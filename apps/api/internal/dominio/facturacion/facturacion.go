@@ -126,7 +126,7 @@ func (s *Servicio) GenerarPedido(ctx context.Context, tienda, rol string, a Alta
 		_, err := t.Exec(ctx, `INSERT INTO arca_config (tienda_id, cuit, razon_social, condicion, punto_venta, ambiente, clave)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (tienda_id) DO UPDATE SET cuit = $2, razon_social = $3, condicion = $4, punto_venta = $5,
-				ambiente = $6, clave = $7, certificado = NULL, certificado_vence = NULL, actualizada_en = now()`,
+				ambiente = $6, clave = $7, certificado = NULL, certificado_vence = NULL, aviso_vence = NULL, actualizada_en = now()`,
 			tienda, a.CUIT, strings.TrimSpace(a.RazonSocial), a.Condicion, a.PuntoVenta, a.Ambiente, cif)
 		if err != nil {
 			return err
@@ -173,7 +173,7 @@ func (s *Servicio) GuardarCertificado(ctx context.Context, tienda, rol, certPEM 
 		if _, err := t.Exec(ctx, `DELETE FROM arca_tickets WHERE tienda_id = $1`, tienda); err != nil {
 			return err
 		}
-		_, err = t.Exec(ctx, `UPDATE arca_config SET certificado = $2, certificado_vence = $3, actualizada_en = now() WHERE tienda_id = $1`,
+		_, err = t.Exec(ctx, `UPDATE arca_config SET certificado = $2, certificado_vence = $3, aviso_vence = NULL, actualizada_en = now() WHERE tienda_id = $1`,
 			tienda, strings.TrimSpace(certPEM), d.Vence)
 		if err != nil {
 			return err

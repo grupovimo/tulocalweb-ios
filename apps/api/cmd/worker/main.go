@@ -205,6 +205,10 @@ func correr() error {
 			if err := f.Drenar(ctx, time.Now()); err != nil && ctx.Err() == nil {
 				slog.Error("facturacion: drenar", "error", err)
 			}
+			// El aviso de vencimiento del certificado (§48): barato, va en la misma vuelta.
+			if err := f.AvisarVencimientos(ctx, time.Now()); err != nil && ctx.Err() == nil {
+				slog.Error("facturacion: avisar vencimientos", "error", err)
+			}
 			select {
 			case <-ctx.Done():
 				return

@@ -269,3 +269,79 @@ func TestFacturaADesdeElCheckout(t *testing.T) {
 		t.Fatalf("B a consumidor final: %s", falso.UltimoPedido)
 	}
 }
+
+// El certificado por vencer avisa una vez por umbral (30, 7, al vencer); uno nuevo arranca de cero.
+func TestAvisoDeVencimientoDelCertificado(t *testing.T) {
+	ctx := context.Background()
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	sol := pruebadb.CrearTienda(t, b.App, "sol")
+	s := &facturacion.Servicio{Pool: b.App, Cifra: cifrador(t)}
+	ahora := time.Now().UTC()
+	conectar := func() {
+		t.Helper()
+		alta := facturacion.Alta{CUIT: "20-44859234-1", RazonSocial: "Luna", Condicion: "monotributo", PuntoVenta: 2, Ambiente: "homologacion"}
+		csr, err := s.GenerarPedido(ctx, luna, "duenio", alta)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.GuardarCertificado(ctx, luna, "duenio", firmarComoARCA(t, csr), ahora); err != nil {
+			t.Fatal(err)
+		}
+	}
+	vencerEn := func(d time.Duration) {
+		t.Helper()
+		if err := b.App.EnTienda(ctx, luna, func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `UPDATE arca_config SET certificado_vence = $1`, ahora.Add(d))
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	avisos := func() []int {
+		t.Helper()
+		if err := s.AvisarVencimientos(ctx, ahora); err != nil {
+			t.Fatal(err)
+		}
+		filas, err := b.Worker.Query(ctx, `SELECT (datos->>'dias')::int FROM outbox WHERE tipo = $1 ORDER BY id`, facturacion.TipoVence)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ds, err := pgx.CollectRows(filas, pgx.RowTo[int])
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ds
+	}
+	conectar()
+	vencerEn(90 * 24 * time.Hour)
+	if d := avisos(); len(d) != 0 {
+		t.Fatalf("a 90 días avisó: %v", d)
+	}
+	vencerEn(20 * 24 * time.Hour)
+	avisos()
+	if d := avisos(); len(d) != 1 || d[0] != 20 {
+		t.Fatalf("a 20 días (una sola vez): %v", d)
+	}
+	vencerEn(5*24*time.Hour - time.Hour)
+	if d := avisos(); len(d) != 2 || d[1] != 5 {
+		t.Fatalf("a 5 días: %v", d)
+	}
+	vencerEn(-time.Hour)
+	avisos()
+	if d := avisos(); len(d) != 3 || d[2] != 0 {
+		t.Fatalf("vencido: %v", d)
+	}
+	// Certificado nuevo: vuelve a avisar cuando le toque.
+	conectar()
+	vencerEn(10 * 24 * time.Hour)
+	if d := avisos(); len(d) != 4 || d[3] != 10 {
+		t.Fatalf("con el certificado nuevo: %v", d)
+	}
+	// La otra tienda, sin ARCA, nunca.
+	var otra int
+	_ = b.Worker.QueryRow(ctx, `SELECT count(*) FROM outbox WHERE tipo = $1 AND tienda_id = $2`, facturacion.TipoVence, sol).Scan(&otra)
+	if otra != 0 {
+		t.Fatalf("avisó a una tienda sin ARCA: %d", otra)
+	}
+}

@@ -1045,3 +1045,14 @@ avisos que el iPhone de §40.
   reintenta. Un rechazo (token vencido, píxel ajeno): no se reintenta y el panel muestra el motivo.
   Compras de más de 7 días se descartan (Meta no las acepta).
 - **La demo** no la tiene: conectar responde que es una tienda de ejemplo.
+
+## 48. Aviso de vencimiento del certificado de ARCA (migración 00065)
+
+- **Por qué**: el certificado dura dos años; vencido, las ventas quedan «sin facturar» y antes sólo
+  se veía abriendo Integraciones › ARCA.
+- **Cuándo**: a 30 días, a 7 y al vencer, una vez cada umbral (`arca_config.aviso_vence`). Subir un
+  certificado nuevo (o generar otro pedido) lo vuelve a cero. Lo revisa el worker en la vuelta del
+  drenador de facturas (`app.tiendas_con_arca_por_vencer`, sólo ids).
+- **A quién**: evento `arca.vence` → campanita y mail a quien tiene Finanzas (la dueña, al email
+  del negocio si lo cargó). El mail no sale si en el medio ya subió uno nuevo. Los dos llevan a
+  `/panel/integraciones?arca`, que abre el asistente.

@@ -53,6 +53,7 @@ func (g *Generador) generadores() map[string]generador {
 		"equipo.aceptada":         aceptada,
 		"plan.activado":           planActivado,
 		"plan.pausado":            planPausado,
+		"arca.vence":              arcaVence,
 	}
 }
 
@@ -360,6 +361,33 @@ func reautorizar(_ context.Context, _ pgx.Tx, ev outbox.Evento) (Hecho, error) {
 	}
 	return Hecho{Clave: fmt.Sprintf("reautorizar:%d", ev.ID), Para: solo(Texto{Tipo: d.Canal, Grupo: "sistema",
 		Titulo: nombre + " se desconectó", Detalle: detalle, Ruta: "/panel/integraciones"}, roles.Tienda, roles.Finanzas)}, nil
+}
+
+// arcaVence: arca.vence, a 30 días, a 7 y al vencer el certificado (§48). A quien tiene Finanzas.
+func arcaVence(_ context.Context, _ pgx.Tx, ev outbox.Evento) (Hecho, error) {
+	var d struct {
+		Dias int `json:"dias"`
+	}
+	if json.Unmarshal(ev.Datos, &d) != nil {
+		return Hecho{}, nil
+	}
+	titulo, detalle := TituloArcaVence(d.Dias), "Renovalo para que tus ventas se sigan facturando solas."
+	if d.Dias <= 0 {
+		detalle = "Tus ventas quedan sin facturar hasta que subas uno nuevo."
+	}
+	return Hecho{Clave: fmt.Sprintf("arca.vence:%d", ev.ID), Para: solo(Texto{Tipo: "arca", Grupo: "sistema",
+		Titulo: titulo, Detalle: detalle, Ruta: "/panel/integraciones?arca"}, roles.Finanzas)}, nil
+}
+
+// TituloArcaVence: «Tu certificado de ARCA vence en 7 días» / «vence mañana» / «venció».
+func TituloArcaVence(dias int) string {
+	switch {
+	case dias <= 0:
+		return "Tu certificado de ARCA venció"
+	case dias == 1:
+		return "Tu certificado de ARCA vence mañana"
+	}
+	return fmt.Sprintf("Tu certificado de ARCA vence en %d días", dias)
 }
 
 // aceptada: equipo.aceptada, cuando alguien acepta la invitación. A quien maneja el equipo (Cuenta),
