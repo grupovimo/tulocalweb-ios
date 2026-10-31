@@ -1093,3 +1093,51 @@ avisos que el iPhone de §40.
 - **La demo**: los suscriptos de ejemplo salen de los clientes de la tienda de ejemplo; todo funciona
   y «Mandar» guarda la novedad en el historial sin mandar ningún mail (lo dice la página). Sumarse
   desde la tienda de la demo no manda el mail: el aviso trae el link de confirmar.
+
+## 52. Lanzamientos con reserva, ofertas con fin y encargo con seña (migración 00069)
+
+- **Modelo**: el producto suma `lanzamiento`, `reserva_sena` y `encargo_sena` (% de seña, NULL = no
+  se ofrece), `oferta_precio` y `oferta_hasta` (el precio de lista sigue en `precio`) y
+  `lanzamiento_avisado`. «Avisame cuando salga» va en `avisos_lanzamiento` (un email por producto,
+  RLS por tienda). El pedido con seña suma `sena`, `sena_tipo` (reserva o encargo), `sena_pagada_en`,
+  `sena_vence` y `saldado_en`. Se configura aparte del producto (`GET/PUT
+  /v1/panel/productos/{id}/lanzamiento`, PUT con Catálogo porque lleva precio y señas), así el editor
+  de productos no cambia de forma.
+- **La tienda online**: antes de la hora, el producto se ve con «Próximamente», su fecha y su cuenta
+  regresiva y no se compra (Go lo rechaza al comprar: `proximamente`); a la hora queda a la venta
+  solo, porque la vidriera lo calcula con el reloj (no hay estado que cambiar). La oferta vigente
+  pone `precio` = oferta y `anterior` = lista y se cobra así: la vidriera fija el precio de cada
+  línea del pedido. Las variantes con precio propio no entran en la oferta. Vencida, vuelve el de
+  lista solo.
+- **Cuenta regresiva**: las plantillas la dibujan con las piezas del handoff (`cd` de la barra de
+  cada una; el bloque grande del hero en Pampa y la «Oferta relámpago» en Yerbal) sólo si hay algo
+  real que contar: el lanzamiento próximo o la oferta con fin más cercanos (`lib/tienda/lanzamiento.ts`).
+  Sin eso no se dibuja nada. Los cupones con vencimiento no se cuentan: muchos son códigos privados
+  (VIP, carrito) y mostrarlos los publicaría. Al llegar a cero, la tienda se vuelve a pedir.
+- **Avisos**: tope de 10 por hora por IP y 20.000 por producto; repetido no suma ni lo dice. El
+  worker mira cada minuto `app.lanzamientos_por_avisar` (sólo ids), marca el producto con un UPDATE
+  condicionado (dos workers no avisan dos veces) y encola `lanzamiento.avisos`: cada evento manda
+  50 mails, marca cada email apenas sale (un reintento no repite) y encola el siguiente si quedan.
+  Reprogramar a una fecha futura deja el aviso pendiente otra vez.
+- **Seña** (reserva antes del lanzamiento o encargo ya lanzado): `POST /v1/publico/tiendas/{slug}/senas`.
+  Precio y seña (% redondeado al peso, como los turnos) los calcula Go; el pedido se crea «Sin pagar»
+  con el stock descontado (el cupo de la reserva es el stock) y retiro en el local (sin retiro, la
+  entrega se coordina: lo dice la nota). La preferencia de Checkout Pro va con la cuenta de la tienda,
+  sin cuotas, como cobro `pedido` por el monto de la seña y vence con `sena_vence` (30 min); pasado eso
+  el worker cancela el pedido (`app.senas_vencidas`) y el stock vuelve. Si Mercado Pago no responde al
+  armarla, se cancela en el momento. El webhook (idempotente como todos: `mp_cobros` + estado previo)
+  la aplica: «Para preparar», pago en «Seña», `tienda.venta` y el mail «Recibimos tu seña». Si llega
+  tarde a un pedido ya cancelado, sólo queda anotada para devolverla desde el pedido.
+- **Saldado**: «Seña pagada · falta $X» en la hoja del pedido y «Marcar como saldado» (con Deshacer):
+  el pago pasa a «Cobrado» y recién ahí salen el mail de pago completo y la factura (la seña no
+  factura sola).
+- **Quebracho**: el «A medida» del handoff es el configurador: un producto con opciones se arma paso a
+  paso (una opción por paso, con tarjetas si los valores tienen color o foto y chips si no) y la
+  barra oscura muestra lo elegido, el precio y, con encargo, la seña y «Encargar». El modelo no tiene
+  medidas: la vista de planta del diseño se reemplaza por la foto de la variante elegida, y los pasos
+  son las opciones que tenga (hasta 3).
+- **Pampa**: «Drops y reserva» con los lanzamientos reales: el hero cuenta el próximo (o la oferta que
+  termina), «El drop» lista lo que todavía no salió y «Avisame» anota el email (el diseño pedía
+  WhatsApp; el aviso es por mail).
+- **La demo**: todo se ve y se usa; la seña se da por pagada y la confirmación dice que en la demo no
+  se cobra. No manda mails.

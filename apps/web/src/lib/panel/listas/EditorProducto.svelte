@@ -20,6 +20,7 @@
 	import { compartirProducto } from '../compartir.ts';
 	import { subir } from '../fotos.ts';
 	import { pesos } from '../formato.ts';
+	import LanzamientoProducto from './LanzamientoProducto.svelte';
 
 	type Producto = components['schemas']['Producto'];
 
@@ -68,6 +69,7 @@
 	let elegirFoto = $state<HTMLInputElement>();
 	let error = $state<string | null>(null);
 	let guardando = $state(false);
+	let lanzamiento = $state<ReturnType<typeof LanzamientoProducto>>();
 	// Borrar pide un segundo toque: «¿Lo borro?».
 	let confirmando = $state(false);
 	$effect(() => {
@@ -271,7 +273,7 @@
 			error = 'Cada opción necesita un nombre y al menos un valor.';
 			return;
 		}
-		const mal = errorOpciones(ops);
+		const mal = errorOpciones(ops) ?? lanzamiento?.revisar() ?? null;
 		if (mal) {
 			error = mal;
 			return;
@@ -301,17 +303,26 @@
 				canales
 			})
 		});
-		guardando = false;
 		if (!r.ok) {
+			guardando = false;
 			error =
 				((await r.json().catch(() => null)) as { message?: string } | null)?.message ??
 				'No pudimos guardarlo.';
 			return;
 		}
-		open = false;
 		const g = (await r.json()) as Producto & {
 			mercadoLibre?: { publicado?: string; error?: string };
 		};
+		// Lanzamiento, señas y oferta (§52): van aparte, con el id ya guardado.
+		const errorLanzamiento = (await lanzamiento?.guardar(g.id)) ?? null;
+		guardando = false;
+		if (errorLanzamiento) {
+			// El producto quedó guardado: el editor sigue abierto para corregir el lanzamiento.
+			error = errorLanzamiento;
+			guardado(g, !producto);
+			return;
+		}
+		open = false;
 		guardado(g, !producto);
 		// Mercado Libre contesta al publicar: si rechazó, se dice por qué (y el canal queda apagado).
 		if (g.mercadoLibre?.error)
@@ -569,6 +580,14 @@
 						: 'Sumar talles, colores u otra opción'}</button
 				>{/if}
 		</div>
+
+		<LanzamientoProducto
+			bind:this={lanzamiento}
+			id={producto?.id ?? null}
+			abierto={open}
+			{precio}
+			{conPrecios}
+		/>
 
 		<div class="tarjeta canales">
 			<div class="t">Dónde se publica</div>

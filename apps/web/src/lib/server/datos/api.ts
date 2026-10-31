@@ -100,6 +100,7 @@ import type {
 } from './tipos.ts';
 import type { Importacion, ImportacionNueva, PedidoHistorial } from '../importacion/fuente.ts';
 import type { ErrorVueltaTN } from './tipos.ts';
+import type { ConfigLanzamiento, LanzamientoProducto } from '#lib/tienda/lanzamiento.ts';
 import type { RolInvitable } from '#lib/panel/permisos.ts';
 
 /** Un producto de una API sin galería ni variantes todavía se ve como uno sin opciones. */
@@ -233,6 +234,34 @@ export class DatosApi implements Datos {
 	}
 	async recordarPago(numero: number) {
 		return resultado(await this.intentar(`/v1/panel/pedidos/${numero}/recordatorio`, 'POST', {}));
+	}
+	async saldarPedido(numero: number, saldado: boolean) {
+		return resultado(
+			await this.intentar(`/v1/panel/pedidos/${numero}/saldado`, saldado ? 'POST' : 'DELETE')
+		);
+	}
+	async lanzamiento(id: string) {
+		const r = await this.intentar(
+			`/v1/panel/productos/${encodeURIComponent(id)}/lanzamiento`,
+			'GET'
+		);
+		return r.ok ? ((await r.json()) as LanzamientoProducto) : null;
+	}
+	async guardarLanzamiento(id: string, c: ConfigLanzamiento) {
+		const r = await this.intentar(
+			`/v1/panel/productos/${encodeURIComponent(id)}/lanzamiento`,
+			'PUT',
+			c,
+			[400]
+		);
+		if (r.status === 404) return null;
+		if (!r.ok)
+			return {
+				error:
+					((await r.json().catch(() => null)) as { detail?: string } | null)?.detail ??
+					'No pudimos guardar el lanzamiento.'
+			};
+		return (await r.json()) as LanzamientoProducto;
 	}
 
 	listar(lista: NombreLista, f: FiltrosLista) {

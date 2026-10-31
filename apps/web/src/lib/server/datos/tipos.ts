@@ -4,6 +4,7 @@
  * packages/contrato/casos corren contra las dos.
  */
 import type { components } from '@mostrador/contrato/esquema';
+import type { ConfigLanzamiento, LanzamientoProducto } from '#lib/tienda/lanzamiento.ts';
 import type { RolInvitable } from '#lib/panel/permisos.ts';
 import type { AjusteIntegracion, EstadoIntegraciones } from '#lib/panel/integraciones.ts';
 import type { Importacion, ImportacionNueva, PedidoHistorial } from '../importacion/fuente.ts';
@@ -157,6 +158,14 @@ export interface Datos {
 	): Promise<{ hechos: number; cambios: { numero: number; antes: EstadoPedido }[] }>;
 	/** Recordatorio de pago por WhatsApp. */
 	recordarPago(numero: number): Promise<Resultado>;
+	/** Con la seña pagada (§52): la tienda cobró el resto (o lo deshace). */
+	saldarPedido(numero: number, saldado: boolean): Promise<Resultado>;
+	/** Lanzamiento, señas y oferta con fin del producto (§52). null si no existe. */
+	lanzamiento(id: string): Promise<LanzamientoProducto | null>;
+	guardarLanzamiento(
+		id: string,
+		c: ConfigLanzamiento
+	): Promise<LanzamientoProducto | { error: string } | null>;
 	/** Motor de listas: Clientes, Productos, Inventario, Facturación y Envíos. */
 	listar(lista: NombreLista, f: FiltrosLista): Promise<ListaGenerica>;
 	/** Una acción sobre filas de una lista (o la sugerencia de Tincho); devuelve cuántas cambiaron. */

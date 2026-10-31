@@ -46,3 +46,31 @@ export const NuevaPregunta = v.object({
 		v.maxLength(500, 'Hacela en menos de 500 letras.')
 	)
 });
+
+/** «Avisame cuando salga» (§52). */
+export const NuevoAviso = v.object({
+	productoId: v.pipe(v.string(), v.minLength(1), v.maxLength(80)),
+	email: v.pipe(
+		v.string(),
+		v.trim(),
+		v.toLowerCase(),
+		v.email('Revisá el email.'),
+		v.maxLength(200)
+	)
+});
+
+/** Reservar un lanzamiento o encargar con seña (§52): precio y seña los calcula el servidor. */
+export const NuevaSena = v.object({
+	productoId: v.pipe(v.string(), v.minLength(1), v.maxLength(80)),
+	varianteId: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(120))), null),
+	cantidad: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10)), 1),
+	nombre: v.pipe(v.string(), v.trim(), v.minLength(2, 'Poné tu nombre.'), v.maxLength(80)),
+	email: v.pipe(
+		v.string(),
+		v.trim(),
+		v.toLowerCase(),
+		v.email('Revisá el email.'),
+		v.maxLength(200)
+	),
+	telefono: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(30)), '')
+});

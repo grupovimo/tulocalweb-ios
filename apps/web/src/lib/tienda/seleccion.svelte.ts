@@ -4,6 +4,7 @@
  * (talles, swatches, presentaciones, miniaturas), así el comportamiento es uno solo.
  */
 import type { Carrito } from './carrito.svelte.ts';
+import { proximamente } from './lanzamiento.ts';
 import type { ProductoPublico, VariantePublica } from './tipos.ts';
 import {
 	colorDe,
@@ -110,12 +111,17 @@ export class Seleccion {
 		if (this.conOpciones) return this.falta ? this.variantes.reduce((s, x) => s + x.stock, 0) : 0;
 		return this.producto.stock;
 	}
+	/** Todavía no salió a la venta (lanzamiento, §52): no se agrega al carrito. */
+	get proximo() {
+		return proximamente(this.producto);
+	}
 	/** Se puede agregar ya: está todo elegido y hay stock. */
 	get listo() {
-		return !this.falta && this.stock > 0 && (!this.conOpciones || !!this.variante);
+		return !this.proximo && !this.falta && this.stock > 0 && (!this.conOpciones || !!this.variante);
 	}
 	/** El texto del botón: lo que falta elegir, sin stock o el "Agregar" de la plantilla. */
 	boton(agregar: string, sinStock = 'Sin stock') {
+		if (this.proximo) return 'Próximamente';
 		if (this.stock <= 0) return sinStock;
 		return this.falta ?? agregar;
 	}
@@ -158,6 +164,7 @@ export class Seleccion {
 	 * Suma lo elegido al carrito. Devuelve false si falta elegir (y prende el aviso) o no hay stock.
 	 */
 	agregar(carrito: Carrito, cantidad = 1) {
+		if (this.proximo) return false;
 		if (this.falta) {
 			this.aviso = true;
 			return false;

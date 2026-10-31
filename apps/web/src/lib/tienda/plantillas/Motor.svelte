@@ -11,6 +11,9 @@
 	import * as I from '#lib/icons.ts';
 	import FormResena from '../FormResena.svelte';
 	import CompartirProducto from '../CompartirProducto.svelte';
+	import LanzamientoFicha from '../LanzamientoFicha.svelte';
+	import SenaPedido from '../SenaPedido.svelte';
+	import { Conteo } from '../conteo.svelte.ts';
 	import PreguntasProducto from '../PreguntasProducto.svelte';
 	import type { TemaOpiniones } from '../opiniones.ts';
 	import { carritoDe } from '../carrito.svelte.ts';
@@ -234,6 +237,8 @@
 
 	// En el dominio propio de la tienda los links no llevan /t/<slug> (tienda.base = '').
 	const base = $derived(tienda.base ?? `/t/${tienda.slug}`);
+	// La cuenta regresiva (§52): sólo un lanzamiento próximo o una oferta con fin, nunca inventada.
+	const conteo = new Conteo(() => tienda);
 	const carrito = $derived(carritoDe(tienda.slug));
 	const nl = new AltaNewsletter(() => tienda.slug);
 	let ancho = $state(page.data.movil ? 390 : 1200);
@@ -649,13 +654,19 @@
 		<div
 			style="display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;background:{T.acc};color:{T.ai};font-size:13px;font-weight:600;text-align:center"
 		>
-			<span
-				>{tienda.envios.gratisDesde
-					? `Envío gratis desde ${fmt(tienda.envios.gratisDesde)}`
-					: tienda.cobros.cuotas > 1
-						? `${tienda.cobros.cuotas} cuotas sin interés`
-						: 'Compra protegida'}</span
-			>{#if wide && tienda.cobros.cuotas > 1}<span style="opacity:.85;font-weight:500"
+			{#if conteo.actual}<span>{conteo.texto}</span><span
+					style="display:flex;gap:4px;font-variant-numeric:tabular-nums"
+					>{#each conteo.partes(3) as c (c.u)}<span
+							style="padding:2px 7px;border-radius:5px;background:{T.ink};color:{T.bg}"
+							>{c.v}{c.u}</span
+						>{/each}</span
+				>{:else}<span
+					>{tienda.envios.gratisDesde
+						? `Envío gratis desde ${fmt(tienda.envios.gratisDesde)}`
+						: tienda.cobros.cuotas > 1
+							? `${tienda.cobros.cuotas} cuotas sin interés`
+							: 'Compra protegida'}</span
+				>{/if}{#if wide && tienda.cobros.cuotas > 1}<span style="opacity:.85;font-weight:500"
 					>{tienda.cobros.cuotas} cuotas sin interés{#if tienda.cobros.transferencia > 0}&nbsp;· {tienda
 							.cobros.transferencia}% off por transferencia{/if}</span
 				>{/if}
@@ -1390,6 +1401,7 @@
 									style="display:flex;justify-content:center;align-items:center;gap:8px;padding:15px;border:1.5px solid {T.ink};border-radius:{T.rb};font-size:14.5px;font-weight:700;color:{T.ink};text-decoration:none"
 									><Icon icon={I.phWhatsappLogo} size={18} />Comprar por WhatsApp</a
 								>{/if}
+							<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 							<CompartirProducto {tienda} {producto} {tema} />
 						</div>
 						{#if envia(tienda.envios)}<div
@@ -2406,6 +2418,7 @@
 					<b style="color:{T.ink}">{fmt(pedido.total)}</b>. Te escribimos por mail con
 					cada&nbsp;novedad.
 				</p>
+				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
 						style="margin-top:24px;padding:20px;background:{T.sf};border-radius:{T.rL};text-align:left;font-size:14.5px;line-height:1.6"

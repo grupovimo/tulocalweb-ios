@@ -319,6 +319,13 @@ export function detalleDemo(
 			gastado: suyos.reduce((s, x) => s + x.total, 0)
 		},
 		estadoPago: p.estado === 'Sin pagar' ? 'Pendiente' : p.estadoPago,
+		sena: p.sena
+			? {
+					...p.sena,
+					falta: p.sena.saldado ? 0 : Math.max(0, p.total - p.sena.monto),
+					vence: null
+				}
+			: null,
 		factura: p.facturado ? `B 0004-${String(p.numero - 200).padStart(8, '0')}` : null,
 		seguimiento:
 			conEnvio && paso >= 3

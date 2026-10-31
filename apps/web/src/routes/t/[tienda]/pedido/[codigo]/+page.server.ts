@@ -28,6 +28,14 @@ export const load: PageServerLoad = async ({ params, cookies, url, depends }) =>
 			alias: string | null;
 			cbu: string | null;
 			titular: string | null;
+			/** Reservado o encargado con seña (§52). */
+			sena?: {
+				tipo: 'reserva' | 'encargo';
+				monto: number;
+				falta: number;
+				pagada: boolean;
+				saldado: boolean;
+			} | null;
 		};
 		// Vuelve de Mercado Pago con el pago aprobado y el pedido todavía sin pagar: se le pide a la API
 		// que lo confirme (la API lo consulta en Mercado Pago; no confía en lo que dice la URL).
@@ -68,7 +76,9 @@ export const load: PageServerLoad = async ({ params, cookies, url, depends }) =>
 		error(404, 'No encontramos ese pedido.');
 	const p = await r.datos.pedido(numero);
 	if (!p) error(404, 'No encontramos ese pedido.');
-	const pago = url.searchParams.get('pago') === 'mercadopago' ? 'mercadopago' : 'transferencia';
+	// Con seña (§52), se paga por Mercado Pago (en la demo, simulado).
+	const pago =
+		p.sena || url.searchParams.get('pago') === 'mercadopago' ? 'mercadopago' : 'transferencia';
 	const total = Number(url.searchParams.get('total')) || p.total;
 	const dt = pago === 'transferencia' ? r.tienda.cobros.datosTransferencia : null;
 	return {
@@ -82,7 +92,10 @@ export const load: PageServerLoad = async ({ params, cookies, url, depends }) =>
 			esCbu: !!dt && !dt.alias && !!dt.cbu,
 			estado: p.estado,
 			titular: r.tienda.cobros.datosTransferencia?.titular ?? null,
-			pagado: false
-		}
+			pagado: false,
+			sena: p.sena ?? null
+		},
+		// La demo no cobra la seña: la confirmación lo dice.
+		senaDemo: !!p.sena
 	};
 };

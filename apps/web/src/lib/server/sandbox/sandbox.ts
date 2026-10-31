@@ -250,6 +250,15 @@ import { diasDe } from '#lib/tienda/suscripciones.ts';
 import type { CuponTienda, Historial } from '#lib/tienda/cupon.ts';
 import { validarGa4, validarPixel } from '#lib/tienda/medicion.ts';
 import { generarVariantes, precioDe, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
+import {
+	aplicarLanzamiento,
+	errorLanzamiento,
+	proximamente,
+	senaDe,
+	SIN_LANZAMIENTO,
+	type ConfigLanzamiento,
+	type LanzamientoProducto
+} from '#lib/tienda/lanzamiento.ts';
 
 export type DbSandbox = DrizzleD1Database<Record<string, never>>;
 
@@ -1489,6 +1498,10 @@ export class DatosSandbox implements Datos {
 			descuentoCupon: number;
 			total?: number;
 			entrega?: { direccion: string; cp: string } | null;
+			/** El precio de cada línea (con la oferta vigente, §52), por claveStock. */
+			precios?: Record<string, number>;
+			/** Reserva o encargo con seña (§52): en la demo la seña se da por pagada. */
+			sena?: { tipo: 'reserva' | 'encargo'; monto: number };
 		}
 	): Promise<{ numero: number; total: number } | 'sin-stock' | 'invalido'> {
 		const d = await this.base();
@@ -1510,7 +1523,7 @@ export class DatosSandbox implements Datos {
 				productoId: p.id,
 				nombre: p.nombre,
 				cantidad: i.cantidad,
-				precio: v?.precio ?? p.precio,
+				precio: web?.precios?.[k] ?? v?.precio ?? p.precio,
 				varianteId: v?.id ?? null,
 				variante: v ? textoVariante(p.opciones, v.valores) : null
 			});
@@ -1561,7 +1574,15 @@ export class DatosSandbox implements Datos {
 			// En la tienda online, el total cobrado (envío, cupón y transferencia incluidos).
 			total: web?.total ?? items.reduce((s, i) => s + i.precio * i.cantidad, 0),
 			creado: ahora,
-			...(web?.cupon ? { cupon: web.cupon } : {})
+			...(web?.cupon ? { cupon: web.cupon } : {}),
+			...(web?.sena
+				? {
+						sena: { ...web.sena, pagada: true, saldado: false },
+						estadoPago: 'Seña',
+						estado: 'Para preparar' as const,
+						facturado: false
+					}
+				: {})
 		};
 		if (web?.cupon) await this.usarCupon(web.cupon, pedido.total, web.descuentoCupon);
 		await guardarCambio(this.db, this.sb.id, 'pedido-nuevo', String(numero), {
@@ -3039,8 +3060,149 @@ export class DatosSandbox implements Datos {
 	 * La tienda online como la ve quien compra (lo publicado en Mi tienda). vitrina: es la tienda de
 	 * ejemplo de una plantilla para mirar, sin carrito real.
 	 */
+	// ---------------------------------------------------------------- Lanzamientos (§52)
+
+	private async lanzamientos() {
+		const c = await cambiosDe(this.db, this.sb.id, 'lanzamiento');
+		return new Map([...c].filter(([, v]) => v).map(([k, v]) => [k, v as ConfigLanzamiento]));
+	}
+	private async avisosLanzamiento() {
+		return [...(await cambiosDe(this.db, this.sb.id, 'aviso-lanzamiento')).keys()];
+	}
+
+	/** Lanzamiento, señas y oferta del producto, con cuántos pidieron aviso y cuántos reservaron. */
+	async lanzamiento(id: string): Promise<LanzamientoProducto | null> {
+		const [productos, config, avisos, d] = await Promise.all([
+			this.regProductos(),
+			this.lanzamientos(),
+			this.avisosLanzamiento(),
+			this.demo()
+		]);
+		if (!productos.some((p) => p.id === id)) return null;
+		const c = config.get(id) ?? SIN_LANZAMIENTO;
+		const conSena = d.pedidos.filter(
+			(p) => p.sena && p.estado !== 'Cancelado' && p.items.some((i) => i.productoId === id)
+		);
+		const suyos = avisos.filter((k) => k.startsWith(`${id}:`)).length;
+		return {
+			...c,
+			avisos: suyos,
+			// La demo no manda mails: a la hora del lanzamiento, todos cuentan como avisados.
+			avisados: c.lanzamiento && Date.parse(c.lanzamiento) <= Date.now() ? suyos : 0,
+			reservas: conSena.filter((p) => p.sena!.tipo === 'reserva').length,
+			encargos: conSena.filter((p) => p.sena!.tipo === 'encargo').length
+		};
+	}
+
+	async guardarLanzamiento(
+		id: string,
+		c: ConfigLanzamiento
+	): Promise<LanzamientoProducto | { error: string } | null> {
+		const p = (await this.regProductos()).find((x) => x.id === id);
+		if (!p) return null;
+		const antes = (await this.lanzamientos()).get(id) ?? SIN_LANZAMIENTO;
+		const mal = errorLanzamiento(c, antes, p.precio);
+		if (mal) return { error: mal };
+		await guardarCambio(this.db, this.sb.id, 'lanzamiento', id, c);
+		return this.lanzamiento(id);
+	}
+
+	/** «Avisame cuando salga» en la demo: se anota (no sale ningún mail). */
+	async avisarLanzamiento(
+		productoId: string,
+		email: string
+	): Promise<'ok' | 'no-existe' | 'ya-salio' | 'lleno'> {
+		const t = await this.tiendaPublica(false);
+		const p = t.productos.find((x) => x.id === productoId);
+		if (!p) return 'no-existe';
+		if (!proximamente(p)) return 'ya-salio';
+		const avisos = await this.avisosLanzamiento();
+		if (avisos.filter((k) => k.startsWith(`${productoId}:`)).length >= 200) return 'lleno';
+		await guardarCambio(
+			this.db,
+			this.sb.id,
+			'aviso-lanzamiento',
+			`${productoId}:${email.toLowerCase()}`,
+			{
+				en: Date.now()
+			}
+		);
+		return 'ok';
+	}
+
+	/**
+	 * Reservar o encargar con seña en la demo: el pedido se arma igual que en Go (precio y seña del
+	 * servidor, descuenta stock) y la seña se da por pagada, porque la demo no cobra.
+	 */
+	async senar(s: {
+		productoId: string;
+		varianteId: string | null;
+		cantidad: number;
+		nombre: string;
+		email: string;
+		telefono: string;
+	}): Promise<
+		{ numero: number; total: number; sena: number } | 'sin-stock' | 'invalido' | 'sin-sena'
+	> {
+		const t = await this.tiendaPublica(false);
+		const p = t.productos.find((x) => x.id === s.productoId);
+		if (!p) return 'invalido';
+		const antes = proximamente(p);
+		const pct = antes ? p.reserva : p.encargo;
+		if (!pct) return 'sin-sena';
+		const v = p.opciones.length ? p.variantes.find((x) => x.id === s.varianteId) : undefined;
+		if (p.opciones.length ? !v : s.varianteId) return 'invalido';
+		const precio = v ? precioDe(v, p.precio) : p.precio;
+		const total = precio * s.cantidad;
+		const sena = senaDe(total, pct);
+		const tipo = antes ? 'reserva' : 'encargo';
+		const r = await this.crearPedido(
+			{
+				items: [{ productoId: p.id, varianteId: v?.id ?? null, cantidad: s.cantidad }],
+				pago: 'mp',
+				canal: 'web',
+				envio: 'retiro',
+				cliente: s.nombre,
+				telefono: s.telefono,
+				nota: [
+					`Email: ${s.email}`,
+					`${tipo === 'reserva' ? 'Reserva del lanzamiento' : 'Encargo'} con seña: $ ${sena.toLocaleString('es-AR')} ahora, $ ${(total - sena).toLocaleString('es-AR')} al retirar`
+				].join(' · '),
+				pagado: false
+			},
+			{
+				email: s.email,
+				cupon: null,
+				descuentoCupon: 0,
+				total,
+				precios: { [claveStock(p.id, v?.id)]: precio },
+				sena: { tipo, monto: sena }
+			}
+		);
+		if (typeof r === 'string') return r;
+		return { ...r, sena };
+	}
+
+	/** «Saldado»: cobró el resto de un pedido con la seña pagada (o lo deshace). */
+	async saldarPedido(numero: number, saldado: boolean): Promise<Resultado> {
+		const n = (await cambiosDe(this.db, this.sb.id, 'pedido-nuevo')).get(String(numero)) as
+			PedidoNuevoDemo | undefined;
+		if (!n) return 'no-existe';
+		const vivo = (await this.demo()).pedidos.find((x) => x.numero === numero);
+		if (!n.pedido.sena?.pagada || !vivo || vivo.estado === 'Cancelado') return 'no-se-puede';
+		await guardarCambio(this.db, this.sb.id, 'pedido-nuevo', String(numero), {
+			...n,
+			pedido: {
+				...n.pedido,
+				estadoPago: saldado ? 'Cobrado' : 'Seña',
+				sena: { ...n.pedido.sena, saldado }
+			}
+		} satisfies PedidoNuevoDemo);
+		return 'ok';
+	}
+
 	async tiendaPublica(vitrina = false): Promise<TiendaPublica> {
-		const [d, t, c, conf, productos, mp, turnos, medicion, cr, respuestasQ, entregas, planes] =
+		const [d, t, c, conf, productos, mp, turnos, medicion, cr, respuestasQ, entregas, planes, lanz] =
 			await Promise.all([
 				this.demo(),
 				this.tienda(),
@@ -3053,7 +3215,8 @@ export class DatosSandbox implements Datos {
 				this.cambiosResenas(),
 				this.respuestasPreguntas(),
 				this.entregas(),
-				this.estadoSuscripciones()
+				this.estadoSuscripciones(),
+				this.lanzamientos()
 			]);
 		const diseno = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
 		const plantillaId = diseno.plantilla || t.plantilla;
@@ -3126,6 +3289,8 @@ export class DatosSandbox implements Datos {
 				foto: x.foto,
 				etiqueta:
 					delCatalogo.get(x.id)?.etiqueta ?? (x.stock > 0 && x.stock <= 3 ? 'Últimos' : null),
+				// Lanzamiento, oferta con fin y señas (§52), como Go (vidriera.lanzamiento.aplicar).
+				...aplicarLanzamiento(x.precio, lanz.get(x.id), mp.conectada, Date.now()),
 				stock: x.stock,
 				fotos: x.fotos,
 				opciones: x.opciones,

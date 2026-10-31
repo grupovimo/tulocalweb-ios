@@ -31,16 +31,21 @@ export const GET: RequestHandler = async ({ locals, params, request }) => {
 	return json(p, { headers: { 'cache-control': 'no-store' } });
 };
 
-/** {estado}: avanzar, deshacer o cancelar. {recordatorio: true}: reclamar el pago por WhatsApp. */
+/**
+ * {estado}: avanzar, deshacer o cancelar. {recordatorio: true}: reclamar el pago por WhatsApp.
+ * {saldado}: con la seña pagada (§52), la tienda cobró el resto (false lo deshace).
+ */
 export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const n = numeroDe(params.numero);
 	const cuerpo = (await request.json().catch(() => null)) as {
 		estado?: unknown;
 		recordatorio?: unknown;
+		saldado?: unknown;
 	} | null;
 	const datos = datosDe(locals);
 	let r;
 	if (cuerpo?.recordatorio === true) r = await datos.recordarPago(n);
+	else if (typeof cuerpo?.saldado === 'boolean') r = await datos.saldarPedido(n, cuerpo.saldado);
 	else if (ESTADOS.includes(cuerpo?.estado as EstadoPedido))
 		r = await datos.cambiarEstado(n, cuerpo!.estado as EstadoPedido);
 	else error(400, 'Falta qué hacer con el pedido.');

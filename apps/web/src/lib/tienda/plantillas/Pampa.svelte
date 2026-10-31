@@ -12,6 +12,10 @@
 	import * as I from '#lib/icons.ts';
 	import FormResena from '../FormResena.svelte';
 	import CompartirProducto from '../CompartirProducto.svelte';
+	import LanzamientoFicha from '../LanzamientoFicha.svelte';
+	import SenaPedido from '../SenaPedido.svelte';
+	import { Conteo } from '../conteo.svelte.ts';
+	import { cuando, proximamente } from '../lanzamiento.ts';
 	import PreguntasProducto from '../PreguntasProducto.svelte';
 	import type { TemaOpiniones } from '../opiniones.ts';
 	import { carritoDe } from '../carrito.svelte.ts';
@@ -90,6 +94,35 @@
 
 	// En el dominio propio de la tienda los links no llevan /t/<slug> (tienda.base = '').
 	const base = $derived(tienda.base ?? `/t/${tienda.slug}`);
+	// La cuenta regresiva (§52): sólo un lanzamiento próximo o una oferta con fin, nunca inventada.
+	const conteo = new Conteo(() => tienda);
+	// Drops y reserva (§52): el lanzamiento (o la oferta con fin) que se cuenta en la portada, los
+	// productos que todavía no salieron y «Avisame» del próximo.
+	const drop = $derived(conteo.actual);
+	const proximos = $derived(
+		tienda.productos
+			.filter((p) => proximamente(p, conteo.ahora))
+			.sort((a, b) => Date.parse(a.lanzamiento!) - Date.parse(b.lanzamiento!))
+	);
+	let avisoEmail = $state('');
+	let avisoListo = $state<string | null>(null);
+	let avisoError = $state<string | null>(null);
+	async function avisarDrop(e: SubmitEvent, productoId: string) {
+		e.preventDefault();
+		avisoError = null;
+		const email = avisoEmail.trim();
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return (avisoError = 'Revisá el email.');
+		const r = await fetch(`/t/${tienda.slug}/aviso`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ productoId, email })
+		}).catch(() => null);
+		if (r?.ok) avisoListo = email;
+		else
+			avisoError =
+				((await r?.json().catch(() => null)) as { error?: string } | null)?.error ??
+				'No se pudo. Probá de nuevo.';
+	}
 	const carrito = $derived(carritoDe(tienda.slug));
 	let ancho = $state(page.data.movil ? 390 : 1200);
 	const nar = $derived(ancho < 820);
@@ -599,12 +632,17 @@
 							<div
 								style="padding:clamp(22px,4cqw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:28px;min-width:0;border-right:2px solid #2A2A2A"
 							>
-								{#if tienda.portada.lema}<div
+								{#if (drop && drop.producto.stock > 0) || tienda.portada.lema}<div
 										style="display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase"
 									>
 										<span
 											style="width:10px;height:10px;background:#FF4D2E;border-radius:50%;flex:none"
-										></span>{tienda.portada.lema}
+										></span>{#if drop && drop.producto.stock > 0}{drop.tipo === 'lanzamiento'
+												? 'Próximo drop'
+												: 'En vivo'} · {drop.tipo === 'lanzamiento' ? '' : 'quedan '}{drop.producto
+												.stock}
+											{drop.producto.stock === 1 ? 'unidad' : 'unidades'}{:else}{tienda.portada
+												.lema}{/if}
 									</div>{/if}
 								<h1
 									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(68px,13cqw,190px),{cabe(
@@ -626,11 +664,45 @@
 													{tienda.cobros.transferencia}% off pagando por&nbsp;transferencia{/if}.{:else if tienda.cobros.transferencia > 0}&nbsp;{tienda
 													.cobros.transferencia}% off pagando por&nbsp;transferencia.{/if}
 										</p>{/if}
-									<div style="display:flex;gap:0;flex-wrap:wrap">
+									{#if drop}
+										<div
+											style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2px solid #2A2A2A;max-width:440px"
+										>
+											{#each conteo.partes(4, ['DÍAS', 'HS', 'MIN', 'SEG']) as c (c.u)}<div
+													style="padding:10px 0;text-align:center;border-right:2px solid #2A2A2A"
+												>
+													<div
+														style="font-family:'Archivo Black',sans-serif;font-size:clamp(26px,3.4cqw,38px);line-height:1;font-variant-numeric:tabular-nums"
+													>
+														{c.v}
+													</div>
+													<div
+														style="margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.14em;color:#8A8A8A"
+													>
+														{c.u}
+													</div>
+												</div>{/each}
+										</div>
+										<div style="margin-top:12px;font-size:12.5px;color:#8A8A8A">
+											{#if drop.tipo === 'lanzamiento'}{drop.producto.nombre} sale el {cuando(
+													drop.hasta
+												)}{#if drop.producto.reserva}&nbsp;· reservalo con {drop.producto.reserva}%
+													de&nbsp;seña{/if}{:else}{drop.producto.nombre}: cierra el {cuando(
+													drop.hasta
+												)} · después vuelve a precio&nbsp;full{/if}
+										</div>
+									{/if}
+									<div style="display:flex;gap:0;flex-wrap:wrap;margin-top:{drop ? '22px' : '0'}">
 										<a
-											href="{base}/catalogo"
+											href={drop
+												? `${base}/producto/${drop.producto.slug ?? drop.producto.id}`
+												: `${base}/catalogo`}
 											style="padding:18px 28px;border:2px solid var(--acento, #E6FF4D);background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
-											>Ver todo →</a
+											>{drop?.tipo === 'lanzamiento'
+												? 'Ver el drop →'
+												: drop
+													? 'Comprar el drop →'
+													: 'Ver todo →'}</a
 										><a
 											href="{base}/nosotros"
 											style="padding:18px 24px;border:2px solid #F2F2F2;border-left-width:0;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
@@ -710,6 +782,77 @@
 						</div>
 					{/if}
 				{:else if seccion === 'prods'}
+					{#if proximos.length}
+						<section style="padding:clamp(40px,6cqw,80px) 0 0">
+							<div
+								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;padding:0 clamp(14px,2.4cqw,28px) 18px"
+							>
+								<h2
+									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+								>
+									El drop
+								</h2>
+								<span
+									style="font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+									>{proximos.length}
+									{proximos.length === 1
+										? 'pieza'
+										: 'piezas'}{#if proximos.some((p) => p.stock > 0)}&nbsp;· {proximos.reduce(
+											(s, p) => s + p.stock,
+											0
+										)}
+										unidades{/if}</span
+								>
+							</div>
+							<div
+								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid #2A2A2A"
+							>
+								{#each proximos as p (p.id)}{@render card(tarjeta(p), false, true)}{/each}
+							</div>
+							<div
+								style="margin:2px clamp(14px,2.4cqw,28px) 0;display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:clamp(20px,3cqw,32px);background:#1A1A1A;border:2px solid #2A2A2A"
+							>
+								<div style="flex:1 1 280px">
+									<div
+										style="font-family:'Archivo Black',sans-serif;font-size:clamp(24px,3cqw,34px);text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere"
+									>
+										Avisame {proximos.length === 1 ? 'del drop' : `de ${proximos[0].nombre}`}
+									</div>
+									<div style="font-size:14px;color:#8A8A8A;margin-top:4px">
+										{#if avisoListo}Listo: te escribimos a {avisoListo} cuando salga.{:else}Te
+											escribimos por mail cuando salga. Nada de spam.{/if}
+									</div>
+									{#if avisoError}<div
+											style="margin-top:6px;font-size:13px;color:#FF4D2E"
+											role="alert"
+										>
+											{avisoError}
+										</div>{/if}
+								</div>
+								{#if !avisoListo}<form
+										onsubmit={(e) => avisarDrop(e, proximos[0].id)}
+										novalidate
+										style="flex:1 1 320px;display:flex;border:2px solid #F2F2F2;min-width:0"
+									>
+										<label for="aviso-drop" class="oculto">Tu email para el aviso</label><input
+											id="aviso-drop"
+											type="email"
+											autocomplete="email"
+											maxlength="200"
+											placeholder="Tu email"
+											bind:value={avisoEmail}
+											disabled={tienda.vitrina}
+											style="flex:1;min-width:0;padding:14px;border:0;background:transparent;font:400 14.5px 'Archivo';color:#F2F2F2;outline:none"
+										/><button
+											type="submit"
+											disabled={tienda.vitrina}
+											style="display:flex;align-items:center;padding:0 18px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 12.5px 'Archivo';letter-spacing:.1em;text-transform:uppercase;gap:7px;cursor:pointer;min-height:48px"
+											><Icon icon={I.phBellRingingBold} size={17} />Avisame</button
+										>
+									</form>{/if}
+							</div>
+						</section>
+					{/if}
 					{#if ver('prods') && best.length}
 						<section style="padding:clamp(40px,6cqw,80px) 0 0">
 							<div
@@ -1056,6 +1199,7 @@
 							style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:16px;border:2px solid #F2F2F2;color:#F2F2F2;text-decoration:none;font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
 							><Icon icon={I.phWhatsappLogoBold} size={18} />Comprar por WhatsApp</a
 						>{/if}
+					<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 					<CompartirProducto {tienda} {producto} {tema} />
 					<div style="margin-top:18px;border:2px solid #2A2A2A">
 						{#if envia(tienda.envios)}<div style="display:flex">
@@ -1601,6 +1745,7 @@
 						>
 					</div>
 				</div>
+				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
 						style="padding:clamp(22px,3.4cqw,44px);background:#161616;font-size:15px;line-height:1.6;min-width:0"

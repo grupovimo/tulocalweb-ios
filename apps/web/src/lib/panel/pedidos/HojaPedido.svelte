@@ -9,6 +9,7 @@
 	import { cara, unsplash } from '#lib/landing/formato.ts';
 	import type { components } from '@mostrador/contrato/esquema';
 	import { pesos } from '../formato.ts';
+	import { getUi } from '#lib/ui.svelte.ts';
 	import { whatsappDe, type Contexto } from './acciones.ts';
 	import { NOMBRE_CANAL, NOMBRE_ENVIO, NOMBRE_PAGO, siguienteDe, textoEstado } from './nombres.ts';
 
@@ -74,6 +75,39 @@
 			: null
 	);
 	const siguiente = $derived(pedido ? siguienteDe(pedido) : undefined);
+
+	// La seña (§52): «Seña pagada · falta $X» y «Marcar como saldado» (con Deshacer).
+	const ui = getUi();
+	let saldado = $state<boolean | null>(null);
+	$effect(() => {
+		void pedido?.numero;
+		saldado = null;
+	});
+	const sena = $derived(
+		pedido?.sena ? { ...pedido.sena, saldado: saldado ?? pedido.sena.saldado } : null
+	);
+	async function saldar(valor: boolean) {
+		if (!pedido) return;
+		const n = pedido.numero;
+		const r = await fetch(`/panel/pedidos/${n}`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ saldado: valor })
+		});
+		if (!r.ok) {
+			ui.toast({ k: 'warn', title: 'No se pudo', desc: 'El pedido cambió. Actualizá la lista.' });
+			return;
+		}
+		saldado = valor;
+		if (valor)
+			ui.toast({
+				k: 'ok',
+				title: `Pedido #${n} saldado`,
+				desc: 'Quedó cobrado completo',
+				action: 'Deshacer',
+				onAction: () => saldar(false)
+			});
+	}
 </script>
 
 <Hoja bind:open titulo={pedido ? `Pedido #${pedido.numero}` : 'Pedido'} ancho={520}>
@@ -187,10 +221,19 @@
 						/>
 						<span
 							><span class="m-n">{NOMBRE_PAGO[pedido.pago] ?? pedido.pago}</span><span class="m-s"
-								>{pedido.estadoPago}</span
+								>{#if sena?.saldado}Seña y saldo cobrados{:else if sena?.pagada}Seña pagada · falta {pesos(
+										sena.falta
+									)}{:else if sena}Esperando la seña de {pesos(
+										sena.monto
+									)}{:else}{pedido.estadoPago}{/if}</span
 							></span
 						>
 					</div>
+					{#if sena?.pagada && !sena.saldado && pedido.estado !== 'Cancelado'}
+						<button type="button" class="borde saldar" onclick={() => saldar(true)}
+							>Marcar como saldado</button
+						>
+					{/if}
 				</div>
 				<!-- Sin factura no se muestra nada: «se emite al cobrar» no es cierto sin ARCA conectado. -->
 				{#if pedido.factura}
@@ -495,6 +538,11 @@
 		border-radius: 999px;
 		color: var(--tx);
 		white-space: nowrap;
+	}
+	.saldar {
+		margin-top: 10px;
+		min-height: 44px;
+		width: 100%;
 	}
 	.hist {
 		margin-top: 10px;

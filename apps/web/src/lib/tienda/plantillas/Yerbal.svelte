@@ -11,6 +11,9 @@
 	import * as I from '#lib/icons.ts';
 	import FormResena from '../FormResena.svelte';
 	import CompartirProducto from '../CompartirProducto.svelte';
+	import LanzamientoFicha from '../LanzamientoFicha.svelte';
+	import SenaPedido from '../SenaPedido.svelte';
+	import { Conteo } from '../conteo.svelte.ts';
 	import PreguntasProducto from '../PreguntasProducto.svelte';
 	import type { TemaOpiniones } from '../opiniones.ts';
 	import { carritoDe } from '../carrito.svelte.ts';
@@ -84,6 +87,8 @@
 
 	// En el dominio propio de la tienda los links no llevan /t/<slug> (tienda.base = '').
 	const base = $derived(tienda.base ?? `/t/${tienda.slug}`);
+	// La cuenta regresiva (§52): sólo un lanzamiento próximo o una oferta con fin, nunca inventada.
+	const conteo = new Conteo(() => tienda);
 	const carrito = $derived(carritoDe(tienda.slug));
 	const nl = new AltaNewsletter(() => tienda.slug);
 	let ancho = $state(page.data.movil ? 390 : 1200);
@@ -156,7 +161,9 @@
 			.filter((p) => p.anterior && !tarjetaDe(p).agotado)
 			.sort((a, b) => a.precio / a.anterior! - b.precio / b.anterior!)
 	);
-	const oferta = $derived(ofertas[0] ?? null);
+	// Con una oferta que termina (§52), la tarjeta es la «Oferta relámpago» del handoff, con su cuenta.
+	const relampago = $derived(conteo.actual?.tipo === 'oferta' ? conteo.actual.producto : null);
+	const oferta = $derived(relampago ?? ofertas[0] ?? null);
 	// Lo que va al lado del banner de la portada: la oferta y el descuento por transferencia.
 	const ladoHero = $derived(!!oferta || tienda.cobros.transferencia > 0);
 	const maxOff = $derived(oferta ? Math.round((1 - oferta.precio / oferta.anterior!) * 100) : 0);
@@ -737,10 +744,18 @@
 											href="{base}/producto/{oferta.slug ?? oferta.id}"
 											style="padding:20px;border-radius:16px;background:#E8C547;color:#1E2B22;text-decoration:none;display:flex;flex-direction:column;justify-content:space-between;gap:10px"
 											><span style="display:flex;justify-content:space-between;align-items:start"
-												><b style="font-size:13px;letter-spacing:.04em">OFERTA</b><span
-													style="padding:3px 6px;border-radius:5px;background:#1E2B22;color:#E8C547;font-size:12.5px;font-weight:700"
-													>−{maxOff}%</span
-												></span
+												><b style="font-size:13px;letter-spacing:.04em"
+													>{relampago ? 'OFERTA RELÁMPAGO' : 'OFERTA'}</b
+												>{#if relampago}<span
+														style="display:flex;gap:3px;font-variant-numeric:tabular-nums"
+														>{#each conteo.partes(3) as c (c.u)}<span
+																style="padding:3px 6px;border-radius:5px;background:#1E2B22;color:#E8C547;font-size:12.5px;font-weight:700"
+																>{c.v}</span
+															>{/each}</span
+													>{:else}<span
+														style="padding:3px 6px;border-radius:5px;background:#1E2B22;color:#E8C547;font-size:12.5px;font-weight:700"
+														>−{maxOff}%</span
+													>{/if}</span
 											><span style="display:flex;gap:12px;align-items:center;min-width:0"
 												>{#if oferta.foto}<img
 														src={img(oferta.foto, 200, 200)}
@@ -1392,6 +1407,7 @@
 									style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:12px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
 									><Icon icon={I.phWhatsappLogoFill} size={18} />Pedir por WhatsApp</a
 								>{/if}
+							<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 							<CompartirProducto {tienda} {producto} {tema} />
 						</div>
 						{#if envia(tienda.envios)}<div
@@ -1916,6 +1932,7 @@
 						cada&nbsp;novedad.
 					</p>
 				</div>
+				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
 						style="padding:16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.6"

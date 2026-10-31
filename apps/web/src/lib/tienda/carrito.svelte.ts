@@ -6,6 +6,7 @@
 import { browser } from '$app/env';
 import { agregado, recordarCompra } from './medicion.ts';
 import { claveLinea, detalleLineas, MAX_LINEAS, migrarLineas, type Linea } from './lineas.ts';
+import { proximamente } from './lanzamiento.ts';
 import type { ProductoPublico } from './tipos.ts';
 
 export type { Linea };
@@ -60,7 +61,8 @@ export class Carrito {
 	 * (devuelve false y la plantilla lleva a la ficha).
 	 */
 	sumarProducto(p: ProductoPublico, cantidad = 1) {
-		if (p.opciones?.length) return false;
+		// Con opciones se elige en la ficha; un lanzamiento que no salió, también va a la ficha.
+		if (p.opciones?.length || proximamente(p)) return false;
 		if (p.stock > 0) this.sumar(p.id, cantidad, p.stock);
 		return true;
 	}

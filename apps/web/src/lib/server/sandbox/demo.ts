@@ -44,6 +44,8 @@ export type Pedido = {
 	total: number;
 	/** Milisegundos (epoch). */
 	creado: number;
+	/** Reservado o encargado con seña (§52): en la demo la seña se da por pagada (no se cobra). */
+	sena?: { tipo: 'reserva' | 'encargo'; monto: number; pagada: boolean; saldado: boolean };
 };
 
 export type ItemPedido = {

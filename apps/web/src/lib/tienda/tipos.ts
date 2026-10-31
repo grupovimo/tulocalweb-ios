@@ -34,6 +34,16 @@ export type ProductoPublico = {
 	opciones: OpcionProducto[];
 	/** Sólo las activas. `precio` null: el del producto. */
 	variantes: VariantePublica[];
+	/**
+	 * Lanzamiento (§52, lanzamiento.ts): ISO de cuándo sale a la venta, sólo mientras no llegó (antes
+	 * se ve «Próximamente» y no se compra). `reserva`: % de seña para reservarlo antes; `encargo`: %
+	 * de seña para encargarlo ya lanzado (el resto al retirar). Los dos sólo con Mercado Pago.
+	 * `ofertaHasta`: ISO del fin de la oferta (`precio` es el de oferta y `anterior` el de lista).
+	 */
+	lanzamiento?: string | null;
+	reserva?: number | null;
+	encargo?: number | null;
+	ofertaHasta?: string | null;
 };
 
 export type OpcionProducto = { nombre: string; valores: string[] };
