@@ -9,7 +9,7 @@ func mayoristaDe(p ProductoPublico, varianteID string) *int64 {
 	}
 	for _, v := range p.Variantes {
 		if v.ID == varianteID {
-			return mayorista.DeVariante(v.Mayorista, p.Mayorista)
+			return mayorista.DeVariante(v.Mayorista, p.Mayorista, v.Precio)
 		}
 	}
 	return nil

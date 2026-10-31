@@ -73,6 +73,7 @@ describe('venta mayorista (los mismos casos que Go)', () => {
 		expect(mayoristaDeVariante(null, 5)).toBe(5);
 		expect(mayoristaDeVariante(3, 5)).toBe(3);
 		expect(mayoristaDeVariante(undefined, undefined)).toBe(null);
+		expect(mayoristaDeVariante(null, 5, 9)).toBe(null);
 	});
 
 	it('textos sin renglones viudos', () => {
@@ -126,7 +127,8 @@ describe('el carrito al por mayor', () => {
 		expect(avisoMayorista(d, minimo)).toEqual({
 			aplicado: false,
 			falta: { unidades: 1, monto: 0 },
-			ahorro: 6_000
+			ahorro: 6_000,
+			progreso: 83
 		});
 	});
 

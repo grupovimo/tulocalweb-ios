@@ -30,6 +30,8 @@
 		textoEnvios
 	} from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { Reserva } from '../reserva.svelte.ts';
 	import {
@@ -248,6 +250,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -1565,6 +1572,8 @@
 								>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por transferencia</span
 							>{/if}
 					</div>
+					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+					{#if porMayorFicha}<div style="margin-top:3px;font-size:14px">{porMayorFicha}</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 							(x) => x.color || x.foto
 						)}
@@ -1846,6 +1855,23 @@
 													(subtotal / tienda.envios.gratisDesde) * 100
 												)}%;height:100%;background:#fff"
 											></div>
+										</div>
+									</div>
+								</div>
+							{/if}
+							{#if avisoMayor && porMayor}
+								<div
+									style="padding:16px;border-radius:22px;background:var(--acento, #5B3FD6);color:#fff;display:flex;gap:14px;align-items:center;flex-wrap:wrap"
+								>
+									<Icon icon={I.phPackage} size={30} />
+									<div style="flex:1;min-width:200px">
+										<div style="font-size:15px;font-weight:700">
+											{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}
+										</div>
+										<div
+											style="margin-top:8px;height:6px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden"
+										>
+											<div style="width:{porMayor.progreso}%;height:100%;background:#fff"></div>
 										</div>
 									</div>
 								</div>

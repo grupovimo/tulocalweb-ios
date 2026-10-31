@@ -35,11 +35,15 @@ export function alcanza(m: MinimoMayorista | null | undefined, unidades: number,
 export const precioMayorista = (minorista: number, mayor: number | null | undefined) =>
 	mayor && mayor > 0 && mayor < minorista ? mayor : minorista;
 
-/** El mayorista de una variante: el suyo o, si no tiene, el del producto. */
+/**
+ * El mayorista de una variante: el suyo o, si no tiene, el del producto, pero sólo si se vende al
+ * precio del producto (una presentación con precio propio no hereda el mayorista de otra).
+ */
 export const mayoristaDeVariante = (
 	variante: number | null | undefined,
-	producto: number | null | undefined
-) => variante ?? producto ?? null;
+	producto: number | null | undefined,
+	precioVariante: number | null | undefined = null
+) => variante ?? (precioVariante == null ? (producto ?? null) : null);
 
 /** Cuánto le falta al carrito: unidades y pesos (0 si ese mínimo ya está o no existe). */
 export function falta(m: MinimoMayorista, unidades: number, monto: number) {

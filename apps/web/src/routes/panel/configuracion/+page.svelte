@@ -185,7 +185,11 @@
 	);
 	async function guardarMayorista(activa: boolean, m = minimo, deshacer = false) {
 		const antes = { ...data.mayorista };
-		const r = await pedir('/panel/configuracion/mayorista', 'PUT', { activa, ...m });
+		const r = await pedir('/panel/configuracion/mayorista', 'PUT', {
+			unidades: m.unidades,
+			monto: m.monto,
+			activa
+		});
 		if (!r) {
 			await invalidateAll();
 			return;

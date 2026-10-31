@@ -28,6 +28,8 @@
 		textoEnvios
 	} from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { textoAviso, textoMinimo } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { untrack } from 'svelte';
 	import { Reserva } from '../reserva.svelte.ts';
@@ -368,6 +370,10 @@
 						: []),
 					...(tienda.cobros.transferencia > 0
 						? [[fmt(sel.precio * (1 - tienda.cobros.transferencia / 100)), 'transferencia', false]]
+						: []),
+					// Venta por mayor (§49): una caja más, con el mínimo del carrito.
+					...(sel.mayorista !== null && tienda.mayorista
+						? [[fmt(sel.mayorista), `por mayor desde ${textoMinimo(tienda.mayorista, fmt)}`, false]]
 						: [])
 				].map(([v, t, on]) => ({
 					v: String(v),
@@ -402,6 +408,10 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -1593,6 +1603,24 @@
 											100,
 											(subtotal / tienda.envios.gratisDesde) * 100
 										)}%;background:var(--acento, #2F6BFF);border-radius:3px"
+									></span></span
+								>
+							</div>
+						{/if}
+						{#if avisoMayor && porMayor}
+							<div
+								style="margin-top:14px;padding:12px 14px;border-radius:16px;background:#EAF0FF;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13.5px"
+							>
+								<span style="flex:1;min-width:200px;display:flex;align-items:center;gap:10px"
+									><Icon
+										icon={I.phPackage}
+										size={20}
+										style="color:var(--acento, #2F6BFF);flex:none"
+									/><span>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span></span
+								><span
+									style="flex:1;min-width:160px;height:6px;border-radius:3px;background:#fff;overflow:hidden"
+									><span
+										style="display:block;height:100%;width:{porMayor.progreso}%;background:var(--acento, #2F6BFF);border-radius:3px"
 									></span></span
 								>
 							</div>

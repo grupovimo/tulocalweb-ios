@@ -32,6 +32,8 @@
 		textoEnvios
 	} from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
@@ -324,6 +326,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -1128,6 +1135,10 @@
 									>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por&nbsp;transferencia</b
 								>{/if}
 						</div>{/if}
+					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+					{#if porMayorFicha}<div style="margin-top:6px;font-size:14px;color:#BDBDBD">
+							{porMayorFicha}
+						</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 							(x) => x.color || x.foto
 						)}
@@ -1313,6 +1324,20 @@
 											100,
 											(subtotal / tienda.envios.gratisDesde) * 100
 										)}%;height:100%;background:var(--acento, #E6FF4D)"
+									></div>
+								</div>
+							</div>
+						{/if}
+						{#if avisoMayor && porMayor}
+							<div
+								style="margin-top:16px;padding:12px 14px;border:2px solid #2A2A2A;font-size:13.5px"
+							>
+								<div style="display:flex;justify-content:space-between;gap:10px">
+									<span>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span>
+								</div>
+								<div style="margin-top:8px;height:6px;background:#2A2A2A">
+									<div
+										style="width:{porMayor.progreso}%;height:100%;background:var(--acento, #E6FF4D)"
 									></div>
 								</div>
 							</div>

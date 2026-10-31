@@ -1061,7 +1061,8 @@ avisos que el iPhone de §40.
 
 - **Qué es**: cada producto (y cada variante) puede tener un «precio mayorista» opcional
   (`productos.precio_mayorista`, `variantes.precio_mayorista`; en la variante, vacío usa el del
-  producto, como el precio). La tienda pone en Configuración › Venta mayorista un mínimo del carrito:
+  producto sólo si la variante va al precio del producto: una presentación con precio propio no
+  hereda el mayorista de otra). La tienda pone en Configuración › Venta mayorista un mínimo del carrito:
   unidades, monto o los dos (al menos uno). Con los dos, el carrito tiene que cumplir los dos; el monto
   se cuenta con los precios minoristas (si no, al pasar a mayorista dejaría de alcanzar).
 - **Un solo interruptor**: prendida o apagada es `tiendas.automaticas->>'mayorista'`, la promoción

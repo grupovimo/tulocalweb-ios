@@ -68,10 +68,15 @@ func Precio(minorista int64, mayor *int64) int64 {
 	return minorista
 }
 
-// DeVariante: el precio mayorista de una variante es el suyo o, si no tiene, el del producto.
-func DeVariante(variante, producto *int64) *int64 {
+// DeVariante: el precio mayorista de una variante es el suyo o, si no tiene, el del producto, pero
+// sólo si la variante se vende al precio del producto (una con precio propio, 1 kg contra 250 g, no
+// puede heredar el mayorista de otra presentación).
+func DeVariante(variante, producto, precioVariante *int64) *int64 {
 	if variante != nil {
 		return variante
+	}
+	if precioVariante != nil {
+		return nil
 	}
 	return producto
 }

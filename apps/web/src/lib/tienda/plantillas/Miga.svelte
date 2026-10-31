@@ -32,6 +32,8 @@
 		textoEnvios
 	} from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
 
@@ -305,6 +307,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -983,6 +990,10 @@
 					{#if tienda.cobros.cuotas > 1}<div style="margin-top:2px;font-size:13.5px;color:#7A5F4C">
 							{tienda.cobros.cuotas} cuotas sin interés de {fmt(sel.precio / tienda.cobros.cuotas)}
 						</div>{/if}
+					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+					{#if porMayorFicha}<div style="margin-top:2px;font-size:13.5px;color:#7A5F4C">
+							{porMayorFicha}
+						</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 							(x) => x.color || x.foto
 						)}
@@ -1227,6 +1238,25 @@
 												100,
 												(subtotal / tienda.envios.gratisDesde) * 100
 											)}%;border-radius:2px;background:var(--acento, #D9452B)"
+										></div>
+									</div>
+								</div>
+							{/if}
+							{#if avisoMayor && porMayor}
+								<div
+									style="padding:16px;border-radius:24px;background:#F7E3A6;display:flex;flex-direction:column;gap:10px"
+								>
+									<div style="display:flex;gap:12px;align-items:center">
+										<Icon icon={I.phSparkleFill} size={22} style="color:#9A2E18;flex:none" />
+										<span style="font-size:14px"
+											>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+										>
+									</div>
+									<div
+										style="position:relative;height:4px;border-radius:2px;background:rgba(58,36,20,.14)"
+									>
+										<div
+											style="position:absolute;left:0;top:0;bottom:0;width:{porMayor.progreso}%;border-radius:2px;background:var(--acento, #D9452B)"
 										></div>
 									</div>
 								</div>

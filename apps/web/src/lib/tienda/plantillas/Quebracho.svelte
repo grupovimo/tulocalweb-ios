@@ -24,6 +24,8 @@
 	import EnvioCorreo from '../EnvioCorreo.svelte';
 	import { comoLlega, cotizar, cotizarYa, cpValido, textoEnvios } from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
@@ -307,6 +309,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -1145,6 +1152,8 @@
 										>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por&nbsp;transferencia</b
 									>{/if}
 							</div>{/if}
+						<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+						{#if porMayorFicha}<div style="margin-top:6px;font-size:14px">{porMayorFicha}</div>{/if}
 						{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 								(x) => x.color || x.foto
 							)}
@@ -1366,6 +1375,24 @@
 										100,
 										(subtotal / tienda.envios.gratisDesde) * 100
 									)}%;background:var(--acento, #4F5B3A)"
+								></span></span
+							>
+						</div>
+					{/if}
+					{#if avisoMayor && porMayor}
+						<div
+							style="margin-top:18px;padding:14px 16px;background:#E6DED2;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px"
+						>
+							<span style="flex:1;min-width:200px;display:flex;align-items:center;gap:10px"
+								><Icon
+									icon={I.phPackage}
+									size={22}
+									style="color:var(--acento, #4F5B3A);flex:none"
+								/>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+							><span
+								style="flex:1;min-width:160px;height:3px;background:rgba(43,37,32,.15);overflow:hidden"
+								><span
+									style="display:block;height:100%;width:{porMayor.progreso}%;background:var(--acento, #4F5B3A)"
 								></span></span
 							>
 						</div>

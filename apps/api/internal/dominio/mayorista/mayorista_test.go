@@ -40,8 +40,8 @@ func TestPrecioYDetalle(t *testing.T) {
 		mayorista.Precio(10000, ptr(int64(12000))) != 10000 || mayorista.Precio(10000, ptr(int64(0))) != 10000 {
 		t.Fatal("precio: el mayorista sólo si es menor")
 	}
-	if *mayorista.DeVariante(nil, ptr(int64(5))) != 5 || *mayorista.DeVariante(ptr(int64(3)), ptr(int64(5))) != 3 ||
-		mayorista.DeVariante(nil, nil) != nil {
+	if *mayorista.DeVariante(nil, ptr(int64(5)), nil) != 5 || *mayorista.DeVariante(ptr(int64(3)), ptr(int64(5)), ptr(int64(9))) != 3 ||
+		mayorista.DeVariante(nil, nil, nil) != nil || mayorista.DeVariante(nil, ptr(int64(5)), ptr(int64(9))) != nil {
 		t.Fatal("variante: la suya o la del producto")
 	}
 	for c, quiero := range map[*mayorista.Config]string{

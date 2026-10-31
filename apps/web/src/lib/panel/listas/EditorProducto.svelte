@@ -592,13 +592,13 @@
 									(v.precio = e.currentTarget.value.trim() ? numero(e.currentTarget.value) : null)}
 							/>
 							{#if verMayorista}
-								<!-- Vacío: el mayorista del producto (como el precio). -->
+								<!-- Vacío: el mayorista del producto, si la variante va al precio del producto. -->
 								<input
 									class="v-p"
 									inputmode="numeric"
 									aria-label="Precio mayorista de {nombreVariante(v)}"
 									readonly={!conPrecios}
-									placeholder={precioMayor ? pesos(precioMayor) : 'Mayorista'}
+									placeholder={precioMayor && v.precio === null ? pesos(precioMayor) : 'Mayorista'}
 									value={v.precioMayorista ? pesos(v.precioMayorista) : ''}
 									onchange={(e) =>
 										(v.precioMayorista = e.currentTarget.value.trim()

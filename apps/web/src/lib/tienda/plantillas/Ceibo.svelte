@@ -21,6 +21,8 @@
 	import EnvioCorreo from '../EnvioCorreo.svelte';
 	import { comoLlega, cotizar, cotizarYa, cpValido, textoEnvios } from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
@@ -235,6 +237,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -888,6 +895,12 @@
 									)} por transferencia ({tienda.cobros.transferencia}% off)</span
 								>{/if}
 						</div>
+						<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+						{#if porMayorFicha}<div
+								style="margin-top:4px;display:flex;align-items:center;gap:8px;font-size:14px"
+							>
+								<Icon icon={I.phPackage} size={17} />{porMayorFicha}
+							</div>{/if}
 						{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 								(x) => x.color || x.foto
 							)}
@@ -1092,6 +1105,20 @@
 										100,
 										(subtotal / tienda.envios.gratisDesde) * 100
 									)}%;height:100%;background:#1C1A17"
+								></span></span
+							>
+						</div>
+					{/if}
+					{#if avisoMayor && porMayor}
+						<div
+							style="margin-top:14px;padding:12px 16px;background:#E5DDD3;border-radius:2px;font-size:13.5px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"
+						>
+							<span style="flex:1;min-width:200px"
+								>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+							><span
+								style="flex:1;min-width:160px;height:4px;background:rgba(28,26,23,.15);border-radius:2px;overflow:hidden"
+								><span
+									style="display:block;width:{porMayor.progreso}%;height:100%;background:#1C1A17"
 								></span></span
 							>
 						</div>

@@ -29,6 +29,8 @@
 		textoEnvios
 	} from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
@@ -290,6 +292,11 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -1138,6 +1145,8 @@
 									>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por transferencia</b
 								>{/if}
 						</div>{/if}
+					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+					{#if porMayorFicha}<div style="margin-top:4px;font-size:14px">{porMayorFicha}</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 							(x) => x.color || x.foto
 						)}
@@ -1457,6 +1466,18 @@
 												100,
 												(subtotal / tienda.envios.gratisDesde) * 100
 											)}%;height:100%;background:var(--acento, #B4475B)"
+										></div>
+									</div>
+								</div>{/if}
+							{#if avisoMayor && porMayor}<div>
+									<div style="display:flex;justify-content:space-between;font-size:13px">
+										<span>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span>
+									</div>
+									<div
+										style="margin-top:8px;height:6px;border-radius:3px;background:#F3D9DE;overflow:hidden"
+									>
+										<div
+											style="width:{porMayor.progreso}%;height:100%;background:var(--acento, #B4475B)"
 										></div>
 									</div>
 								</div>{/if}

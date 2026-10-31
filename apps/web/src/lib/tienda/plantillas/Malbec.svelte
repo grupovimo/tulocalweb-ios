@@ -25,6 +25,8 @@
 	import EnvioCorreo from '../EnvioCorreo.svelte';
 	import { comoLlega, cotizar, cotizarYa, cpValido, textoEnvios } from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { lineaPorMayor, textoAviso } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
 
@@ -259,6 +261,19 @@
 	const subtotal = $derived(lineas.reduce((s, l) => s + l.subtotal, 0));
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
+	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	// «Por mayor: $ X desde 12 unidades» en la ficha.
+	const porMayorFicha = $derived(sel ? lineaPorMayor(sel.mayorista, tienda.mayorista, fmt) : null);
+	// Las mismas seis casillas, para lo que falta del mínimo mayorista.
+	const casillasMayor = $derived(
+		Array.from({ length: 6 }, (_, i) =>
+			porMayor && porMayor.progreso >= ((i + 1) / 6) * 100
+				? 'var(--acento, #E8B86A)'
+				: 'transparent'
+		)
 	);
 	// Las seis casillas del diseño muestran cuánto falta para el envío gratis.
 	const casillas = $derived(
@@ -1087,6 +1102,8 @@
 										.cobros.transferencia}% off)</span
 								>{/if}
 						</div>
+						<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
+						{#if porMayorFicha}<div style="margin-top:3px;font-size:14px">{porMayorFicha}</div>{/if}
 						{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 								(x) => x.color || x.foto
 							)}
@@ -1298,6 +1315,20 @@
 									>{/if}</span
 							><span style="display:flex;gap:4px"
 								>{#each casillas as s, i (i)}<span
+										style="width:14px;height:30px;border:1px solid var(--acento, #E8B86A);background:{s}"
+									></span>{/each}</span
+							>
+						</div>
+					{/if}
+					{#if avisoMayor && porMayor}
+						<div
+							style="margin-top:16px;padding:14px 16px;background:#24121A;border:1px solid rgba(232,184,106,.3);display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px"
+						>
+							<Icon icon={I.phPackage} size={22} style="color:var(--acento, #E8B86A)" /><span
+								style="flex:1;min-width:200px"
+								>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+							><span style="display:flex;gap:4px"
+								>{#each casillasMayor as s, i (i)}<span
 										style="width:14px;height:30px;border:1px solid var(--acento, #E8B86A);background:{s}"
 									></span>{/each}</span
 							>

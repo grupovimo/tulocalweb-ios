@@ -102,12 +102,13 @@ export class Seleccion {
 	}
 	/**
 	 * El precio mayorista de lo elegido (§49): el de la variante, o el del producto; null si no tiene
-	 * o no es menor. Sin elegir, el del producto contra el precio «desde».
+	 * o no es menor. Con opciones, recién cuando se eligió la variante (cada una tiene el suyo).
 	 */
 	get mayorista() {
 		const v = this.variante;
+		if (this.conOpciones && !v) return null;
 		const mayor = v
-			? mayoristaDeVariante(v.mayorista, this.producto.mayorista)
+			? mayoristaDeVariante(v.mayorista, this.producto.mayorista, v.precio)
 			: (this.producto.mayorista ?? null);
 		const m = precioMayorista(this.precio, mayor);
 		return m < this.precio ? m : null;

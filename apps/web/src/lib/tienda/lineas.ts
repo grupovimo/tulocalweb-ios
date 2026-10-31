@@ -101,7 +101,7 @@ export function detalleLineas(
 			linea(
 				{ ...p, precio, anterior: null, foto: v.foto ?? p.foto, stock: v.stock },
 				textoVariante(opciones, v.valores),
-				mayoristaDeVariante(v.mayorista, p.mayorista)
+				mayoristaDeVariante(v.mayorista, p.mayorista, v.precio)
 			)
 		];
 	});
@@ -133,9 +133,15 @@ export function avisoMayorista(lineas: LineaDetalle[], minimo: MinimoMayorista |
 		(s, l) => s + (l.mayorista === null ? 0 : (l.minorista - l.mayorista) * l.cantidad),
 		0
 	);
+	const aplicado = lineas.some((l) => l.alPorMayor);
+	// Para la barrita (la misma del envío gratis): lo que más falta de los dos mínimos.
+	const parte = (hay: number, min: number | null) => (min ? Math.min(1, hay / min) : 1);
 	return {
-		aplicado: lineas.some((l) => l.alPorMayor),
+		aplicado,
 		falta: falta(minimo, unidades, monto),
-		ahorro
+		ahorro,
+		progreso: aplicado
+			? 100
+			: Math.round(Math.min(parte(unidades, minimo.unidades), parte(monto, minimo.monto)) * 100)
 	};
 }
