@@ -44,7 +44,10 @@ test('lanzamiento: «Próximamente» con cuenta, aviso, reserva con seña y sald
 	// En la tienda: «Próximamente», cuándo sale y su cuenta; no se agrega al carrito.
 	await page.goto(`/t/${slug}/catalogo`);
 	await listo(page);
-	await page.getByRole('link', { name: /Drop de prueba/ }).first().click();
+	await page
+		.getByRole('link', { name: /Drop de prueba/ })
+		.first()
+		.click();
 	await listo(page);
 	await expect(page.getByText(/Sale el .* a las 19:00/)).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Próximamente' })).toBeVisible();
@@ -52,7 +55,9 @@ test('lanzamiento: «Próximamente» con cuenta, aviso, reserva con seña y sald
 
 	await page.getByLabel('Tu email para el aviso').fill('ana@ejemplo.com');
 	await page.getByRole('button', { name: 'Avisame cuando salga' }).click();
-	await expect(page.getByText('Listo: te escribimos a ana@ejemplo.com cuando salga.')).toBeVisible();
+	await expect(
+		page.getByText('Listo: te escribimos a ana@ejemplo.com cuando salga.')
+	).toBeVisible();
 
 	// Reservar con seña: en la demo no se cobra y la confirmación lo dice.
 	await expect(page.getByText(/\$ 10\.000.*de seña \(25%\)/)).toBeVisible();

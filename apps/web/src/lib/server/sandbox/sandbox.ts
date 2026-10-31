@@ -3202,22 +3202,35 @@ export class DatosSandbox implements Datos {
 	}
 
 	async tiendaPublica(vitrina = false): Promise<TiendaPublica> {
-		const [d, t, c, conf, productos, mp, turnos, medicion, cr, respuestasQ, entregas, planes, lanz] =
-			await Promise.all([
-				this.demo(),
-				this.tienda(),
-				cambiosDe(this.db, this.sb.id, 'mi-tienda'),
-				this.configuracion(),
-				this.regProductos(),
-				this.mercadoPago(),
-				this.turnosTienda(),
-				vitrina ? null : this.medicion(),
-				this.cambiosResenas(),
-				this.respuestasPreguntas(),
-				this.entregas(),
-				this.estadoSuscripciones(),
-				this.lanzamientos()
-			]);
+		const [
+			d,
+			t,
+			c,
+			conf,
+			productos,
+			mp,
+			turnos,
+			medicion,
+			cr,
+			respuestasQ,
+			entregas,
+			planes,
+			lanz
+		] = await Promise.all([
+			this.demo(),
+			this.tienda(),
+			cambiosDe(this.db, this.sb.id, 'mi-tienda'),
+			this.configuracion(),
+			this.regProductos(),
+			this.mercadoPago(),
+			this.turnosTienda(),
+			vitrina ? null : this.medicion(),
+			this.cambiosResenas(),
+			this.respuestasPreguntas(),
+			this.entregas(),
+			this.estadoSuscripciones(),
+			this.lanzamientos()
+		]);
 		const diseno = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
 		const plantillaId = diseno.plantilla || t.plantilla;
 		const p = buscarPlantilla(plantillaId);
