@@ -73,11 +73,11 @@ test('medición: IDs en Integraciones, sin consentimiento no carga nada y con é
 	await d.getByRole('button', { name: 'Guardar' }).click();
 	await expect(ga.getByText('● Conectada')).toBeVisible();
 
-	// Meta: el píxel, la URL del feed y la API de conversiones sin prometer.
+	// Meta: el píxel y la URL del feed. La API de conversiones vive en Go: la demo no la ofrece.
 	const meta = page.locator('.tarjeta', { hasText: 'Meta Ads' });
 	await meta.getByRole('button', { name: 'Conectar' }).click();
 	await expect(d).toContainText(`/t/${slug}/feed.xml`);
-	await expect(d).toContainText('Próximamente: API de conversiones');
+	await expect(d).not.toContainText('API de conversiones');
 	await d.getByLabel('ID del píxel de Meta').fill('123456789012345');
 	await d.getByRole('button', { name: 'Guardar' }).click();
 	await expect(meta.getByText('● Conectada')).toBeVisible();

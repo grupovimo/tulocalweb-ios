@@ -12,6 +12,22 @@ async function demo(page: Page) {
 	await listo(page);
 }
 
+/** Carga un pedido propio, como «Crear pedido», con un producto de Litoral sin variantes y con stock. */
+async function pedidoPropio(page: Page, extra: { pagado: boolean }) {
+	for (const productoId of [
+		'mate-de-calabaza',
+		'miel-de-monte',
+		'dulce-de-mamon',
+		'bombilla-alpaca'
+	]) {
+		const r = await page.request.post('/panel/pedidos/nuevo', {
+			data: { items: [{ productoId, cantidad: 1 }], pago: 'transf', canal: 'wa', ...extra }
+		});
+		if (r.status() === 201) return String(((await r.json()) as { numero: number }).numero);
+	}
+	throw new Error('No se pudo cargar un pedido propio');
+}
+
 test('lista, filtra por la URL y vuelve a todos', async ({ page }) => {
 	await demo(page);
 	await expect(page.getByRole('heading', { name: 'Pedidos' })).toBeVisible();
@@ -44,12 +60,15 @@ test('lista, filtra por la URL y vuelve a todos', async ({ page }) => {
 
 test('preparar un pedido, deshacerlo y verlo en la hoja', async ({ page }) => {
 	await demo(page);
-	await page.goto('/panel/pedidos?estado=para-preparar');
+	// Uno propio (los de la demo dependen de la hora: el primero puede ser un retiro).
+	const numero = await pedidoPropio(page, { pagado: true });
+	await page.goto(`/panel/pedidos?estado=para-preparar&q=%23${numero}`);
 	await listo(page);
-	const fila = page.locator('.fila').first();
-	const numero = (await fila.locator('.q-s').textContent())!.match(/#(\d+)/)![1];
+	const fila = page.locator('.fila').filter({ hasText: `#${numero}` });
 	// Un retiro en el local queda «listo para retirar» en vez de «preparado».
-	await fila.getByRole('button', { name: new RegExp(`Preparar #${numero}`) }).click();
+	await fila
+		.getByRole('button', { name: new RegExp(`(Preparar|Listo para retirar) #${numero}`) })
+		.click();
 	await expect(
 		page.getByText(new RegExp(`^#${numero} (preparado|listo para retirar)$`))
 	).toBeVisible();
@@ -187,14 +206,16 @@ test('WhatsApp con el mensaje del estado, desde la fila y la hoja', async ({ pag
 
 test('volver a vender abre Crear pedido completo para revisar', async ({ page }) => {
 	await demo(page);
-	await page.goto('/panel/pedidos?pedido=1048');
+	// Uno propio con un producto con stock (los productos del 1048 de la demo dependen de la hora).
+	const numero = await pedidoPropio(page, { pagado: true });
+	await page.goto(`/panel/pedidos?pedido=${numero}`);
 	await listo(page);
-	const hoja = page.getByRole('dialog', { name: 'Pedido #1048' });
+	const hoja = page.getByRole('dialog', { name: `Pedido #${numero}` });
 	await expect(hoja.locator('.item').first()).toBeVisible();
 	const productos = await hoja.locator('.item').count();
 	await hoja.getByRole('link', { name: 'Volver a vender' }).click();
-	await expect(page).toHaveURL(/\/panel\/pedidos\/nuevo\?desde=1048/);
-	await expect(page.getByText('Lo mismo que el pedido #1048')).toBeVisible();
+	await expect(page).toHaveURL(new RegExp(`/panel/pedidos/nuevo\\?desde=${numero}`));
+	await expect(page.getByText(`Lo mismo que el pedido #${numero}`)).toBeVisible();
 	await expect(page.locator('.resumen .item').first()).toBeVisible();
 	expect(await page.locator('.resumen .item').count()).toBeLessThanOrEqual(productos);
 	await expect(page.getByRole('button', { name: /^Crear/ })).toBeEnabled();
