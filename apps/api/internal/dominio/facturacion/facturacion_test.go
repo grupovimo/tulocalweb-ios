@@ -216,3 +216,56 @@ func TestFacturacionConARCA(t *testing.T) {
 		t.Fatalf("otra tienda ve %d comprobantes", len(r))
 	}
 }
+
+// Responsable inscripta: la venta online con CUIT sale como factura A a ese CUIT; sin CUIT, B a
+// consumidor final.
+func TestFacturaADesdeElCheckout(t *testing.T) {
+	ctx := context.Background()
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	falso := arcatest.Nuevo()
+	defer falso.Close()
+	s := &facturacion.Servicio{Pool: b.App, Cifra: cifrador(t), HTTP: falso.Client(),
+		Direcciones: func(arca.Ambiente) arca.Direcciones { return arca.Direcciones{WSAA: falso.WSAA(), WSFE: falso.WSFE()} }}
+	ahora := time.Now().UTC().Add(time.Minute)
+	alta := facturacion.Alta{CUIT: "20-44859234-1", RazonSocial: "Luna SRL", Condicion: "responsable_inscripto", PuntoVenta: 2, Ambiente: "homologacion"}
+	csr, err := s.GenerarPedido(ctx, luna, "duenio", alta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GuardarCertificado(ctx, luna, "duenio", firmarComoARCA(t, csr), ahora); err != nil {
+		t.Fatal(err)
+	}
+	stock := 100
+	prod, err := listas.Guardar(ctx, b.App, luna, "", listas.Editable{Nombre: "Mate", Precio: 12100, Stock: &stock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vender := func(nombre string, f *pedidos.Factura) {
+		t.Helper()
+		n := pedidos.PedidoNuevo{Canal: "web", Pago: "mp", Envio: "retiro", Cliente: &nombre, Factura: f, Precios: map[string]int64{prod.ID: 12100}}
+		n.Items = append(n.Items, pedidos.Linea{ProductoID: prod.ID, Cantidad: 1})
+		if _, _, err := pedidos.CrearDesdeProductos(ctx, b.App, luna, n); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Drenar(ctx, ahora); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	vender("Ana", &pedidos.Factura{CUIT: "30500010912", RazonSocial: "Ferretería El Tornillo SA"})
+	for _, quiere := range []string{"<ar:CbteTipo>1</ar:CbteTipo>", "<ar:DocTipo>80</ar:DocTipo>", "<ar:DocNro>30500010912</ar:DocNro>",
+		"<ar:CondicionIVAReceptorId>1</ar:CondicionIVAReceptorId>", "<ar:ImpNeto>10000.00</ar:ImpNeto>"} {
+		if !strings.Contains(falso.UltimoPedido, quiere) {
+			t.Fatalf("factura A sin %s: %s", quiere, falso.UltimoPedido)
+		}
+	}
+	if f := comprobante(t, b, luna, "receptor->>'nombre' = 'Ferretería El Tornillo SA'"); f.estado != "emitido" {
+		t.Fatalf("A: %+v", f)
+	}
+
+	vender("Beto", nil)
+	if !strings.Contains(falso.UltimoPedido, "<ar:CbteTipo>6</ar:CbteTipo>") || !strings.Contains(falso.UltimoPedido, "<ar:DocTipo>99</ar:DocTipo>") {
+		t.Fatalf("B a consumidor final: %s", falso.UltimoPedido)
+	}
+}

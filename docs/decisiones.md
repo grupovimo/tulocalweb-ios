@@ -1016,3 +1016,16 @@ avisos que el iPhone de §40.
   honesto. Tocar una la marca leída y abre su página (sólo rutas de `/panel`).
 - **De paso**: `/panel/pedidos/<n>` abierto en el navegador (el «Ver el pedido» de los mails y el
   push) devolvía el JSON de la hoja; ahora lleva a `/panel/pedidos?pedido=<n>`.
+
+## 46. Factura A desde el checkout (migración 00063)
+
+- **Cuándo se ofrece**: sólo si la tienda es responsable inscripta y conectó ARCA
+  (`TiendaPublica.cobros.facturaA`). Monotributistas emiten C, que sirve para cualquiera: no se pide nada.
+- **El checkout**: dos campos opcionales más en los datos del comprador de cada plantilla
+  (`lib/tienda/factura.ts`): «CUIT (si necesitás factura A)» y «Razón social». La web valida el
+  verificador; Go lo vuelve a validar (`arca.CUITValido`) y, si la tienda no la ofrece, lo ignora.
+- **Dónde queda**: en `pedidos.comprador.factura` (`{cuit, razonSocial}`) y en la nota del pedido, así
+  la tienda lo ve aunque facture a mano.
+- **La cola**: `app.encolar_factura` emite A (tipo 1, DocTipo 80, condición 1) cuando el pedido trae
+  CUIT y la tienda es RI; si no, B a consumidor final como antes. Sólo se pide como responsable
+  inscripto: a monotributistas que piden A no se les pregunta la condición (quedaría mal informada).

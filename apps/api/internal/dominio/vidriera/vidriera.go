@@ -23,6 +23,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/turnos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/arca"
 )
 
 var (
@@ -250,6 +251,13 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 				out.Cobros["transferencia"] = cupones.TransferenciaPct
 			}
 		}
+		// Factura A desde el checkout: la tienda es responsable inscripta y conectó ARCA.
+		var facturaA bool
+		if err := t.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM arca_config WHERE tienda_id = $1
+				AND certificado IS NOT NULL AND condicion = 'responsable_inscripto')`, id).Scan(&facturaA); err != nil {
+			return err
+		}
+		out.Cobros["facturaA"] = facturaA
 		// El envío gratis sólo si la tienda envía (moto o Correo): con sólo retiro no hay envío que regalar.
 		if autos["envio"] && (out.Envios.Moto || out.Envios.Correo) {
 			g := int64(cupones.EnvioGratisDesde)
@@ -436,6 +444,9 @@ type Compra struct {
 	Provincia string `json:"provincia"`
 	Localidad string `json:"localidad"`
 	Sucursal  string `json:"sucursal"`
+	// Factura A: sólo si la tienda la ofrece (cobros.facturaA); la razón social, si no viene, es el nombre.
+	CUIT        string `json:"cuit"`
+	RazonSocial string `json:"razonSocial"`
 }
 
 // Resultado de comprar: el pedido, su código público y (con Mercado Pago) adónde pagar.
@@ -471,6 +482,10 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	}
 	if c.Pago == "transferencia" && t.Cobros["datosTransferencia"] == nil {
 		return Resultado{}, ErrInvalido
+	}
+	factura, err := facturaDe(c, t.Cobros["facturaA"] == true)
+	if err != nil {
+		return Resultado{}, err
 	}
 	porID := map[string]ProductoPublico{}
 	for _, p := range t.Productos {
@@ -548,8 +563,8 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	n.Pagado = &f
 	n.Cliente, n.Telefono = &c.Nombre, &c.Telefono
 	n.Email, n.CostoEnvio, n.CiudadEnvio = c.Email, costoEnvio, strings.TrimSpace(c.CP)
-	n.Entrega = entrega
-	n.Nota = notaCompra(c)
+	n.Entrega, n.Factura = entrega, factura
+	n.Nota = notaCompra(c, factura)
 	b := make([]byte, 18)
 	_, _ = rand.Read(b)
 	n.CodigoPublico = base64.RawURLEncoding.EncodeToString(b)
@@ -575,11 +590,31 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	return r, err
 }
 
-// notaCompra: el DNI y adónde se entrega, sólo lo que vino (nada de campos vacíos). Sin nada, sin nota.
-func notaCompra(c Compra) *string {
+// facturaDe: el CUIT del checkout, sólo si la tienda ofrece factura A. Vacío, sin factura; inválido, error.
+func facturaDe(c Compra, ofrece bool) (*pedidos.Factura, error) {
+	cuit := strings.NewReplacer("-", "", " ", "", ".", "").Replace(c.CUIT)
+	if cuit == "" || !ofrece {
+		return nil, nil
+	}
+	razon := strings.Join(strings.Fields(c.RazonSocial), " ")
+	if razon == "" {
+		razon = c.Nombre
+	}
+	if !arca.CUITValido(cuit) || len(razon) < 2 || len(razon) > 120 {
+		return nil, ErrInvalido
+	}
+	return &pedidos.Factura{CUIT: cuit, RazonSocial: razon}, nil
+}
+
+// notaCompra: el DNI, la factura A y adónde se entrega, sólo lo que vino (nada de campos vacíos).
+// Sin nada, sin nota.
+func notaCompra(c Compra, f *pedidos.Factura) *string {
 	partes := []string{}
 	if d := strings.TrimSpace(c.DNI); d != "" {
 		partes = append(partes, "DNI "+d)
+	}
+	if f != nil {
+		partes = append(partes, fmt.Sprintf("Factura A: %s, CUIT %s", f.RazonSocial, f.CUIT))
 	}
 	if c.Envio != "retiro" {
 		dir, cp := strings.TrimSpace(c.Direccion), strings.TrimSpace(c.CP)

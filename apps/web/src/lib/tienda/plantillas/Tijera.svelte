@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -1946,14 +1947,14 @@
 							<div
 								style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px"
 							>
-								{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI', 'text', 'off']] as [n, l, tipo, ac] (n)}
+								{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
 									<label
 										style="display:block;padding:11px 14px;border-radius:16px;background:#fff;box-shadow:inset 0 0 0 1.5px rgba(30,27,46,.1)"
 										><span style="display:block;font-size:11.5px;color:#8B879A">{l}</span><input
 											name={n}
 											type={tipo}
 											autocomplete={ac as 'email'}
-											required={n !== 'dni'}
+											required={!OPCIONALES.has(n)}
 											maxlength="120"
 											style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Instrument Sans';color:#1E1B2E;outline:none"
 										/></label

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { envia } from '../envio.ts';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
@@ -1356,14 +1357,14 @@
 							<div
 								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px"
 							>
-								{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI', 'text', 'off']] as [n, l, tipo, ac] (n)}
+								{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
 									<label
 										style="display:block;padding:11px 13px;border:1px solid rgba(43,37,32,.2);background:#F7F3EE"
 										><span style="display:block;font-size:11.5px;color:#6F6358">{l}</span><input
 											name={n}
 											type={tipo}
 											autocomplete={ac as 'email'}
-											required={n !== 'dni'}
+											required={!OPCIONALES.has(n)}
 											maxlength="120"
 											style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Familjen Grotesk';color:#2B2520;outline:none"
 										/></label

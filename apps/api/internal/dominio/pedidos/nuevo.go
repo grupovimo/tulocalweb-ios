@@ -77,6 +77,8 @@ type PedidoNuevo struct {
 	// acá, en la transacción: si se agotó en el medio, ErrCupon.
 	Cupon          string `json:"-"`
 	DescuentoCupon int64  `json:"-"`
+	// Factura A pedida en el checkout (validada por la vidriera): la cola de ARCA la emite a ese CUIT.
+	Factura *Factura `json:"-"`
 }
 
 // ErrCupon: el cupón se agotó o se pausó entre que se validó y se usó.
@@ -158,7 +160,7 @@ func CrearDesdeProductos(ctx context.Context, pool tx, tiendaID string, n Pedido
 		if n.Email != "" {
 			email = &n.Email
 		}
-		comprador, _ := json.Marshal(Comprador{Nombre: nombre, Telefono: tel, Email: email})
+		comprador, _ := json.Marshal(Comprador{Nombre: nombre, Telefono: tel, Email: email, Factura: n.Factura})
 		if n.CostoEnvio < 0 || n.Descuento < 0 || n.Descuento > total {
 			return errors.New("pedido inválido")
 		}

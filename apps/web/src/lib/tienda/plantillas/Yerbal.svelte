@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -1703,14 +1704,14 @@
 							style="padding:16px;border-radius:14px;background:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"
 						>
 							<b style="grid-column:1/-1;font-size:16px">Tus datos</b>
-							{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI (opcional)', 'text', 'off']] as [n, l, tipo, ac] (n)}
+							{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI (opcional)', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
 								<label
 									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14)"
 									><span style="display:block;font-size:11.5px;color:#6B7A6E">{l}</span><input
 										name={n}
 										type={tipo}
 										autocomplete={ac as 'email'}
-										required={n !== 'dni'}
+										required={!OPCIONALES.has(n)}
 										maxlength="120"
 										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
 									/></label

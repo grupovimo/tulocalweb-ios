@@ -91,6 +91,8 @@ export type TiendaPublica = {
 		mercadoPago: boolean;
 		/** Datos para transferir que cargó la tienda (null: no ofrece transferencia). `ejemplo` en la demo. */
 		datosTransferencia: { alias: string; cbu: string; titular: string; ejemplo?: boolean } | null;
+		/** Responsable inscripta con ARCA conectado: el checkout pide CUIT y razón social para factura A. */
+		facturaA?: boolean;
 	};
 	/**
 	 * Cómo entrega (Configuración › Envíos y retiro). Sin retiro, su dirección y horario van vacíos;

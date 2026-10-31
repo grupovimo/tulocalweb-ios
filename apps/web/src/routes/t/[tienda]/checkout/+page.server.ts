@@ -10,6 +10,7 @@ import { cotizar, cpValido } from '#lib/tienda/envio.ts';
 import { precioDe } from '#lib/tienda/variantes.ts';
 import type { Actions } from './$types';
 import { irAfuera } from '#lib/server/afuera.ts';
+import { cuitValido, limpiarCuit } from '#lib/panel/cuit.ts';
 
 const Pedido = v.object({
 	carrito: v.pipe(
@@ -38,7 +39,17 @@ const Pedido = v.object({
 	localidad: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(80)), ''),
 	sucursal: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(20)), ''),
 	pago: v.picklist(['transferencia', 'mercadopago']),
-	cupon: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(30)), '')
+	cupon: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(30)), ''),
+	// Factura A (sólo si la tienda la emite): el CUIT con su verificador; la razón social, opcional.
+	cuit: v.optional(
+		v.pipe(
+			v.string(),
+			v.transform(limpiarCuit),
+			v.check((c) => c === '' || cuitValido(c), 'Revisá el CUIT: son 11 números.')
+		),
+		''
+	),
+	razonSocial: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120)), '')
 });
 
 export const actions: Actions = {
@@ -140,6 +151,9 @@ export const actions: Actions = {
 				nota: [
 					`Email: ${p.email}`,
 					p.dni && `DNI: ${p.dni}`,
+					r.tienda.cobros.facturaA &&
+						p.cuit &&
+						`Factura A: ${p.razonSocial || p.nombre}, CUIT ${p.cuit}`,
 					p.envio !== 'retiro' && `Entrega: ${p.direccion} (${p.cp})`,
 					cupon?.ok && `Cupón: ${p.cupon.toUpperCase()}`,
 					`Total cobrado: $ ${total.toLocaleString('es-AR')}`

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { envia } from '../envio.ts';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
@@ -509,6 +510,7 @@
 		['telefono', 'Teléfono', 'tel', 'tel'],
 		['dni', 'DNI', 'text', 'off']
 	] as const;
+	const campos = $derived([...CAMPOS, ...camposFactura(tienda)]);
 
 	const foot = $derived([
 		{
@@ -1716,14 +1718,14 @@
 							<div
 								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"
 							>
-								{#each CAMPOS as [n, l, tipo, ac] (n)}
+								{#each campos as [n, l, tipo, ac] (n)}
 									<label
 										style="display:block;padding:10px 12px;border:1.5px solid {T.ln};border-radius:{T.r};background:{T.sf}"
 										><span style="display:block;font-size:11.5px;color:{T.mu}">{l}</span><input
 											name={n}
 											type={tipo}
 											autocomplete={ac}
-											required={n !== 'dni'}
+											required={!OPCIONALES.has(n)}
 											maxlength="120"
 											style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Instrument Sans';color:{T.ink};outline:none"
 										/></label

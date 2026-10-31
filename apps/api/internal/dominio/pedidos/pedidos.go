@@ -79,6 +79,14 @@ type Comprador struct {
 	Email    *string `json:"email"`
 	Telefono *string `json:"telefono"`
 	Foto     *string `json:"foto"`
+	// Factura: quien compra pidió factura A a su CUIT (la tienda online de una responsable inscripta).
+	Factura *Factura `json:"factura,omitempty"`
+}
+
+// Factura son los datos del receptor de una factura A: el CUIT ya validado y la razón social.
+type Factura struct {
+	CUIT        string `json:"cuit"`
+	RazonSocial string `json:"razonSocial"`
 }
 
 // Nuevo es lo necesario para crear un pedido.
