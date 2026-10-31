@@ -18,15 +18,17 @@ var ErrNoExiste = errors.New("el producto no existe")
 
 // Editable es lo que se carga en el editor (components/schemas/ProductoEditable).
 type Editable struct {
-	Nombre      string          `json:"nombre"`
-	Descripcion *string         `json:"descripcion"`
-	Categoria   *string         `json:"categoria"`
-	Precio      int64           `json:"precio"`
-	Costo       *int64          `json:"costo"`
-	SKU         *string         `json:"sku"`
-	Stock       *int            `json:"stock"`
-	Foto        *string         `json:"foto"`
-	Canales     map[string]bool `json:"canales"`
+	Nombre      string  `json:"nombre"`
+	Descripcion *string `json:"descripcion"`
+	Categoria   *string `json:"categoria"`
+	Precio      int64   `json:"precio"`
+	// PrecioMayorista (§49): nil deja el que había; 0 lo saca. Menor que el precio.
+	PrecioMayorista *int64          `json:"precioMayorista"`
+	Costo           *int64          `json:"costo"`
+	SKU             *string         `json:"sku"`
+	Stock           *int            `json:"stock"`
+	Foto            *string         `json:"foto"`
+	Canales         map[string]bool `json:"canales"`
 	// Fotos es la galería (la primera es la portada). Sin mandarla, manda Foto: reemplaza la portada
 	// y deja el resto (o vacía la galería si Foto es null).
 	Fotos []string `json:"fotos"`
@@ -41,22 +43,24 @@ type Editable struct {
 
 // Producto es la ficha (components/schemas/Producto).
 type Producto struct {
-	ID          string          `json:"id"`
-	Nombre      string          `json:"nombre"`
-	Descripcion string          `json:"descripcion"`
-	Categoria   *string         `json:"categoria"`
-	Precio      int64           `json:"precio"`
-	Costo       int64           `json:"costo"`
-	SKU         string          `json:"sku"`
-	Stock       int             `json:"stock"`
-	Foto        *string         `json:"foto"`
-	Canales     map[string]bool `json:"canales"`
-	Publicado   bool            `json:"publicado"`
-	Vendidos30d int             `json:"vendidos30d"`
-	Slug        string          `json:"slug"`
-	Fotos       []string        `json:"fotos"`
-	Opciones    []Opcion        `json:"opciones"`
-	Variantes   []Variante      `json:"variantes"`
+	ID          string  `json:"id"`
+	Nombre      string  `json:"nombre"`
+	Descripcion string  `json:"descripcion"`
+	Categoria   *string `json:"categoria"`
+	Precio      int64   `json:"precio"`
+	// PrecioMayorista: null si no tiene.
+	PrecioMayorista *int64          `json:"precioMayorista"`
+	Costo           int64           `json:"costo"`
+	SKU             string          `json:"sku"`
+	Stock           int             `json:"stock"`
+	Foto            *string         `json:"foto"`
+	Canales         map[string]bool `json:"canales"`
+	Publicado       bool            `json:"publicado"`
+	Vendidos30d     int             `json:"vendidos30d"`
+	Slug            string          `json:"slug"`
+	Fotos           []string        `json:"fotos"`
+	Opciones        []Opcion        `json:"opciones"`
+	Variantes       []Variante      `json:"variantes"`
 }
 
 // Validar revisa lo que se carga.
@@ -67,6 +71,9 @@ func (e Editable) Validar() error {
 	}
 	if e.Precio < 0 || (e.Costo != nil && *e.Costo < 0) || (e.Stock != nil && *e.Stock < 0) {
 		return errors.New("precio, costo y stock no pueden ser negativos")
+	}
+	if m := e.PrecioMayorista; m != nil && !e.SinPrecios && (*m < 0 || (*m > 0 && *m >= e.Precio)) {
+		return errors.New("el precio mayorista tiene que ser menor que el precio")
 	}
 	return nil
 }
@@ -160,10 +167,14 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 		stock = nil
 	}
 	if id == "" {
-		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+		var mayor *int64
+		if e.PrecioMayorista != nil && *e.PrecioMayorista > 0 && !e.SinPrecios {
+			mayor = e.PrecioMayorista
+		}
+		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones, precio_mayorista)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
 			tiendaID, strings.TrimSpace(e.Nombre), valor(e.Descripcion, ""), e.Categoria, e.Precio, valor(e.Costo, 0),
-			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones).Scan(&id); err != nil {
+			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones, mayor).Scan(&id); err != nil {
 			return "", err
 		}
 		nombre := strings.TrimSpace(e.Nombre)
@@ -175,10 +186,11 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 	} else if _, err := t.Exec(ctx, `UPDATE productos SET nombre = $3, descripcion = coalesce($4, descripcion),
 			categoria = $5, precio = CASE WHEN $14 THEN precio ELSE $6 END,
 			costo = CASE WHEN $14 THEN costo ELSE coalesce($7, costo) END, sku = coalesce($8, sku),
-			stock = coalesce($9, stock), foto = $10, canales = $11, publicado = true, fotos = $12, opciones = $13
+			stock = coalesce($9, stock), foto = $10, canales = $11, publicado = true, fotos = $12, opciones = $13,
+			precio_mayorista = CASE WHEN $14 OR $15::bigint IS NULL THEN precio_mayorista ELSE nullif($15::bigint, 0) END
 		WHERE tienda_id = $1 AND id::text = $2`,
 		tiendaID, id, strings.TrimSpace(e.Nombre), e.Descripcion, e.Categoria, e.Precio, e.Costo, e.SKU, stock, foto, canales,
-		fotos, opciones, e.SinPrecios); err != nil {
+		fotos, opciones, e.SinPrecios, e.PrecioMayorista); err != nil {
 		return "", err
 	} else if err := registrarEdicion(ctx, t, tiendaID, id, antes, e, len(opciones) == 0); err != nil {
 		return "", err
@@ -247,14 +259,16 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 		if err != nil {
 			return err
 		}
-		filas, err := t.Query(ctx, `SELECT id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, publicado, fotos, opciones, slug
+		filas, err := t.Query(ctx, `SELECT id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, publicado, fotos, opciones, slug,
+				precio_mayorista
 			FROM productos WHERE tienda_id = $1 ORDER BY creado_en DESC`, tiendaID)
 		if err != nil {
 			return err
 		}
 		for filas.Next() {
 			var p Producto
-			if err := filas.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Costo, &p.SKU, &p.Stock, &p.Foto, &p.Canales, &p.Publicado, &p.Fotos, &p.Opciones, &p.Slug); err != nil {
+			if err := filas.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Costo, &p.SKU, &p.Stock, &p.Foto, &p.Canales, &p.Publicado, &p.Fotos, &p.Opciones, &p.Slug,
+				&p.PrecioMayorista); err != nil {
 				return err
 			}
 			p.Variantes = porProducto[p.ID]
@@ -265,7 +279,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 			resumen := make([]Registro, 0, len(p.Variantes))
 			for _, v := range p.Variantes {
 				resumen = append(resumen, Registro{"id": v.ID, "texto": TextoVariante(p.Opciones, v.Valores), "sku": v.SKU,
-					"precio": v.Precio, "stock": v.Stock, "activa": v.Activa})
+					"precio": v.Precio, "precioMayorista": v.PrecioMayorista, "stock": v.Stock, "activa": v.Activa})
 			}
 			p.Vendidos30d = ultimos30[p.Nombre]
 			ventas := semanas[p.Nombre]
@@ -300,7 +314,8 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 			}
 			regs = append(regs, Registro{
 				"id": p.ID, "nombre": p.Nombre, "descripcion": p.Descripcion, "foto": p.Foto, "sku": p.SKU,
-				"categoria": cat, "precio": p.Precio, "costo": p.Costo, "margen": margen, "stock": p.Stock,
+				"categoria": cat, "precio": p.Precio, "precioMayorista": p.PrecioMayorista, "costo": p.Costo,
+				"margen": margen, "stock": p.Stock,
 				"ventas": ventas, "vendidos30": p.Vendidos30d, "canales": canales, "publicado": p.Publicado,
 				"estado": estado, "lowm": lowm, "star": p.Vendidos30d > 60, "variantes": resumen, "slug": p.Slug, "_ficha": p,
 			})
@@ -384,7 +399,10 @@ func Precio(ctx context.Context, pool tx, tiendaID string, ids []string, pct flo
 	}
 	var n int64
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		filas, err := t.Query(ctx, `UPDATE productos p SET precio = greatest(0, round(p.precio * (1 + $3 / 100.0) / 10) * 10)
+		// El precio mayorista (§49) acompaña: sube o baja lo mismo.
+		filas, err := t.Query(ctx, `UPDATE productos p SET precio = greatest(0, round(p.precio * (1 + $3 / 100.0) / 10) * 10),
+				precio_mayorista = CASE WHEN p.precio_mayorista IS NOT NULL
+					THEN greatest(1, round(p.precio_mayorista * (1 + $3 / 100.0) / 10) * 10) END
 			FROM productos v WHERE p.tienda_id = $1 AND p.id::text = ANY($2) AND v.tienda_id = p.tienda_id AND v.id = p.id
 			RETURNING p.id::text, p.nombre, v.precio, p.precio`, tiendaID, ids, pct)
 		if err != nil {
@@ -407,8 +425,12 @@ func Precio(ctx context.Context, pool tx, tiendaID string, ids []string, pct flo
 			return err
 		}
 		// Las variantes con precio propio suben (o bajan) igual.
-		_, err = t.Exec(ctx, `UPDATE variantes SET precio = greatest(0, round(precio * (1 + $3 / 100.0) / 10) * 10)
-			WHERE tienda_id = $1 AND producto_id::text = ANY($2) AND precio IS NOT NULL`, tiendaID, ids, pct)
+		// (greatest ignora los NULL: sin el CASE, un precio vacío pasaría a 0).
+		_, err = t.Exec(ctx, `UPDATE variantes SET
+				precio = CASE WHEN precio IS NOT NULL THEN greatest(0, round(precio * (1 + $3 / 100.0) / 10) * 10) END,
+				precio_mayorista = CASE WHEN precio_mayorista IS NOT NULL
+					THEN greatest(1, round(precio_mayorista * (1 + $3 / 100.0) / 10) * 10) END
+			WHERE tienda_id = $1 AND producto_id::text = ANY($2) AND (precio IS NOT NULL OR precio_mayorista IS NOT NULL)`, tiendaID, ids, pct)
 		return err
 	})
 	return int(n), err

@@ -1057,6 +1057,39 @@ avisos que el iPhone de §40.
   del negocio si lo cargó). El mail no sale si en el medio ya subió uno nuevo. Los dos llevan a
   `/panel/integraciones?arca`, que abre el asistente.
 
+## 49. Precios mayoristas (migración 00066)
+
+- **Qué es**: cada producto (y cada variante) puede tener un «precio mayorista» opcional
+  (`productos.precio_mayorista`, `variantes.precio_mayorista`; en la variante, vacío usa el del
+  producto, como el precio). La tienda pone en Configuración › Venta mayorista un mínimo del carrito:
+  unidades, monto o los dos (al menos uno). Con los dos, el carrito tiene que cumplir los dos; el monto
+  se cuenta con los precios minoristas (si no, al pasar a mayorista dejaría de alcanzar).
+- **Un solo interruptor**: prendida o apagada es `tiendas.automaticas->>'mayorista'`, la promoción
+  automática «Precio mayorista» que ya mostraba Cupones (ahora con el mínimo de verdad en su detalle).
+  El mínimo vive en `tiendas.mayorista_unidades` (12 de entrada, como el handoff) y
+  `tiendas.mayorista_monto`. La regla es una: `dominio/mayorista` en Go y `lib/tienda/mayorista.ts`
+  en la web, con los mismos casos en los tests.
+- **Al comprar**: cuando el carrito llega al mínimo, todos los productos con precio mayorista pasan a
+  ese precio (nunca a uno mayor que el de lista). Go lo recalcula en `vidriera.Comprar` con los
+  precios de la base (`preciosCarrito`), pasa los precios a `pedidos.CrearDesdeProductos` y marca el
+  pedido `mayorista = true` (la marca que ya filtraba Pedidos › Mayoristas); si ningún producto tenía
+  precio mayorista, no se marca. El cupón y el envío gratis se miden con lo que se cobra. La demo
+  hace lo mismo en el checkout del BFF (`detalleLineas` con el mínimo) y en su `crearPedido`.
+- **La tienda online**: `TiendaPublica.mayorista` (el mínimo, null si no vende por mayor) y
+  `mayorista` en cada producto y variante (null con la venta apagada). El carrito (`detalleLineas`)
+  pasa solo a los precios mayoristas y deja el minorista tachado con el `anterior` que cada plantilla
+  ya dibuja. Yerbal lo dibuja como el handoff: la barra de arriba («Comprás por mayor desde…»), la
+  tabla «Precio por mayor» de la ficha, el aviso amarillo del carrito y «¿Tenés un comercio?». Las
+  demás plantillas, con piezas propias: «Por mayor: $ X desde N unidades» en la ficha y en el carrito
+  cuánto falta (o «Precio mayorista aplicado») con lo que se ahorra.
+- **El panel**: la caja «Mayorista» del precio por canal del editor (la del handoff, «Desde 12 u»),
+  con su precio por variante; Ventas lo ve pero no lo cambia (Go lo conserva, como los demás
+  precios). Configuración › Venta mayorista pide Catálogo. Subir o bajar precios un % desde la lista
+  de productos mueve también los mayoristas; el aumento de Listas de precio no los toca (tampoco toca
+  los de las variantes).
+- **Lo que no cambia**: el feed de productos y el píxel (y la API de conversiones, que repite lo del
+  píxel) siguen con el precio minorista; el total de la compra sí es el cobrado.
+
 ## 50. Newsletter de cada tienda (migración 00067)
 
 - **Sumarse**: el bloque de newsletter del pie, donde el handoff lo dibuja (Ceibo, Mostaza, Rosedal,

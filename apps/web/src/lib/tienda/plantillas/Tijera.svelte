@@ -243,7 +243,7 @@
 	}
 
 	// Carrito.
-	const lineas = $derived(carrito.detalle(tienda.productos));
+	const lineas = $derived(carrito.detalle(tienda.productos, tienda.mayorista ?? null));
 	const subtotal = $derived(lineas.reduce((s, l) => s + l.subtotal, 0));
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0

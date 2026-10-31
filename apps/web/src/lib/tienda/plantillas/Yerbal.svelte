@@ -22,6 +22,8 @@
 	import EnvioCorreo from '../EnvioCorreo.svelte';
 	import { comoLlega, cotizar, cotizarYa, cpValido, envia, textoEnvios } from '../envio.svelte.ts';
 	import { Seleccion, tarjetaDe } from '../seleccion.svelte.ts';
+	import { avisoMayorista } from '../lineas.ts';
+	import { textoAviso, textoMinimo } from '../mayorista.ts';
 	import { partirTitulo } from '../titulo.ts';
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
@@ -32,9 +34,10 @@
 	 * Plantilla Yerbal (design/Plantilla Yerbal.dc.html), con los datos de la tienda en lugar de los
 	 * de ejemplo. El buscador, los filtros "en oferta / con stock" y la vista lista o grilla se
 	 * resuelven en el navegador con los productos cargados. Lo que el diseño muestra sin datos atrás
-	 * (precios por mayor, presentaciones, orgánico y sin TACC, marcas, tabla nutricional, combos,
-	 * turnos de entrega, cupones, factura A, cuenta regresiva) no se dibuja. El newsletter del pie anda
-	 * de verdad (§50).
+	 * (presentaciones, orgánico y sin TACC, marcas, tabla nutricional, combos, turnos de entrega,
+	 * cupones, factura A, cuenta regresiva) no se dibuja. El newsletter del pie anda de verdad (§50) y
+	 * la venta por mayor también (§49): la barra de arriba, la tabla «Precio por mayor» de la ficha, el
+	 * aviso del carrito y «¿Tenés un comercio?», con el mínimo y los precios mayoristas de la tienda.
 	 */
 	type Pagina =
 		| 'inicio'
@@ -328,7 +331,7 @@
 	}
 
 	// Carrito.
-	const lineas = $derived(carrito.detalle(tienda.productos));
+	const lineas = $derived(carrito.detalle(tienda.productos, tienda.mayorista ?? null));
 	const subtotal = $derived(lineas.reduce((s, l) => s + l.subtotal, 0));
 	const ahorro = $derived(
 		lineas.reduce(
@@ -340,6 +343,39 @@
 	const falta = $derived(
 		tienda.envios.gratisDesde ? Math.max(0, tienda.envios.gratisDesde - subtotal) : 0
 	);
+	// Venta por mayor (§49): cuánto falta para el precio mayorista, o lo que ya se ahorra.
+	const porMayor = $derived(avisoMayorista(lineas, tienda.mayorista ?? null));
+	const avisoMayor = $derived(porMayor && textoAviso(porMayor, fmt));
+	const minimoMayor = $derived(tienda.mayorista ? textoMinimo(tienda.mayorista, fmt) : '');
+	// La tabla «Precio por mayor» de la ficha: el precio de lista y el mayorista con su mínimo.
+	const escalas = $derived.by(() => {
+		const m = tienda.mayorista;
+		const mayor = sel?.mayorista ?? null;
+		if (!m || !sel || mayor === null) return [];
+		const desde =
+			m.unidades !== null && m.monto !== null
+				? `${m.unidades} u. y ${fmt(m.monto)}`
+				: m.unidades !== null
+					? `${m.unidades} u. o más`
+					: `Desde ${fmt(m.monto ?? 0)}`;
+		const hasta =
+			m.unidades !== null && m.monto === null
+				? m.unidades > 2
+					? `1 a ${m.unidades - 1} u.`
+					: '1 u.'
+				: m.unidades === null
+					? `Menos de ${fmt(m.monto ?? 0)}`
+					: 'Por unidad';
+		return [
+			{ q: hasta, p: fmt(sel.precio), s: '', on: !porMayor?.aplicado },
+			{
+				q: desde,
+				p: fmt(mayor),
+				s: `−${Math.round((1 - mayor / sel.precio) * 100)}%`,
+				on: !!porMayor?.aplicado
+			}
+		];
+	});
 	const upsell = $derived(
 		tienda.masVendidos
 			.filter(
@@ -587,7 +623,9 @@
 					: tienda.cobros.cuotas > 1
 						? `${tienda.cobros.cuotas} cuotas sin interés`
 						: 'Compra protegida'}</span
-			>{#if wide && tienda.cobros.transferencia > 0}<span style="opacity:.6">·</span><span
+			>{#if wide && tienda.mayorista}<span style="opacity:.6">·</span><span
+					>Comprás por mayor desde {minimoMayor}</span
+				>{:else if wide && tienda.cobros.transferencia > 0}<span style="opacity:.6">·</span><span
 					>{tienda.cobros.transferencia}% off pagando por transferencia</span
 				>{/if}
 		</div>
@@ -1366,6 +1404,24 @@
 											>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por transferencia</b
 										>{/if}
 								</div>{/if}
+							{#if escalas.length}<div
+									style="margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(30,43,34,.1)"
+								>
+									<div
+										style="padding:8px 12px;background:#F2F4EE;font-size:12px;font-weight:800;letter-spacing:.04em"
+									>
+										PRECIO POR MAYOR
+									</div>
+									{#each escalas as t (t.q)}<div
+											style="display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border-top:1px solid rgba(30,43,34,.08);font-size:13.5px;background:{t.on
+												? '#F7F9F4'
+												: 'transparent'}"
+										>
+											<span>{t.q}</span><b>{t.p}</b><span
+												style="color:var(--acento, #2F5D50);font-weight:700">{t.s}</span
+											>
+										</div>{/each}
+								</div>{/if}
 							{#if sel.stock > 0 && sel.stock <= 3 && (!sel.conOpciones || sel.variante)}<div
 									style="margin-top:8px;font-size:13px;font-weight:700;color:#C2412D"
 								>
@@ -1621,6 +1677,16 @@
 										>{/if}
 								</div>{/each}
 						</div>
+						{#if avisoMayor && porMayor}<div
+								style="padding:12px 14px;border-radius:12px;background:#E8C547;display:flex;align-items:center;gap:10px;font-size:13.5px"
+							>
+								<Icon icon={I.phLightbulbBold} size={18} style="flex:none" /><span
+									style="flex:1;min-width:0"
+									>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+								>{#if !porMayor.aplicado && porMayor.falta.unidades}<b style="white-space:nowrap"
+										>Sumar {porMayor.falta.unidades}</b
+									>{/if}
+							</div>{/if}
 						{#each upsell as u (u.id)}<div
 								style="padding:12px 14px;border-radius:12px;background:#E8C547;display:flex;align-items:center;gap:10px;font-size:13.5px"
 							>
@@ -2461,35 +2527,49 @@
 						><span style="font-size:13.5px;color:#56645A">de promedio en reseñas</span>
 					</div>{/if}
 			</section>
-			{#if tienda.direccion || whatsapp}
+			{#if tienda.direccion || whatsapp || tienda.mayorista}
 				<section
 					style="padding:clamp(32px,5cqw,56px) clamp(12px,3cqw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px"
 				>
-					<div
-						style="padding:18px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:8px"
-					>
-						<b style="font-size:18px">{tienda.envios.retiro ? 'Vení al local' : 'Hablemos'}</b>
-						{#if tienda.direccion}<a
-								href="https://www.google.com/maps/search/?api=1&query={encodeURIComponent(
-									[tienda.direccion, tienda.ciudad].filter(Boolean).join(', ')
-								)}"
-								target="_blank"
-								rel="noopener"
-								style="display:flex;gap:8px;font-size:14px;color:#1E2B22;text-decoration:none"
-								><Icon
-									icon={I.phMapPinBold}
-									size={17}
-									style="color:var(--acento, #2F5D50);flex:none"
-								/>{tienda.direccion}</a
-							>{/if}
-						{#if whatsapp}<a
-								href={wa('¡Hola!')}
-								target="_blank"
-								rel="noopener"
-								style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:8px;padding:11px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
-								><Icon icon={I.phWhatsappLogoFill} size={17} />{tienda.whatsapp}</a
-							>{/if}
-					</div>
+					{#if tienda.direccion || whatsapp}<div
+							style="padding:18px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						>
+							<b style="font-size:18px">{tienda.envios.retiro ? 'Vení al local' : 'Hablemos'}</b>
+							{#if tienda.direccion}<a
+									href="https://www.google.com/maps/search/?api=1&query={encodeURIComponent(
+										[tienda.direccion, tienda.ciudad].filter(Boolean).join(', ')
+									)}"
+									target="_blank"
+									rel="noopener"
+									style="display:flex;gap:8px;font-size:14px;color:#1E2B22;text-decoration:none"
+									><Icon
+										icon={I.phMapPinBold}
+										size={17}
+										style="color:var(--acento, #2F5D50);flex:none"
+									/>{tienda.direccion}</a
+								>{/if}
+							{#if whatsapp}<a
+									href={wa('¡Hola!')}
+									target="_blank"
+									rel="noopener"
+									style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:8px;padding:11px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
+									><Icon icon={I.phWhatsappLogoFill} size={17} />{tienda.whatsapp}</a
+								>{/if}
+						</div>{/if}
+					{#if tienda.mayorista}<div
+							style="padding:18px;border-radius:14px;background:#E8C547;display:flex;flex-direction:column;gap:8px"
+						>
+							<b style="font-size:18px">¿Tenés un comercio?</b><span
+								style="font-size:14px;line-height:1.5"
+								>Precios mayoristas desde {minimoMayor}: se aplican solos en el&nbsp;carrito.</span
+							><a
+								href={whatsapp ? wa('¡Hola! Quiero comprar por mayor.') : `${base}/catalogo`}
+								target={whatsapp ? '_blank' : undefined}
+								rel={whatsapp ? 'noopener' : undefined}
+								style="margin-top:auto;padding:11px;border-radius:10px;background:#1E2B22;color:#EEF1E8;font-size:14px;font-weight:700;text-align:center;text-decoration:none"
+								>{whatsapp ? 'Pedir lista mayorista' : 'Ver productos'}</a
+							>
+						</div>{/if}
 				</section>
 			{:else}
 				<div style="height:clamp(32px,5cqw,56px)"></div>

@@ -21,6 +21,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mayorista"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
@@ -56,9 +57,12 @@ type ProductoPublico struct {
 	Descripcion string  `json:"descripcion"`
 	Categoria   *string `json:"categoria"`
 	Precio      int64   `json:"precio"`
-	Anterior    *int64  `json:"anterior"`
-	Foto        *string `json:"foto"`
-	Etiqueta    *string `json:"etiqueta"`
+	// Mayorista: el precio con el carrito al mínimo mayorista (§49); null si no tiene o si la tienda
+	// no vende por mayor.
+	Mayorista *int64  `json:"mayorista"`
+	Anterior  *int64  `json:"anterior"`
+	Foto      *string `json:"foto"`
+	Etiqueta  *string `json:"etiqueta"`
 	// Stock: con opciones, la suma de las variantes activas.
 	Stock     int               `json:"stock"`
 	Fotos     []string          `json:"fotos"`
@@ -80,8 +84,10 @@ type VariantePublica struct {
 	ID      string            `json:"id"`
 	Valores map[string]string `json:"valores"`
 	Precio  *int64            `json:"precio"`
-	Stock   int               `json:"stock"`
-	Foto    *string           `json:"foto"`
+	// Mayorista nil: el mayorista del producto (si tiene).
+	Mayorista *int64  `json:"mayorista"`
+	Stock     int     `json:"stock"`
+	Foto      *string `json:"foto"`
 }
 
 type Categoria struct {
@@ -123,6 +129,14 @@ type Tienda struct {
 	Medicion      Medicion                    `json:"medicion"`
 	// Dominio: el propio que eligió como principal, ya verificado (null: sólo /t/<slug>).
 	Dominio *string `json:"dominio"`
+	// Mayorista: el mínimo del carrito para los precios mayoristas (§49); null si no vende por mayor.
+	Mayorista *MinimoMayorista `json:"mayorista"`
+}
+
+// MinimoMayorista: unidades y/o monto (a precio minorista); con los dos, tienen que cumplirse los dos.
+type MinimoMayorista struct {
+	Unidades *int   `json:"unidades"`
+	Monto    *int64 `json:"monto"`
 }
 
 // Compartir es lo que la tienda escribió en Mi tienda › Al compartir.
@@ -286,9 +300,23 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		if out.Suscripciones, err = suscripciones.PlanesDe(ctx, t, id, mp); err != nil {
 			return err
 		}
+		may, err := mayorista.Leer(ctx, t, id)
+		if err != nil {
+			return err
+		}
+		if may.Activa {
+			out.Mayorista = &MinimoMayorista{Unidades: may.Unidades, Monto: may.Monto}
+		}
+		// Sin venta mayorista, los precios mayoristas no se publican.
+		soloSi := func(p *int64) *int64 {
+			if may.Activa {
+				return p
+			}
+			return nil
+		}
 
 		variantes := map[string][]listas.Variante{}
-		vs, err := t.Query(ctx, `SELECT producto_id::text, id::text, valores, precio, stock, foto FROM variantes
+		vs, err := t.Query(ctx, `SELECT producto_id::text, id::text, valores, precio, stock, foto, precio_mayorista FROM variantes
 			WHERE tienda_id = $1 AND activa`, id)
 		if err != nil {
 			return err
@@ -296,7 +324,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		for vs.Next() {
 			var p string
 			v := listas.Variante{Activa: true}
-			if err := vs.Scan(&p, &v.ID, &v.Valores, &v.Precio, &v.Stock, &v.Foto); err != nil {
+			if err := vs.Scan(&p, &v.ID, &v.Valores, &v.Precio, &v.Stock, &v.Foto, &v.PrecioMayorista); err != nil {
 				vs.Close()
 				return err
 			}
@@ -306,7 +334,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			return err
 		}
 		filas, err := t.Query(ctx, `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
-				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta FROM productos
+				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista FROM productos
 			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true) ORDER BY creado_en DESC LIMIT 500`, id)
 		if err != nil {
 			return err
@@ -316,15 +344,17 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			var p ProductoPublico
 			var l lanzamiento
 			if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
-				&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta); err != nil {
+				&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista); err != nil {
 				return err
 			}
+			p.Mayorista = soloSi(p.Mayorista)
 			p.Variantes = []VariantePublica{}
 			if len(p.Opciones) > 0 {
 				vs := variantes[p.ID]
 				listas.OrdenarVariantes(p.Opciones, vs)
 				for _, v := range vs {
-					p.Variantes = append(p.Variantes, VariantePublica{ID: v.ID, Valores: v.Valores, Precio: v.Precio, Stock: v.Stock, Foto: v.Foto})
+					p.Variantes = append(p.Variantes, VariantePublica{ID: v.ID, Valores: v.Valores, Precio: v.Precio, Stock: v.Stock, Foto: v.Foto,
+						Mayorista: soloSi(v.PrecioMayorista)})
 				}
 			}
 			if p.Stock > 0 && p.Stock <= 3 {
@@ -522,27 +552,27 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	for _, p := range t.Productos {
 		porID[p.ID] = p
 	}
+	// Los precios salen de acá: con el carrito al mínimo mayorista, los que tienen precio mayorista
+	// pasan a ese (§49) y el pedido queda marcado.
+	precios, esMayorista, ok := preciosCarrito(t, porID, c.Carrito)
+	if !ok {
+		return Resultado{}, ErrInvalido
+	}
 	var subtotal int64
 	var unidades int
 	var n pedidos.PedidoNuevo
-	for _, l := range c.Carrito {
-		p, ok := porID[l.ID]
-		if !ok || l.Cantidad < 1 || l.Cantidad > 99 {
-			return Resultado{}, ErrInvalido
-		}
-		precio, ok := precioDe(p, l.VarianteID)
-		if !ok {
-			return Resultado{}, ErrInvalido
-		}
-		if p.Lanzamiento != nil {
+	for i, l := range c.Carrito {
+		if porID[l.ID].Lanzamiento != nil {
 			return Resultado{}, ErrProximamente
 		}
-		subtotal += precio * int64(l.Cantidad)
+		subtotal += precios[i] * int64(l.Cantidad)
 		unidades += l.Cantidad
 		n.Items = append(n.Items, pedidos.Linea{ProductoID: l.ID, VarianteID: l.VarianteID, Cantidad: l.Cantidad})
-		// El precio de cada línea lo fija la vidriera (con la oferta vigente, §52), no el de lista.
-		n.Precios = fijarPrecio(n.Precios, l.ID, l.VarianteID, precio)
+		// El precio de cada línea lo fija la vidriera (con la oferta vigente, §52, y el mayorista,
+		// §49), no el de lista.
+		n.Precios = fijarPrecio(n.Precios, l.ID, l.VarianteID, precios[i])
 	}
+	n.Mayorista = esMayorista
 	var costoEnvio int64
 	var entrega *pedidos.Entrega
 	n.Canal, n.Envio = "web", c.Envio
@@ -575,7 +605,7 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	var descCupon int64
 	combinable := true
 	if codigo := strings.ToUpper(strings.TrimSpace(c.Cupon)); codigo != "" {
-		r, err := EvaluarCupon(ctx, pool, id, codigo, c.Email, lineasDe(c, porID), hoy)
+		r, err := EvaluarCupon(ctx, pool, id, codigo, c.Email, lineasDe(c, porID, precios), hoy)
 		if err != nil {
 			return Resultado{}, err
 		}
@@ -638,6 +668,8 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 // se pierde esa medición, que el píxel del navegador igual mandó).
 func medirCompra(ctx context.Context, pool tx, tienda string, c Compra, n pedidos.PedidoNuevo, porID map[string]ProductoPublico,
 	numero int, total int64, hoy time.Time) {
+	// Las líneas con el precio minorista, como las manda el píxel (§49: el píxel y el feed no saben
+	// del mayorista); el total sí es el cobrado.
 	lineas := make([]conversiones.Linea, 0, len(n.Items))
 	for _, l := range n.Items {
 		precio, _ := precioDe(porID[l.ProductoID], l.VarianteID)

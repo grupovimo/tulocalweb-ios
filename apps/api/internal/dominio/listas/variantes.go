@@ -30,10 +30,12 @@ type Variante struct {
 	Valores map[string]string `json:"valores"`
 	SKU     string            `json:"sku"`
 	// Precio nil: usa el del producto.
-	Precio *int64  `json:"precio"`
-	Stock  int     `json:"stock"`
-	Foto   *string `json:"foto"`
-	Activa bool    `json:"activa"`
+	Precio *int64 `json:"precio"`
+	// PrecioMayorista nil: usa el mayorista del producto (si tiene). §49.
+	PrecioMayorista *int64  `json:"precioMayorista"`
+	Stock           int     `json:"stock"`
+	Foto            *string `json:"foto"`
+	Activa          bool    `json:"activa"`
 }
 
 // VarianteEditable es lo que manda el editor por cada combinación que quiere tocar. Se identifica
@@ -42,9 +44,11 @@ type VarianteEditable struct {
 	Valores map[string]string `json:"valores"`
 	SKU     *string           `json:"sku"`
 	Precio  *int64            `json:"precio"`
-	Stock   *int              `json:"stock"`
-	Foto    *string           `json:"foto"`
-	Activa  *bool             `json:"activa"`
+	// PrecioMayorista pisa como Precio: nil usa el mayorista del producto.
+	PrecioMayorista *int64  `json:"precioMayorista"`
+	Stock           *int    `json:"stock"`
+	Foto            *string `json:"foto"`
+	Activa          *bool   `json:"activa"`
 }
 
 // TextoVariante es lo que se lee en el pedido: "Talle M · Color Negro" (en el orden de las opciones).
@@ -184,7 +188,7 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 		if _, ok := pedidas[k]; ok {
 			return errors.New("hay una variante repetida")
 		}
-		if (e.Precio != nil && *e.Precio < 0) || (e.Stock != nil && (*e.Stock < 0 || *e.Stock > 1000000)) {
+		if (e.Precio != nil && *e.Precio < 0) || (e.PrecioMayorista != nil && *e.PrecioMayorista < 0) || (e.Stock != nil && (*e.Stock < 0 || *e.Stock > 1000000)) {
 			return errors.New("precio y stock de las variantes no pueden ser negativos")
 		}
 		if e.SKU != nil && largo(strings.TrimSpace(*e.SKU)) > 40 {
@@ -196,7 +200,7 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 		pedidas[k] = e
 	}
 	existentes := map[string]Variante{}
-	filas, err := t.Query(ctx, `SELECT id::text, valores, sku, precio, stock, foto, activa FROM variantes
+	filas, err := t.Query(ctx, `SELECT id::text, valores, sku, precio, precio_mayorista, stock, foto, activa FROM variantes
 		WHERE tienda_id = $1 AND producto_id::text = $2`, tiendaID, productoID)
 	if err != nil {
 		return err
@@ -204,7 +208,7 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 	var borrar []string
 	for filas.Next() {
 		var v Variante
-		if err := filas.Scan(&v.ID, &v.Valores, &v.SKU, &v.Precio, &v.Stock, &v.Foto, &v.Activa); err != nil {
+		if err := filas.Scan(&v.ID, &v.Valores, &v.SKU, &v.Precio, &v.PrecioMayorista, &v.Stock, &v.Foto, &v.Activa); err != nil {
 			filas.Close()
 			return err
 		}
@@ -239,6 +243,10 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 			}
 			if !sinPrecios {
 				v.Precio = e.Precio
+				v.PrecioMayorista = e.PrecioMayorista
+				if v.PrecioMayorista != nil && *v.PrecioMayorista == 0 {
+					v.PrecioMayorista = nil
+				}
 			}
 			v.Foto = e.Foto
 			if e.Stock != nil {
@@ -249,8 +257,9 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 			}
 		}
 		if !ya {
-			if _, err := t.Exec(ctx, `INSERT INTO variantes (tienda_id, producto_id, valores, sku, precio, stock, foto, activa)
-				VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8)`, tiendaID, productoID, c, v.SKU, v.Precio, v.Stock, v.Foto, v.Activa); err != nil {
+			if _, err := t.Exec(ctx, `INSERT INTO variantes (tienda_id, producto_id, valores, sku, precio, stock, foto, activa, precio_mayorista)
+				VALUES ($1, $2::uuid, $3, $4, $5, $6, $7, $8, $9)`, tiendaID, productoID, c, v.SKU, v.Precio, v.Stock, v.Foto, v.Activa,
+				v.PrecioMayorista); err != nil {
 				return err
 			}
 			continue
@@ -258,9 +267,9 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 		if igualVariante(antes, v) {
 			continue
 		}
-		if _, err := t.Exec(ctx, `UPDATE variantes SET sku = $4, precio = $5, stock = $6, foto = $7, activa = $8
+		if _, err := t.Exec(ctx, `UPDATE variantes SET sku = $4, precio = $5, stock = $6, foto = $7, activa = $8, precio_mayorista = $9
 			WHERE tienda_id = $1 AND producto_id::text = $2 AND id::text = $3`,
-			tiendaID, productoID, v.ID, v.SKU, v.Precio, v.Stock, v.Foto, v.Activa); err != nil {
+			tiendaID, productoID, v.ID, v.SKU, v.Precio, v.Stock, v.Foto, v.Activa, v.PrecioMayorista); err != nil {
 			return err
 		}
 	}
@@ -270,13 +279,13 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 func igualVariante(a, b Variante) bool {
 	eq := func(x, y *int64) bool { return (x == nil) == (y == nil) && (x == nil || *x == *y) }
 	eqs := func(x, y *string) bool { return (x == nil) == (y == nil) && (x == nil || *x == *y) }
-	return a.SKU == b.SKU && eq(a.Precio, b.Precio) && a.Stock == b.Stock && eqs(a.Foto, b.Foto) && a.Activa == b.Activa
+	return a.SKU == b.SKU && eq(a.Precio, b.Precio) && eq(a.PrecioMayorista, b.PrecioMayorista) && a.Stock == b.Stock && eqs(a.Foto, b.Foto) && a.Activa == b.Activa
 }
 
 // variantesDe trae las variantes de la tienda agrupadas por producto.
 func variantesDe(ctx context.Context, t pgx.Tx, tiendaID string) (map[string][]Variante, error) {
 	por := map[string][]Variante{}
-	filas, err := t.Query(ctx, `SELECT producto_id::text, id::text, valores, sku, precio, stock, foto, activa
+	filas, err := t.Query(ctx, `SELECT producto_id::text, id::text, valores, sku, precio, precio_mayorista, stock, foto, activa
 		FROM variantes WHERE tienda_id = $1`, tiendaID)
 	if err != nil {
 		return nil, err
@@ -285,7 +294,7 @@ func variantesDe(ctx context.Context, t pgx.Tx, tiendaID string) (map[string][]V
 	for filas.Next() {
 		var p string
 		var v Variante
-		if err := filas.Scan(&p, &v.ID, &v.Valores, &v.SKU, &v.Precio, &v.Stock, &v.Foto, &v.Activa); err != nil {
+		if err := filas.Scan(&p, &v.ID, &v.Valores, &v.SKU, &v.Precio, &v.PrecioMayorista, &v.Stock, &v.Foto, &v.Activa); err != nil {
 			return nil, err
 		}
 		por[p] = append(por[p], v)

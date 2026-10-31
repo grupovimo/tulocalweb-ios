@@ -129,7 +129,8 @@ export function listarDemo(
 		if (p.creado < limite || p.total < (f.minimo ?? 0)) return false;
 		if (f.vip && !vips.has(p.clienteId)) return false;
 		if (f.hornero && !deHornero(p)) return false;
-		if (f.mayorista && !c.mayorista) return false;
+		// Mayorista: el cliente lo es o el pedido salió con precios mayoristas (§49).
+		if (f.mayorista && !c.mayorista && !p.mayorista) return false;
 		if (!q) return true;
 		const texto = `#${p.numero} ${p.numero} ${c.nombre} ${p.ciudadEnvio} ${p.items.map((i) => i.nombre).join(' ')}`;
 		return sinAcento(texto).includes(q);
@@ -193,7 +194,7 @@ function fila(
 		cantidadProductos: p.items.length,
 		vip: vips.has(p.clienteId),
 		hornero: deHornero(p),
-		mayorista: c.mayorista,
+		mayorista: c.mayorista || !!p.mayorista,
 		telefono: c.telefono,
 		// El código firmado de la confirmación lo pone sandbox.ts (necesita el id del sandbox).
 		codigo: null

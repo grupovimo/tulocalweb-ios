@@ -2235,6 +2235,22 @@ paths:
       responses:
         '204': { description: Guardado }
         '400': { $ref: '#/components/responses/Problema' }
+  /v1/panel/configuracion/mayorista:
+    put:
+      operationId: guardarMayorista
+      summary: Guarda la venta mayorista (§49), prendida o apagada, con su mínimo del carrito.
+      description: |
+        Prendida o apagada es el mismo interruptor que la promoción automática «Precio mayorista» de
+        Cupones. Hace falta al menos un mínimo (unidades o monto); con los dos, el carrito tiene que
+        cumplir los dos. El monto se mide con los precios minoristas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VentaMayorista' }
+      responses:
+        '204': { description: Guardado }
+        '400': { $ref: '#/components/responses/Problema' }
   /v1/panel/configuracion/{grupo}/{clave}:
     put:
       operationId: fijarOpcion
@@ -3795,6 +3811,7 @@ components:
         descripcion: { type: string, maxLength: 4000 }
         categoria: { type: [string, 'null'], maxLength: 60 }
         precio: { type: integer, minimum: 0 }
+        precioMayorista: { type: [integer, 'null'], minimum: 0, description: 'Precio con el carrito al mínimo mayorista (§49), menor que el precio. Al guardar: sin mandar (o null) queda el que había; 0 lo saca. En la ficha, null: no tiene' }
         costo: { type: integer, minimum: 0 }
         sku: { type: string, maxLength: 40 }
         stock: { type: integer, minimum: 0 }
@@ -3839,6 +3856,7 @@ components:
           additionalProperties: { type: string }
         sku: { type: string, maxLength: 40 }
         precio: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio del producto' }
+        precioMayorista: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio mayorista del producto (§49)' }
         stock: { type: integer, minimum: 0, maximum: 1000000, description: 'Sin mandar: el que tenía (0 si es nueva)' }
         foto: { type: [string, 'null'], description: 'Una de las fotos del producto' }
         activa: { type: boolean, description: 'Sin mandar: la que tenía (true si es nueva)' }
@@ -3853,6 +3871,7 @@ components:
           additionalProperties: { type: string }
         sku: { type: string, maxLength: 40 }
         precio: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio del producto' }
+        precioMayorista: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio mayorista del producto (§49)' }
         stock: { type: integer, minimum: 0 }
         foto: { type: [string, 'null'], description: 'Una de las fotos del producto' }
         activa: { type: boolean }
@@ -4594,11 +4613,20 @@ components:
         vence: { type: [string, 'null'], format: date-time, description: 'Invitación: cuándo vence el link (null si nunca se mandó)' }
         vos: { type: boolean }
         dobleFactor: { type: boolean }
+    VentaMayorista:
+      type: object
+      required: [activa, unidades, monto]
+      description: 'Configuración › Venta mayorista (§49): con el carrito al mínimo, los productos con precio mayorista pasan a ese precio'
+      properties:
+        activa: { type: boolean }
+        unidades: { type: [integer, 'null'], minimum: 2, maximum: 10000, description: 'Mínimo de unidades en el carrito (null: sin mínimo de unidades)' }
+        monto: { type: [integer, 'null'], minimum: 1, maximum: 100000000, description: 'Mínimo del carrito en pesos, a precio minorista (null: sin mínimo de monto)' }
     Configuracion:
       type: object
-      required: [negocio, equipo, seguridad, sesiones, avisos, plan]
+      required: [negocio, equipo, seguridad, sesiones, avisos, plan, mayorista]
       properties:
         negocio: { $ref: '#/components/schemas/Negocio' }
+        mayorista: { $ref: '#/components/schemas/VentaMayorista' }
         equipo: { type: array, items: { $ref: '#/components/schemas/Miembro' } }
         seguridad:
           type: object

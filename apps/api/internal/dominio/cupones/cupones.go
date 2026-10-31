@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mayorista"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/auditoria"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/problema"
 )
@@ -318,7 +319,8 @@ var automaticas = []automatica{
 	{"cantidad", "Descuento por cantidad", "3 o más unidades: 15 % off", "3 unidades → 15 % off automático"},
 	{"3x2", "3x2 en una categoría", "Llevás 3, pagás 2", "3 unidades → la más barata gratis"},
 	{"cuotas", "Cuotas sin interés", "3 y 6 cuotas desde $ 30.000", "6 cuotas sin interés desde $ 30.000"},
-	{"mayorista", "Precio mayorista", "Desde 12 unidades, lista Mayorista", "12 unidades → precio de lista mayorista"},
+	// El detalle del mayorista sale del mínimo de Configuración › Venta mayorista (§49).
+	{"mayorista", "Precio mayorista", "", "Carrito al mínimo → precio mayorista automático"},
 	{"carrito", "Rescate de carrito con Tincho", "Ofrece hasta 10 % si el carrito se enfría", "Carrito abandonado 2 h → “Te guardo 10 % hasta las 20 h”"},
 	{"cumple", "Cumpleaños", "15 % el día del cumple del cliente", "Le llega por WhatsApp a las 9 h"},
 }
@@ -369,8 +371,15 @@ func Leer(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (map[s
 		if err := t.QueryRow(ctx, `SELECT automaticas, nombre FROM tiendas WHERE id = $1`, tiendaID).Scan(&prendidas, &nombre); err != nil {
 			return err
 		}
+		may, err := mayorista.Leer(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
 		autos := []map[string]any{}
 		for _, a := range automaticas {
+			if a.ID == "mayorista" {
+				a.Detalle = may.Detalle() + ", con el precio mayorista de cada producto"
+			}
 			estado := "Apagada"
 			if prendidas[a.ID] {
 				estado = "Activa"

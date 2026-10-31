@@ -91,6 +91,7 @@ import type {
 	Medicion,
 	Entregas,
 	EstadoEntregas,
+	VentaMayorista,
 	ConexionMP,
 	PublicacionML,
 	Dominios,
@@ -249,6 +250,13 @@ import {
 import { diasDe } from '#lib/tienda/suscripciones.ts';
 import type { CuponTienda, Historial } from '#lib/tienda/cupon.ts';
 import { validarGa4, validarPixel } from '#lib/tienda/medicion.ts';
+import {
+	MAYORISTA_INICIAL,
+	problemaMayorista,
+	textoMinimo,
+	type MinimoMayorista
+} from '#lib/tienda/mayorista.ts';
+import { pesos } from '#lib/panel/formato.ts';
 import { generarVariantes, precioDe, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
 import {
 	aplicarLanzamiento,
@@ -821,6 +829,7 @@ export class DatosSandbox implements Datos {
 			descripcion: p.descripcion,
 			categoria: p.categoria,
 			precio: p.precio,
+			precioMayorista: p.precioMayorista ?? 0,
 			costo: p.costo,
 			sku: '',
 			stock: 0,
@@ -1072,11 +1081,14 @@ export class DatosSandbox implements Datos {
 					? todos.filter((p) => p.estado === 'out' && p.canales.includes('ml'))
 					: todos.filter((p) => ids.includes(p.id));
 			if (accion === 'precio' && typeof valor === 'number' && valor > -90 && valor <= 200) {
+				// El mayorista acompaña (como Go).
+				const mover = (n: number, min: number) =>
+					Math.max(min, Math.round((n * (1 + valor / 100)) / 10) * 10);
 				for (const p of elegidos) {
-					const precio = Math.max(0, Math.round((p.precio * (1 + valor / 100)) / 10) * 10);
 					await guardarCambio(this.db, this.sb.id, 'producto', p.id, {
 						...cambios.get(p.id),
-						precio
+						precio: mover(p.precio, 0),
+						precioMayorista: p.precioMayorista === null ? null : mover(p.precioMayorista, 1)
 					});
 				}
 				return elegidos.length;
@@ -1231,6 +1243,7 @@ export class DatosSandbox implements Datos {
 			descripcion: p.descripcion,
 			categoria: p.categoria === 'Sin categoría' ? null : p.categoria,
 			precio: p.precio,
+			precioMayorista: p.precioMayorista,
 			costo: p.costo,
 			sku: p.sku,
 			stock: p.stock,
@@ -1286,6 +1299,7 @@ export class DatosSandbox implements Datos {
 						...v,
 						sku: e.sku?.trim() ?? v.sku,
 						precio: e.precio ?? null,
+						precioMayorista: e.precioMayorista || null,
 						foto: e.foto ?? null,
 						stock: e.stock ?? v.stock,
 						activa: e.activa ?? v.activa
@@ -1314,6 +1328,11 @@ export class DatosSandbox implements Datos {
 			descripcion: p.descripcion ?? antes.descripcion,
 			categoria: p.categoria ?? antes.categoria,
 			precio: p.precio,
+			// Como Go: sin venir (o null) queda el que había; 0 lo saca.
+			precioMayorista:
+				p.precioMayorista === undefined || p.precioMayorista === null
+					? antes.precioMayorista
+					: p.precioMayorista || null,
 			costo: p.costo ?? antes.costo,
 			sku: p.sku ?? antes.sku,
 			stock: opciones.length ? antes.stock : (p.stock ?? antes.stock),
@@ -1498,10 +1517,15 @@ export class DatosSandbox implements Datos {
 			descuentoCupon: number;
 			total?: number;
 			entrega?: { direccion: string; cp: string } | null;
-			/** El precio de cada línea (con la oferta vigente, §52), por claveStock. */
+			/**
+			 * El precio cobrado de cada línea, por clave de stock (producto o producto:variante): con la
+			 * oferta vigente (§52) y, al por mayor, el mayorista (§49). Los calcula el checkout.
+			 */
 			precios?: Record<string, number>;
 			/** Reserva o encargo con seña (§52): en la demo la seña se da por pagada. */
 			sena?: { tipo: 'reserva' | 'encargo'; monto: number };
+			/** El pedido salió con precios mayoristas (§49). */
+			mayorista?: boolean;
 		}
 	): Promise<{ numero: number; total: number } | 'sin-stock' | 'invalido'> {
 		const d = await this.base();
@@ -1582,7 +1606,8 @@ export class DatosSandbox implements Datos {
 						estado: 'Para preparar' as const,
 						facturado: false
 					}
-				: {})
+				: {}),
+			...(web?.mayorista ? { mayorista: true } : {})
 		};
 		if (web?.cupon) await this.usarCupon(web.cupon, pedido.total, web.descuentoCupon);
 		await guardarCambio(this.db, this.sb.id, 'pedido-nuevo', String(numero), {
@@ -1607,15 +1632,16 @@ export class DatosSandbox implements Datos {
 
 	async cupones(): Promise<Cupones> {
 		const d = await this.demo();
-		const [cambios, nuevos, consejo, autos, rel, clientes] = await Promise.all([
+		const [cambios, nuevos, consejo, autos, rel, clientes, mayorista] = await Promise.all([
 			cambiosDe(this.db, this.sb.id, 'cupon'),
 			this.cuponesNuevos(),
 			cambiosDe(this.db, this.sb.id, 'cupones'),
 			cambiosDe(this.db, this.sb.id, 'automatica'),
 			cambiosDe(this.db, this.sb.id, 'relampago'),
-			this.regClientes()
+			this.regClientes(),
+			this.ventaMayorista()
 		]);
-		return cuponesDemo(
+		const c = cuponesDemo(
 			d,
 			Date.now(),
 			this.sb.creadoEn,
@@ -1635,6 +1661,16 @@ export class DatosSandbox implements Datos {
 				riesgo: clientes.filter((c) => c.seg === 'risk').length
 			}
 		);
+		// El mayorista dice el mínimo de verdad (Configuración › Venta mayorista, como Go).
+		const desde = textoMinimo(mayorista, pesos).replace(' de\u00a0compra', '');
+		return {
+			...c,
+			automaticas: c.automaticas.map((a) =>
+				a.id === 'mayorista'
+					? { ...a, detalle: `Desde ${desde}, con el precio mayorista de cada producto` }
+					: a
+			)
+		};
 	}
 
 	async crearCupon(n: CuponNuevoT): Promise<Cupon | 'repetido'> {
@@ -2285,8 +2321,39 @@ export class DatosSandbox implements Datos {
 	}
 
 	async configuracion(): Promise<Configuracion> {
-		const [d, t, e] = await Promise.all([this.demo(), this.tienda(), this.estadoCuenta()]);
-		return configuracionDemo(d, t.nombre, Date.now(), DIAS_DE_PRUEBA, e);
+		const [d, t, e, mayorista] = await Promise.all([
+			this.demo(),
+			this.tienda(),
+			this.estadoCuenta(),
+			this.ventaMayorista()
+		]);
+		return { ...configuracionDemo(d, t.nombre, Date.now(), DIAS_DE_PRUEBA, e), mayorista };
+	}
+
+	/**
+	 * Venta mayorista (§49, como mayorista.Leer): prendida o apagada es la promoción automática
+	 * «Precio mayorista» (en la demo arranca prendida, como en Cupones); el mínimo, el que guardó el
+	 * visitante o 12 unidades.
+	 */
+	private async ventaMayorista(): Promise<VentaMayorista> {
+		const [autos, c] = await Promise.all([
+			cambiosDe(this.db, this.sb.id, 'automatica'),
+			cambiosDe(this.db, this.sb.id, 'mayorista')
+		]);
+		const minimo = c.get('minimo') as MinimoMayorista | undefined;
+		return {
+			activa: (autos.get('mayorista') as { activa: boolean } | null | undefined)?.activa ?? true,
+			unidades: minimo ? minimo.unidades : MAYORISTA_INICIAL.unidades,
+			monto: minimo ? minimo.monto : MAYORISTA_INICIAL.monto
+		};
+	}
+
+	async guardarMayorista(m: VentaMayorista): Promise<void> {
+		const c = { unidades: m.unidades ?? null, monto: m.monto ?? null };
+		const mal = problemaMayorista(c);
+		if (mal) error(400, mal);
+		await guardarCambio(this.db, this.sb.id, 'mayorista', 'minimo', c satisfies MinimoMayorista);
+		await guardarCambio(this.db, this.sb.id, 'automatica', 'mayorista', { activa: !!m.activa });
 	}
 
 	async guardarNegocio(n: Negocio) {
@@ -3215,7 +3282,8 @@ export class DatosSandbox implements Datos {
 			respuestasQ,
 			entregas,
 			planes,
-			lanz
+			lanz,
+			may
 		] = await Promise.all([
 			this.demo(),
 			this.tienda(),
@@ -3229,8 +3297,11 @@ export class DatosSandbox implements Datos {
 			this.respuestasPreguntas(),
 			this.entregas(),
 			this.estadoSuscripciones(),
-			this.lanzamientos()
+			this.lanzamientos(),
+			this.ventaMayorista()
 		]);
+		// Sin venta mayorista no se publican el mínimo ni los precios mayoristas (como Go).
+		const soloSi = (n: number | null | undefined) => (may.activa ? (n ?? null) : null);
 		const diseno = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
 		const plantillaId = diseno.plantilla || t.plantilla;
 		const p = buscarPlantilla(plantillaId);
@@ -3298,6 +3369,7 @@ export class DatosSandbox implements Datos {
 				descripcion: x.descripcion || delCatalogo.get(x.id)?.detalle || '',
 				categoria: x.categoria || null,
 				precio: x.precio,
+				mayorista: soloSi(x.precioMayorista),
 				anterior: delCatalogo.get(x.id)?.anterior ?? null,
 				foto: x.foto,
 				etiqueta:
@@ -3314,6 +3386,7 @@ export class DatosSandbox implements Datos {
 						id: v.id,
 						valores: v.valores,
 						precio: v.precio,
+						mayorista: soloSi(v.precioMayorista),
 						stock: v.stock,
 						foto: v.foto
 					}))
@@ -3362,7 +3435,8 @@ export class DatosSandbox implements Datos {
 				: [],
 			vitrina,
 			// La vitrina de una plantilla nunca mide: no es de nadie.
-			medicion: { ga4: medicion?.ga4 ?? null, pixel: medicion?.pixel ?? null }
+			medicion: { ga4: medicion?.ga4 ?? null, pixel: medicion?.pixel ?? null },
+			mayorista: may.activa ? { unidades: may.unidades, monto: may.monto } : null
 		};
 	}
 

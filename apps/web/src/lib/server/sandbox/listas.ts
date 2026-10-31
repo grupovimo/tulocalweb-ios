@@ -334,6 +334,8 @@ export type CambioProducto = {
 	descripcion?: string;
 	categoria?: string | null;
 	precio?: number;
+	/** Precio mayorista (§49): null lo sacó; sin venir, el de ejemplo. */
+	precioMayorista?: number | null;
 	costo?: number;
 	sku?: string;
 	stock?: number;
@@ -362,6 +364,8 @@ export type RegProducto = {
 	sku: string;
 	categoria: string;
 	precio: number;
+	/** Precio mayorista (§49); null: no tiene. */
+	precioMayorista: number | null;
 	costo: number;
 	/** null: sin costo cargado. */
 	margen: number | null;
@@ -437,6 +441,14 @@ export function registrosProductos(
 					...(semilla(p.id + 'ig') < 0.7 ? ['ig'] : [])
 				];
 		const precio = c.precio ?? p.precio;
+		// La mitad del catálogo de ejemplo tiene precio mayorista (18 % menos), para que la venta por
+		// mayor se vea en la tienda de la demo.
+		const precioMayorista =
+			c.precioMayorista !== undefined
+				? c.precioMayorista
+				: semilla(p.id + 'mayor') < 0.5 && precio >= 1000
+					? Math.round((precio * 0.82) / 10) * 10
+					: null;
 		const v = conVariantes(
 			p.id,
 			c,
@@ -452,6 +464,7 @@ export function registrosProductos(
 			sku: c.sku ?? `SKU-${1000 + i}`,
 			categoria: (c.categoria ?? p.categoria) || 'Sin categoría',
 			precio,
+			precioMayorista,
 			costo: c.costo ?? Math.round((precio * (1 - margen / 100)) / 10) * 10,
 			stock: v.opciones.length
 				? stockTotal(v.variantes)
@@ -475,6 +488,7 @@ export function registrosProductos(
 				sku: c.sku ?? '',
 				categoria: c.categoria || 'Sin categoría',
 				precio: c.precio ?? 0,
+				precioMayorista: c.precioMayorista ?? null,
 				costo: c.costo ?? 0,
 				stock: v.opciones.length
 					? stockTotal(v.variantes)

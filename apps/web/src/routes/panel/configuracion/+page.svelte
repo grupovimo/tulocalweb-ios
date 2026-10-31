@@ -32,6 +32,7 @@
 		['equipo', I.phUsersThreeFill, 'Equipo y permisos', 'cuenta'],
 		['seguridad', I.phShieldCheckFill, 'Seguridad', 'panel'],
 		['avisos', I.phBellRingingFill, 'Notificaciones', 'tienda'],
+		['mayorista', I.phPackageFill, 'Venta mayorista', 'catalogo'],
 		['plan', I.phCrownSimpleFill, 'Plan', 'cuenta']
 	] as const;
 	type Tab = (typeof TODAS)[number][0];
@@ -170,6 +171,36 @@
 			title: cerradas === 1 ? 'Cerramos 1 sesión' : `Cerramos ${cerradas} sesiones`,
 			desc: 'Sólo queda abierta esta'
 		});
+	}
+
+	// ---- Venta mayorista (§49) ----
+	// El mínimo se edita en el formulario; prenderla o apagarla se guarda al toque (con Deshacer).
+	const numeroOVacio = (s: string) => {
+		const n = Number(s.replace(/\D/g, ''));
+		return s.trim() && n > 0 ? n : null;
+	};
+	let minimo = $derived({ unidades: data.mayorista.unidades, monto: data.mayorista.monto });
+	const minimoCambiado = $derived(
+		minimo.unidades !== data.mayorista.unidades || minimo.monto !== data.mayorista.monto
+	);
+	async function guardarMayorista(activa: boolean, m = minimo, deshacer = false) {
+		const antes = { ...data.mayorista };
+		const r = await pedir('/panel/configuracion/mayorista', 'PUT', { activa, ...m });
+		if (!r) {
+			await invalidateAll();
+			return;
+		}
+		await invalidateAll();
+		if (deshacer) return;
+		if (antes.activa === activa) {
+			ui.toast({ k: 'ok', title: 'Mínimo guardado', desc: 'La tienda ya usa el nuevo mínimo' });
+			return;
+		}
+		ui.undoable(
+			activa ? 'Venta mayorista prendida' : 'Venta mayorista apagada',
+			activa ? 'Los precios mayoristas ya se ven en tu tienda' : 'Tu tienda vende sólo minorista',
+			() => guardarMayorista(antes.activa, { unidades: antes.unidades, monto: antes.monto }, true)
+		);
 	}
 
 	// ---- Plan ----
@@ -394,6 +425,66 @@
 						</div>
 					{/each}
 				</div>
+			{:else if tab === 'mayorista'}
+				<div class="tarjeta lista">
+					<div class="opcion">
+						<span class="o-ico"><Icon icon={I.phPackageFill} size={18} /></span>
+						<span class="o-txt"
+							><span class="o-t">Venta mayorista</span><span class="o-d"
+								>Con el carrito al mínimo, los productos con precio mayorista pasan a ese
+								precio&nbsp;solos</span
+							></span
+						>
+						<Interruptor
+							checked={data.mayorista.activa}
+							label="Venta mayorista"
+							onchange={(v) => guardarMayorista(v, data.mayorista)}
+						/>
+					</div>
+				</div>
+				<form
+					class="tarjeta campos"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void guardarMayorista(data.mayorista.activa);
+					}}
+				>
+					<div class="t-cab"><span>Mínimo del carrito</span></div>
+					<label
+						>Unidades<input
+							inputmode="numeric"
+							placeholder="Sin mínimo"
+							value={minimo.unidades ?? ''}
+							oninput={(e) =>
+								(minimo = { ...minimo, unidades: numeroOVacio(e.currentTarget.value) })}
+						/></label
+					>
+					<label
+						>Monto<input
+							inputmode="numeric"
+							placeholder="Sin mínimo"
+							value={minimo.monto === null ? '' : pesos(minimo.monto)}
+							onchange={(e) => (minimo = { ...minimo, monto: numeroOVacio(e.currentTarget.value) })}
+						/></label
+					>
+					<p class="d-nota">
+						Poné al menos uno; con los dos, el carrito tiene que cumplir los dos. El monto se cuenta
+						con los precios de siempre. El precio mayorista de cada producto se carga en su ficha,
+						en&nbsp;Productos.
+					</p>
+					{#if minimoCambiado}
+						<div class="guardar">
+							<button
+								type="button"
+								class="btn btn-secondary"
+								onclick={() =>
+									(minimo = { unidades: data.mayorista.unidades, monto: data.mayorista.monto })}
+								>Descartar</button
+							>
+							<button class="btn btn-primary">Guardar mínimo</button>
+						</div>
+					{/if}
+				</form>
 			{:else}
 				<div class="planes">
 					{#each PLANES as p (p.id)}
@@ -516,6 +607,10 @@
 	}
 	.d-nota {
 		font-size: 12.5px;
+	}
+	.campos .t-cab,
+	.campos .d-nota {
+		grid-column: 1 / -1;
 	}
 	.campos {
 		display: grid;

@@ -80,7 +80,7 @@ export function configuracionDemo(
 	ahora: number,
 	diasPrueba: number,
 	e: EstadoCuenta
-): Configuracion {
+): Omit<Configuracion, 'mayorista'> {
 	const dom = `${dominio(tienda)}.com.ar`;
 	const negocio: Negocio = {
 		nombre: tienda,

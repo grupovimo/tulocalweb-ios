@@ -35,6 +35,7 @@ import type {
 	Medicion,
 	Entregas,
 	EstadoEntregas,
+	VentaMayorista,
 	ConexionMP,
 	PublicacionML,
 	Dominios,
@@ -613,6 +614,9 @@ export class DatosApi implements Datos {
 	}
 	guardarEntregas(e: Entregas) {
 		return this.pedir<void>('/v1/panel/configuracion/entregas', 'PUT', e);
+	}
+	guardarMayorista(m: VentaMayorista) {
+		return this.pedir<void>('/v1/panel/configuracion/mayorista', 'PUT', m);
 	}
 	async ajustarIntegracion(a: AjusteIntegracion) {
 		// Por ahora sólo los permisos de las IA se guardan en la API; el resto llega con cada integración.

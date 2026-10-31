@@ -19,6 +19,8 @@ export type VarianteEditable = {
 	valores: Valores;
 	sku?: string;
 	precio?: number | null;
+	/** null: el mayorista del producto (§49). */
+	precioMayorista?: number | null;
 	stock?: number;
 	foto?: string | null;
 	activa?: boolean;
@@ -30,6 +32,8 @@ export type Variante = {
 	valores: Valores;
 	sku: string;
 	precio: number | null;
+	/** null (o sin venir): el mayorista del producto (§49). */
+	precioMayorista?: number | null;
 	stock: number;
 	foto: string | null;
 	activa: boolean;

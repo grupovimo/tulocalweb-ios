@@ -1,8 +1,9 @@
 import { env } from 'cloudflare:workers';
 import { aplicarCupon, normalizarCodigo, type ResultadoCupon } from '#lib/tienda/cupon.ts';
+import { detalleLineas } from '#lib/tienda/lineas.ts';
 import type { TiendaResuelta } from './publica.ts';
 
-type Linea = { id: string; cantidad: number };
+type Linea = { id: string; varianteId?: string | null; cantidad: number };
 
 /**
  * Evalúa un cupón para un carrito de la tienda online. En la demo, con los cupones y pedidos del
@@ -45,11 +46,17 @@ export async function evaluarCupon(
 	}
 	const cupon = await r.datos.cuponTienda(c);
 	if (!cupon) return { ok: false, motivo: 'Ese cupón no existe. Revisá cómo está escrito.' };
-	const porId = new Map(r.tienda.productos.map((p) => [p.id, p]));
-	const lineas = carrito.flatMap((l) => {
-		const p = porId.get(l.id);
-		return p ? [{ id: p.id, precio: p.precio, cantidad: l.cantidad, categoria: p.categoria }] : [];
-	});
+	// Con los precios que se cobran (el de la variante y el mayorista, §49), como Go.
+	const lineas = detalleLineas(
+		carrito.map((l) => ({ ...l, varianteId: l.varianteId ?? null })),
+		r.tienda.productos,
+		r.tienda.mayorista ?? null
+	).map((l) => ({
+		id: l.id,
+		precio: l.producto.precio,
+		cantidad: l.cantidad,
+		categoria: l.producto.categoria
+	}));
 	const h = email
 		? await r.datos.historialDe(email, c)
 		: { pedidos: 0, usosDelCupon: 0, vip: false, ultimaCompra: null };

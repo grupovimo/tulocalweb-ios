@@ -10,10 +10,19 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	// Tiempo real (§44): stock, altas, cambios de otra persona del equipo e importaciones.
 	depends('tienda:productos');
 	const datos = datosDe(locals);
-	const [lista, precios] = await Promise.all([
+	const [lista, precios, mayorista] = await Promise.all([
 		datos.listar('productos', { ...leer(url.searchParams), desde: 0, cuantos: 60 }),
 		// Sin permiso para ver precios (o si falla), el editor sigue sin la fila de Mercado Libre.
-		datos.listasPrecio().catch(() => ({ listas: [] as { id: string; ajuste: number }[] }))
+		datos.listasPrecio().catch(() => ({ listas: [] as { id: string; ajuste: number }[] })),
+		// El mínimo mayorista (§49) para la caja «Mayorista» del editor; si falla, sin la caja.
+		datos
+			.configuracion()
+			.then((c) => c.mayorista)
+			.catch(() => null)
 	]);
-	return { lista, recargoML: precios.listas.find((l) => l.id === 'ml')?.ajuste ?? null };
+	return {
+		lista,
+		recargoML: precios.listas.find((l) => l.id === 'ml')?.ajuste ?? null,
+		mayorista
+	};
 };

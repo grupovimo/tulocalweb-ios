@@ -17,6 +17,7 @@
 		type Variante
 	} from '#lib/tienda/variantes.ts';
 	import type { components } from '@mostrador/contrato/esquema';
+	import type { VentaMayorista } from '#lib/tienda/mayorista.ts';
 	import { compartirProducto } from '../compartir.ts';
 	import { subir } from '../fotos.ts';
 	import { pesos } from '../formato.ts';
@@ -35,6 +36,7 @@
 		tienda,
 		dominio,
 		recargoML = null,
+		mayorista = null,
 		guardado,
 		borrado
 	}: {
@@ -44,6 +46,8 @@
 		dominio: string;
 		/** El recargo de la conexión con Mercado Libre; null si no está conectado. */
 		recargoML?: number | null;
+		/** Configuración › Venta mayorista (§49): el mínimo, para la nota del precio mayorista. */
+		mayorista?: VentaMayorista | null;
 		guardado: (p: Producto, nuevo: boolean) => void;
 		borrado: (nombre: string) => void;
 	} = $props();
@@ -52,6 +56,8 @@
 	let nombre = $state('');
 	let descripcion = $state('');
 	let precio = $state(0);
+	// Precio mayorista (§49): 0 es «no tiene» (así lo saca Go al guardar).
+	let precioMayor = $state(0);
 	let costo = $state(0);
 	// Ventas edita el producto pero no los precios ni los costos (docs/decisiones.md §37): se ven sin
 	// poder cambiarlos y el costo no se muestra. Go igual conserva los que había.
@@ -119,6 +125,7 @@
 		nombre = p?.nombre ?? '';
 		descripcion = p?.descripcion ?? '';
 		precio = p?.precio ?? 0;
+		precioMayor = p?.precioMayorista ?? 0;
 		costo = p?.costo ?? 0;
 		stock = p?.stock ?? 0;
 		categoria = p?.categoria ?? '';
@@ -166,6 +173,23 @@
 					]
 				]
 	);
+	/**
+	 * La caja «Mayorista» del diseño (precio por canal, «Desde 10 u»), con el mínimo de verdad de
+	 * Configuración › Venta mayorista. Con la venta apagada sólo aparece si el producto ya tenía uno.
+	 */
+	const notaMayorista = $derived(
+		!mayorista?.activa
+			? 'Venta por mayor apagada'
+			: [
+					mayorista.unidades !== null ? `Desde ${mayorista.unidades} u` : '',
+					mayorista.monto !== null ? `desde ${pesos(mayorista.monto)}` : ''
+				]
+					.filter(Boolean)
+					.join(' y ')
+					.replace(/^d/, 'D')
+	);
+	const verMayorista = $derived(!!mayorista?.activa || precioMayor > 0);
+	const mayorMal = $derived(precioMayor > 0 && precioMayor >= precio);
 	const CANALES = $derived(
 		(
 			[
@@ -273,6 +297,10 @@
 			error = 'Cada opción necesita un nombre y al menos un valor.';
 			return;
 		}
+		if (mayorMal) {
+			error = 'El precio mayorista tiene que ser menor que el precio.';
+			return;
+		}
 		const mal = errorOpciones(ops) ?? lanzamiento?.revisar() ?? null;
 		if (mal) {
 			error = mal;
@@ -287,6 +315,7 @@
 				descripcion,
 				categoria: categoria.trim() || null,
 				precio,
+				precioMayorista: precioMayor,
 				costo,
 				stock,
 				foto: fotos[0] ?? null,
@@ -295,6 +324,7 @@
 				variantes: variantes.map((v) => ({
 					valores: v.valores,
 					precio: v.precio,
+					precioMayorista: v.precioMayorista ?? null,
 					stock: v.stock,
 					activa: v.activa,
 					// Si se sacó de la galería la foto de una variante, la variante queda sin foto.
@@ -462,6 +492,23 @@
 						<div class="p-n">{nota}</div>
 					</div>
 				{/each}
+				{#if verMayorista}
+					<div class="precio">
+						<div class="p-t">Mayorista</div>
+						<input
+							class="p-in"
+							inputmode="numeric"
+							aria-label="Precio mayorista"
+							readonly={!conPrecios}
+							placeholder="Sin precio"
+							value={precioMayor ? pesos(precioMayor) : ''}
+							onchange={(e) => (precioMayor = numero(e.currentTarget.value))}
+						/>
+						<div class="p-n" class:mal={mayorMal}>
+							{mayorMal ? 'Tiene que ser menor que el precio' : notaMayorista}
+						</div>
+					</div>
+				{/if}
 			</div>
 			{#if conPrecios}
 				<div class="margen">
@@ -530,7 +577,7 @@
 			<div class="variantes">
 				{#if listas.length}
 					{#each variantes as v (nombreVariante(v))}
-						<div class="variante" class:apagada={!v.activa}>
+						<div class="variante" class:apagada={!v.activa} class:con-mayor={verMayorista}>
 							<span class="v-color" style:background={colorVariante(v)}></span><span class="v-n"
 								>{nombreVariante(v)}</span
 							>
@@ -544,6 +591,21 @@
 								onchange={(e) =>
 									(v.precio = e.currentTarget.value.trim() ? numero(e.currentTarget.value) : null)}
 							/>
+							{#if verMayorista}
+								<!-- Vacío: el mayorista del producto (como el precio). -->
+								<input
+									class="v-p"
+									inputmode="numeric"
+									aria-label="Precio mayorista de {nombreVariante(v)}"
+									readonly={!conPrecios}
+									placeholder={precioMayor ? pesos(precioMayor) : 'Mayorista'}
+									value={v.precioMayorista ? pesos(v.precioMayorista) : ''}
+									onchange={(e) =>
+										(v.precioMayorista = e.currentTarget.value.trim()
+											? numero(e.currentTarget.value) || null
+											: null)}
+								/>
+							{/if}
 							<input
 								class="v-s"
 								inputmode="numeric"
@@ -835,6 +897,9 @@
 		font-size: 11.5px;
 		color: var(--fa);
 	}
+	.p-n.mal {
+		color: #b0441d;
+	}
 	.margen {
 		margin-top: 10px;
 		font-size: 12.5px;
@@ -885,6 +950,15 @@
 		flex: 1;
 		min-width: 0;
 		font-size: 14px;
+	}
+	/* Con el precio mayorista, a 375 px los números bajan a su renglón (el nombre arriba). */
+	@media (max-width: 760px) {
+		.variante.con-mayor {
+			flex-wrap: wrap;
+		}
+		.variante.con-mayor .v-n {
+			flex-basis: calc(100% - 28px);
+		}
 	}
 	.variante.apagada .v-n {
 		color: var(--mu);

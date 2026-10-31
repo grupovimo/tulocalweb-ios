@@ -85,6 +85,8 @@ type PedidoNuevo struct {
 	Sena      int64      `json:"-"`
 	SenaTipo  string     `json:"-"`
 	SenaVence *time.Time `json:"-"`
+	// Mayorista: la tienda online lo cobró con precios mayoristas (§49; los precios van en Precios).
+	Mayorista bool `json:"-"`
 }
 
 // ErrCupon: el cupón se agotó o se pausó entre que se validó y se usó.
@@ -209,13 +211,13 @@ func CrearDesdeProductos(ctx context.Context, pool tx, tiendaID string, n Pedido
 		if err := t.QueryRow(ctx, `
 			INSERT INTO pedidos (tienda_id, numero, comprador, canal, pago, estado_pago, envio, estado, facturado,
 				items, subtotal, costo_envio, total, nota, estados_en, ciudad_envio, codigo_publico, cupon, entrega, descuentos,
-				sena, sena_tipo, sena_vence)
+				sena, sena_tipo, sena_vence, mayorista)
 			SELECT $1, coalesce(max(numero), 1000) + 1, $2, $3, $4, $5, $6, $7, false, $8, $9, $11::bigint, $9::bigint + $11::bigint - $12::bigint, $10,
-				jsonb_build_object($7::text, now()), $13, $14, $15, $16, $17, nullif($18::bigint, 0), nullif($19::text, ''), $20
+				jsonb_build_object($7::text, now()), $13, $14, $15, $16, $17, nullif($18::bigint, 0), nullif($19::text, ''), $20, $21
 			FROM pedidos WHERE tienda_id = $1
 			RETURNING numero`,
 			tiendaID, comprador, n.Canal, n.Pago, estadoPago, n.Envio, estado, js, total, n.Nota,
-			n.CostoEnvio, n.Descuento, n.CiudadEnvio, codigo, cupon, n.Entrega, desc, n.Sena, n.SenaTipo, n.SenaVence).Scan(&numero); err != nil {
+			n.CostoEnvio, n.Descuento, n.CiudadEnvio, codigo, cupon, n.Entrega, desc, n.Sena, n.SenaTipo, n.SenaVence, n.Mayorista).Scan(&numero); err != nil {
 			return err
 		}
 		// Lo que carga alguien del equipo (el panel o una IA): la compra en la tienda online no tiene autor.

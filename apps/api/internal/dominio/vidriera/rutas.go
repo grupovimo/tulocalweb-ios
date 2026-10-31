@@ -239,7 +239,10 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 		for _, p := range t.Productos {
 			porID[p.ID] = p
 		}
-		res, err := EvaluarCupon(r.Context(), pool, id, strings.ToUpper(strings.TrimSpace(c.Cupon)), c.Email, lineasDe(c, porID), time.Now())
+		// Con los precios que se van a cobrar (variante y mayorista); un carrito con líneas que ya no
+		// valen se evalúa con el precio del producto, como antes.
+		precios, _, _ := preciosCarrito(t, porID, c.Carrito)
+		res, err := EvaluarCupon(r.Context(), pool, id, strings.ToUpper(strings.TrimSpace(c.Cupon)), c.Email, lineasDe(c, porID, precios), time.Now())
 		if err != nil {
 			error404(w, err)
 			return

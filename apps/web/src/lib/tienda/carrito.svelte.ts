@@ -7,6 +7,7 @@ import { browser } from '$app/env';
 import { agregado, recordarCompra } from './medicion.ts';
 import { claveLinea, detalleLineas, MAX_LINEAS, migrarLineas, type Linea } from './lineas.ts';
 import { proximamente } from './lanzamiento.ts';
+import type { MinimoMayorista } from './mayorista.ts';
 import type { ProductoPublico } from './tipos.ts';
 
 export type { Linea };
@@ -89,9 +90,12 @@ export class Carrito {
 		this.#guardar();
 	}
 
-	/** Las líneas con su producto (precio, foto y stock de la variante). */
-	detalle(productos: ProductoPublico[]) {
-		return detalleLineas(this.lineas, productos);
+	/**
+	 * Las líneas con su producto (precio, foto y stock de la variante). Con el mínimo mayorista de la
+	 * tienda (§49), las que tienen precio mayorista pasan a ese cuando el carrito llega.
+	 */
+	detalle(productos: ProductoPublico[], mayorista: MinimoMayorista | null = null) {
+		return detalleLineas(this.lineas, productos, mayorista);
 	}
 }
 

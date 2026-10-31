@@ -73,6 +73,7 @@ export type ConexionML = components['schemas']['ConexionML'];
 export type Medicion = components['schemas']['Medicion'];
 export type Entregas = components['schemas']['Entregas'];
 export type EstadoEntregas = components['schemas']['EstadoEntregas'];
+export type VentaMayorista = components['schemas']['VentaMayorista'];
 export type PublicacionML = components['schemas']['PublicacionML'];
 export type ArcaConfig = components['schemas']['ArcaConfig'];
 export type ArcaAlta = components['schemas']['ArcaAlta'];
@@ -233,6 +234,8 @@ export interface Datos {
 	entregas(): Promise<EstadoEntregas>;
 	/** Guarda retiro y moto; un dato que no va o todo apagado: error 400 con el motivo. */
 	guardarEntregas(e: Entregas): Promise<void>;
+	/** Venta mayorista (§49): prendida o apagada y el mínimo; sin mínimo, error 400 con el motivo. */
+	guardarMayorista(m: VentaMayorista): Promise<void>;
 	/** Mercado Libre como canal (OAuth de la tienda). */
 	mercadoLibre(): Promise<ConexionML>;
 	conectarMercadoLibre(): Promise<string | null>;

@@ -176,11 +176,17 @@ type ErrCupon struct{ Motivo string }
 
 func (e ErrCupon) Error() string { return "vidriera: cupón: " + e.Motivo }
 
-func lineasDe(c Compra, porID map[string]ProductoPublico) []LineaCupon {
+// precios: el de cada línea como se cobra (preciosCarrito: el de la variante o el mayorista); sin
+// ellos (nil), el del producto.
+func lineasDe(c Compra, porID map[string]ProductoPublico, precios []int64) []LineaCupon {
 	var out []LineaCupon
-	for _, l := range c.Carrito {
+	for i, l := range c.Carrito {
 		if p, ok := porID[l.ID]; ok {
-			out = append(out, LineaCupon{ID: l.ID, Precio: p.Precio, Cantidad: l.Cantidad, Categoria: p.Categoria})
+			precio := p.Precio
+			if i < len(precios) {
+				precio = precios[i]
+			}
+			out = append(out, LineaCupon{ID: l.ID, Precio: precio, Cantidad: l.Cantidad, Categoria: p.Categoria})
 		}
 	}
 	return out

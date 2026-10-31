@@ -18,6 +18,10 @@ const Editable = v.object({
 	descripcion: v.optional(v.pipe(v.string(), v.maxLength(4000))),
 	categoria: v.optional(v.nullable(v.pipe(v.string(), v.trim(), v.maxLength(60)))),
 	precio: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000_000)),
+	// Precio mayorista (§49): sin venir (o null) queda el que había; 0 lo saca.
+	precioMayorista: v.optional(
+		v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000_000)))
+	),
 	costo: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000_000))),
 	sku: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(40))),
 	stock: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000))),
@@ -42,6 +46,9 @@ const Editable = v.object({
 					valores: v.record(Texto20, Texto20),
 					sku: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(40))),
 					precio: v.optional(
+						v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000_000)))
+					),
+					precioMayorista: v.optional(
 						v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000_000)))
 					),
 					stock: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1_000_000))),
@@ -75,6 +82,9 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 	}
 	const r = v.safeParse(Editable, cuerpo);
 	if (!r.success) error(400, r.issues[0].message);
+	// Como Go: el mayorista tiene que ser menor que el precio (0 o null no es un precio).
+	if (r.output.precioMayorista && r.output.precioMayorista >= r.output.precio)
+		error(400, 'El precio mayorista tiene que ser menor que el precio.');
 	const { opciones, variantes, fotos } = r.output;
 	// Las combinaciones las rearma quien guarda; acá se rechaza lo que no puede corresponder.
 	const mal = opciones

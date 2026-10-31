@@ -5,6 +5,7 @@
  */
 import type { Carrito } from './carrito.svelte.ts';
 import { proximamente } from './lanzamiento.ts';
+import { mayoristaDeVariante, precioMayorista } from './mayorista.ts';
 import type { ProductoPublico, VariantePublica } from './tipos.ts';
 import {
 	colorDe,
@@ -98,6 +99,18 @@ export class Seleccion {
 			!this.variante &&
 			precioDesde({ precio: this.producto.precio, variantes: this.variantes }).desde
 		);
+	}
+	/**
+	 * El precio mayorista de lo elegido (§49): el de la variante, o el del producto; null si no tiene
+	 * o no es menor. Sin elegir, el del producto contra el precio «desde».
+	 */
+	get mayorista() {
+		const v = this.variante;
+		const mayor = v
+			? mayoristaDeVariante(v.mayorista, this.producto.mayorista)
+			: (this.producto.mayorista ?? null);
+		const m = precioMayorista(this.precio, mayor);
+		return m < this.precio ? m : null;
 	}
 	/** El tachado sólo cuando el precio es el del producto (las variantes con precio propio no). */
 	get anterior() {

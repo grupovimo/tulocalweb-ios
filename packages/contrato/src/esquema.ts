@@ -2193,6 +2193,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/configuracion/mayorista": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Guarda la venta mayorista (§49), prendida o apagada, con su mínimo del carrito.
+         * @description Prendida o apagada es el mismo interruptor que la promoción automática «Precio mayorista» de
+         *     Cupones. Hace falta al menos un mínimo (unidades o monto); con los dos, el carrito tiene que
+         *     cumplir los dos. El monto se mide con los precios minoristas.
+         */
+        put: operations["guardarMayorista"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panel/configuracion/{grupo}/{clave}": {
         parameters: {
             query?: never;
@@ -3667,6 +3689,8 @@ export interface components {
             descripcion?: string;
             categoria?: string | null;
             precio: number;
+            /** @description Precio con el carrito al mínimo mayorista (§49), menor que el precio. Al guardar: sin mandar (o null) queda el que había; 0 lo saca. En la ficha, null: no tiene */
+            precioMayorista?: number | null;
             costo?: number;
             sku?: string;
             stock?: number;
@@ -3696,6 +3720,8 @@ export interface components {
             sku?: string;
             /** @description null: usa el precio del producto */
             precio?: number | null;
+            /** @description null: usa el precio mayorista del producto (§49) */
+            precioMayorista?: number | null;
             /** @description Sin mandar: el que tenía (0 si es nueva) */
             stock?: number;
             /** @description Una de las fotos del producto */
@@ -3712,6 +3738,8 @@ export interface components {
             sku: string;
             /** @description null: usa el precio del producto */
             precio: number | null;
+            /** @description null: usa el precio mayorista del producto (§49) */
+            precioMayorista?: number | null;
             stock: number;
             /** @description Una de las fotos del producto */
             foto: string | null;
@@ -4406,8 +4434,17 @@ export interface components {
             vos: boolean;
             dobleFactor: boolean;
         };
+        /** @description Configuración › Venta mayorista (§49): con el carrito al mínimo, los productos con precio mayorista pasan a ese precio */
+        VentaMayorista: {
+            activa: boolean;
+            /** @description Mínimo de unidades en el carrito (null: sin mínimo de unidades) */
+            unidades: number | null;
+            /** @description Mínimo del carrito en pesos, a precio minorista (null: sin mínimo de monto) */
+            monto: number | null;
+        };
         Configuracion: {
             negocio: components["schemas"]["Negocio"];
+            mayorista: components["schemas"]["VentaMayorista"];
             equipo: components["schemas"]["Miembro"][];
             /** @description Opciones de la persona que mira (no de la tienda). */
             seguridad: {
@@ -9842,6 +9879,29 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["Entregas"];
+            };
+        };
+        responses: {
+            /** @description Guardado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+        };
+    };
+    guardarMayorista: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VentaMayorista"];
             };
         };
         responses: {

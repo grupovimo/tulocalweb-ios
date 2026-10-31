@@ -482,6 +482,7 @@
 	tienda={tienda.nombre}
 	{dominio}
 	recargoML={data.recargoML}
+	mayorista={data.mayorista}
 	guardado={async (p, nuevo) => {
 		await invalidateAll();
 		ui.toast({

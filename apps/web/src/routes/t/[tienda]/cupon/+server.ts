@@ -14,6 +14,8 @@ const Pedido = v.object({
 		v.array(
 			v.object({
 				id: v.pipe(v.string(), v.maxLength(80)),
+				// La variante cuenta para el precio (el suyo o el mayorista, §49).
+				varianteId: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(120))), null),
 				cantidad: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(99))
 			})
 		),

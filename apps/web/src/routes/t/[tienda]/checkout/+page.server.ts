@@ -7,8 +7,8 @@ import { avisarVenta } from '#lib/server/telegram.ts';
 import { evaluarCupon } from '#lib/server/tienda/cupon.ts';
 import { resolverTienda } from '#lib/server/tienda/publica.ts';
 import { cotizar, cpValido } from '#lib/tienda/envio.ts';
-import { precioDe } from '#lib/tienda/variantes.ts';
 import { proximamente } from '#lib/tienda/lanzamiento.ts';
+import { detalleLineas } from '#lib/tienda/lineas.ts';
 import type { Actions } from './$types';
 import { irAfuera } from '#lib/server/afuera.ts';
 import { cuitValido, limpiarCuit } from '#lib/panel/cuit.ts';
@@ -125,9 +125,6 @@ export const actions: Actions = {
 		// Los precios y el envío salen del servidor, nunca del navegador. Con opciones, la variante
 		// tiene que ser de ese producto, estar activa (las públicas lo están) y tener stock.
 		const porId = new Map(r.tienda.productos.map((x) => [x.id, x]));
-		let subtotal = 0;
-		// El precio de cada línea (con la oferta vigente, §52) para el pedido.
-		const precios: Record<string, number> = {};
 		for (const l of p.carrito) {
 			const x = porId.get(l.id);
 			if (!x)
@@ -135,8 +132,6 @@ export const actions: Actions = {
 			if (proximamente(x)) return fail(409, { error: `${x.nombre} todavía no salió a la venta.` });
 			if (!x.opciones.length) {
 				if (l.varianteId) return fail(400, { error: 'Revisá el carrito.' });
-				subtotal += x.precio * l.cantidad;
-				precios[x.id] = x.precio;
 				continue;
 			}
 			const variante = x.variantes.find((y) => y.id === l.varianteId);
@@ -146,9 +141,12 @@ export const actions: Actions = {
 				});
 			if (variante.stock < l.cantidad)
 				return fail(409, { error: 'Algún producto se quedó sin stock. Revisá el carrito.' });
-			subtotal += precioDe(variante, x.precio) * l.cantidad;
-			precios[`${x.id}:${variante.id}`] = precioDe(variante, x.precio);
 		}
+		// Los precios de cada línea (el de la variante y, con el carrito al mínimo mayorista, el
+		// mayorista: §49), con la misma regla que Go.
+		const detalle = detalleLineas(p.carrito, r.tienda.productos, r.tienda.mayorista ?? null);
+		const subtotal = detalle.reduce((s, l) => s + l.subtotal, 0);
+		const mayorista = detalle.some((l) => l.alPorMayor);
 		const opcion = cotizar(p.envio === 'retiro' ? '0000' : p.cp, subtotal, r.tienda).find(
 			(o) => o.id === p.envio
 		);
@@ -197,7 +195,10 @@ export const actions: Actions = {
 				descuentoCupon: descCupon,
 				total,
 				entrega: p.envio === 'retiro' ? null : { direccion: p.direccion, cp: p.cp },
-				precios
+				precios: Object.fromEntries(
+					detalle.map((l) => [l.varianteId ? `${l.id}:${l.varianteId}` : l.id, l.producto.precio])
+				),
+				mayorista
 			}
 		);
 		if (res === 'sin-stock')

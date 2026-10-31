@@ -1,4 +1,5 @@
 import type { components } from '@mostrador/contrato/esquema';
+import type { MinimoMayorista } from './mayorista.ts';
 
 /** Los turnos de la tienda (servicios y profesionales activos, seña, horario); null si no toma. */
 export type TurnosTienda = components['schemas']['TurnosPublicos'];
@@ -21,6 +22,11 @@ export type ProductoPublico = {
 	descripcion: string;
 	categoria: string | null;
 	precio: number;
+	/**
+	 * Precio con el carrito al mínimo mayorista (§49, lib/tienda/mayorista.ts). null (o sin venir):
+	 * no tiene, o la tienda no vende por mayor.
+	 */
+	mayorista?: number | null;
 	/** Precio tachado (oferta). */
 	anterior: number | null;
 	/** URL de la foto (o id de Unsplash en la demo). */
@@ -52,6 +58,8 @@ export type VariantePublica = {
 	id: string;
 	valores: Record<string, string>;
 	precio: number | null;
+	/** null: el mayorista del producto. */
+	mayorista?: number | null;
 	stock: number;
 	foto: string | null;
 };
@@ -132,6 +140,11 @@ export type TiendaPublica = {
 	 * el consentimiento de quien compra; la vitrina nunca los tiene.
 	 */
 	medicion: { ga4: string | null; pixel: string | null };
+	/**
+	 * Venta mayorista (§49): el mínimo del carrito para pasar a los precios mayoristas; null (o sin
+	 * venir) si la tienda no vende por mayor.
+	 */
+	mayorista?: MinimoMayorista | null;
 };
 
 /** Lo que muestra la portada de los turnos: los libres de hoy y el próximo libre de cada uno. */
