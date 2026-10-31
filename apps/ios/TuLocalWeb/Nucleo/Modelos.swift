@@ -138,6 +138,8 @@ struct ResumenPanel: Codable {
     struct Prueba: Codable { var plan: String; var diasRestantes: Int; var diasTotales: Int }
     var insignias: Insignias
     var prueba: Prueba
+    /// Canales conectados (wa, ml, mp, ig, tg).
+    var canales: [String]?
 }
 
 // MARK: - Pedidos

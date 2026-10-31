@@ -86,6 +86,15 @@ struct Inicio: View {
 
     @ViewBuilder
     private func contenido(_ t: Tablero) -> some View {
+        if t.ultimosPedidos.isEmpty && t.masVendidos.isEmpty && (t.ventas?.actual ?? 0) == 0 && periodo == "hoy" {
+            SinVentas()
+        } else {
+            conVentas(t)
+        }
+    }
+
+    @ViewBuilder
+    private func conVentas(_ t: Tablero) -> some View {
         if t.montos, let v = t.ventas {
             tarjetaVentas(t, v)
         }
@@ -634,5 +643,86 @@ struct RayadoMeta: View {
                 x += 8 * 1.4142
             }
         }
+    }
+}
+
+/// 2d · Sin ventas todavía: Tincho saludando, «Tu tienda ya está online» y los pasos (el hecho
+/// tachado con check verde; el siguiente con «Cargar»).
+struct SinVentas: View {
+    @Environment(Estado.self) private var estado
+    @Environment(Navegacion.self) private var nav
+    @State private var conProductos: Bool?
+
+    var body: some View {
+        let mp = estado.resumen?.canales?.contains("mp") ?? false
+        let url = URL(string: "https://\(estado.tienda?.direccion ?? "tulocalweb.com.ar")")!
+        VStack(spacing: 8) {
+            Image(Tincho.saludo.imagen).resizable().scaledToFit().frame(width: 150, height: 150).accessibilityHidden(true)
+            Text("Tu tienda ya está online").estilo(.tituloHoja).foregroundStyle(C.texto).multilineTextAlignment(.center)
+            Text(Formato.sinViudas("Falta la primera venta. Con estos pasos, la tenés cerca."))
+                .estilo(.subhead).foregroundStyle(C.texto2).multilineTextAlignment(.center)
+            VStack(spacing: 0) {
+                paso(1, "Creaste la tienda", nil, hecho: true, boton: nil) {}
+                Separador(inset: 57)
+                paso(2, "Cargá tu primer producto", "Con una foto alcanza", hecho: conProductos == true,
+                     boton: conProductos == false ? "Cargar" : nil) { nav.crear = true }
+                Separador(inset: 57)
+                paso(3, "Conectá Mercado Pago", "Para cobrar con tarjeta y QR", hecho: mp,
+                     boton: conProductos == true && !mp ? "Conectar" : nil) {
+                    nav.web = URL(string: "https://tulocalweb.com.ar/panel/integraciones")
+                }
+                Separador(inset: 57)
+                ShareLink(item: url) {
+                    filaPaso(4, "Compartí el link", "Por WhatsApp o en tus redes", hecho: false, boton: nil)
+                }
+                .buttonStyle(.plain)
+            }
+            .tarjeta()
+            .padding(.top, 8)
+        }
+        .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 18)
+        .background(C.crema2, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color(hex: 0xB0441D, alfa: 0.14), lineWidth: 1))
+        .task {
+            if let l: PaginaProductos = try? await estado.api.get("/v1/panel/listas/productos", query: [URLQueryItem(name: "cuantos", value: "1")]) {
+                conProductos = l.total > 0
+            }
+        }
+    }
+
+    private func paso(_ n: Int, _ t: String, _ d: String?, hecho: Bool, boton: String?, _ accion: @escaping () -> Void) -> some View {
+        Button(action: accion) { filaPaso(n, t, d, hecho: hecho, boton: boton) }
+            .buttonStyle(.plain).disabled(hecho)
+    }
+
+    private func filaPaso(_ n: Int, _ t: String, _ d: String?, hecho: Bool, boton: String?) -> some View {
+        HStack(spacing: 13) {
+            ZStack {
+                if hecho {
+                    Circle().fill(C.ok)
+                    Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white)
+                } else {
+                    Circle().strokeBorder(Color.tema(0x3A1D12, 0xFBF7F2, alfa: 0.2), lineWidth: 2)
+                    Text("\(n)").font(Estilo(tamano: 13, peso: .bold, relativo: .footnote).font).foregroundStyle(C.texto2)
+                }
+            }
+            .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                if hecho {
+                    Text(t).estilo(.body16).strikethrough().foregroundStyle(C.texto2)
+                } else {
+                    Text(t).estilo(.fila).foregroundStyle(C.texto)
+                    if let d { Text(d).estilo(.footnote).foregroundStyle(C.texto2) }
+                }
+            }
+            Spacer(minLength: 0)
+            if let boton {
+                Text(boton).estilo(.label).foregroundStyle(.white)
+                    .padding(.horizontal, 14).frame(height: 34)
+                    .background(C.primario, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 }

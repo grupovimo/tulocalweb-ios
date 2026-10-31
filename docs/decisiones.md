@@ -1224,3 +1224,54 @@ avisos que el iPhone de §40.
   WhatsApp; el aviso es por mail).
 - **La demo**: todo se ve y se usa; la seña se da por pagada y la confirmación dice que en la demo no
   se cobra. No manda mails.
+
+## 53. La app de iPhone (apps/ios, sin migración)
+
+«El panel en el bolsillo» del handoff docs/handoff/app-ios, en SwiftUI nativo para iOS 17+.
+
+- **Proyecto**: XcodeGen (`apps/ios/project.yml`; el `.xcodeproj` no se versiona: `xcodegen generate`).
+  Bundle `ar.com.tulocalweb.app`, equipo M6935MSNQB, firma automática, entitlements de push
+  (`development` en Debug, `production` en Release) y Sign in with Apple. Sin dependencias: ni SDK de
+  Clerk ni paquetes de terceros.
+- **API**: va directo contra `api.tulocalweb.com.ar` con la sesión propia en `Authorization: Bearer`
+  (la misma que el BFF guarda en la cookie), guardada en el Keychain (sólo este aparato). Para probar
+  contra la local: `-TLWApi http://127.0.0.1:4000` al lanzar (Debug) o `Config/Local.xcconfig`. Un
+  401 `sin_sesion` vuelve al ingreso.
+- **Ingreso**: email y contraseña con `POST /v1/auth/ingresar` (`recordarme`: sesión de un año, como
+  «Recordarme» en la web). Apple (hoja nativa, `oauth_token_apple`) y Google (ASWebAuthenticationSession
+  con vuelta a `ar.com.tulocalweb.app://callback`) van por la Frontend API de Clerk en modo nativo, igual
+  que la web y Caigo, y el JWT se canjea en `POST /v1/auth/clerk`. La clave publicable no se configura
+  en la app: la da `GET /v1/auth/proveedores` (`clerkPublicable`), así la app habla siempre con la misma
+  instancia que verifica Go. Sin Clerk prendido, los botones no se muestran.
+- **Intentos**: el 401 de la contraseña trae `restantes` (de 5 por email cada 15 minutos) para decir
+  «Te quedan 2 intentos antes del bloqueo» (1b); el 429 muestra 1c con la cuenta regresiva del
+  `Retry-After`. Se dice exista o no la cuenta, y el texto nombra «el email o la contraseña» (el
+  handoff decía «la contraseña no coincide», que delataría qué emails tienen cuenta).
+- **Push**: con el permiso (pre-prompt 1e) la app pide el token de APNs y lo registra en
+  `POST /v1/panel/dispositivos` (`sandbox` en Debug, `produccion` en Release); al salir,
+  `DELETE /v1/panel/dispositivos` y `POST /v1/auth/salir`. Tocar el aviso abre la `ruta` del payload
+  (`pedido/<n>`); la categoría `venta` trae «Ver pedido» y «Marcar como preparado» (pide desbloquear).
+  La insignia del ícono es la de pedidos por preparar.
+- **UI**: tokens de color claro/oscuro, tipografía (Instrument Sans 400–700 en el bundle, instancias
+  estáticas de la variable de Google Fonts, OFL), radios y alturas del README del handoff. Barra de
+  pestañas propia (la del sistema no permite el avatar de Tincho ni la insignia del handoff), encabezados
+  grandes propios en las raíces (llevan el botón redondo al lado) y la barra nativa en los detalles
+  (back con el nombre del padre). Montos con espacio fino sin corte (U+202F) y `Formato.sinViudas`
+  para que no quede una palabra sola en el último renglón. Margen 16 en SE (375 pt), 20 en el estándar,
+  24 en Pro Max; en SE el Inicio esconde el gráfico (11i).
+- **Sin conexión**: la última respuesta de cada lista (Inicio, Pedidos, Productos) queda en Caches y se
+  muestra con el banner «Sin conexión. Ves lo guardado hoy, 14:20.» (5a). Las escrituras no se encolan:
+  fallan con el toast.
+- **Pedidos**: cambio de estado optimista (swipe o barra de acción) con «Deshacer» que vuelve al
+  anterior; el circuito y los textos dependen del envío (retiro: «Listo para retirar» / «Retirado»).
+  Cancelar pide Face ID o el código. La API todavía no guarda el motivo de la cancelación ni avisa por
+  mail a quien compró: la hoja 3c va sin esas dos piezas hasta que existan.
+- **Venta en el local** (4a–4e): escáner con AVFoundation (busca el SKU exacto), ticket con stepper,
+  efectivo con vuelto, transferencia con el alias y el CVU de Configuración, QR de Mercado Pago con
+  `POST /v1/panel/pedidos/{n}/qr` y consulta cada 3 s hasta acreditarse (si no hay Mercado Pago
+  conectado, el pedido se cancela en el momento). La venta es `POST /v1/panel/pedidos` (canal `pos`,
+  retiro). El link de pago abre el panel web.
+- **Lo que vive en la web**: lo que la app todavía no tiene (alta y edición de productos, finanzas,
+  ARCA, cupones, integraciones, usuarios) se abre en SFSafariViewController.
+- **Tincho**: el chat con IA está en el Worker de la web; la pestaña lo dice y lo abre allá hasta que
+  la API lo sirva.
