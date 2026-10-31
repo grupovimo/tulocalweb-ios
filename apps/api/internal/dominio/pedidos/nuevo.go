@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -79,6 +80,11 @@ type PedidoNuevo struct {
 	DescuentoCupon int64  `json:"-"`
 	// Factura A pedida en el checkout (validada por la vidriera): la cola de ARCA la emite a ese CUIT.
 	Factura *Factura `json:"-"`
+	// Seña (reserva de un lanzamiento o encargo, §52): lo que se cobra ahora por Mercado Pago y hasta
+	// cuándo se espera el pago (después se cancela y el stock vuelve). La calcula la vidriera.
+	Sena      int64      `json:"-"`
+	SenaTipo  string     `json:"-"`
+	SenaVence *time.Time `json:"-"`
 }
 
 // ErrCupon: el cupón se agotó o se pausó entre que se validó y se usó.
@@ -202,13 +208,14 @@ func CrearDesdeProductos(ctx context.Context, pool tx, tiendaID string, n Pedido
 		}
 		if err := t.QueryRow(ctx, `
 			INSERT INTO pedidos (tienda_id, numero, comprador, canal, pago, estado_pago, envio, estado, facturado,
-				items, subtotal, costo_envio, total, nota, estados_en, ciudad_envio, codigo_publico, cupon, entrega, descuentos)
+				items, subtotal, costo_envio, total, nota, estados_en, ciudad_envio, codigo_publico, cupon, entrega, descuentos,
+				sena, sena_tipo, sena_vence)
 			SELECT $1, coalesce(max(numero), 1000) + 1, $2, $3, $4, $5, $6, $7, false, $8, $9, $11::bigint, $9::bigint + $11::bigint - $12::bigint, $10,
-				jsonb_build_object($7::text, now()), $13, $14, $15, $16, $17
+				jsonb_build_object($7::text, now()), $13, $14, $15, $16, $17, nullif($18::bigint, 0), nullif($19::text, ''), $20
 			FROM pedidos WHERE tienda_id = $1
 			RETURNING numero`,
 			tiendaID, comprador, n.Canal, n.Pago, estadoPago, n.Envio, estado, js, total, n.Nota,
-			n.CostoEnvio, n.Descuento, n.CiudadEnvio, codigo, cupon, n.Entrega, desc).Scan(&numero); err != nil {
+			n.CostoEnvio, n.Descuento, n.CiudadEnvio, codigo, cupon, n.Entrega, desc, n.Sena, n.SenaTipo, n.SenaVence).Scan(&numero); err != nil {
 			return err
 		}
 		// Lo que carga alguien del equipo (el panel o una IA): la compra en la tienda online no tiene autor.

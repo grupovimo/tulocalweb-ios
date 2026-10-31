@@ -32,6 +32,8 @@ var (
 	ErrNoExiste = errors.New("vidriera: no existe")
 	ErrInvalido = errors.New("vidriera: pedido inválido")
 	ErrSinStock = errors.New("vidriera: sin stock")
+	// ErrProximamente: un producto del carrito todavía no salió a la venta (§52).
+	ErrProximamente = errors.New("vidriera: todavía no salió")
 )
 
 type tx interface {
@@ -60,6 +62,15 @@ type ProductoPublico struct {
 	Fotos     []string          `json:"fotos"`
 	Opciones  []listas.Opcion   `json:"opciones"`
 	Variantes []VariantePublica `json:"variantes"`
+	// Lanzamiento (§52): la fecha y hora en que sale a la venta, sólo mientras no llegó (antes se ve
+	// «Próximamente» y no se compra). Reserva: el % de seña para reservarlo antes, si la tienda lo
+	// ofrece y cobra con Mercado Pago. Encargo: el % de seña para encargarlo ya lanzado (el resto
+	// al retirar o recibir). OfertaHasta: cuándo termina la oferta (Precio es el de oferta y
+	// Anterior el de lista); null si no tiene fin o no hay oferta.
+	Lanzamiento *time.Time `json:"lanzamiento"`
+	Reserva     *int       `json:"reserva"`
+	Encargo     *int       `json:"encargo"`
+	OfertaHasta *time.Time `json:"ofertaHasta"`
 }
 
 // VariantePublica: sólo las activas, sin SKU. Precio nil = el del producto.
@@ -287,14 +298,18 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		if err := vs.Err(); err != nil {
 			return err
 		}
-		filas, err := t.Query(ctx, `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones FROM productos
+		filas, err := t.Query(ctx, `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
+				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta FROM productos
 			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true) ORDER BY creado_en DESC LIMIT 500`, id)
 		if err != nil {
 			return err
 		}
+		ahora := time.Now()
 		for filas.Next() {
 			var p ProductoPublico
-			if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones); err != nil {
+			var l lanzamiento
+			if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
+				&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta); err != nil {
 				return err
 			}
 			p.Variantes = []VariantePublica{}
@@ -309,6 +324,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 				u := "Últimos"
 				p.Etiqueta = &u
 			}
+			l.aplicar(&p, mp, ahora)
 			out.Productos = append(out.Productos, p)
 		}
 		if err := filas.Err(); err != nil {
@@ -508,9 +524,14 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 		if !ok {
 			return Resultado{}, ErrInvalido
 		}
+		if p.Lanzamiento != nil {
+			return Resultado{}, ErrProximamente
+		}
 		subtotal += precio * int64(l.Cantidad)
 		unidades += l.Cantidad
 		n.Items = append(n.Items, pedidos.Linea{ProductoID: l.ID, VarianteID: l.VarianteID, Cantidad: l.Cantidad})
+		// El precio de cada línea lo fija la vidriera (con la oferta vigente, §52), no el de lista.
+		n.Precios = fijarPrecio(n.Precios, l.ID, l.VarianteID, precio)
 	}
 	var costoEnvio int64
 	var entrega *pedidos.Entrega
@@ -694,6 +715,17 @@ type Confirmacion struct {
 	Alias       *string `json:"alias"`
 	CBU         *string `json:"cbu"`
 	Titular     *string `json:"titular"`
+	// Sena: el pedido se reservó o encargó con seña (§52); null si se paga entero.
+	Sena *SenaPublica `json:"sena"`
+}
+
+// SenaPublica es la seña de un pedido como la ve quien compró.
+type SenaPublica struct {
+	Tipo    string `json:"tipo"`
+	Monto   int64  `json:"monto"`
+	Falta   int64  `json:"falta"`
+	Pagada  bool   `json:"pagada"`
+	Saldado bool   `json:"saldado"`
 }
 
 // VerPedido por su código público.
@@ -704,11 +736,26 @@ func VerPedido(ctx context.Context, pool tx, slug, codigo string) (Confirmacion,
 	}
 	var c Confirmacion
 	err = pool.EnTienda(ctx, id, func(t pgx.Tx) error {
-		return t.QueryRow(ctx, `SELECT p.numero, p.total, CASE WHEN p.pago = 'mp' THEN 'mercadopago' ELSE 'transferencia' END,
+		var sena *int64
+		var tipo *string
+		var s SenaPublica
+		if err := t.QueryRow(ctx, `SELECT p.numero, p.total, CASE WHEN p.pago = 'mp' THEN 'mercadopago' ELSE 'transferencia' END,
 				split_part(p.comprador->>'nombre', ' ', 1), p.estado_pago, p.estado, p.envio, p.seguimiento,
-				nullif(t.negocio->>'alias', ''), nullif(t.negocio->>'cbu', ''), nullif(t.negocio->>'titular', '')
+				nullif(t.negocio->>'alias', ''), nullif(t.negocio->>'cbu', ''), nullif(t.negocio->>'titular', ''),
+				p.sena, p.sena_tipo, p.sena_pagada_en IS NOT NULL, p.saldado_en IS NOT NULL
 			FROM pedidos p JOIN tiendas t ON t.id = p.tienda_id WHERE p.codigo_publico = $1`, codigo).
-			Scan(&c.Numero, &c.Total, &c.Pago, &c.Nombre, &c.EstadoPago, &c.Estado, &c.Envio, &c.Seguimiento, &c.Alias, &c.CBU, &c.Titular)
+			Scan(&c.Numero, &c.Total, &c.Pago, &c.Nombre, &c.EstadoPago, &c.Estado, &c.Envio, &c.Seguimiento, &c.Alias, &c.CBU, &c.Titular,
+				&sena, &tipo, &s.Pagada, &s.Saldado); err != nil {
+			return err
+		}
+		if sena != nil && tipo != nil {
+			s.Tipo, s.Monto, s.Falta = *tipo, *sena, max(0, c.Total-*sena)
+			if s.Saldado {
+				s.Falta = 0
+			}
+			c.Sena = &s
+		}
+		return nil
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return c, ErrNoExiste

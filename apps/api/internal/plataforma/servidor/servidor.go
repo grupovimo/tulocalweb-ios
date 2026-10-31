@@ -23,6 +23,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/hoy"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ia"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/importacion"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/lanzamientos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/links"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
@@ -221,6 +222,8 @@ func Nuevo(d Dependencias) http.Handler {
 			d.CorreoArgentino.Rutas(mux, d.App, ip)
 		}
 		vidriera.Rutas(mux, d.App, pagador, d.Sitio, dev, ip, correo)
+		// Lanzamientos, ofertas con fin y señas (§52): el editor, «saldado» y «Avisame cuando salga».
+		lanzamientos.Rutas(mux, d.App, tienda, ip)
 		// Las visitas de las tiendas las manda la web por lotes, con su clave.
 		visitas.Rutas(mux, d.App, d.ClaveBFF, d.Log)
 		if d.Arrepentimiento != nil {

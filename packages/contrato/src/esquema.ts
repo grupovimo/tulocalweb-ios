@@ -688,6 +688,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/pedidos/{numero}/saldado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Con la seña pagada (§52): la tienda cobró el resto al entregarlo. El pago queda «Cobrado». */
+        post: operations["saldarPedido"];
+        /** Deshace «saldado»: el resto vuelve a quedar pendiente y el pago en «Seña». */
+        delete: operations["desaldarPedido"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panel/pedidos/{numero}/recordatorio": {
         parameters: {
             query?: never;
@@ -764,6 +782,24 @@ export interface paths {
         };
         get: operations["obtenerProducto"];
         put: operations["guardarProducto"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/productos/{id}/lanzamiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lanzamiento, reserva y encargo con seña y oferta con fin del producto (§52), con cuántos pidieron aviso y cuántos reservaron. */
+        get: operations["lanzamientoProducto"];
+        /** Reemplaza la configuración (null saca cada cosa). Una fecha nueva tiene que ser futura; el precio de oferta, menor que el del producto. Pide Catálogo. */
+        put: operations["guardarLanzamientoProducto"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1179,6 +1215,40 @@ export interface paths {
         put?: never;
         /** Arma el pedido de la tienda online. Precios y envío los calcula la API; con Mercado Pago devuelve el checkout. */
         post: operations["comprarEnTienda"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/senas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reserva un lanzamiento o encarga un producto pagando una seña con Mercado Pago (§52). Precio y seña los calcula la API; el stock se descuenta y vuelve si la seña no se paga en 30 min. Tope de 10 por hora por IP. */
+        post: operations["senarEnTienda"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/productos/{id}/aviso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Avisame cuando salga»: anota el email (repetido no suma) y el worker escribe a la hora del lanzamiento. Tope de 10 por hora por IP y de 20.000 por producto. */
+        post: operations["avisoLanzamiento"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4175,6 +4245,44 @@ export interface components {
             /** @description Envío gratis desde este monto (promoción automática prendida en Cupones) */
             gratisDesde: number | null;
         };
+        /** @description El pedido se reservó o encargó con seña (§52); null si se paga entero. falta = total − seña (0 si ya se saldó). */
+        SenaPedido: {
+            /** @enum {string} */
+            tipo: "reserva" | "encargo";
+            monto: number;
+            falta: number;
+            pagada: boolean;
+            saldado: boolean;
+            /**
+             * Format: date-time
+             * @description Hasta cuándo se espera el pago de la seña
+             */
+            vence?: string | null;
+        } | null;
+        LanzamientoEditable: {
+            /**
+             * Format: date-time
+             * @description Cuándo sale a la venta (hora de Argentina en el panel)
+             */
+            lanzamiento: string | null;
+            /** @description % de seña para reservar antes del lanzamiento */
+            reserva: number | null;
+            /** @description % de seña para encargarlo (el resto al retirar) */
+            encargo: number | null;
+            /** @description Precio de oferta (el de lista sigue en el producto) */
+            ofertaPrecio: number | null;
+            /** Format: date-time */
+            ofertaHasta: string | null;
+        };
+        LanzamientoProducto: components["schemas"]["LanzamientoEditable"] & {
+            /** @description Cuántos pidieron «Avisame cuando salga» */
+            avisos: number;
+            /** @description A cuántos ya les salió el mail */
+            avisados: number;
+            /** @description Pedidos con seña de reserva (sin los cancelados) */
+            reservas: number;
+            encargos: number;
+        };
         Medicion: {
             /** @description ID de medición de GA4 */
             ga4: string | null;
@@ -4684,6 +4792,7 @@ export interface components {
                 sucursal?: string;
                 sucursalNombre?: string;
             } | null;
+            sena?: components["schemas"]["SenaPedido"];
             historial: {
                 texto: string;
                 /** Format: date-time */
@@ -6548,6 +6657,49 @@ export interface operations {
             409: components["responses"]["Problema"];
         };
     };
+    saldarPedido: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saldado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+        };
+    };
+    desaldarPedido: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pendiente otra vez */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: components["responses"]["Problema"];
+        };
+    };
     recordarPago: {
         parameters: {
             query?: never;
@@ -6719,6 +6871,57 @@ export interface operations {
             };
             400: components["responses"]["Problema"];
             401: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+        };
+    };
+    lanzamientoProducto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lanzamiento */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanzamientoProducto"];
+                };
+            };
+            404: components["responses"]["Problema"];
+        };
+    };
+    guardarLanzamientoProducto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LanzamientoEditable"];
+            };
+        };
+        responses: {
+            /** @description Guardado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanzamientoProducto"];
+                };
+            };
+            400: components["responses"]["Problema"];
             404: components["responses"]["Problema"];
         };
     };
@@ -7609,6 +7812,79 @@ export interface operations {
             409: components["responses"]["Problema"];
         };
     };
+    senarEnTienda: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    productoId: string;
+                    varianteId?: string;
+                    cantidad?: number;
+                    nombre: string;
+                    email: string;
+                    telefono?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pedido con la seña por pagar */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        numero: number;
+                        codigo: string;
+                        total: number;
+                        sena: number;
+                        url: string;
+                    };
+                };
+            };
+            400: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
+    avisoLanzamiento: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Anotado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
     dejarResena: {
         parameters: {
             query?: never;
@@ -7777,6 +8053,7 @@ export interface operations {
                         alias: string | null;
                         cbu: string | null;
                         titular: string | null;
+                        sena?: components["schemas"]["SenaPedido"];
                     };
                 };
             };

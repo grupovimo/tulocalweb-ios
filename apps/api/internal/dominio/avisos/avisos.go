@@ -58,6 +58,8 @@ type pedido struct {
 	responderA string
 	horario    string
 	descuentos []pedidos.Descuento
+	// sena: lo que se pagó de seña (§52); 0 si se paga entero.
+	sena int64
 }
 
 func pesos(n int64) string {
@@ -88,13 +90,13 @@ func (s *Servicio) manejar(ctx context.Context, ev outbox.Evento) error {
 	err := s.Pool.EnTienda(ctx, ev.TiendaID, func(t pgx.Tx) error {
 		var items, comprador, negocio []byte
 		err := t.QueryRow(ctx, `SELECT p.numero, p.comprador, p.pago, p.envio, p.estado_pago, p.codigo_publico, p.seguimiento,
-				p.items, p.subtotal, p.costo_envio, p.total, p.avisos ? $2, t.nombre, t.slug, t.negocio, p.descuentos,
+				p.items, p.subtotal, p.costo_envio, p.total, p.avisos ? $2, t.nombre, t.slug, t.negocio, p.descuentos, coalesce(p.sena, 0),
 				coalesce(nullif(t.negocio->>'email', ''), (SELECT u.email::text FROM auth.membresias m
 					JOIN auth.usuarios u ON u.id = m.usuario_id WHERE m.tienda_id = t.id AND m.rol = 'duenio'
 					ORDER BY m.creada_en LIMIT 1), '')
 			FROM pedidos p JOIN tiendas t ON t.id = p.tienda_id WHERE p.numero = $1`, d.Numero, d.Aviso).
 			Scan(&p.numero, &comprador, &p.pago, &p.envio, &p.estadoPago, &p.codigo, &p.seguimiento, &items,
-				&p.subtotal, &p.envioCosto, &p.total, &ya, &p.tienda, &p.slug, &negocio, &p.descuentos, &p.responderA)
+				&p.subtotal, &p.envioCosto, &p.total, &ya, &p.tienda, &p.slug, &negocio, &p.descuentos, &p.sena, &p.responderA)
 		if err != nil {
 			return err
 		}
@@ -167,13 +169,26 @@ func (s *Servicio) mail(p pedido, aviso string) (correo.Mensaje, bool) {
 			if p.responderA != "" {
 				parrafos = append(parrafos, "Mandanos el comprobante respondiendo este mail.")
 			}
+		} else if p.sena > 0 && p.estadoPago == "Pendiente" {
+			parrafos = append(parrafos, fmt.Sprintf("Para confirmarlo, pagá la seña de %s con Mercado Pago. El resto (%s) lo pagás al retirarlo.",
+				pesos(p.sena), pesos(p.total-p.sena)))
 		} else if p.estadoPago == "Pendiente" {
 			parrafos = append(parrafos, "Cuando se acredite el pago te avisamos y empezamos a prepararlo.")
 		}
 	case "pago":
 		asunto = fmt.Sprintf("Recibimos tu pago · pedido #%d", p.numero)
 		titulo = "Recibimos tu pago"
-		parrafos = append(parrafos, fmt.Sprintf("Hola, %s. Se acreditó el pago de tu pedido #%d: ya lo estamos preparando.", p.nombre, p.numero))
+		if p.sena > 0 {
+			// Con seña, «pagado» es cuando la tienda cobró el resto al entregarlo (§52).
+			parrafos = append(parrafos, fmt.Sprintf("Hola, %s. Quedó pago todo tu pedido #%d. ¡Gracias por tu compra!", p.nombre, p.numero))
+		} else {
+			parrafos = append(parrafos, fmt.Sprintf("Hola, %s. Se acreditó el pago de tu pedido #%d: ya lo estamos preparando.", p.nombre, p.numero))
+		}
+	case "sena":
+		asunto = fmt.Sprintf("Recibimos tu seña · pedido #%d", p.numero)
+		titulo = "Recibimos tu seña"
+		parrafos = append(parrafos, fmt.Sprintf("Hola, %s. Se acreditó la seña de %s de tu pedido #%d: ya está reservado.", p.nombre, pesos(p.sena), p.numero),
+			fmt.Sprintf("Te falta pagar %s cuando lo retires. Te avisamos cuando esté listo.", pesos(p.total-p.sena)))
 	case "en_camino":
 		asunto = fmt.Sprintf("Tu pedido #%d está en camino", p.numero)
 		titulo = "Tu pedido está en camino"

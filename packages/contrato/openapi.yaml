@@ -640,6 +640,24 @@ paths:
         '401': { $ref: '#/components/responses/Problema' }
         '404': { $ref: '#/components/responses/Problema' }
         '409': { $ref: '#/components/responses/Problema' }
+  /v1/panel/pedidos/{numero}/saldado:
+    post:
+      operationId: saldarPedido
+      summary: 'Con la seña pagada (§52): la tienda cobró el resto al entregarlo. El pago queda «Cobrado».'
+      parameters:
+        - { name: numero, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: Saldado }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+    delete:
+      operationId: desaldarPedido
+      summary: 'Deshace «saldado»: el resto vuelve a quedar pendiente y el pago en «Seña».'
+      parameters:
+        - { name: numero, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: Pendiente otra vez }
+        '409': { $ref: '#/components/responses/Problema' }
   /v1/panel/pedidos/{numero}/recordatorio:
     post:
       operationId: recordarPago
@@ -749,6 +767,37 @@ paths:
               schema: { $ref: '#/components/schemas/Producto' }
         '400': { $ref: '#/components/responses/Problema' }
         '401': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+  /v1/panel/productos/{id}/lanzamiento:
+    get:
+      operationId: lanzamientoProducto
+      summary: 'Lanzamiento, reserva y encargo con seña y oferta con fin del producto (§52), con cuántos pidieron aviso y cuántos reservaron.'
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Lanzamiento
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LanzamientoProducto' }
+        '404': { $ref: '#/components/responses/Problema' }
+    put:
+      operationId: guardarLanzamientoProducto
+      summary: 'Reemplaza la configuración (null saca cada cosa). Una fecha nueva tiene que ser futura; el precio de oferta, menor que el del producto. Pide Catálogo.'
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LanzamientoEditable' }
+      responses:
+        '200':
+          description: Guardado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LanzamientoProducto' }
+        '400': { $ref: '#/components/responses/Problema' }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/panel/inventario/movimientos:
     get:
@@ -1242,6 +1291,55 @@ paths:
               schema: { type: object, required: [numero, codigo, total], properties: { numero: { type: integer }, codigo: { type: string }, total: { type: integer }, url: { type: string } } }
         '400': { $ref: '#/components/responses/Problema' }
         '409': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/senas:
+    post:
+      operationId: senarEnTienda
+      summary: 'Reserva un lanzamiento o encarga un producto pagando una seña con Mercado Pago (§52). Precio y seña los calcula la API; el stock se descuenta y vuelve si la seña no se paga en 30 min. Tope de 10 por hora por IP.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productoId, nombre, email]
+              properties:
+                productoId: { type: string }
+                varianteId: { type: string }
+                cantidad: { type: integer, minimum: 1, maximum: 10 }
+                nombre: { type: string, minLength: 2, maxLength: 80 }
+                email: { type: string, maxLength: 200 }
+                telefono: { type: string, maxLength: 30 }
+      responses:
+        '201':
+          description: Pedido con la seña por pagar
+          content:
+            application/json:
+              schema: { type: object, required: [numero, codigo, total, sena, url], properties: { numero: { type: integer }, codigo: { type: string }, total: { type: integer }, sena: { type: integer }, url: { type: string } } }
+        '400': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/productos/{id}/aviso:
+    post:
+      operationId: avisoLanzamiento
+      summary: '«Avisame cuando salga»: anota el email (repetido no suma) y el worker escribe a la hora del lanzamiento. Tope de 10 por hora por IP y de 20.000 por producto.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [email], properties: { email: { type: string, maxLength: 200 } } }
+      responses:
+        '204': { description: Anotado }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/resenas:
     post:
       operationId: dejarResena
@@ -1338,7 +1436,7 @@ paths:
         - { name: slug, in: path, required: true, schema: { type: string } }
         - { name: codigo, in: path, required: true, schema: { type: string } }
       responses:
-        '200': { description: Pedido y su seguimiento, content: { application/json: { schema: { type: object, required: [numero, total, pago, nombre, estadoPago, estado, envio, seguimiento, alias, cbu, titular], properties: { numero: { type: integer }, total: { type: integer }, pago: { type: string }, nombre: { type: string }, estadoPago: { type: string }, estado: { $ref: '#/components/schemas/EstadoPedido' }, envio: { type: string, enum: [retiro, andreani, oca, correo, moto, mercadoenvios] }, seguimiento: { type: [string, 'null'] }, alias: { type: [string, 'null'] }, cbu: { type: [string, 'null'] }, titular: { type: [string, 'null'] } } } } } }
+        '200': { description: Pedido y su seguimiento, content: { application/json: { schema: { type: object, required: [numero, total, pago, nombre, estadoPago, estado, envio, seguimiento, alias, cbu, titular], properties: { numero: { type: integer }, total: { type: integer }, pago: { type: string }, nombre: { type: string }, estadoPago: { type: string }, estado: { $ref: '#/components/schemas/EstadoPedido' }, envio: { type: string, enum: [retiro, andreani, oca, correo, moto, mercadoenvios] }, seguimiento: { type: [string, 'null'] }, alias: { type: [string, 'null'] }, cbu: { type: [string, 'null'] }, titular: { type: [string, 'null'] }, sena: { $ref: '#/components/schemas/SenaPedido' } } } } } }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/panel/integraciones/mercadolibre:
     get:
@@ -4352,6 +4450,36 @@ components:
           properties:
             correo: { type: boolean, description: 'La cuenta de MiCorreo está conectada (se configura en Integraciones)' }
             gratisDesde: { type: [integer, 'null'], description: 'Envío gratis desde este monto (promoción automática prendida en Cupones)' }
+    SenaPedido:
+      type: [object, 'null']
+      description: 'El pedido se reservó o encargó con seña (§52); null si se paga entero. falta = total − seña (0 si ya se saldó).'
+      required: [tipo, monto, falta, pagada, saldado]
+      properties:
+        tipo: { type: string, enum: [reserva, encargo] }
+        monto: { type: integer }
+        falta: { type: integer }
+        pagada: { type: boolean }
+        saldado: { type: boolean }
+        vence: { type: [string, 'null'], format: date-time, description: 'Hasta cuándo se espera el pago de la seña' }
+    LanzamientoEditable:
+      type: object
+      required: [lanzamiento, reserva, encargo, ofertaPrecio, ofertaHasta]
+      properties:
+        lanzamiento: { type: [string, 'null'], format: date-time, description: 'Cuándo sale a la venta (hora de Argentina en el panel)' }
+        reserva: { type: [integer, 'null'], minimum: 1, maximum: 100, description: '% de seña para reservar antes del lanzamiento' }
+        encargo: { type: [integer, 'null'], minimum: 1, maximum: 100, description: '% de seña para encargarlo (el resto al retirar)' }
+        ofertaPrecio: { type: [integer, 'null'], description: 'Precio de oferta (el de lista sigue en el producto)' }
+        ofertaHasta: { type: [string, 'null'], format: date-time }
+    LanzamientoProducto:
+      allOf:
+        - { $ref: '#/components/schemas/LanzamientoEditable' }
+        - type: object
+          required: [avisos, avisados, reservas, encargos]
+          properties:
+            avisos: { type: integer, description: 'Cuántos pidieron «Avisame cuando salga»' }
+            avisados: { type: integer, description: 'A cuántos ya les salió el mail' }
+            reservas: { type: integer, description: 'Pedidos con seña de reserva (sin los cancelados)' }
+            encargos: { type: integer }
     Medicion:
       type: object
       required: [ga4, pixel, feeds]
@@ -4925,6 +5053,7 @@ components:
                 localidad: { type: string }
                 sucursal: { type: string }
                 sucursalNombre: { type: string }
+            sena: { $ref: '#/components/schemas/SenaPedido' }
             historial:
               type: array
               items:

@@ -15,6 +15,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/facturacion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ia"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/importacion"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/lanzamientos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/notificaciones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
@@ -120,14 +121,36 @@ func correr() error {
 		conv.Cifra = c
 	}
 	ps := push.Nuevo(app, cliAPNs, slog.Default()).ConWeb(cliWeb)
+	// Lanzamientos (§52): «Ya salió» a quienes pidieron aviso, de a tandas.
+	lz := &lanzamientos.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	for _, ms := range []map[string]outbox.Manejador{mp.Manejadores(), ml.Manejadores(), av.Manejadores(), mc.Manejadores(), tg.Manejadores(), equipo.Manejadores(mails), imp.Manejadores(),
-		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores()} {
+		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores(), lz.Manejadores()} {
 		for tipo, m := range ms {
 			w.Manejadores[tipo] = m
 		}
 	}
 	// La campanita del panel (§45): los mismos eventos dejan además una notificación por persona.
 	(&notificaciones.Generador{Pool: app}).Envolver(w.Manejadores)
+	// Lanzamientos y señas (§52), cada minuto: encola los avisos de los que llegaron a su hora y
+	// cancela los pedidos cuya seña no se pagó a tiempo (el stock vuelve). Sólo ids y UPDATE
+	// condicionados: dos workers no avisan dos veces.
+	go func() {
+		t := time.NewTicker(time.Minute)
+		defer t.Stop()
+		for {
+			if _, err := lanzamientos.PorLanzar(ctx, app); err != nil && ctx.Err() == nil {
+				slog.Error("lanzamientos: avisar", "error", err)
+			}
+			if _, err := lanzamientos.VencerSenas(ctx, app); err != nil && ctx.Err() == nil {
+				slog.Error("lanzamientos: vencer señas", "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
 	// Limpieza de las IA conectadas: códigos vencidos y clientes que nadie usa hace 30 días.
 	go func() {
 		iaS := &ia.Servicio{Pool: app}

@@ -45,6 +45,8 @@ var Rutas = map[string]Permiso{
 	"POST /v1/panel/pedidos/{numero}/correo":               Pedidos,
 	"PUT /v1/panel/pedidos/{numero}/correo/seguimiento":    Pedidos,
 	"POST /v1/panel/pedidos/{numero}/estado":               Pedidos,
+	"POST /v1/panel/pedidos/{numero}/saldado":              Pedidos,
+	"DELETE /v1/panel/pedidos/{numero}/saldado":            Pedidos,
 	"POST /v1/panel/pedidos/{numero}/qr":                   Pedidos,
 	"POST /v1/panel/pedidos/{numero}/recordatorio":         Pedidos,
 	"GET /v1/panel/cobros/qr/{referencia}":                 Pedidos,
@@ -62,6 +64,7 @@ var Rutas = map[string]Permiso{
 	"POST /v1/panel/listas/envios/acciones":                Pedidos,
 	"GET /v1/panel/inventario/movimientos":                 Pedidos,
 	"GET /v1/panel/productos/{id}":                         Pedidos, // sin costo para quien no tiene Catalogo
+	"GET /v1/panel/productos/{id}/lanzamiento":             Pedidos,
 	"GET /v1/panel/configuracion/entregas":                 Pedidos,
 	"GET /v1/panel/tarjeta":                                Pedidos,
 	"GET /v1/panel/listas/clientes":                        Clientes,
@@ -84,6 +87,7 @@ var Rutas = map[string]Permiso{
 	"POST /v1/panel/listas/productos/acciones":      Productos, // «precio» pide Catalogo (listas.Rutas)
 	"POST /v1/panel/listas/inventario/acciones":     Productos,
 	"POST /v1/panel/productos":                      Catalogo,
+	"PUT /v1/panel/productos/{id}/lanzamiento":      Catalogo, // precio de oferta y señas
 	"DELETE /v1/panel/productos/{id}":               Catalogo,
 	"POST /v1/panel/productos/{id}/duplicar":        Catalogo,
 	"POST /v1/panel/productos/{id}/mercadolibre":    Catalogo,

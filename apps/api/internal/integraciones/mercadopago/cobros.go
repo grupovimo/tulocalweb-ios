@@ -168,6 +168,62 @@ func (s *Servicio) PagarPedido(ctx context.Context, tiendaID string, numero int,
 	return r.InitPoint, nil
 }
 
+// PagarSena crea la preferencia por la seña de un pedido reservado o encargado (§52), con el monto
+// sacado de la base, y devuelve el init_point. Vence con la espera del pedido: después se cancela
+// y el stock vuelve. Se concilia como un cobro de pedido (tipo 'pedido'), y aplicar ve que tiene seña.
+func (s *Servicio) PagarSena(ctx context.Context, tiendaID string, numero int, vuelta string) (string, error) {
+	var sena int64
+	var tienda string
+	var vence *time.Time
+	err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
+		return t.QueryRow(ctx, `SELECT p.sena, p.sena_vence, t.nombre FROM pedidos p JOIN tiendas t ON t.id = p.tienda_id
+			WHERE p.numero = $1 AND p.sena IS NOT NULL AND p.sena_pagada_en IS NULL AND p.estado = 'Sin pagar'`, numero).
+			Scan(&sena, &vence, &tienda)
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNoExiste
+	}
+	if err != nil {
+		return "", err
+	}
+	token, _, err := s.tokenDe(ctx, tiendaID)
+	if err != nil {
+		return "", err
+	}
+	ref := nuevaReferencia(tiendaID)
+	if err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
+		_, err := t.Exec(ctx, `INSERT INTO mp_cobros (referencia, tienda_id, tipo, objetivo, monto) VALUES ($1, $2, 'pedido', $3, $4)`,
+			ref, tiendaID, fmt.Sprint(numero), sena)
+		return err
+	}); err != nil {
+		return "", err
+	}
+	p := preferencia{
+		Items:             []item{{Title: recortar(fmt.Sprintf("Seña del pedido #%d de %s", numero, tienda), 250), Quantity: 1, UnitPrice: sena, CurrencyID: "ARS"}},
+		ExternalReference: ref,
+		BackURLs:          map[string]string{"success": vuelta + "?pago=ok", "pending": vuelta + "?pago=pendiente", "failure": vuelta + "?pago=error"},
+		StatementDesc:     recortar(tienda, 22),
+		// Una seña no se paga en cuotas.
+		PaymentMethods: map[string]any{"installments": 1},
+	}
+	if vence != nil {
+		p.Expires, p.ExpirationDateTo = true, vence.Format("2006-01-02T15:04:05.000-07:00")
+	}
+	if s.publico() {
+		p.AutoReturn = "approved"
+	}
+	var r struct {
+		InitPoint string `json:"init_point"`
+	}
+	if err := s.cliente().JSON(ctx, http.MethodPost, "/checkout/preferences", token, ref, p, &r); err != nil {
+		return "", err
+	}
+	if r.InitPoint == "" {
+		return "", errors.New("mercadopago: la preferencia no trajo init_point")
+	}
+	return r.InitPoint, nil
+}
+
 // PagarTurno crea la preferencia por la seña de un turno reservado (monto sacado de la base) y
 // devuelve el init_point. La preferencia vence con el turno: pasado venceEn el horario ya se liberó.
 // vuelta es la página del turno en la tienda.
@@ -317,6 +373,20 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 			}
 		case "pedido", "qr":
 			pedido = objetivo
+			// La seña de un pedido reservado o encargado (§52): no lo paga entero.
+			var conSena bool
+			if tipo == "pedido" {
+				if err := t.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pedidos WHERE numero = $1::int AND sena IS NOT NULL)`,
+					objetivo).Scan(&conSena); err != nil {
+					return err
+				}
+			}
+			if conSena {
+				pedido = ""
+				if err := aplicarSena(ctx, t, tiendaID, objetivo, aprobado, devuelto); err != nil {
+					return err
+				}
+			}
 		case "turno":
 			// Seña aprobada: el turno queda confirmado. Si alguien lo canceló mientras, o la reserva ya
 			// venció (el horario quedó libre y otra persona pudo tomarlo), sólo se marca pagada y queda
@@ -354,6 +424,36 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 		}
 		return nil
 	})
+}
+
+// aplicarSena: la seña aprobada deja el pedido «Para preparar» con el pago en «Seña» (falta el
+// resto) y avisa como una venta nueva y a quien compró. Si el pedido ya se canceló (la seña llegó
+// tarde y el stock volvió), sólo se anota pagada: la tienda la devuelve desde el pedido.
+func aplicarSena(ctx context.Context, t pgx.Tx, tiendaID, numero string, aprobado, devuelto bool) error {
+	switch {
+	case aprobado:
+		var estado string
+		err := t.QueryRow(ctx, `UPDATE pedidos SET sena_pagada_en = now(), sena_vence = NULL,
+				estado_pago = CASE WHEN estado = 'Cancelado' THEN estado_pago ELSE 'Seña' END,
+				estado = CASE WHEN estado = 'Sin pagar' THEN 'Para preparar' ELSE estado END,
+				estados_en = CASE WHEN estado = 'Sin pagar' THEN estados_en || jsonb_build_object('Para preparar', now()) ELSE estados_en END
+			WHERE numero = $1::int AND sena_pagada_en IS NULL RETURNING estado`, numero).Scan(&estado)
+		if errors.Is(err, pgx.ErrNoRows) || (err == nil && estado == "Cancelado") {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		n, _ := strconv.Atoi(numero)
+		if err := outbox.Publicar(ctx, t, tiendaID, "tienda.venta", map[string]any{"numero": n}); err != nil {
+			return err
+		}
+		return outbox.Publicar(ctx, t, tiendaID, "comprador.aviso", map[string]any{"numero": n, "aviso": "sena"})
+	case devuelto:
+		_, err := t.Exec(ctx, `UPDATE pedidos SET estado_pago = 'Devuelto' WHERE numero = $1::int`, numero)
+		return err
+	}
+	return nil
 }
 
 // Reembolsar devuelve el pago de un pedido (total si monto es 0). Idempotente por clave. Los cobros

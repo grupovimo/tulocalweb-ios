@@ -35,6 +35,12 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 			problema.Escribir(w, problema.Conflicto("sin_cotizacion", "No pudimos cotizar el envío con Correo Argentino. Probá de nuevo o elegí otra forma de entrega."))
 		case errors.Is(err, ErrSinStock):
 			problema.Escribir(w, problema.Conflicto("sin_stock", "Algún producto se quedó sin stock."))
+		case errors.Is(err, ErrProximamente):
+			problema.Escribir(w, problema.Conflicto("proximamente", "Ese producto todavía no salió a la venta."))
+		case errors.Is(err, ErrSinSena):
+			problema.Escribir(w, problema.Conflicto("sin_sena", "Este producto no se reserva ni se encarga con seña."))
+		case errors.Is(err, ErrMercadoPago):
+			problema.Escribir(w, problema.Conflicto("mercadopago", "Mercado Pago no respondió. Probá de nuevo en un rato."))
 		default:
 			problema.Escribir(w, problema.Interno())
 		}
@@ -258,6 +264,24 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+	})
+	// Reservar un lanzamiento o encargar un producto con seña (§52). Tope por IP, como los turnos.
+	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/senas", func(w http.ResponseWriter, r *http.Request) {
+		if !tope(w, r, "sena") {
+			return
+		}
+		var s PedidoSena
+		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&s) != nil {
+			error404(w, ErrInvalido)
+			return
+		}
+		senador, _ := mp.(Senador)
+		res, err := Senar(r.Context(), pool, senador, sitio, r.PathValue("slug"), s, time.Now())
+		if err != nil {
+			error404(w, err)
+			return
+		}
+		escribir(w, http.StatusCreated, res)
 	})
 	mux.HandleFunc("GET /v1/publico/tiendas/{slug}/pedidos/{codigo}", func(w http.ResponseWriter, r *http.Request) {
 		c, err := VerPedido(r.Context(), pool, r.PathValue("slug"), r.PathValue("codigo"))

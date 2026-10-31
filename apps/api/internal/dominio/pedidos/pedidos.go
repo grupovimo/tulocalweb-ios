@@ -350,6 +350,8 @@ type Detalle struct {
 	Nota        *string  `json:"nota"`
 	Entrega     *Entrega `json:"entrega"`
 	Historial   []Paso   `json:"historial"`
+	// Sena: el pedido se encargó o reservó con seña (§52); null si se pagó entero.
+	Sena *Sena `json:"sena"`
 }
 
 // Obtener devuelve el detalle de un pedido.
@@ -387,7 +389,8 @@ func Obtener(ctx context.Context, pool tx, tiendaID string, numero int) (Detalle
 			return err
 		}
 		d.Historial = historial(d.Fila, d.Canal, d.Pago, d.Envio, d.Factura != nil, estadosEn)
-		return nil
+		d.Sena, err = senaDe(ctx, t, tiendaID, numero, d.Total)
+		return err
 	})
 	return d, err
 }
