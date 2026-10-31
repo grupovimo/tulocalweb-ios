@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"net/smtp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,9 +23,29 @@ import (
 
 // Mensaje es un mail. HTML y Texto van los dos (los clientes que no muestran HTML usan el texto).
 // ResponderA (opcional): a dónde va la respuesta, p. ej. la tienda en los mails a quien le compró.
+// DeNombre (opcional) reemplaza el nombre del remitente (la dirección sigue siendo la de la
+// plataforma): el newsletter sale con el nombre de la tienda. Encabezados suma encabezados propios
+// (List-Unsubscribe del newsletter).
 type Mensaje struct {
 	Para, Asunto, HTML, Texto string
 	ResponderA                string
+	DeNombre                  string
+	Encabezados               map[string]string
+}
+
+// remitente arma el From con el nombre del mensaje, si trae uno.
+func remitente(de string, m Mensaje) string {
+	nombre := strings.Map(func(r rune) rune {
+		// Sin los especiales de RFC 5322: el nombre va sin comillas.
+		if strings.ContainsRune("\"<>\\,;:()[]@\r\n", r) {
+			return -1
+		}
+		return r
+	}, strings.TrimSpace(m.DeNombre))
+	if nombre == "" {
+		return de
+	}
+	return nombre + " <" + direccionDe(de) + ">"
 }
 
 // Correo manda un mensaje.
@@ -44,9 +65,12 @@ func (r *Resend) Enviar(ctx context.Context, m Mensaje) error {
 	if url == "" {
 		url = "https://api.resend.com/emails"
 	}
-	datos := map[string]any{"from": r.De, "to": []string{m.Para}, "subject": m.Asunto, "html": m.HTML, "text": m.Texto}
+	datos := map[string]any{"from": remitente(r.De, m), "to": []string{m.Para}, "subject": m.Asunto, "html": m.HTML, "text": m.Texto}
 	if m.ResponderA != "" {
 		datos["reply_to"] = m.ResponderA
+	}
+	if len(m.Encabezados) > 0 {
+		datos["headers"] = m.Encabezados
 	}
 	cuerpo, _ := json.Marshal(datos)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(cuerpo))
@@ -90,13 +114,26 @@ func (s *SMTP) Enviar(_ context.Context, m Mensaje) error {
 	if strings.ContainsAny(m.Para+m.Asunto+m.ResponderA, "\r\n") {
 		return fmt.Errorf("correo: salto de línea en Para, Asunto o ResponderA")
 	}
+	for k, v := range m.Encabezados {
+		if strings.ContainsAny(k+v, "\r\n") || strings.ContainsAny(k, ": ") {
+			return fmt.Errorf("correo: encabezado inválido")
+		}
+	}
 	frontera := "mostrador-frontera"
 	var b strings.Builder
 	// El asunto va codificado (RFC 2047): con tildes en crudo, varios clientes lo muestran roto.
 	fmt.Fprintf(&b, "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\nMessage-ID: %s\r\nMIME-Version: 1.0\r\n",
-		de(s.De), m.Para, mime.QEncoding.Encode("utf-8", m.Asunto), time.Now().Format(time.RFC1123Z), idMensaje(s.De))
+		de(remitente(s.De, m)), m.Para, mime.QEncoding.Encode("utf-8", m.Asunto), time.Now().Format(time.RFC1123Z), idMensaje(s.De))
 	if m.ResponderA != "" {
 		fmt.Fprintf(&b, "Reply-To: %s\r\n", m.ResponderA)
+	}
+	claves := make([]string, 0, len(m.Encabezados))
+	for k := range m.Encabezados {
+		claves = append(claves, k)
+	}
+	sort.Strings(claves)
+	for _, k := range claves {
+		fmt.Fprintf(&b, "%s: %s\r\n", k, m.Encabezados[k])
 	}
 	fmt.Fprintf(&b, "Content-Type: multipart/alternative; boundary=%s\r\n\r\n", frontera)
 	fmt.Fprintf(&b, "--%s\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%s\r\n", frontera, m.Texto)

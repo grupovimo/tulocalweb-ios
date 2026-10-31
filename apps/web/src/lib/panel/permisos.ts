@@ -98,6 +98,7 @@ export const PERMISO_SECCION: Record<string, Permiso> = {
 	Facturación: 'finanzas',
 	Informes: 'finanzas',
 	Marketing: 'tienda',
+	Newsletter: 'tienda',
 	Canales: 'tienda',
 	'Mi tienda': 'tienda',
 	'Tarjeta para paquetes': 'tienda',

@@ -1323,6 +1323,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/publico/tiendas/{slug}/newsletter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suma el email al newsletter de la tienda como pendiente y le manda el mail para confirmar (doble opt-in). Si ya confirmó, no manda nada. Topes por IP y tienda (10 por hora), por tienda (300 por hora) y por email (3 por día). */
+        post: operations["suscribirNewsletter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/newsletter/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** El link del mail de confirmación. */
+        post: operations["confirmarNewsletter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/newsletter/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** La baja de un clic (link de cada mail y List-Unsubscribe-Post). Borra la suscripción. */
+        post: operations["bajaNewsletter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/publico/tiendas/{slug}/pedidos/{codigo}": {
         parameters: {
             query?: never;
@@ -1812,6 +1863,57 @@ export interface paths {
         get: operations["marketing"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/newsletter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El newsletter de la tienda (§50) — suscriptos (los más nuevos primero, hasta 5000), los números, lo enviado hoy contra el tope diario y los últimos envíos. */
+        get: operations["newsletter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/newsletter/suscriptores/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Saca a alguien de la lista (confirmado o no). */
+        delete: operations["borrarSuscriptor"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/newsletter/envios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manda una novedad a los suscriptos confirmados de ahora. Sale por el worker de a tandas, con un tope de 500 mails por día por tienda (lo que no entra sigue al día siguiente). */
+        post: operations["mandarNovedad"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3716,6 +3818,55 @@ export interface components {
             tasa: number;
             costoMensaje: number;
             automaticos: components["schemas"]["AutomaticosCarritos"];
+        };
+        Newsletter: {
+            suscriptores: {
+                id: string;
+                email: string;
+                /**
+                 * @description El bloque del pie de la tienda o la casilla del checkout
+                 * @enum {string}
+                 */
+                origen: "tienda" | "checkout";
+                confirmado: boolean;
+                /** Format: date-time */
+                creado: string;
+                /** Format: date-time */
+                confirmadoEn: string | null;
+            }[];
+            confirmados: number;
+            pendientes: number;
+            envios: components["schemas"]["EnvioNewsletter"][];
+            /** @description Mails de novedades que salieron hoy (día de Argentina) */
+            hoy: number;
+            /** @description Tope diario por tienda */
+            tope: number;
+            /** @description Productos publicados que se pueden destacar (por nombre, hasta 300) */
+            productos: {
+                id: string;
+                nombre: string;
+                precio: number;
+                foto: string | null;
+            }[];
+        };
+        EnvioNewsletter: {
+            id: string;
+            asunto: string;
+            /** Format: date-time */
+            creado: string;
+            destinatarios: number;
+            enviados: number;
+            /**
+             * @description manana: se llegó al tope del día y sigue mañana
+             * @enum {string}
+             */
+            estado: "enviando" | "manana" | "enviado";
+        };
+        NovedadNueva: {
+            asunto: string;
+            texto: string;
+            /** @description Productos publicados destacados (con foto, precio y link) */
+            productos: string[];
         };
         PedidoNuevo: {
             items: {
@@ -8268,6 +8419,89 @@ export interface operations {
             404: components["responses"]["Problema"];
         };
     };
+    suscribirNewsletter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pendiente de confirmar */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
+    confirmarNewsletter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Suscripto */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problema"];
+        };
+    };
+    bajaNewsletter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description De baja */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problema"];
+        };
+    };
     confirmacionPedido: {
         parameters: {
             query?: never;
@@ -9099,6 +9333,85 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problema"];
+        };
+    };
+    newsletter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newsletter */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Newsletter"];
+                };
+            };
+            401: components["responses"]["Problema"];
+            403: components["responses"]["Problema"];
+        };
+    };
+    borrarSuscriptor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Borrado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+        };
+    };
+    mandarNovedad: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovedadNueva"];
+            };
+        };
+        responses: {
+            /** @description En camino */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvioNewsletter"];
+                };
+            };
+            400: components["responses"]["Problema"];
+            401: components["responses"]["Problema"];
+            /** @description sin_suscriptos: no hay confirmados */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     crearCampana: {

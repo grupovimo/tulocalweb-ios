@@ -4,9 +4,11 @@
  * porque rechaza todo pedido sin `Origin`, y dos cosas llegan así desde servidores ajenos:
  * el OAuth del conector MCP (Claude, ChatGPT, Gemini), el propio servidor MCP y los webhooks de
  * terceros. Esos endpoints quedan exceptuados y se autentican por su cuenta (PKCE, token Bearer sin
- * cookies, firma HMAC).
+ * cookies, firma HMAC). También la baja de un clic del newsletter de cada tienda (RFC 8058: el
+ * servidor de correo hace el POST sin Origin; el token del link es la credencial).
  */
-const EXEMPT = /^\/api\/(mcp|oauth\/(token|revoke|register)|webhooks\/[a-z0-9-]+)$/;
+const EXEMPT =
+	/^\/api\/(mcp|oauth\/(token|revoke|register)|webhooks\/[a-z0-9-]+)$|^\/t\/[a-z0-9-]+\/newsletter\/baja\/[A-Za-z0-9_-]{20,64}$/;
 const FORM_TYPES = [
 	'application/x-www-form-urlencoded',
 	'multipart/form-data',

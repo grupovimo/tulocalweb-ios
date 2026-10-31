@@ -1384,6 +1384,15 @@
 									>
 								{/each}
 							</div>
+							<!-- Sin bloque de newsletter en el diseño de esta plantilla: la casilla del checkout (§50). -->
+							<label
+								style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 14.5px 'Instrument Sans';color:#2A1C12;cursor:pointer"
+								><input
+									type="checkbox"
+									name="novedades"
+									style="flex:none;width:18px;height:18px;margin:0;accent-color:var(--acento, #D9452B)"
+								/>Quiero recibir novedades</label
+							>
 						</div>
 						<div>
 							<div style="font-size:15px;font-weight:700;margin-bottom:10px">Entrega</div>

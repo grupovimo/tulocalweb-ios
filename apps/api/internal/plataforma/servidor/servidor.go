@@ -27,6 +27,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/links"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/notificaciones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/partners"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
@@ -169,6 +170,7 @@ func Nuevo(d Dependencias) http.Handler {
 		precios.Rutas(mux, d.App, tienda)
 		cupones.Rutas(mux, d.App, tienda)
 		crecer.Rutas(mux, d.App, tienda)
+		newsletter.Rutas(mux, d.App, tienda)
 		hoy.Rutas(mux, d.App, tienda)
 		finanzas.Rutas(mux, d.App, tienda)
 		mitienda.Rutas(mux, d.App, tienda, d.Sitio)

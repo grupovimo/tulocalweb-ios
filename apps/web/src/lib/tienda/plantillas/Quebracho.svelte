@@ -28,8 +28,8 @@
 	/**
 	 * Plantilla Quebracho (design/Plantilla Quebracho.dc.html), con los datos de la tienda en lugar de
 	 * los de ejemplo. Lo que el diseño muestra sin datos atrás (puntos sobre la foto del ambiente,
-	 * diseño a medida, maderas y telas, franjas de entrega, seña, favoritos, newsletter, contadores)
-	 * no se dibuja.
+	 * diseño a medida, maderas y telas, franjas de entrega, seña, favoritos, contadores) no se dibuja.
+	 * El diseño no tiene newsletter: el checkout ofrece la casilla «Quiero recibir novedades» (§50).
 	 */
 	type Pagina =
 		| 'inicio'
@@ -1371,6 +1371,15 @@
 									>
 								{/each}
 							</div>
+							<!-- Sin bloque de newsletter en el diseño de esta plantilla: la casilla del checkout (§50). -->
+							<label
+								style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 14.5px 'Familjen Grotesk';color:#2B2520;cursor:pointer"
+								><input
+									type="checkbox"
+									name="novedades"
+									style="flex:none;width:18px;height:18px;margin:0;accent-color:var(--acento, #4F5B3A)"
+								/>Quiero recibir novedades</label
+							>
 						</div>
 						<div>
 							<div style="font-family:'Newsreader',serif;font-size:32px">Entrega</div>

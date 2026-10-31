@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/devoluciones"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/limite"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/problema"
@@ -130,6 +131,80 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	// Newsletter (§50): sumarse desde el pie de la tienda. Queda pendiente hasta confirmar por mail.
+	// Topes contra abuso: por IP y tienda, por tienda y por email (para no llenarle la casilla a nadie).
+	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/newsletter", func(w http.ResponseWriter, r *http.Request) {
+		var b struct {
+			Email string `json:"email"`
+		}
+		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&b) != nil {
+			problema.Escribir(w, problema.Invalido("Revisá el email."))
+			return
+		}
+		email, ok := newsletter.Email(b.Email)
+		if !ok {
+			problema.Escribir(w, problema.Invalido("Revisá el email.", problema.Campo{Ruta: "email", Mensaje: "Revisá el email."}))
+			return
+		}
+		id, err := tiendaDe(r.Context(), pool, r.PathValue("slug"))
+		if err != nil {
+			error404(w, err)
+			return
+		}
+		if c, ok := pool.(limite.Consultor); ok {
+			type tope struct {
+				clave   string
+				max     int
+				ventana time.Duration
+			}
+			claves := []tope{{"newsletter:tienda:" + id, 300, time.Hour}, {"newsletter:email:" + id + ":" + email, 3, 24 * time.Hour}}
+			if ip != nil {
+				claves = append(claves, tope{"newsletter:ip:" + id + ":" + ip(r), 10, time.Hour})
+			}
+			for _, l := range claves {
+				if ok, err := limite.Permitido(r.Context(), c, l.clave, l.max, l.ventana); err == nil && !ok {
+					w.Header().Set("Retry-After", "3600")
+					problema.Escribir(w, &problema.Problema{Estado: http.StatusTooManyRequests, Codigo: "demasiados_envios",
+						Titulo: "Esperá un rato", Detalle: "Recibimos varios pedidos seguidos. Probá de nuevo en un rato."})
+					return
+				}
+			}
+		}
+		if err := newsletter.Suscribir(r.Context(), pool, id, email, "tienda"); err != nil {
+			error404(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+	})
+	// El link del mail de confirmación y la baja de un clic (el token es el de cada suscripto).
+	for _, accion := range []string{"confirmar", "baja"} {
+		mux.HandleFunc("POST /v1/publico/tiendas/{slug}/newsletter/"+accion, func(w http.ResponseWriter, r *http.Request) {
+			var b struct {
+				Token string `json:"token"`
+			}
+			if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&b) != nil {
+				error404(w, ErrInvalido)
+				return
+			}
+			id, err := tiendaDe(r.Context(), pool, r.PathValue("slug"))
+			if err == nil {
+				if accion == "confirmar" {
+					err = newsletter.Confirmar(r.Context(), pool, id, b.Token)
+				} else {
+					err = newsletter.Baja(r.Context(), pool, id, b.Token)
+				}
+			}
+			if errors.Is(err, newsletter.ErrNoExiste) {
+				problema.Escribir(w, problema.NoEncontrado("Ese link ya no sirve: puede que ya te hayas dado de baja."))
+				return
+			}
+			if err != nil {
+				error404(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}
 	// El link del recordatorio: las líneas para volver a armar el carrito.
 	mux.HandleFunc("GET /v1/publico/tiendas/{slug}/carritos/{token}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := tiendaDe(r.Context(), pool, r.PathValue("slug"))

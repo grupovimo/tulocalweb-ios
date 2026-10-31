@@ -1056,3 +1056,40 @@ avisos que el iPhone de §40.
 - **A quién**: evento `arca.vence` → campanita y mail a quien tiene Finanzas (la dueña, al email
   del negocio si lo cargó). El mail no sale si en el medio ya subió uno nuevo. Los dos llevan a
   `/panel/integraciones?arca`, que abre el asistente.
+
+## 50. Newsletter de cada tienda (migración 00067)
+
+- **Sumarse**: el bloque de newsletter del pie, donde el handoff lo dibuja (Ceibo, Mostaza, Rosedal,
+  Yerbal y las doce del motor de `Plantillas Tienda`), con sus piezas; el texto de arriba sigue
+  siendo el de cobros (no se promete un 10 % off que la tienda no cargó). Las plantillas sin bloque
+  en el diseño (Andes, Malbec, Miga, Miga Clásica, Pampa, Quebracho y Tijera) suman en el checkout
+  la casilla «Quiero recibir novedades», desmarcada, con los estilos de sus campos.
+- **Doble confirmación**: el alta queda pendiente y el outbox (`newsletter.confirmar`) manda «Confirmá
+  tu suscripción» con el link `/t/<slug>/newsletter/confirmar/<token>`. La página confirma con un
+  botón, no al abrirla (los antivirus de correo abren los links). Pedirlo de nuevo sin confirmar
+  reenvía el mismo link; si ya confirmó, no sale nada (y la respuesta es la misma: no se filtra quién
+  está suscripto). Topes: 10 por hora por IP y tienda, 300 por hora por tienda y 3 por día por email
+  (`plataforma/limite`); en la demo, 20 por hora por visitante.
+- **Baja con un clic**: cada novedad trae el link y los encabezados `List-Unsubscribe` y
+  `List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058) a `/t/<slug>/newsletter/baja/<token>`.
+  Esa misma página recibe el POST del servidor de correo (sin Origin: exceptuada del CSRF, el token es
+  la credencial) y da de baja sin más pasos. La baja borra la fila: el email no queda guardado.
+- **Datos**: `suscriptores` (email, origen tienda/checkout, token, confirmado), `newsletter_envios`
+  (asunto, texto, hasta 4 productos, destinatarios) y `newsletter_entregas` (una por envío y
+  destinatario: pendiente, enviado, omitido o fallido). Todo con RLS por tienda.
+- **Panel**: Crecer › Newsletter, junto a Marketing (permiso Tienda, el de marketing en `roles.go`).
+  Números (confirmados, sin confirmar, mails de hoy contra el tope), «Mandar novedad» con asunto,
+  texto y hasta 4 productos publicados (foto, precio y link) y la vista previa del mail al costado,
+  confirmación con la cantidad de destinatarios, historial de envíos (destinatarios, enviados y
+  estado: enviando, sigue mañana o enviada), la lista con fecha, origen y estado, borrar uno (con
+  Deshacer: se borra cuando vence el aviso) y exportar CSV.
+- **Envío**: «Mandar» fija los destinatarios (los confirmados de ese momento) y encola
+  `newsletter.tanda`. El worker manda de a 25, cada uno con su fila bloqueada y marcada apenas sale
+  (una tanda repetida no duplica), y encola la siguiente: ya mismo, a los 10 minutos si el correo
+  rechazó alguno (tres rechazos: fallido) o mañana a las 9 si la tienda llegó a **500 mails por día**.
+  Quien se dio de baja en el medio queda omitido. Remitente con el nombre de la tienda
+  (`correo.Mensaje.DeNombre`, la dirección sigue siendo hola@tulocalweb.com.ar) y Reply-To al email del
+  negocio (o el de la dueña). El correo suma `Encabezados` (SMTP y Resend).
+- **La demo**: los suscriptos de ejemplo salen de los clientes de la tienda de ejemplo; todo funciona
+  y «Mandar» guarda la novedad en el historial sin mandar ningún mail (lo dice la página). Sumarse
+  desde la tienda de la demo no manda el mail: el aviso trae el link de confirmar.

@@ -30,12 +30,14 @@
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
+	import { AltaNewsletter } from '../newsletter.svelte.ts';
 
 	/**
 	 * Plantilla Rosedal (design/Plantilla Rosedal.dc.html), con los datos de la tienda en lugar de los
 	 * de ejemplo. Lo que el diseño muestra sin datos atrás (test de piel, rutina −20 %, reposición
-	 * automática, ingredientes, antes y después, muestra gratis, cupón, newsletter, cuenta regresiva)
-	 * no se inventa: el selector de piel pasa a elegir categoría y lo demás no se dibuja.
+	 * automática, ingredientes, antes y después, muestra gratis, cupón, cuenta regresiva) no se
+	 * inventa: el selector de piel pasa a elegir categoría y lo demás no se dibuja. El newsletter del
+	 * pie anda de verdad (§50).
 	 */
 	type Pagina =
 		| 'inicio'
@@ -89,6 +91,7 @@
 	// En el dominio propio de la tienda los links no llevan /t/<slug> (tienda.base = '').
 	const base = $derived(tienda.base ?? `/t/${tienda.slug}`);
 	const carrito = $derived(carritoDe(tienda.slug));
+	const nl = new AltaNewsletter(() => tienda.slug);
 	let ancho = $state(page.data.movil ? 390 : 1200);
 	const nar = $derived(ancho < 820);
 	const wide = $derived(!nar);
@@ -2321,6 +2324,43 @@
 								.cobros.transferencia}% off por transferencia, en toda la&nbsp;tienda.{:else}Compra
 							protegida, con 10 días para&nbsp;arrepentirte.{/if}
 					</p>
+					<!-- Newsletter (§50): el bloque del pie del diseño; queda pendiente hasta confirmar por mail. -->
+					<form
+						onsubmit={nl.enviar}
+						novalidate
+						style="margin-top:12px;display:flex;padding:5px;border-radius:999px;background:#fff"
+					>
+						<input
+							class="nl"
+							type="email"
+							name="email"
+							required
+							maxlength="120"
+							autocomplete="email"
+							placeholder="Tu email"
+							aria-label="Tu email"
+							bind:value={nl.email}
+							style="--ph:#A88A8F;flex:1;min-width:0;padding:9px 12px;border:0;background:transparent;font:inherit;font-size:14px;color:#3A1F25;outline:none"
+						/>
+						<button
+							type="submit"
+							disabled={nl.enviando}
+							style="flex:none;padding:9px 16px;border:0;border-radius:999px;background:#3A1F25;color:#fff;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer"
+							>Sumarme</button
+						>
+					</form>
+					{#if nl.aviso}<p
+							role="status"
+							style="margin:8px 0 0;font-size:13px;line-height:1.45;color:{nl.aviso.ok
+								? '#6E4F55'
+								: '#A3361F'}"
+						>
+							{nl.aviso.texto}{#if nl.aviso.link}&nbsp;<a
+									href={nl.aviso.link}
+									style="color:inherit;text-decoration:underline;text-underline-offset:3px;font-weight:600"
+									>Confirmar acá</a
+								>{/if}
+						</p>{/if}
 				</div>
 				{#each foot as f (f.t)}<div
 						style="display:flex;flex-direction:column;gap:9px;font-size:14px"
@@ -2485,5 +2525,9 @@
 	button:disabled {
 		opacity: 0.45;
 		cursor: not-allowed !important;
+	}
+	.nl::placeholder {
+		color: var(--ph);
+		opacity: 1;
 	}
 </style>

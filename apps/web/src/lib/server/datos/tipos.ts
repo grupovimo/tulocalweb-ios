@@ -53,6 +53,11 @@ export type PedidoNuevo = components['schemas']['PedidoNuevo'];
 export type ListasPrecio = components['schemas']['ListasPrecio'];
 export type Cupon = components['schemas']['Cupon'];
 export type Marketing = components['schemas']['Marketing'];
+export type Newsletter = components['schemas']['Newsletter'];
+export type EnvioNewsletter = components['schemas']['EnvioNewsletter'];
+export type NovedadNueva = components['schemas']['NovedadNueva'];
+/** Por qué no salió una novedad: sin confirmados, o un dato inválido con su texto. */
+export type ErrorNovedad = 'sin-suscriptos' | { error: string };
 export type Evento = components['schemas']['Evento'];
 export type { FiltroActividad, PaginaActividad } from '#lib/panel/actividad.ts';
 import type { FiltroActividad, PaginaActividad } from '#lib/panel/actividad.ts';
@@ -193,6 +198,11 @@ export interface Datos {
 	listasPrecio(): Promise<ListasPrecio>;
 	cupones(): Promise<Cupones>;
 	marketing(): Promise<Marketing>;
+	/** Crecer › Newsletter (§50): suscriptos, números y envíos. */
+	newsletter(): Promise<Newsletter>;
+	borrarSuscriptor(id: string): Promise<Resultado>;
+	/** Manda la novedad a los confirmados (en la demo no sale ningún mail). */
+	mandarNovedad(n: NovedadNueva): Promise<EnvioNewsletter | ErrorNovedad>;
 	/** Actividad (§39): una página con los filtros. */
 	actividad(f?: FiltroActividad): Promise<PaginaActividad>;
 	/** Las filas del CSV de la actividad (la primera es el encabezado). */

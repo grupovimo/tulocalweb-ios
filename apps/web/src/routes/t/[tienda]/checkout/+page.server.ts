@@ -12,6 +12,7 @@ import type { Actions } from './$types';
 import { irAfuera } from '#lib/server/afuera.ts';
 import { cuitValido, limpiarCuit } from '#lib/panel/cuit.ts';
 import { cookieMedir } from '#lib/tienda/medicion.ts';
+import { suscribirDesdeCheckout } from '#lib/server/tienda/newsletter.ts';
 
 const Pedido = v.object({
 	carrito: v.pipe(
@@ -50,7 +51,15 @@ const Pedido = v.object({
 		),
 		''
 	),
-	razonSocial: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120)), '')
+	razonSocial: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120)), ''),
+	// «Quiero recibir novedades» (plantillas sin bloque de newsletter, §50): desmarcada de entrada.
+	novedades: v.optional(
+		v.pipe(
+			v.string(),
+			v.transform((x) => x === 'on' || x === 'si')
+		),
+		''
+	)
 });
 
 export const actions: Actions = {
@@ -96,7 +105,7 @@ export const actions: Actions = {
 				{
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ ...p, medicion })
+					body: JSON.stringify({ ...p, novedades: p.novedades === true, medicion })
 				}
 			);
 			if (!res.ok) {
@@ -189,6 +198,7 @@ export const actions: Actions = {
 		if (res === 'invalido') return fail(400, { error: 'Revisá el carrito.' });
 		// Si había dejado el carrito, queda recuperado (como en Go, que lo cierra al comprar).
 		await r.datos.cerrarCarritoTienda(p.email, total).catch(() => {});
+		if (p.novedades === true) await suscribirDesdeCheckout(r, p.email).catch(() => {});
 		const aviso = avisarVenta(
 			dbSandbox(env.SANDBOX),
 			r.sandboxId,

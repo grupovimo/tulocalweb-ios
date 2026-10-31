@@ -35,7 +35,8 @@
 	 * Plantilla Andes (design/Plantilla Andes.dc.html), con los datos de la tienda en lugar de los de
 	 * ejemplo. El comparador funciona con los productos ya cargados (se recuerda en el navegador). Lo
 	 * que el diseño muestra sin datos atrás (colores, fichas técnicas, combo, cuenta regresiva,
-	 * filtros por marca, cupón, factura A, garantía extendida, newsletter) no se dibuja.
+	 * filtros por marca, cupón, factura A, garantía extendida) no se dibuja. El diseño no tiene
+	 * newsletter: el checkout ofrece la casilla «Quiero recibir novedades» (§50).
 	 */
 	type Pagina =
 		| 'inicio'
@@ -1771,6 +1772,15 @@
 										>
 									{/each}
 								</div>
+								<!-- Sin bloque de newsletter en el diseño de esta plantilla: la casilla del checkout (§50). -->
+								<label
+									style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 14px 'Instrument Sans';color:#0E1116;cursor:pointer"
+									><input
+										type="checkbox"
+										name="novedades"
+										style="flex:none;width:18px;height:18px;margin:0;accent-color:var(--acento, #2F6BFF)"
+									/>Quiero recibir novedades</label
+								>
 							</div>
 							<!-- 2 Entrega -->
 							<div

@@ -59,6 +59,9 @@ import type {
 	Canales,
 	Informes,
 	Marketing,
+	Newsletter,
+	EnvioNewsletter,
+	NovedadNueva,
 	AccionLote,
 	AccionRelampago,
 	Cupon,
@@ -698,6 +701,23 @@ export class DatosApi implements Datos {
 	}
 	marketing() {
 		return this.pedir<Marketing>('/v1/panel/marketing');
+	}
+	newsletter() {
+		return this.pedir<Newsletter>('/v1/panel/newsletter');
+	}
+	async borrarSuscriptor(id: string) {
+		return resultado(
+			await this.intentar(`/v1/panel/newsletter/suscriptores/${encodeURIComponent(id)}`, 'DELETE')
+		);
+	}
+	async mandarNovedad(n: NovedadNueva) {
+		const r = await this.intentar('/v1/panel/newsletter/envios', 'POST', n, [400]);
+		if (r.status === 409) return 'sin-suscriptos' as const;
+		if (!r.ok) {
+			const p = (await r.json().catch(() => null)) as { detail?: string } | null;
+			return { error: p?.detail ?? 'Revisá la novedad.' };
+		}
+		return (await r.json()) as EnvioNewsletter;
 	}
 	async crearCampana(c: Parameters<Datos['crearCampana']>[0]) {
 		const r = await this.intentar('/v1/panel/campanas', 'POST', c);

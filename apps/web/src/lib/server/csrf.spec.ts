@@ -39,4 +39,14 @@ describe('csrfForbidden (misma regla que SvelteKit)', () => {
 		expect(csrfForbidden(req('POST', FORM, null), U('/oauth/autorizar'))).toBe(true);
 		expect(csrfForbidden(req('POST', FORM, null), U('/api/webhooks/a/b'))).toBe(true);
 	});
+	it('la baja de un clic del newsletter (RFC 8058) pasa sin origen; confirmar, no', () => {
+		const token = 'aB3_dE5-fG7hI9jK1lM3nO5p';
+		expect(csrfForbidden(req('POST', FORM, null), U(`/t/luna/newsletter/baja/${token}`))).toBe(
+			false
+		);
+		expect(csrfForbidden(req('POST', FORM, null), U(`/t/luna/newsletter/confirmar/${token}`))).toBe(
+			true
+		);
+		expect(csrfForbidden(req('POST', FORM, null), U('/t/luna/newsletter/baja/corto'))).toBe(true);
+	});
 });

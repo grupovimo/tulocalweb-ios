@@ -69,3 +69,31 @@ func TestEncabezadosCodificados(t *testing.T) {
 		t.Errorf("Message-ID único y con el dominio: %q", id)
 	}
 }
+
+func TestRemitenteConElNombreDeLaTiendaYEncabezados(t *testing.T) {
+	var cuerpo map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &cuerpo)
+		w.WriteHeader(200)
+	}))
+	defer srv.Close()
+	r := &Resend{Clave: "x", De: "Tu Local Web <hola@tulocalweb.com.ar>", URL: srv.URL}
+	m := Mensaje{Para: "a@b.co", Asunto: "Hola", DeNombre: `Café "Bruma", <Palermo>`,
+		Encabezados: map[string]string{"List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}}
+	if err := r.Enviar(context.Background(), m); err != nil {
+		t.Fatal(err)
+	}
+	if cuerpo["from"] != "Café Bruma Palermo <hola@tulocalweb.com.ar>" {
+		t.Fatalf("from = %v", cuerpo["from"])
+	}
+	if h, _ := cuerpo["headers"].(map[string]any); h["List-Unsubscribe-Post"] != "List-Unsubscribe=One-Click" {
+		t.Fatalf("headers = %v", cuerpo["headers"])
+	}
+	// Un encabezado con salto de línea no sale por SMTP.
+	m.Encabezados = map[string]string{"X-Algo": "a\r\nBcc: x@y.z"}
+	if err := (&SMTP{Direccion: "127.0.0.1:1", De: "hola@tulocalweb.com.ar"}).Enviar(context.Background(), m); err == nil ||
+		!strings.Contains(err.Error(), "encabezado") {
+		t.Fatalf("err = %v", err)
+	}
+}

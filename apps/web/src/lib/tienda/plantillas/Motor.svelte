@@ -25,12 +25,14 @@
 	import { Reserva } from '../reserva.svelte.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
+	import { AltaNewsletter } from '../newsletter.svelte.ts';
 
 	/**
 	 * Motor de plantillas (design/Plantillas Tienda.dc.html): un solo marcado con temas para doce
 	 * plantillas en tres familias (editorial, grilla y catálogo), con los datos de la tienda en lugar
 	 * de los de ejemplo. Lo que el diseño muestra sin datos atrás (talles, combos, contadores,
-	 * cuenta regresiva, newsletter, buscador) no se inventa: esas partes no se dibujan.
+	 * cuenta regresiva, buscador) no se inventa: esas partes no se dibujan. El newsletter del pie
+	 * anda de verdad (§50).
 	 */
 	type Pagina =
 		| 'inicio'
@@ -233,6 +235,7 @@
 	// En el dominio propio de la tienda los links no llevan /t/<slug> (tienda.base = '').
 	const base = $derived(tienda.base ?? `/t/${tienda.slug}`);
 	const carrito = $derived(carritoDe(tienda.slug));
+	const nl = new AltaNewsletter(() => tienda.slug);
 	let ancho = $state(page.data.movil ? 390 : 1200);
 	const nar = $derived(ancho < 820);
 	const wide = $derived(!nar);
@@ -2560,6 +2563,44 @@
 								.cobros.transferencia}% off por transferencia, en toda la&nbsp;tienda.{:else}Compra
 							protegida, con 10 días para&nbsp;arrepentirte.{/if}
 					</p>
+					<!-- Newsletter (§50): el bloque del pie del diseño; queda pendiente hasta confirmar por mail. -->
+					<form
+						onsubmit={nl.enviar}
+						novalidate
+						style="margin-top:12px;display:flex;border-bottom:1.5px solid {T.ink}"
+					>
+						<input
+							class="nl"
+							type="email"
+							name="email"
+							required
+							maxlength="120"
+							autocomplete="email"
+							placeholder="Tu email"
+							aria-label="Tu email"
+							bind:value={nl.email}
+							style="--ph:{T.mu};flex:1;min-width:0;padding:10px 0;border:0;background:transparent;font:inherit;font-size:14.5px;color:inherit;outline:none"
+						/>
+						<button
+							type="submit"
+							aria-label="Sumarme"
+							disabled={nl.enviando}
+							style="flex:none;width:44px;min-height:44px;padding:0;border:0;background:transparent;color:inherit;display:grid;place-items:center end;cursor:pointer"
+							><Icon icon={I.phArrowRight} size={18} /></button
+						>
+					</form>
+					{#if nl.aviso}<p
+							role="status"
+							style="margin:8px 0 0;font-size:13px;line-height:1.45;color:{nl.aviso.ok
+								? T.mu
+								: '#A3361F'}"
+						>
+							{nl.aviso.texto}{#if nl.aviso.link}&nbsp;<a
+									href={nl.aviso.link}
+									style="color:inherit;text-decoration:underline;text-underline-offset:3px;font-weight:600"
+									>Confirmar acá</a
+								>{/if}
+						</p>{/if}
 				</div>
 				{#each foot as f (f.t)}<div
 						style="display:flex;flex-direction:column;gap:9px;font-size:14px"
@@ -2721,5 +2762,9 @@
 	button:disabled {
 		opacity: 0.45;
 		cursor: not-allowed !important;
+	}
+	.nl::placeholder {
+		color: var(--ph);
+		opacity: 1;
 	}
 </style>

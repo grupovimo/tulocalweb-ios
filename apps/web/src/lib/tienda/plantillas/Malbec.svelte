@@ -29,7 +29,8 @@
 	 * Plantilla Malbec (design/Plantilla Malbec.dc.html), con los datos de la tienda en lugar de los de
 	 * ejemplo. El aviso de +18 se recuerda en el navegador. Lo que el diseño muestra sin datos atrás
 	 * (club de vinos, puntajes, notas y ficha de cata, presentaciones por caja, maridajes, equipo,
-	 * caja de regalo, newsletter, cuenta regresiva) no se inventa: esas partes no se dibujan.
+	 * caja de regalo, cuenta regresiva) no se inventa: esas partes no se dibujan. El diseño no tiene
+	 * newsletter: el checkout ofrece la casilla «Quiero recibir novedades» (§50).
 	 */
 	type Pagina =
 		| 'inicio'
@@ -1478,6 +1479,15 @@
 									>
 								{/each}
 							</div>
+							<!-- Sin bloque de newsletter en el diseño de esta plantilla: la casilla del checkout (§50). -->
+							<label
+								style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 14.5px 'Instrument Sans';color:#F4E9E1;cursor:pointer"
+								><input
+									type="checkbox"
+									name="novedades"
+									style="flex:none;width:18px;height:18px;margin:0;accent-color:var(--acento, #E8B86A)"
+								/>Quiero recibir novedades</label
+							>
 						</div>
 						<div>
 							<div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600">

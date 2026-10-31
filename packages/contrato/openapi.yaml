@@ -1427,6 +1427,53 @@ paths:
             application/json:
               schema: { type: object, required: [carrito], properties: { carrito: { type: array, items: { type: object, required: [id, cantidad], properties: { id: { type: string }, varianteId: { type: [string, 'null'] }, cantidad: { type: integer } } } } } }
         '404': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/newsletter:
+    post:
+      operationId: suscribirNewsletter
+      summary: Suma el email al newsletter de la tienda como pendiente y le manda el mail para confirmar (doble opt-in). Si ya confirmó, no manda nada. Topes por IP y tienda (10 por hora), por tienda (300 por hora) y por email (3 por día).
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [email], properties: { email: { type: string, maxLength: 120 } } }
+      responses:
+        '202': { description: Pendiente de confirmar }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/newsletter/confirmar:
+    post:
+      operationId: confirmarNewsletter
+      summary: El link del mail de confirmación.
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string } } }
+      responses:
+        '204': { description: Suscripto }
+        '404': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/newsletter/baja:
+    post:
+      operationId: bajaNewsletter
+      summary: La baja de un clic (link de cada mail y List-Unsubscribe-Post). Borra la suscripción.
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string } } }
+      responses:
+        '204': { description: De baja }
+        '404': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/pedidos/{codigo}:
     get:
       operationId: confirmacionPedido
@@ -1887,6 +1934,46 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Marketing' }
         '401': { $ref: '#/components/responses/Problema' }
+  /v1/panel/newsletter:
+    get:
+      operationId: newsletter
+      summary: El newsletter de la tienda (§50) — suscriptos (los más nuevos primero, hasta 5000), los números, lo enviado hoy contra el tope diario y los últimos envíos.
+      responses:
+        '200':
+          description: Newsletter
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Newsletter' }
+        '401': { $ref: '#/components/responses/Problema' }
+        '403': { $ref: '#/components/responses/Problema' }
+  /v1/panel/newsletter/suscriptores/{id}:
+    delete:
+      operationId: borrarSuscriptor
+      summary: Saca a alguien de la lista (confirmado o no).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Borrado }
+        '401': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+  /v1/panel/newsletter/envios:
+    post:
+      operationId: mandarNovedad
+      summary: Manda una novedad a los suscriptos confirmados de ahora. Sale por el worker de a tandas, con un tope de 500 mails por día por tienda (lo que no entra sigue al día siguiente).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NovedadNueva' }
+      responses:
+        '201':
+          description: En camino
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvioNewsletter' }
+        '400': { $ref: '#/components/responses/Problema' }
+        '401': { $ref: '#/components/responses/Problema' }
+        '409': { description: 'sin_suscriptos: no hay confirmados', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
   /v1/panel/campanas:
     post:
       operationId: crearCampana
@@ -3879,6 +3966,55 @@ components:
         tasa: { type: number, description: 'Porcentaje recuperado (0–100)' }
         costoMensaje: { type: integer }
         automaticos: { $ref: '#/components/schemas/AutomaticosCarritos' }
+    Newsletter:
+      type: object
+      required: [suscriptores, confirmados, pendientes, envios, hoy, tope, productos]
+      properties:
+        suscriptores:
+          type: array
+          items:
+            type: object
+            required: [id, email, origen, confirmado, creado, confirmadoEn]
+            properties:
+              id: { type: string }
+              email: { type: string }
+              origen: { type: string, enum: [tienda, checkout], description: 'El bloque del pie de la tienda o la casilla del checkout' }
+              confirmado: { type: boolean }
+              creado: { type: string, format: date-time }
+              confirmadoEn: { type: [string, 'null'], format: date-time }
+        confirmados: { type: integer }
+        pendientes: { type: integer }
+        envios: { type: array, items: { $ref: '#/components/schemas/EnvioNewsletter' } }
+        hoy: { type: integer, description: 'Mails de novedades que salieron hoy (día de Argentina)' }
+        tope: { type: integer, description: 'Tope diario por tienda' }
+        productos:
+          type: array
+          description: 'Productos publicados que se pueden destacar (por nombre, hasta 300)'
+          items:
+            type: object
+            required: [id, nombre, precio, foto]
+            properties:
+              id: { type: string }
+              nombre: { type: string }
+              precio: { type: integer }
+              foto: { type: [string, 'null'] }
+    EnvioNewsletter:
+      type: object
+      required: [id, asunto, creado, destinatarios, enviados, estado]
+      properties:
+        id: { type: string }
+        asunto: { type: string }
+        creado: { type: string, format: date-time }
+        destinatarios: { type: integer }
+        enviados: { type: integer }
+        estado: { type: string, enum: [enviando, manana, enviado], description: 'manana: se llegó al tope del día y sigue mañana' }
+    NovedadNueva:
+      type: object
+      required: [asunto, texto, productos]
+      properties:
+        asunto: { type: string, minLength: 3, maxLength: 120 }
+        texto: { type: string, minLength: 10, maxLength: 5000 }
+        productos: { type: array, maxItems: 4, items: { type: string }, description: 'Productos publicados destacados (con foto, precio y link)' }
     PedidoNuevo:
       type: object
       required: [items, pago, canal]

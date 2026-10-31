@@ -72,6 +72,7 @@ export const AREAS: Area[] = [
 		iconFill: I.phChartLineUpFill,
 		items: [
 			it('Marketing', I.phMegaphone, I.phMegaphoneFill),
+			it('Newsletter', I.phEnvelopeSimple, I.phEnvelopeSimpleFill),
 			it('Cupones', I.phTicket, I.phTicketFill),
 			it('Canales', I.phLinkSimple, I.phLinkSimpleFill),
 			it('Informes', I.phChartBar, I.phChartBarFill)

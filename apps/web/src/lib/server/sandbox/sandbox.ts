@@ -24,6 +24,15 @@ import {
 	type Nombres
 } from './actividad.ts';
 import { canalesDemo, informesDemo, marketingDemo, type CampanaDemo } from './crecer.ts';
+import {
+	novedadesDemo,
+	panelNewsletter,
+	suscriptoresDemo,
+	unirSuscriptores,
+	type NovedadDemo,
+	type SuscriptorDemo
+} from './newsletter.ts';
+import { validarNovedad } from '#lib/panel/newsletter.ts';
 import { cuando } from '#lib/panel/cupones.ts';
 import { descripcionDe, lunes9, vigenciaDe } from '#lib/panel/cupones.ts';
 import {
@@ -102,6 +111,10 @@ import type {
 	Canales,
 	Informes,
 	Marketing,
+	Newsletter,
+	EnvioNewsletter,
+	NovedadNueva,
+	ErrorNovedad,
 	Cupon,
 	Cupones,
 	CuponNuevo as CuponNuevoT,
@@ -1830,6 +1843,102 @@ export class DatosSandbox implements Datos {
 			programada: c.programar ? sabado10(ahora) : null
 		} satisfies CampanaDemo);
 		return (await this.marketing()).campanas.find((x) => x.id === id)!;
+	}
+
+	// ---------------------------------------------------------------- Newsletter (§50)
+
+	private async suscriptores() {
+		const [d, c] = await Promise.all([this.demo(), cambiosDe(this.db, this.sb.id, 'suscriptor')]);
+		return unirSuscriptores(suscriptoresDemo(d, this.sb.creadoEn), c);
+	}
+
+	async newsletter(): Promise<Newsletter> {
+		const [ss, c, t] = await Promise.all([
+			this.suscriptores(),
+			cambiosDe(this.db, this.sb.id, 'novedad'),
+			this.tiendaPublica(false)
+		]);
+		const confirmados = ss.filter((s) => s.confirmadoEn != null).length;
+		const propias = [...c.values()].filter(Boolean) as NovedadDemo[];
+		return panelNewsletter(
+			ss,
+			[...novedadesDemo(this.sb.creadoEn, confirmados), ...propias],
+			inicioDelDia(Date.now()),
+			t.productos.map((p) => ({ id: p.id, nombre: p.nombre, precio: p.precio, foto: p.foto }))
+		);
+	}
+
+	async borrarSuscriptor(id: string): Promise<Resultado> {
+		if (!(await this.suscriptores()).some((s) => s.id === id)) return 'no-existe';
+		await guardarCambio(this.db, this.sb.id, 'suscriptor', id, null);
+		return 'ok';
+	}
+
+	/** En la demo la novedad queda en el historial y no sale ningún mail. */
+	async mandarNovedad(n: NovedadNueva): Promise<EnvioNewsletter | ErrorNovedad> {
+		const v = validarNovedad(n);
+		if (!v.ok) return { error: v.error };
+		const publicados = new Set((await this.tiendaPublica(false)).productos.map((p) => p.id));
+		if (v.novedad.productos.some((id) => !publicados.has(id)))
+			return { error: 'Algún producto ya no está publicado. Elegilos de nuevo.' };
+		const destinatarios = (await this.suscriptores()).filter((s) => s.confirmadoEn != null).length;
+		if (!destinatarios) return 'sin-suscriptos';
+		const ahora = Date.now();
+		const id = `n${ahora.toString(36)}`;
+		await guardarCambio(this.db, this.sb.id, 'novedad', id, {
+			id,
+			asunto: v.novedad.asunto,
+			creado: ahora,
+			destinatarios
+		} satisfies NovedadDemo);
+		return {
+			id,
+			asunto: v.novedad.asunto,
+			creado: new Date(ahora).toISOString(),
+			destinatarios,
+			enviados: destinatarios,
+			estado: 'enviado'
+		};
+	}
+
+	/**
+	 * Alta desde la tienda de la demo: queda pendiente como con Go, pero no sale el mail: devuelve el
+	 * token para que la tienda muestre el link de confirmar. null si el email no sirve.
+	 */
+	async suscribirNewsletter(email: string, origen: 'tienda' | 'checkout') {
+		const e = email.trim().toLowerCase();
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 120) return null;
+		const previo = (await this.suscriptores()).find((s) => s.email === e);
+		if (previo) return { token: previo.token, confirmado: previo.confirmadoEn != null };
+		const token = randomToken(24);
+		const id = `s${Date.now().toString(36)}${token.slice(0, 4)}`;
+		await guardarCambio(this.db, this.sb.id, 'suscriptor', id, {
+			id,
+			email: e,
+			origen,
+			creado: Date.now(),
+			confirmadoEn: null,
+			token
+		} satisfies SuscriptorDemo);
+		return { token, confirmado: false };
+	}
+
+	async confirmarNewsletter(token: string) {
+		const s = (await this.suscriptores()).find((x) => x.token === token);
+		if (!s) return false;
+		if (!s.confirmadoEn)
+			await guardarCambio(this.db, this.sb.id, 'suscriptor', s.id, {
+				...s,
+				confirmadoEn: Date.now()
+			} satisfies SuscriptorDemo);
+		return true;
+	}
+
+	async bajaNewsletter(token: string) {
+		const s = (await this.suscriptores()).find((x) => x.token === token);
+		if (!s) return false;
+		await guardarCambio(this.db, this.sb.id, 'suscriptor', s.id, null);
+		return true;
 	}
 
 	async canales(): Promise<Canales> {

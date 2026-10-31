@@ -21,6 +21,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/turnos"
@@ -474,6 +475,9 @@ type Compra struct {
 	// Medicion: sólo si quien compra aceptó las cookies de medición de la tienda (lo arma el BFF con
 	// su navegador). Con la API de conversiones conectada, la compra se manda a Meta (§47).
 	Medicion *conversiones.Navegador `json:"medicion"`
+	// Novedades: marcó «Quiero recibir novedades» (plantillas sin bloque de newsletter, §50). Queda
+	// pendiente hasta que confirme por mail, como desde el pie.
+	Novedades bool `json:"novedades"`
 }
 
 // Resultado de comprar: el pedido, su código público y (con Mercado Pago) adónde pagar.
@@ -615,6 +619,11 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	}
 	// Compró: su carrito abandonado (si había) queda recuperado.
 	_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email) })
+	if c.Novedades {
+		if err := newsletter.Suscribir(ctx, pool, id, c.Email, "checkout"); err != nil {
+			slog.Warn("vidriera: no se sumó al newsletter desde el checkout", "error", err)
+		}
+	}
 	if c.Medicion != nil && t.Medicion.Pixel != nil {
 		medirCompra(ctx, pool, id, c, n, porID, numero, total, hoy)
 	}
