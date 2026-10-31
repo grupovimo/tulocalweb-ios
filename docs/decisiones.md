@@ -1128,6 +1128,55 @@ avisos que el iPhone de §40.
   y «Mandar» guarda la novedad en el historial sin mandar ningún mail (lo dice la página). Sumarse
   desde la tienda de la demo no manda el mail: el aviso trae el link de confirmar.
 
+## 51. Suscripciones de la tienda con débito automático de Mercado Pago (migración 00068)
+
+- **Qué**: la tienda arma planes en Ventas › Suscripciones (nombre, descripción, foto, precio por
+  período, cada 2 semanas / mensual / cada 2 meses, productos del catálogo y/o texto de qué incluye,
+  envío y/o retiro, cupo opcional, a la venta o pausado). Quien compra se suscribe desde la página del
+  plan (`/t/{slug}/suscripciones/{plan}`: email, nombre, teléfono y entrega) y autoriza el débito en
+  Mercado Pago. El club de vinos de Malbec y la suscripción de café de Mostaza salen de estos planes
+  (sin planes, esa parte no se dibuja); las demás plantillas suman «Suscripciones» con sus piezas.
+- **Cobro**: suscripción de Mercado Pago sin plan (preapproval `pending` con `init_point`) creada con
+  el token de la cuenta conectada de la tienda, nunca con el de la plataforma (eso es el abono de Tu
+  Local Web). `external_reference = SUS-<id>` para no confundirse con el abono. Las tres
+  frecuencias son las que la API acepta sin vueltas (14 días, 1 mes, 2 meses). Sin Mercado Pago
+  conectado, la tienda no ofrece planes y el panel lleva a conectarlo.
+- **La plata la pone el servidor**: el navegador manda el plan y los datos; el precio sale del plan y
+  la suscripción lo copia (nombre, precio, frecuencia). Editar el plan no cambia lo que pagan quienes ya
+  están: es lo que autorizaron en Mercado Pago.
+- **Avisos**: `subscription_preapproval` (firmado, como todos) va al outbox como `mp.suscripcion`; la
+  tienda sale del débito guardado (`app.tienda_de_preapproval`) o de la cuenta del aviso. Si no es de
+  una tienda, se concilia como el abono. El worker trae el preapproval con el token de la tienda y aplica
+  el estado (autorizada → activa y «alta»; cancelada → «baja»; una cancelada no vuelve).
+  `subscription_authorized_payment` va como `mp.cobro_suscripcion`: el worker trae el cobro autorizado;
+  aprobado, arma el pedido; rechazado, avisa una vez (`rechazo:<id>`). El mismo cobro también llega
+  como `payment` con la referencia de la suscripción y pasa por el mismo camino.
+- **Un cobro = un pedido**: `suscripcion_cobros` con clave `pago:<id de Mercado Pago>` (PK por tienda),
+  insertada en la misma transacción que el pedido con `ON CONFLICT DO NOTHING`. El pedido es de la
+  tienda online (`canal web`, `pago mp`, `Aprobado`, `Para preparar`, `pedidos.suscripcion_id`): una
+  línea «Suscripción: <plan>» por lo cobrado y debajo los productos del plan en $ 0 para preparar. El
+  stock se descuenta sin frenar (el cobro ya se hizo). Los triggers de siempre hacen el resto: «Nueva
+  venta», confirmación a quien compró y la factura de ARCA si está conectada. Si lo cobrado no llega al
+  precio acordado, no hay pedido.
+- **Link privado sin cuenta** (`/t/{slug}/suscripcion/{codigo}`, código aleatorio como el de los
+  pedidos; es la `back_url` de Mercado Pago): ver, pausar, reanudar y dar de baja. Primero se cambia en
+  Mercado Pago y recién después en la base; si Mercado Pago no responde, no cambia nada. La tienda
+  cancela desde el panel igual.
+- **Mails y campanita**: `suscripcion.alta` (mail a quien se suscribió con el link privado y a la
+  tienda), `suscripcion.baja` (a los dos) y `suscripcion.rechazo` (a la tienda). Cada mail sale una vez
+  (`suscripciones.avisos`). La campanita va a quien tiene Pedidos, con el precio sólo para Finanzas.
+- **Roles**: ver suscriptores y cancelar, Pedidos; crear, editar, pausar y borrar planes, Tienda. Un
+  plan con suscriptores no se borra: se pausa (sigue siendo de quienes ya están).
+- **RLS** por tienda en `suscripcion_planes`, `suscripciones` y `suscripcion_cobros`. Topes del alta: 10
+  por IP y 5 por email por hora; el cupo se mira con el plan bloqueado (cuentan las activas, las pausadas
+  y las altas de la última hora que se están autorizando).
+- **La demo**: los planes y suscriptores se ven y se crean; suscribirse la deja activa sin cobrar y la
+  página lo dice. Malbec y Mostaza traen planes y suscriptores de ejemplo.
+- **Para producción**: en la aplicación de Mercado Pago (Tus integraciones › Webhooks) hay que sumar los
+  eventos «Planes y suscripciones» (`subscription_preapproval` y `subscription_authorized_payment`) a
+  la misma URL `https://<api>/v1/webhooks/mercadopago` con la misma clave secreta. Mercado Pago pide
+  que el email de quien paga sea el de su cuenta: si autoriza con otra, el débito queda pendiente.
+
 ## 52. Lanzamientos con reserva, ofertas con fin y encargo con seña (migración 00069)
 
 - **Modelo**: el producto suma `lanzamiento`, `reserva_sena` y `encargo_sena` (% de seña, NULL = no

@@ -28,6 +28,8 @@
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
 	import { Reserva } from '../reserva.svelte.ts';
+	import { accionesDe, AltaPlan, cajaDe, textosSuscripcion } from '../suscripcion.svelte.ts';
+	import { CADA, diaCobro, entregasDe, porPeriodo, queIncluye } from '../suscripciones.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
 	import { AltaNewsletter } from '../newsletter.svelte.ts';
@@ -49,7 +51,9 @@
 		| 'no-existe'
 		| 'listo'
 		| 'turnos'
-		| 'turno';
+		| 'turno'
+		| 'suscripcion'
+		| 'mi-suscripcion';
 	// eslint-disable-next-line svelte/no-unused-props -- `proximos`: esta plantilla no dibuja el equipo ni los libres de hoy
 	let {
 		tienda,
@@ -60,6 +64,9 @@
 		pedido = null,
 		turno = null,
 		aviso = null,
+		plan = null,
+		suscripcion = null,
+		demo = false,
 		error = null
 	}: {
 		tienda: TiendaPublica;
@@ -85,6 +92,12 @@
 		proximos?: import('../tipos.ts').ProximosTurnos | null;
 		/** Vuelta de Mercado Pago al pagar la seña: ok, pendiente o error. */
 		aviso?: string | null;
+		/** El plan de suscripción (pagina 'suscripcion', §51). */
+		plan?: import('../tipos.ts').PlanPublico | null;
+		/** La suscripción del link privado (pagina 'mi-suscripcion'). */
+		suscripcion?: import('../tipos.ts').SuscripcionPublica | null;
+		/** Es la demo: suscribirse no cobra (se dice al lado del botón). */
+		demo?: boolean;
 		error?: string | null;
 	} = $props();
 
@@ -593,6 +606,11 @@
 	let reservando = $state(false);
 	let cancelando = $state(false);
 	let seguro = $state(false);
+	// ---- Suscripciones (§51; no están en el diseño: con las piezas del checkout y del turno) ----
+	const alta = untrack(() => (pagina === 'suscripcion' && plan ? new AltaPlan(plan) : null));
+	const caja = $derived(plan ? cajaDe(plan, tienda) : null);
+	let cambiando = $state(false);
+	let seguroBaja = $state(false);
 </script>
 
 <svelte:window bind:innerWidth={ancho} />
@@ -1012,6 +1030,48 @@
 								style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,{cardMin}),1fr));gap:clamp(12px,1.6cqw,20px) clamp(10px,1.4cqw,16px)"
 							>
 								{#each best as p (p.id)}{@render card(p, true, true)}{/each}
+							</div>
+						</section>
+					{/if}
+					{#if tienda.suscripciones.length}
+						<!-- Suscripciones (§51): sólo con planes activos, con las tarjetas de esta plantilla -->
+						<section style="padding:clamp(48px,7cqw,100px) clamp(14px,3.5cqw,44px) 0">
+							<div
+								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"
+							>
+								<h2
+									style="margin:0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(34px,4.8cqw,62px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt}"
+								>
+									Suscripciones
+								</h2>
+								<span style="font-size:14px;color:{T.mu}"
+									>Débito automático con Mercado Pago · pausás cuando&nbsp;quieras</span
+								>
+							</div>
+							<div
+								style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px"
+							>
+								{#each tienda.suscripciones as p (p.id)}<a
+										href="{base}/suscripciones/{p.id}"
+										style="display:flex;flex-direction:column;gap:4px;text-decoration:none;color:{T.ink}"
+										><span
+											style="display:block;aspect-ratio:4/3;border-radius:{T.rL};overflow:hidden;background:{T.sf2};margin-bottom:8px"
+											>{#if p.foto ?? p.productos[0]?.foto}<img
+													src={img(p.foto ?? p.productos[0]?.foto ?? null, 600, 450)}
+													alt=""
+													style="width:100%;height:100%;object-fit:cover;display:block"
+												/>{/if}</span
+										><span
+											style="display:block;font-family:{T.f};font-weight:{T.fw};font-size:22px;text-transform:{T.tt}"
+											>{p.nombre}</span
+										><span style="display:block;font-size:13px;color:{T.mu}"
+											>{p.agotado ? 'Sin lugar por ahora' : queIncluye(p) || entregasDe(p)}</span
+										><b style="display:block;margin-top:4px;font-size:16px"
+											>{fmt(p.precio)}<span style="font-weight:500;color:{T.mu}">
+												{CADA[p.frecuencia]}</span
+											></b
+										></a
+									>{/each}
 							</div>
 						</section>
 					{/if}
@@ -2476,6 +2536,324 @@
 
 		<!-- ============ NOSOTROS ============ -->
 		<!-- ============ NO EXISTE (producto o página que no está) ============ -->
+		<!-- ============ SUSCRIPCIÓN (un plan y su alta; con las piezas del checkout) ============ -->
+		{#if pagina === 'suscripcion' && plan && alta && caja}
+			<form
+				method="POST"
+				use:alta.form
+				style="padding:28px clamp(14px,3.5cqw,44px) clamp(48px,7cqw,90px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(22px,4cqw,56px);align-items:start"
+			>
+				<input type="hidden" name="entrega" value={alta.entrega} />
+				<div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+					<div>
+						<h1
+							style="margin:0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(40px,6cqw,72px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt};overflow-wrap:anywhere"
+						>
+							{plan.nombre}
+						</h1>
+						{#if plan.descripcion}<p
+								style="margin:10px 0 0;font-size:15.5px;line-height:1.55;color:{T.mu};text-wrap:pretty"
+							>
+								{plan.descripcion}
+							</p>{/if}
+					</div>
+					{#if tienda.suscripciones.length > 1}
+						<div>
+							<div
+								style="font-family:{T.f};font-weight:{T.fw};font-size:30px;text-transform:{T.tt};margin-bottom:12px"
+							>
+								Elegí tu plan
+							</div>
+							<div
+								style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"
+							>
+								{#each tienda.suscripciones as p (p.id)}{@const on = p.id === plan.id}<a
+										href="{base}/suscripciones/{p.id}"
+										aria-current={on ? 'page' : undefined}
+										style="display:block;padding:15px;border-radius:{T.r};border:1.5px solid {on
+											? T.ink
+											: T.ln};background:{on
+											? T.sf
+											: 'transparent'};text-decoration:none;color:{T.ink}"
+										><span style="display:block;font-size:14.5px;font-weight:700">{p.nombre}</span
+										><span style="display:block;font-size:12.5px;color:{T.mu}"
+											>{fmt(p.precio)} {CADA[p.frecuencia]}</span
+										></a
+									>{/each}
+							</div>
+						</div>
+					{/if}
+					<div>
+						<div
+							style="font-family:{T.f};font-weight:{T.fw};font-size:30px;text-transform:{T.tt};margin-bottom:12px"
+						>
+							Tus datos
+						</div>
+						<div
+							style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px"
+						>
+							{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel']] as [n, l, tipo, ac] (n)}
+								<label
+									style="display:block;padding:10px 12px;border:1.5px solid {T.ln};border-radius:{T.r};background:{T.sf}"
+									><span style="display:block;font-size:11.5px;color:{T.mu}">{l}</span><input
+										name={n}
+										type={tipo}
+										autocomplete={ac as 'email'}
+										required
+										maxlength="120"
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Instrument Sans';color:{T.ink};outline:none"
+									/></label
+								>
+							{/each}
+						</div>
+					</div>
+					<div>
+						<div
+							style="font-family:{T.f};font-weight:{T.fw};font-size:30px;text-transform:{T.tt};margin-bottom:12px"
+						>
+							Cómo te llega
+						</div>
+						<div
+							style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"
+							role="radiogroup"
+							aria-label="Cómo te llega"
+						>
+							{#each [['envio', 'Envío', 'A tu casa, incluido', plan.envio], ['retiro', 'Retiro', tienda.envios.retiroDireccion || 'En el local', plan.retiro]] as const as [id, t, d, hay] (id)}{#if hay}{@const on =
+										alta.entrega === id}<button
+										type="button"
+										role="radio"
+										aria-checked={on}
+										onclick={() => (alta.entrega = id)}
+										style="display:block;padding:15px;border-radius:{T.r};border:1.5px solid {on
+											? T.ink
+											: T.ln};background:{on
+											? T.sf
+											: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:{T.ink}"
+										><span style="display:block;font-size:14.5px;font-weight:700">{t}</span><span
+											style="display:block;font-size:12.5px;color:{T.mu}">{d}</span
+										></button
+									>{/if}{/each}
+						</div>
+						{#if alta.entrega === 'envio'}
+							<div
+								style="margin-top:8px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:8px"
+							>
+								<label
+									style="display:block;padding:10px 12px;border:1.5px solid {T.ln};border-radius:{T.r};background:{T.sf}"
+									><span style="display:block;font-size:11.5px;color:{T.mu}">Código postal</span
+									><input
+										name="cp"
+										inputmode="numeric"
+										maxlength="8"
+										autocomplete="postal-code"
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Instrument Sans';color:{T.ink};outline:none"
+									/></label
+								>
+								<label
+									style="display:block;padding:10px 12px;border:1.5px solid {T.ln};border-radius:{T.r};background:{T.sf}"
+									><span style="display:block;font-size:11.5px;color:{T.mu}"
+										>Dirección (calle, número, piso)</span
+									><input
+										name="direccion"
+										maxlength="160"
+										autocomplete="street-address"
+										required
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 14.5px 'Instrument Sans';color:{T.ink};outline:none"
+									/></label
+								>
+							</div>
+						{/if}
+					</div>
+					{#if error}<div
+							role="alert"
+							style="padding:12px 14px;border-radius:{T.r};background:color-mix(in srgb,#B42318 12%,transparent);color:#B42318;font-size:14px"
+						>
+							{error}
+						</div>{/if}
+				</div>
+				<div
+					style="position:sticky;top:90px;padding:24px;background:{T.sf};border-radius:{T.rL};min-width:0"
+				>
+					<div style="font-family:{T.f};font-weight:{T.fw};font-size:26px;text-transform:{T.tt}">
+						Tu suscripción
+					</div>
+					{#if caja.fotos.length}<div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+							{#each caja.fotos.slice(0, 6) as f, i (i)}<img
+									src={img(f, 120, 120)}
+									alt=""
+									style="width:46px;height:46px;border-radius:{T.r};object-fit:cover;flex:none"
+								/>{/each}
+						</div>{/if}
+					<div style="margin-top:12px;font-size:16px;font-weight:700">{plan.nombre}</div>
+					{#if queIncluye(plan)}<div style="margin-top:2px;font-size:13.5px;color:{T.mu}">
+							{queIncluye(plan)}
+						</div>{/if}
+					<div
+						style="margin-top:14px;padding-top:12px;border-top:1px solid {T.ln};display:flex;flex-direction:column;gap:8px;font-size:14px"
+					>
+						{#if caja.ahorro}<span style="display:flex;justify-content:space-between;gap:8px"
+								><span>Sueltos</span><s style="color:{T.mu}">{fmt(caja.sueltos)}</s></span
+							><span
+								style="display:flex;justify-content:space-between;gap:8px;color:{T.ok};font-weight:700"
+								><span>Ahorrás {caja.pct}%</span><span>− {fmt(caja.ahorro)}</span></span
+							>{/if}<span style="display:flex;justify-content:space-between;gap:8px"
+							><span>{alta.entrega === 'envio' ? 'Envío' : 'Retiro'}</span><span
+								style="color:{T.ok};font-weight:700"
+								>{alta.entrega === 'envio' ? 'Incluido' : 'En el local'}</span
+							></span
+						><span
+							style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px"
+							><b>{porPeriodo(plan.frecuencia)}</b><b style="font-size:24px">{fmt(plan.precio)}</b
+							></span
+						>
+					</div>
+					<button
+						disabled={alta.enviando || tienda.vitrina || plan.agotado}
+						style="margin-top:16px;width:100%;padding:18px;border:0;border-radius:{T.rb};background:{T.acc};color:{T.ai};font:700 15.5px 'Instrument Sans';cursor:pointer"
+						>{tienda.vitrina
+							? 'Es una tienda de ejemplo'
+							: plan.agotado
+								? 'Sin lugar por ahora'
+								: 'Suscribirme'}</button
+					>
+					<div
+						style="margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:{T.mu}"
+					>
+						{#if demo}<span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={15} style="flex:none" />Es la demo: no se cobra nada</span
+							>{:else}<span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={15} style="flex:none" />Débito automático con
+								Mercado&nbsp;Pago</span
+							><span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={15} style="flex:none" />Pausás o cancelás cuando
+								quieras</span
+							>{/if}
+					</div>
+				</div>
+			</form>
+		{/if}
+
+		<!-- ============ TU SUSCRIPCIÓN (el link privado; con las piezas de la confirmación del turno) ============ -->
+		{#if pagina === 'mi-suscripcion' && suscripcion}
+			{@const tx = textosSuscripcion(suscripcion, aviso === 'alta', demo)}
+			{@const puede = accionesDe(suscripcion)}
+			<section
+				style="padding:clamp(44px,6.5cqw,90px) clamp(14px,3.5cqw,44px);max-width:720px;margin:0 auto;text-align:center"
+			>
+				<span
+					style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:{T.acc};color:{T.ai}"
+					><Icon
+						icon={suscripcion.estado === 'cancelada'
+							? I.phXBold
+							: suscripcion.estado === 'pausada'
+								? I.phPauseFill
+								: I.phCheckBold}
+						size={26}
+					/></span
+				>
+				<h1
+					style="margin:20px 0 0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(40px,6cqw,72px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt};overflow-wrap:anywhere"
+				>
+					{tx.titulo}
+				</h1>
+				<p style="margin:14px 0 0;font-size:16px;line-height:1.55;color:{T.mu};text-wrap:pretty">
+					{tx.texto}
+				</p>
+				<div
+					style="margin-top:24px;padding:20px;background:{T.sf};border-radius:{T.rL};text-align:left;font-size:14.5px;line-height:1.6"
+				>
+					<div style="font-size:16px;font-weight:700">{suscripcion.plan}</div>
+					<div style="margin-top:4px;font-size:14px;color:{T.mu}">
+						{fmt(suscripcion.precio)}
+						{CADA[suscripcion.frecuencia]}{suscripcion.cobros
+							? ` · ${suscripcion.cobros} ${suscripcion.cobros === 1 ? 'cobro' : 'cobros'}`
+							: ''}
+					</div>
+					{#if suscripcion.incluye}<div style="font-size:14px;color:{T.mu}">
+							{suscripcion.incluye}
+						</div>{/if}
+					{#if suscripcion.estado === 'activa' && suscripcion.proximoCobro}<div
+							style="margin-top:8px;display:flex;gap:8px;font-size:14px"
+						>
+							<Icon icon={I.phCalendarPlusBold} size={17} style="flex:none" />Próximo cobro: {diaCobro(
+								suscripcion.proximoCobro
+							)}
+						</div>{/if}
+					<div style="margin-top:8px;display:flex;gap:8px;font-size:14px">
+						<Icon icon={I.phMapPinFill} size={17} style="flex:none" />{suscripcion.entrega ===
+						'envio'
+							? `Te llega a ${suscripcion.direccion}`
+							: `Retirás en ${suscripcion.tienda}`}
+					</div>
+				</div>
+				{#if error}<div
+						role="alert"
+						style="margin-top:12px;padding:12px 14px;border-radius:{T.r};background:color-mix(in srgb,#B42318 12%,transparent);color:#B42318;font-size:14px"
+					>
+						{error}
+					</div>{/if}
+				<div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+					{#if puede.pausar || puede.reanudar}<form
+							method="POST"
+							action={puede.pausar ? '?/pausar' : '?/reanudar'}
+							use:enhance={() => {
+								cambiando = true;
+								return async ({ update }) => {
+									cambiando = false;
+									await update();
+								};
+							}}
+						>
+							<button
+								disabled={cambiando}
+								style="display:inline-block;padding:15px 26px;border:0;border-radius:{T.rb};background:{T.ink};color:{T.bg};font:700 15px 'Instrument Sans';cursor:pointer"
+								>{puede.pausar ? 'Pausar' : 'Reanudar'}</button
+							>
+						</form>{/if}
+					{#if puede.cancelar}<form
+							method="POST"
+							action="?/cancelar"
+							use:enhance={() => {
+								cambiando = true;
+								return async ({ update }) => {
+									cambiando = false;
+									seguroBaja = false;
+									await update();
+								};
+							}}
+						>
+							{#if seguroBaja}<button
+									disabled={cambiando}
+									style="display:inline-block;padding:15px 26px;border:0;border-radius:{T.rb};background:{T.ink};color:{T.bg};font:700 15px 'Instrument Sans';cursor:pointer"
+									>Sí, darla de baja</button
+								>{:else}<button
+									type="button"
+									onclick={() => (seguroBaja = true)}
+									style="display:inline-block;padding:15px 26px;border:1.5px solid {T.ink};border-radius:{T.rb};background:transparent;color:{T.ink};font:700 15px 'Instrument Sans';cursor:pointer"
+									>Dar de baja</button
+								>{/if}
+						</form>{:else}<a
+							href="{base}/suscripciones/{suscripcion.planId}"
+							style="display:inline-block;padding:15px 26px;border:0;border-radius:{T.rb};background:{T.ink};color:{T.bg};font:700 15px 'Instrument Sans';text-decoration:none"
+							>Volver a sumarme</a
+						>{/if}
+					<a
+						href={base || '/'}
+						style="display:inline-block;padding:15px 26px;border:1.5px solid {T.ink};border-radius:{T.rb};background:transparent;color:{T.ink};font:700 15px 'Instrument Sans';text-decoration:none"
+						>Volver a la tienda</a
+					>
+				</div>
+				{#if whatsapp}<p style="margin:14px 0 0;font-size:13.5px;color:{T.mu}">
+						¿Dudas? Escribinos&nbsp;<a
+							href={wa(`¡Hola! Tengo una consulta sobre mi suscripción a ${suscripcion.plan}.`)}
+							target="_blank"
+							rel="noopener"
+							style="color:{T.ink};font-weight:700">por WhatsApp</a
+						>.
+					</p>{/if}
+			</section>
+		{/if}
+
 		{#if pagina === 'no-existe'}
 			<section style="padding:clamp(40px,7cqw,96px) clamp(16px,4cqw,48px)">
 				<VacioTienda {tienda} {tema} motivo="no-existe" />

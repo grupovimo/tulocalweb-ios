@@ -33,6 +33,8 @@
 	import { partirTitulo } from '../titulo.ts';
 	import { untrack } from 'svelte';
 	import { Reserva } from '../reserva.svelte.ts';
+	import { accionesDe, AltaPlan, cajaDe, textosSuscripcion } from '../suscripcion.svelte.ts';
+	import { CADA, diaCobro, entregasDe, porPeriodo, queIncluye } from '../suscripciones.ts';
 	import { cuandoLargo, duracion } from '#lib/turnos/formato.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../tipos.ts';
 
@@ -53,7 +55,9 @@
 		| 'no-existe'
 		| 'listo'
 		| 'turnos'
-		| 'turno';
+		| 'turno'
+		| 'suscripcion'
+		| 'mi-suscripcion';
 	// eslint-disable-next-line svelte/no-unused-props -- `proximos`: esta plantilla no dibuja el equipo ni los libres de hoy
 	let {
 		tienda,
@@ -64,6 +68,9 @@
 		pedido = null,
 		turno = null,
 		aviso = null,
+		plan = null,
+		suscripcion = null,
+		demo = false,
 		error = null
 	}: {
 		tienda: TiendaPublica;
@@ -89,6 +96,12 @@
 		proximos?: import('../tipos.ts').ProximosTurnos | null;
 		/** Vuelta de Mercado Pago al pagar la seña: ok, pendiente o error. */
 		aviso?: string | null;
+		/** El plan de suscripción (pagina 'suscripcion', §51). */
+		plan?: import('../tipos.ts').PlanPublico | null;
+		/** La suscripción del link privado (pagina 'mi-suscripcion'). */
+		suscripcion?: import('../tipos.ts').SuscripcionPublica | null;
+		/** Es la demo: suscribirse no cobra (se dice al lado del botón). */
+		demo?: boolean;
 		error?: string | null;
 	} = $props();
 
@@ -611,6 +624,13 @@
 	let reservando = $state(false);
 	let cancelando = $state(false);
 	let seguro = $state(false);
+
+	// ---- Suscripciones (§51; no están en el diseño de esta plantilla: con sus piezas) ----
+	const planes = $derived(tienda.suscripciones);
+	const alta = untrack(() => (pagina === 'suscripcion' && plan ? new AltaPlan(plan) : null));
+	const caja = $derived(plan ? cajaDe(plan, tienda) : null);
+	let cambiando = $state(false);
+	let seguroBaja = $state(false);
 </script>
 
 <svelte:window bind:innerWidth={ancho} />
@@ -1048,6 +1068,53 @@
 												></span>{#if wide}Comparar{/if}</button
 											>
 										</div>{/each}
+								</div>
+							</section>
+						{/if}
+						{#if tienda.suscripciones.length}
+							<!-- Suscripciones (no están en el diseño: con las piezas de «Más vendidos») -->
+							<section style="padding:clamp(44px,6cqw,84px) clamp(14px,3cqw,36px) 0">
+								<div
+									style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"
+								>
+									<h2
+										style="margin:0;font-family:'Sora',sans-serif;font-weight:700;font-size:clamp(30px,4cqw,50px);line-height:1;letter-spacing:-.05em"
+									>
+										Suscripciones
+									</h2>
+								</div>
+								<div
+									style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,230px),1fr));gap:12px"
+								>
+									{#each tienda.suscripciones as p (p.id)}{@const f =
+											p.foto ?? p.productos.find((x) => x.foto)?.foto ?? null}<a
+											href="{base}/suscripciones/{p.id}"
+											class="tarj"
+											style="position:relative;padding:10px;border-radius:22px;background:#fff;color:#0E1116;display:flex;flex-direction:column;transition:box-shadow .25s;min-width:0;text-decoration:none"
+											><span
+												style="position:relative;display:block;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#EEF1F5"
+												>{#if f}<img
+														src={img(f, 500, 500)}
+														alt=""
+														style="width:100%;height:100%;object-fit:cover"
+													/>{/if}{#if p.agotado}<span
+														style="position:absolute;top:8px;left:8px;padding:4px 9px;border-radius:999px;background:#0E1116;color:#fff;font-size:11px;font-weight:700"
+														>Sin lugar</span
+													>{/if}</span
+											><span style="display:block;padding:12px 4px 4px"
+												><span style="display:block;font-size:12px;color:#69717E;font-weight:600"
+													>{CADA[p.frecuencia]}</span
+												><span
+													style="display:block;margin-top:2px;font-size:15px;font-weight:700;line-height:1.25"
+													>{p.nombre}</span
+												><span style="display:flex;gap:8px;align-items:baseline;margin-top:10px"
+													><b style="font-size:17px;letter-spacing:-.02em">{fmt(p.precio)}</b></span
+												>{#if queIncluye(p)}<span
+														style="display:block;font-size:12.5px;color:#69717E"
+														>{queIncluye(p)}</span
+													>{/if}</span
+											></a
+										>{/each}
 								</div>
 							</section>
 						{/if}
@@ -2557,6 +2624,378 @@
 							<FormResena slug={tienda.slug} {tema} codigo={pedido.codigo} nombre={pedido.nombre} />
 						</div>
 					{/if}
+				</section>
+			{/if}
+
+			<!-- ============ SUSCRIPCIÓN (un plan y su alta; no está en el diseño: con las piezas del checkout) ============ -->
+			{#if pagina === 'suscripcion' && plan && alta && caja}
+				<form
+					method="POST"
+					use:alta.form
+					style="padding:22px clamp(14px,3cqw,36px) clamp(48px,7cqw,90px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(14px,3cqw,36px);align-items:start"
+				>
+					<input type="hidden" name="entrega" value={alta.entrega} />
+					<div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+						<div>
+							<div style="font-size:12.5px;font-weight:700;color:var(--acento, #2F6BFF)">
+								Suscripción · {CADA[plan.frecuencia]}
+							</div>
+							<h1
+								style="margin:6px 0 0;font-family:'Sora',sans-serif;font-weight:700;font-size:clamp(32px,4.6cqw,52px);line-height:1;letter-spacing:-.05em;overflow-wrap:anywhere"
+							>
+								{plan.nombre}
+							</h1>
+							{#if plan.descripcion}<p
+									style="margin:10px 0 0;font-size:15.5px;line-height:1.55;color:#69717E;text-wrap:pretty"
+								>
+									{plan.descripcion}
+								</p>{/if}
+						</div>
+						{#if planes.length > 1}<div
+								style="padding:16px;border-radius:20px;background:#fff;border:2px solid transparent"
+							>
+								<div style="display:flex;align-items:center;gap:10px">
+									<span
+										style="width:26px;height:26px;border-radius:50%;background:var(--acento, #2F6BFF);color:#fff;display:grid;place-items:center;font-size:12.5px;font-weight:700"
+										>1</span
+									><b style="flex:1;font-size:15.5px">Elegí tu plan</b>
+								</div>
+								<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+									{#each planes as p (p.id)}{@const on = p.id === plan.id}<a
+											href="{base}/suscripciones/{p.id}"
+											aria-current={on ? 'page' : undefined}
+											style="display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;border:1.5px solid {ch(
+												on
+											).bd};background:{ch(on)
+												.bg};text-align:left;cursor:pointer;font-family:inherit;color:#0E1116;text-decoration:none"
+											><span
+												style="width:18px;height:18px;border-radius:50%;border:2px solid {ch(on)
+													.rc};display:grid;place-items:center;flex:none"
+												>{#if on}<span
+														style="width:8px;height:8px;border-radius:50%;background:var(--acento, #2F6BFF)"
+													></span>{/if}</span
+											><span style="flex:1;min-width:0"
+												><span style="display:block;font-size:14.5px;font-weight:600"
+													>{p.nombre}</span
+												><span style="display:block;font-size:12.5px;color:#69717E"
+													>{CADA[p.frecuencia]}</span
+												></span
+											><b style="font-size:13.5px;white-space:nowrap">{fmt(p.precio)}</b></a
+										>{/each}
+								</div>
+							</div>{/if}
+						<div
+							style="padding:16px;border-radius:20px;background:#fff;border:2px solid transparent"
+						>
+							<div style="display:flex;align-items:center;gap:10px">
+								<span
+									style="width:26px;height:26px;border-radius:50%;background:var(--acento, #2F6BFF);color:#fff;display:grid;place-items:center;font-size:12.5px;font-weight:700"
+									>{planes.length > 1 ? '2' : '1'}</span
+								><b style="flex:1;font-size:15.5px">Tus datos</b>
+							</div>
+							<div
+								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px"
+							>
+								<label style="display:block;min-width:0"
+									><span style="display:block;font-size:12.5px;color:#69717E;margin-bottom:4px"
+										>Email</span
+									><input
+										name="email"
+										type="email"
+										autocomplete="email"
+										required
+										maxlength="120"
+										style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#F3F5F8;font:400 14px 'Instrument Sans';color:#0E1116"
+									/></label
+								><label style="display:block;min-width:0"
+									><span style="display:block;font-size:12.5px;color:#69717E;margin-bottom:4px"
+										>Nombre y apellido</span
+									><input
+										name="nombre"
+										type="text"
+										autocomplete="name"
+										required
+										maxlength="80"
+										style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#F3F5F8;font:400 14px 'Instrument Sans';color:#0E1116"
+									/></label
+								><label style="display:block;min-width:0"
+									><span style="display:block;font-size:12.5px;color:#69717E;margin-bottom:4px"
+										>WhatsApp</span
+									><input
+										name="telefono"
+										type="tel"
+										autocomplete="tel"
+										required
+										maxlength="20"
+										style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#F3F5F8;font:400 14px 'Instrument Sans';color:#0E1116"
+									/></label
+								>
+							</div>
+						</div>
+						<div
+							style="padding:16px;border-radius:20px;background:#fff;border:2px solid transparent"
+						>
+							<div style="display:flex;align-items:center;gap:10px">
+								<span
+									style="width:26px;height:26px;border-radius:50%;background:var(--acento, #2F6BFF);color:#fff;display:grid;place-items:center;font-size:12.5px;font-weight:700"
+									>{planes.length > 1 ? '3' : '2'}</span
+								><b style="flex:1;font-size:15.5px">Cómo te llega</b>
+							</div>
+							<div
+								style="margin-top:12px;display:flex;flex-direction:column;gap:8px"
+								role="radiogroup"
+								aria-label="Cómo te llega"
+							>
+								{#each [['envio', 'Envío', 'A tu casa, incluido en el precio', plan.envio], ['retiro', 'Retiro', tienda.envios.retiroDireccion || 'En el local', plan.retiro]] as const as [id, t, d, hay] (id)}{#if hay}{@const on =
+											alta.entrega === id}<button
+											type="button"
+											role="radio"
+											aria-checked={on}
+											onclick={() => (alta.entrega = id)}
+											style="display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;border:1.5px solid {ch(
+												on
+											).bd};background:{ch(on)
+												.bg};text-align:left;cursor:pointer;font-family:inherit;color:#0E1116;text-decoration:none"
+											><span
+												style="width:18px;height:18px;border-radius:50%;border:2px solid {ch(on)
+													.rc};display:grid;place-items:center;flex:none"
+												>{#if on}<span
+														style="width:8px;height:8px;border-radius:50%;background:var(--acento, #2F6BFF)"
+													></span>{/if}</span
+											><span style="flex:1;min-width:0"
+												><span style="display:block;font-size:14.5px;font-weight:600">{t}</span
+												><span style="display:block;font-size:12.5px;color:#69717E">{d}</span></span
+											></button
+										>{/if}{/each}
+							</div>
+							{#if alta.entrega === 'envio'}<div
+									style="margin-top:10px;display:grid;grid-template-columns:minmax(0,140px) minmax(0,1fr);gap:8px"
+								>
+									<label style="display:block;min-width:0"
+										><span style="display:block;font-size:12.5px;color:#69717E;margin-bottom:4px"
+											>Código postal</span
+										><input
+											name="cp"
+											type="text"
+											autocomplete="postal-code"
+											inputmode="numeric"
+											maxlength="8"
+											style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#F3F5F8;font:400 14px 'Instrument Sans';color:#0E1116"
+										/></label
+									><label style="display:block;min-width:0"
+										><span style="display:block;font-size:12.5px;color:#69717E;margin-bottom:4px"
+											>Dirección (calle, número, piso)</span
+										><input
+											name="direccion"
+											type="text"
+											autocomplete="street-address"
+											required
+											maxlength="160"
+											style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#F3F5F8;font:400 14px 'Instrument Sans';color:#0E1116"
+										/></label
+									>
+								</div>{/if}
+						</div>
+						{#if error}<div
+								role="alert"
+								style="padding:12px 14px;border-radius:14px;background:#FDECEC;color:#B42318;font-size:14px"
+							>
+								{error}
+							</div>{/if}
+					</div>
+					<div
+						style="position:sticky;top:80px;padding:20px;border-radius:24px;background:#0E1116;color:#fff;min-width:0"
+					>
+						<div
+							style="font-family:'Sora',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.04em"
+						>
+							{plan.nombre}
+						</div>
+						{#if queIncluye(plan)}<div style="margin-top:6px;font-size:13.5px;color:#8A919D">
+								{queIncluye(plan)}
+							</div>{/if}
+						{#if caja.fotos.length}<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+								{#each caja.fotos.slice(0, 6) as f, i (i)}<img
+										src={img(f, 120, 140)}
+										alt=""
+										style="width:52px;height:52px;border-radius:12px;object-fit:cover;background:#1D2330"
+									/>{/each}
+							</div>{/if}
+						<div
+							style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px;font-size:14px"
+						>
+							{#if caja.ahorro}<span style="display:flex;justify-content:space-between;gap:8px"
+									><span
+										>{caja.unidades} {caja.unidades === 1 ? 'producto' : 'productos'} sueltos</span
+									><s style="color:#8A919D">{fmt(caja.sueltos)}</s></span
+								><span
+									style="display:flex;justify-content:space-between;gap:8px;color:#7EE2A8;font-weight:600"
+									><span>Suscripto ahorrás {caja.pct}%</span><span>− {fmt(caja.ahorro)}</span></span
+								>{/if}<span style="display:flex;justify-content:space-between;gap:8px"
+								><span>{alta.entrega === 'envio' ? 'Envío' : 'Retiro'}</span><span
+									style="color:#7EE2A8;font-weight:600"
+									>{alta.entrega === 'envio' ? 'Incluido' : 'En el local'}</span
+								></span
+							>
+							<span
+								style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:6px"
+								><b style="">{porPeriodo(plan.frecuencia)}</b><b
+									style="font-family:'Sora',sans-serif;font-size:26px">{fmt(plan.precio)}</b
+								></span
+							>
+						</div>
+						<button
+							disabled={alta.enviando || tienda.vitrina || plan.agotado}
+							style="margin-top:16px;width:100%;padding:17px;border:0;border-radius:14px;background:var(--acento, #2F6BFF);color:#fff;font:700 15.5px 'Instrument Sans';cursor:pointer"
+							>{tienda.vitrina
+								? 'Es una tienda de ejemplo'
+								: plan.agotado
+									? 'Sin lugar por ahora'
+									: 'Suscribirme'}</button
+						>
+						<div
+							style="margin-top:14px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:#B4BCCB"
+						>
+							<span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={16} style="flex:none" />{demo
+									? 'Es la demo: no se cobra nada'
+									: 'Débito automático con Mercado Pago'}</span
+							>
+							<span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={16} style="flex:none" />Pausás o cancelás
+								cuando&nbsp;quieras</span
+							>
+							<span style="display:flex;gap:8px"
+								><Icon icon={I.phCheck} size={16} style="flex:none" />{entregasDe(plan)}</span
+							>
+						</div>
+					</div>
+				</form>
+			{/if}
+
+			<!-- ============ TU SUSCRIPCIÓN (el link privado; no está en el diseño: con las piezas de la confirmación) ============ -->
+			{#if pagina === 'mi-suscripcion' && suscripcion}
+				{@const tx = textosSuscripcion(suscripcion, aviso === 'alta', demo)}
+				{@const puede = accionesDe(suscripcion)}
+				{@const icono =
+					suscripcion.estado === 'cancelada'
+						? I.phXBold
+						: suscripcion.estado === 'pausada'
+							? I.phPauseFill
+							: I.phCheckBold}
+				<section style="padding:clamp(28px,4cqw,56px) clamp(14px,3cqw,36px) clamp(48px,7cqw,90px)">
+					<div
+						style="max-width:640px;margin:0 auto;padding:clamp(20px,3cqw,32px);border-radius:24px;background:#fff;text-align:center"
+					>
+						<span
+							style="display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#E7F6EE;color:#14894B"
+							><Icon icon={icono} size={26} /></span
+						>
+						<h1
+							style="margin:16px 0 0;font-family:'Sora',sans-serif;font-weight:700;font-size:clamp(32px,4.6cqw,52px);line-height:1;letter-spacing:-.05em;overflow-wrap:anywhere"
+						>
+							{tx.titulo}
+						</h1>
+						<p
+							style="margin:12px 0 0;font-size:15.5px;line-height:1.55;color:#69717E;text-wrap:pretty"
+						>
+							{tx.texto}
+						</p>
+						<div
+							style="margin-top:18px;padding:14px 16px;border-radius:16px;background:#EAF0FF;text-align:left;font-size:14.5px;line-height:1.6"
+						>
+							<div style="font-size:16px;font-weight:600">{suscripcion.plan}</div>
+							<div style="font-size:13.5px;color:#69717E;margin-top:2px">
+								{fmt(suscripcion.precio)}
+								{CADA[suscripcion.frecuencia]}{suscripcion.cobros
+									? ` · ${suscripcion.cobros} ${suscripcion.cobros === 1 ? 'cobro' : 'cobros'}`
+									: ''}
+							</div>
+							{#if suscripcion.incluye}<div style="font-size:13.5px;color:#69717E;margin-top:2px">
+									{suscripcion.incluye}
+								</div>{/if}
+							{#if suscripcion.estado === 'activa' && suscripcion.proximoCobro}<div
+									style="margin-top:12px;display:flex;gap:8px;font-size:14px"
+								>
+									<Icon icon={I.phCalendarPlusBold} size={17} style="flex:none" />Próximo cobro: {diaCobro(
+										suscripcion.proximoCobro
+									)}
+								</div>{/if}
+							<div style="margin-top:12px;display:flex;gap:8px;font-size:14px">
+								<Icon icon={I.phMapPinFill} size={17} style="flex:none" />{suscripcion.entrega ===
+								'envio'
+									? `Te llega a ${suscripcion.direccion}`
+									: `Retirás en ${suscripcion.tienda}`}
+							</div>
+						</div>
+						{#if error}<div
+								role="alert"
+								style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#FDECEC;color:#B42318;font-size:14px"
+							>
+								{error}
+							</div>{/if}
+						<div
+							style="margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap"
+						>
+							{#if puede.pausar || puede.reanudar}<form
+									method="POST"
+									action={puede.pausar ? '?/pausar' : '?/reanudar'}
+									use:enhance={() => {
+										cambiando = true;
+										return async ({ update }) => {
+											cambiando = false;
+											await update();
+										};
+									}}
+								>
+									<button
+										disabled={cambiando}
+										style="display:inline-block;padding:15px 24px;border:0;border-radius:14px;background:#0E1116;color:#fff;font:700 14.5px 'Instrument Sans';cursor:pointer"
+										>{puede.pausar ? 'Pausar' : 'Reanudar'}</button
+									>
+								</form>{/if}
+							{#if puede.cancelar}<form
+									method="POST"
+									action="?/cancelar"
+									use:enhance={() => {
+										cambiando = true;
+										return async ({ update }) => {
+											cambiando = false;
+											seguroBaja = false;
+											await update();
+										};
+									}}
+								>
+									{#if seguroBaja}<button
+											disabled={cambiando}
+											style="display:inline-block;padding:15px 24px;border:0;border-radius:14px;background:#0E1116;color:#fff;font:700 14.5px 'Instrument Sans';cursor:pointer"
+											>Sí, darla de baja</button
+										>{:else}<button
+											type="button"
+											onclick={() => (seguroBaja = true)}
+											style="display:inline-block;padding:15px 24px;border:0;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px rgba(14,17,22,.08);color:#0E1116;font:700 14.5px 'Instrument Sans';cursor:pointer"
+											>Dar de baja</button
+										>{/if}
+								</form>{:else}<a
+									href="{base}/suscripciones/{suscripcion.planId}"
+									style="display:inline-block;padding:15px 24px;border:0;border-radius:14px;background:#0E1116;color:#fff;font:700 14.5px 'Instrument Sans';text-decoration:none"
+									>Volver a suscribirme</a
+								>{/if}
+							<a
+								href={base || '/'}
+								style="display:inline-block;padding:15px 24px;border:0;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px rgba(14,17,22,.08);color:#0E1116;font:700 14.5px 'Instrument Sans';text-decoration:none"
+								>Volver a la tienda</a
+							>
+						</div>
+						{#if whatsapp}<p style="margin:14px 0 0;font-size:13.5px;color:#69717E">
+								¿Dudas? Escribinos&nbsp;<a
+									href={wa(`¡Hola! Tengo una consulta sobre mi suscripción a ${suscripcion.plan}.`)}
+									target="_blank"
+									rel="noopener"
+									style="color:#0E1116">por WhatsApp</a
+								>.
+							</p>{/if}
+					</div>
 				</section>
 			{/if}
 
