@@ -1,0 +1,6 @@
+// Configuración común. La app no tiene secretos: la clave publicable de Clerk la da la API
+// (/v1/auth/proveedores). Para apuntar a otra API sin tocar esto, creá Local.xcconfig (no se
+// versiona) con, por ejemplo, TLW_API = http:/$()/192.168.0.10:4000. En el simulador también sirve
+// lanzar la app con el argumento -TLWApi http://127.0.0.1:4000 (sólo en Debug).
+TLW_API = https:/$()/api.tulocalweb.com.ar
+#include? "Local.xcconfig"
