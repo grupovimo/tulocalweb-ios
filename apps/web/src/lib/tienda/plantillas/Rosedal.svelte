@@ -2338,7 +2338,7 @@
 							maxlength="120"
 							autocomplete="email"
 							placeholder="Tu email"
-							aria-label="Tu email"
+							aria-label="Tu correo para las novedades"
 							bind:value={nl.email}
 							style="--ph:#A88A8F;flex:1;min-width:0;padding:9px 12px;border:0;background:transparent;font:inherit;font-size:14px;color:#3A1F25;outline:none"
 						/>

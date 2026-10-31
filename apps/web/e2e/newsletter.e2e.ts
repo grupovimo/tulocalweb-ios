@@ -21,10 +21,10 @@ test('newsletter: sumarse desde el pie, confirmar, aparecer en el panel y darse 
 	await page.goto(`/t/${slug}`);
 	await listo(page);
 	const pie = page.locator('footer');
-	await pie.getByLabel('Tu email').fill('no-es-un-email');
+	await pie.getByLabel('Tu correo para las novedades').fill('no-es-un-email');
 	await pie.getByRole('button', { name: 'Sumarme' }).click();
 	await expect(pie.getByRole('status')).toContainText('Revisá el email.');
-	await pie.getByLabel('Tu email').fill('nueva@ejemplo.com');
+	await pie.getByLabel('Tu correo para las novedades').fill('nueva@ejemplo.com');
 	await pie.getByRole('button', { name: 'Sumarme' }).click();
 	// En la demo no sale el mail: el aviso trae el link de confirmar.
 	await expect(pie.getByRole('status')).toContainText('En la demo no mandamos el mail', {
@@ -122,7 +122,7 @@ test('newsletter: la casilla del checkout en una plantilla sin bloque en el dise
 	const slug = await demo(page, /^Andes/);
 	await page.goto(`/t/${slug}`);
 	await listo(page);
-	await expect(page.locator('footer').getByLabel('Tu email')).toHaveCount(0);
+	await expect(page.locator('footer').getByLabel('Tu correo para las novedades')).toHaveCount(0);
 	// Un producto que se agrega sin elegir opciones.
 	await page.goto(`/t/${slug}/catalogo`);
 	await listo(page);
