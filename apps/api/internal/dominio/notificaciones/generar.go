@@ -54,6 +54,9 @@ func (g *Generador) generadores() map[string]generador {
 		"plan.activado":           planActivado,
 		"plan.pausado":            planPausado,
 		"arca.vence":              arcaVence,
+		"suscripcion.alta":        suscripcionAlta,
+		"suscripcion.baja":        suscripcionBaja,
+		"suscripcion.rechazo":     suscripcionRechazo,
 	}
 }
 
@@ -433,4 +436,70 @@ func planPausado(_ context.Context, _ pgx.Tx, ev outbox.Evento) (Hecho, error) {
 	return Hecho{Clave: fmt.Sprintf("plan:%d", ev.ID), Para: solo(Texto{Tipo: "err", Grupo: "sistema",
 		Titulo: "Se pausó el cobro de tu plan", Detalle: "Mercado Pago pausó la suscripción. Revisá el medio de pago.",
 		Ruta: "/panel/plan-y-facturacion"}, roles.Cuenta)}, nil
+}
+
+// Las suscripciones de la tienda (§51), a quien tiene Pedidos; el precio, sólo con Finanzas. Nunca
+// los datos de quien se suscribió.
+func datosSuscripcion(ctx context.Context, t pgx.Tx, ev outbox.Evento) (string, int64, bool, error) {
+	var d struct {
+		ID string `json:"id"`
+	}
+	if json.Unmarshal(ev.Datos, &d) != nil || d.ID == "" {
+		return "", 0, false, nil
+	}
+	var plan string
+	var precio int64
+	err := t.QueryRow(ctx, `SELECT plan_nombre, precio FROM suscripciones WHERE id::text = $1`, d.ID).Scan(&plan, &precio)
+	return plan, precio, err == nil, err
+}
+
+func textoSuscripcion(tx Texto, precio int64) func(Miembro) (Texto, bool) {
+	return func(m Miembro) (Texto, bool) {
+		if !roles.Puede(m.Rol, roles.Pedidos) {
+			return Texto{}, false
+		}
+		if roles.Puede(m.Rol, roles.Finanzas) && precio > 0 {
+			tx.Detalle = auditoria.Pesos(precio) + " · " + tx.Detalle
+		}
+		return tx, true
+	}
+}
+
+// suscripcionAlta: suscripcion.alta (Mercado Pago autorizó el débito).
+func suscripcionAlta(ctx context.Context, t pgx.Tx, ev outbox.Evento) (Hecho, error) {
+	plan, precio, ok, err := datosSuscripcion(ctx, t, ev)
+	if !ok {
+		return Hecho{}, err
+	}
+	return Hecho{Clave: fmt.Sprintf("suscripcion:%d", ev.ID), Para: textoSuscripcion(Texto{Tipo: "mp", Grupo: "ventas",
+		Titulo: "Nuevo suscriptor: " + plan, Detalle: "Débito automático con Mercado Pago", Ruta: "/panel/suscripciones"}, precio)}, nil
+}
+
+// suscripcionBaja: suscripcion.baja (la canceló quien se suscribió, la tienda o Mercado Pago).
+func suscripcionBaja(ctx context.Context, t pgx.Tx, ev outbox.Evento) (Hecho, error) {
+	plan, _, ok, err := datosSuscripcion(ctx, t, ev)
+	if !ok {
+		return Hecho{}, err
+	}
+	var d struct {
+		Por string `json:"por"`
+	}
+	_ = json.Unmarshal(ev.Datos, &d)
+	detalle := map[string]string{"comprador": "La dio de baja quien se había suscripto", "tienda": "La cancelaron desde el panel"}[d.Por]
+	if detalle == "" {
+		detalle = "Mercado Pago la canceló"
+	}
+	return Hecho{Clave: fmt.Sprintf("suscripcion:%d", ev.ID), Para: textoSuscripcion(Texto{Tipo: "mp", Grupo: "ventas",
+		Titulo: "Se dio de baja una suscripción a " + plan, Detalle: detalle, Ruta: "/panel/suscripciones"}, 0)}, nil
+}
+
+// suscripcionRechazo: suscripcion.rechazo (Mercado Pago no pudo cobrar; reintenta solo).
+func suscripcionRechazo(ctx context.Context, t pgx.Tx, ev outbox.Evento) (Hecho, error) {
+	plan, precio, ok, err := datosSuscripcion(ctx, t, ev)
+	if !ok {
+		return Hecho{}, err
+	}
+	return Hecho{Clave: fmt.Sprintf("suscripcion:%d", ev.ID), Para: textoSuscripcion(Texto{Tipo: "err", Grupo: "ventas",
+		Titulo: "No se pudo cobrar una suscripción a " + plan, Detalle: "Mercado Pago lo vuelve a intentar",
+		Ruta: "/panel/suscripciones"}, precio)}, nil
 }

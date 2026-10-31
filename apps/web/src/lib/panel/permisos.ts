@@ -80,6 +80,8 @@ export const PERMISO_SECCION: Record<string, Permiso> = {
 	Actividad: 'tienda',
 	Pedidos: 'pedidos',
 	Turnos: 'pedidos',
+	// Planes y suscriptores (§51); crear y editar planes pide Tienda (lo decide Go).
+	Suscripciones: 'pedidos',
 	Devoluciones: 'pedidos',
 	'Ventas en local': 'pedidos',
 	Productos: 'pedidos',

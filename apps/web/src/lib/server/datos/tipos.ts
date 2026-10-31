@@ -108,6 +108,10 @@ export type ProfesionalEditable = components['schemas']['ProfesionalEditable'];
 export type Turno = components['schemas']['Turno'];
 export type TurnoNuevo = components['schemas']['TurnoNuevo'];
 export type EstadoTurno = components['schemas']['EstadoTurno'];
+export type PanelSuscripciones = components['schemas']['PanelSuscripciones'];
+export type PlanSuscripcion = components['schemas']['PlanSuscripcion'];
+export type PlanSuscripcionEditable = components['schemas']['PlanSuscripcionEditable'];
+export type Suscriptor = components['schemas']['Suscriptor'];
 
 export interface Datos {
 	rubros(): Promise<Rubro[]>;
@@ -330,6 +334,17 @@ export interface Datos {
 	estadoTurno(id: string, estado: EstadoTurno): Promise<Turno | 'no-existe'>;
 	/** Devuelve la seña pagada con Mercado Pago. */
 	devolverSena(id: string): Promise<Turno | 'no-existe' | 'sin-sena' | 'sin-cobros'>;
+	/** Suscripciones (§51): los planes, los suscriptores y si hay Mercado Pago para cobrarlos. */
+	suscripcionesPanel(): Promise<PanelSuscripciones>;
+	/** Crea (id null) o guarda un plan; null si el id no existe o 'invalido'. */
+	guardarPlanSuscripcion(
+		id: string | null,
+		p: PlanSuscripcionEditable
+	): Promise<PlanSuscripcion | null | 'invalido'>;
+	/** 'no-se-puede': tiene suscriptores (se pausa en vez de borrarlo). */
+	borrarPlanSuscripcion(id: string): Promise<Resultado>;
+	/** La tienda da de baja una suscripción. */
+	cancelarSuscriptor(id: string): Promise<Suscriptor | 'no-existe' | 'mercadopago'>;
 	/** La importación en curso o, si no hay, la última (null: nunca hubo). */
 	importacionActual(): Promise<Importacion | null>;
 	/** Empieza a importar desde otra plataforma (una sola activa). */

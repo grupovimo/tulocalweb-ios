@@ -81,7 +81,13 @@ export async function resolverTienda(
 			foto: tienda.compartir?.foto ?? ''
 		};
 		return {
-			tienda: { ...tienda, turnos: tienda.turnos ?? null, medicion: medicionSegura(tienda) },
+			tienda: {
+				...tienda,
+				turnos: tienda.turnos ?? null,
+				// Una API sin suscripciones todavía: sin planes.
+				suscripciones: tienda.suscripciones ?? [],
+				medicion: medicionSegura(tienda)
+			},
 			datos: null,
 			sandboxId: null
 		};

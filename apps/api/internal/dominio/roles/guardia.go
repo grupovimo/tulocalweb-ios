@@ -59,6 +59,8 @@ var Rutas = map[string]Permiso{
 	"PATCH /v1/panel/turnos/{id}":                          Pedidos,
 	"GET /v1/panel/turnos/profesionales":                   Pedidos,
 	"GET /v1/panel/turnos/servicios":                       Pedidos,
+	"GET /v1/panel/suscripciones":                          Pedidos, // planes y suscriptores (§51)
+	"POST /v1/panel/suscripciones/{id}/cancelar":           Pedidos,
 	"GET /v1/panel/listas/{lista}":                         Pedidos, // productos, inventario y envíos
 	"POST /v1/panel/listas/{lista}/acciones":               Pedidos,
 	"POST /v1/panel/listas/envios/acciones":                Pedidos,
@@ -188,6 +190,9 @@ var Rutas = map[string]Permiso{
 	"POST /v1/panel/turnos/servicios":                      Tienda,
 	"PUT /v1/panel/turnos/servicios/{id}":                  Tienda,
 	"DELETE /v1/panel/turnos/servicios/{id}":               Tienda,
+	"POST /v1/panel/suscripciones/planes":                  Tienda,
+	"PUT /v1/panel/suscripciones/planes/{id}":              Tienda,
+	"DELETE /v1/panel/suscripciones/planes/{id}":           Tienda,
 
 	// Sólo la dueña.
 	"GET /v1/panel/cuenta/plan":           Cuenta,

@@ -28,6 +28,7 @@ describe('roles del equipo de una tienda', () => {
 			'Para hacer hoy',
 			'Pedidos',
 			'Turnos',
+			'Suscripciones',
 			'Devoluciones',
 			'Ventas en local',
 			'Productos',

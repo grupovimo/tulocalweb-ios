@@ -81,6 +81,7 @@ function desdeElEditor(slug: string, m: MiTienda): TiendaPublica {
 			correo: false
 		},
 		turnos: null,
+		suscripciones: [],
 		vitrina: false,
 		dominio: null,
 		medicion: { ga4: null, pixel: null }

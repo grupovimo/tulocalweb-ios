@@ -4,6 +4,10 @@ import type { components } from '@mostrador/contrato/esquema';
 export type TurnosTienda = components['schemas']['TurnosPublicos'];
 export type TurnoPublico = components['schemas']['TurnoPublico'];
 export type HorarioLibre = components['schemas']['HorarioLibre'];
+/** Un plan de suscripción de la tienda (§51), como lo ve quien compra. */
+export type PlanPublico = components['schemas']['PlanPublico'];
+/** Lo que ve quien se suscribió en su link privado. */
+export type SuscripcionPublica = components['schemas']['SuscripcionPublica'];
 
 /**
  * La tienda online tal como la ve quien compra: lo publicado, sin costos, márgenes ni datos de
@@ -102,6 +106,11 @@ export type TiendaPublica = {
 	envios: EnviosTienda;
 	/** Turnos con seña; null si la tienda no los tomó. `sena` es el % que se cobra de verdad. */
 	turnos: TurnosTienda | null;
+	/**
+	 * Los planes de suscripción activos (el club de vinos, el café cada dos semanas). Vacío si no
+	 * tiene o, con la API, si no conectó Mercado Pago: esa parte de la tienda no se dibuja.
+	 */
+	suscripciones: PlanPublico[];
 	/** Sólo mirar: la vitrina de una plantilla (nadie la administra, no se compra). */
 	vitrina: boolean;
 	/** El dominio propio principal y verificado (mitienda.com.ar), o null: sólo /t/<slug>. */

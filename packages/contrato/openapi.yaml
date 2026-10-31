@@ -2922,6 +2922,130 @@ paths:
               schema: { $ref: '#/components/schemas/TurnoPublico' }
         '404': { $ref: '#/components/responses/Problema' }
         '409': { description: 'tarde: falta menos que la anticipación mínima', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+  /v1/panel/suscripciones:
+    get:
+      operationId: suscripcionesPanel
+      summary: 'Suscripciones (§51) — los planes de la tienda (activos y pausados), los suscriptores y si tiene Mercado Pago conectado (sin eso no puede ofrecer planes).'
+      responses:
+        '200':
+          description: Planes y suscriptores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PanelSuscripciones' }
+  /v1/panel/suscripciones/planes:
+    post:
+      operationId: crearPlanSuscripcion
+      summary: Un plan nuevo (va al final del orden). Tiene que incluir productos del catálogo, texto o los dos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlanSuscripcionEditable' }
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlanSuscripcion' }
+        '400': { $ref: '#/components/responses/Problema' }
+  /v1/panel/suscripciones/planes/{id}:
+    put:
+      operationId: guardarPlanSuscripcion
+      summary: Edita el plan. Lo que pagan quienes ya se suscribieron no cambia (la suscripción copió el precio).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlanSuscripcionEditable' }
+      responses:
+        '200':
+          description: Como quedó
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlanSuscripcion' }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+    delete:
+      operationId: borrarPlanSuscripcion
+      summary: Lo borra si nunca tuvo suscriptores; si tuvo, 409 en_uso (se pausa).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Borrado }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { description: 'en_uso: tiene suscriptores', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+  /v1/panel/suscripciones/{id}/cancelar:
+    post:
+      operationId: cancelarSuscriptor
+      summary: La tienda da de baja una suscripción (primero en Mercado Pago). Cancelar una cancelada no es error.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Como quedó
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suscriptor' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '502': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/suscripciones:
+    post:
+      operationId: suscribirse
+      summary: 'El alta desde la tienda: el precio sale del plan. Devuelve el link privado (codigo) y adónde autorizar el débito en Mercado Pago (url). Tope de 10 por IP y 5 por email por hora.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AltaSuscripcion' }
+      responses:
+        '201':
+          description: Pendiente de autorizar en Mercado Pago
+          content:
+            application/json:
+              schema: { type: object, required: [codigo], properties: { codigo: { type: string }, url: { type: string } } }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { description: 'cupo (el plan se llenó) o sin_cobros (la tienda no tiene Mercado Pago)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+        '429': { $ref: '#/components/responses/Problema' }
+        '502': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/suscripciones/{codigo}:
+    get:
+      operationId: suscripcionPublica
+      summary: La suscripción por su link privado (sin cuenta).
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: codigo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Suscripción
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuscripcionPublica' }
+        '404': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/suscripciones/{codigo}/{accion}:
+    post:
+      operationId: cambiarSuscripcionPublica
+      summary: Pausar (activa), reanudar (pausada) o cancelar, desde el link privado. Primero en Mercado Pago.
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: codigo, in: path, required: true, schema: { type: string } }
+        - { name: accion, in: path, required: true, schema: { type: string, enum: [pausar, reanudar, cancelar] } }
+      responses:
+        '200':
+          description: Como quedó
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuscripcionPublica' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { description: 'estado: no se puede en el estado actual', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+        '502': { $ref: '#/components/responses/Problema' }
   /v1/panel/telegram:
     get:
       operationId: estadoTelegram
@@ -5477,6 +5601,130 @@ components:
         cancelable: { type: boolean, description: 'Reservado sin vencer o confirmado, y falta más que la anticipación mínima' }
         tienda: { type: string }
         direccion: { type: string }
+        whatsapp: { type: string }
+    FrecuenciaSuscripcion:
+      type: string
+      enum: [quincenal, mensual, bimestral]
+      description: 'Cada 14 días, cada mes o cada 2 meses (lo que acepta la API de suscripciones de Mercado Pago)'
+    EstadoSuscripcion:
+      type: string
+      enum: [pendiente, activa, pausada, cancelada]
+      description: 'pendiente: falta autorizar el débito en Mercado Pago'
+    ProductoPlan:
+      type: object
+      required: [productoId, varianteId, cantidad]
+      properties:
+        productoId: { type: string }
+        varianteId: { type: string, description: 'Vacío si el producto no tiene opciones' }
+        cantidad: { type: integer, minimum: 1, maximum: 99 }
+    PlanSuscripcionEditable:
+      type: object
+      required: [nombre, descripcion, foto, precio, frecuencia, productos, incluye, envio, retiro, cupo, activo]
+      properties:
+        nombre: { type: string, minLength: 2, maxLength: 60 }
+        descripcion: { type: string, maxLength: 400 }
+        foto: { type: [string, 'null'] }
+        precio: { type: integer, minimum: 100, description: 'Pesos por período (envío incluido si se envía)' }
+        frecuencia: { $ref: '#/components/schemas/FrecuenciaSuscripcion' }
+        productos: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/ProductoPlan' } }
+        incluye: { type: string, maxLength: 400, description: 'Qué incluye, en texto libre' }
+        envio: { type: boolean }
+        retiro: { type: boolean }
+        cupo: { type: [integer, 'null'], description: 'Suscripciones vigentes como máximo (null = sin tope)' }
+        activo: { type: boolean }
+    PlanSuscripcion:
+      allOf:
+        - { $ref: '#/components/schemas/PlanSuscripcionEditable' }
+        - type: object
+          required: [id, orden, suscriptores]
+          properties:
+            id: { type: string }
+            orden: { type: integer }
+            suscriptores: { type: integer, description: 'Vigentes: activas y pausadas' }
+    Suscriptor:
+      type: object
+      required: [id, planId, plan, precio, frecuencia, nombre, email, telefono, entrega, direccion, estado, proximoCobro, cobros, ultimoCobro, creadaEn, canceladaPor]
+      properties:
+        id: { type: string }
+        planId: { type: string }
+        plan: { type: string, description: 'El nombre del plan cuando se suscribió' }
+        precio: { type: integer, description: 'Lo que autorizó en Mercado Pago' }
+        frecuencia: { $ref: '#/components/schemas/FrecuenciaSuscripcion' }
+        nombre: { type: string }
+        email: { type: string }
+        telefono: { type: string }
+        entrega: { type: string, enum: [envio, retiro] }
+        direccion: { type: string }
+        estado: { $ref: '#/components/schemas/EstadoSuscripcion' }
+        proximoCobro: { type: [string, 'null'], format: date-time }
+        cobros: { type: integer, description: 'Cobros aprobados' }
+        ultimoCobro: { type: [string, 'null'], format: date-time }
+        creadaEn: { type: string, format: date-time }
+        canceladaPor: { type: [string, 'null'], enum: [comprador, tienda, mercadopago, null] }
+    PanelSuscripciones:
+      type: object
+      required: [mercadoPago, planes, suscriptores]
+      properties:
+        mercadoPago: { type: boolean, description: 'Sin Mercado Pago conectado la tienda no puede ofrecer planes' }
+        planes: { type: array, items: { $ref: '#/components/schemas/PlanSuscripcion' } }
+        suscriptores: { type: array, items: { $ref: '#/components/schemas/Suscriptor' } }
+    PlanPublico:
+      type: object
+      description: 'TiendaPublica.suscripciones[]: los planes activos (vacío sin Mercado Pago)'
+      required: [id, nombre, descripcion, foto, precio, frecuencia, incluye, productos, envio, retiro, agotado]
+      properties:
+        id: { type: string }
+        nombre: { type: string }
+        descripcion: { type: string }
+        foto: { type: [string, 'null'] }
+        precio: { type: integer }
+        frecuencia: { $ref: '#/components/schemas/FrecuenciaSuscripcion' }
+        incluye: { type: string }
+        productos:
+          type: array
+          items:
+            type: object
+            required: [id, nombre, foto, cantidad, variante]
+            properties:
+              id: { type: string }
+              nombre: { type: string }
+              foto: { type: [string, 'null'] }
+              cantidad: { type: integer }
+              variante: { type: [string, 'null'] }
+        envio: { type: boolean }
+        retiro: { type: boolean }
+        agotado: { type: boolean, description: 'Tiene cupo y está lleno' }
+    AltaSuscripcion:
+      type: object
+      required: [planId, email, nombre, telefono, entrega, direccion, cp]
+      properties:
+        planId: { type: string }
+        email: { type: string, format: email, maxLength: 120 }
+        nombre: { type: string, minLength: 2, maxLength: 80 }
+        telefono: { type: string, maxLength: 20 }
+        entrega: { type: string, enum: [envio, retiro] }
+        direccion: { type: string, maxLength: 200, description: 'Obligatoria con envío' }
+        cp: { type: string, maxLength: 10 }
+    SuscripcionPublica:
+      type: object
+      description: 'Lo que ve quien se suscribió en su link privado (/t/{slug}/suscripcion/{codigo})'
+      required: [codigo, planId, plan, foto, incluye, precio, frecuencia, nombre, entrega, direccion, estado, proximoCobro, cobros, creadaEn, tienda, whatsapp]
+      properties:
+        codigo: { type: string }
+        planId: { type: string }
+        plan: { type: string }
+        foto: { type: [string, 'null'] }
+        incluye: { type: string }
+        precio: { type: integer }
+        frecuencia: { $ref: '#/components/schemas/FrecuenciaSuscripcion' }
+        nombre: { type: string, description: 'Sólo el primer nombre' }
+        entrega: { type: string, enum: [envio, retiro] }
+        direccion: { type: string }
+        estado: { $ref: '#/components/schemas/EstadoSuscripcion' }
+        proximoCobro: { type: [string, 'null'], format: date-time }
+        cobros: { type: integer }
+        creadaEn: { type: string, format: date-time }
+        tienda: { type: string }
         whatsapp: { type: string }
     Problema:
       type: object

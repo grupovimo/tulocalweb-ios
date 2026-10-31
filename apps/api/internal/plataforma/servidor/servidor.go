@@ -33,6 +33,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/precios"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/roles"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/tiendas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/turnos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
@@ -203,6 +204,16 @@ func Nuevo(d Dependencias) http.Handler {
 			Admin: func(r *http.Request) bool {
 				s, ok := cuentas.SesionDe(r)
 				return ok && (s.Rol == "duenio" || s.Rol == "admin")
+			}})
+		// Suscripciones de la tienda (§51): sin Mercado Pago en el servidor no se ofrecen planes.
+		var suscriptor suscripciones.Cobrador
+		if d.MercadoPago != nil {
+			suscriptor = d.MercadoPago
+		}
+		suscripciones.Rutas(mux, d.App, suscripciones.Config{Tienda: tienda, MP: suscriptor, Sitio: d.Sitio, Log: d.Log,
+			IP: func(r *http.Request) string { return cuentas.ClienteDe(r, d.ClaveBFF).IP },
+			Permitido: func(ctx context.Context, clave string, max int, ventana time.Duration) (bool, error) {
+				return limite.Permitido(ctx, d.App, clave, max, ventana)
 			}})
 		if d.Telegram != nil {
 			d.Telegram.Rutas(mux, d.ClaveBFF)

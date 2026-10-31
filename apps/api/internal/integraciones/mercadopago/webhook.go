@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -93,16 +94,40 @@ func (s *Servicio) Recibir(ctx context.Context, a Aviso) error {
 	}
 	switch a.Type {
 	case "subscription_preapproval":
-		return s.ConciliarSuscripcion(ctx, id)
-	case "payment", "order":
-		usuario, err := strconv.ParseInt(crudo(a.UserID), 10, 64)
+		// La suscripción que vende una tienda (§51): por el débito ya guardado o por la cuenta del aviso.
+		tienda, err := s.tiendaDelAviso(ctx, `SELECT app.tienda_de_preapproval($1)::text`, id)
 		if err != nil {
-			return nil
+			return err
 		}
-		var tienda *string
-		if err := s.Pool.EnTx(ctx, func(t pgx.Tx) error {
-			return t.QueryRow(ctx, `SELECT app.tienda_de_mp($1)::text`, usuario).Scan(&tienda)
-		}); err != nil {
+		if tienda == nil {
+			if tienda, err = s.tiendaDeUsuario(ctx, a.UserID); err != nil {
+				return err
+			}
+		}
+		if tienda != nil {
+			return s.Pool.EnTienda(ctx, *tienda, func(t pgx.Tx) error {
+				return outbox.Publicar(ctx, t, *tienda, "mp.suscripcion", map[string]string{"id": id})
+			})
+		}
+		// El abono de Tu Local Web.
+		err = s.ConciliarSuscripcion(ctx, id)
+		var e *ErrorMP
+		if errors.As(err, &e) && e.Estado == http.StatusNotFound {
+			return nil // no es de la plataforma: nada que conciliar
+		}
+		return err
+	case "subscription_authorized_payment":
+		// Cada cobro de la suscripción de una tienda: el pedido (aprobado) o el aviso (rechazado).
+		tienda, err := s.tiendaDeUsuario(ctx, a.UserID)
+		if err != nil || tienda == nil {
+			return err
+		}
+		return s.Pool.EnTienda(ctx, *tienda, func(t pgx.Tx) error {
+			return outbox.Publicar(ctx, t, *tienda, "mp.cobro_suscripcion", map[string]string{"id": id})
+		})
+	case "payment", "order":
+		tienda, err := s.tiendaDeUsuario(ctx, a.UserID)
+		if err != nil {
 			return err
 		}
 		if tienda == nil {
@@ -118,6 +143,21 @@ func (s *Servicio) Recibir(ctx context.Context, a Aviso) error {
 		})
 	}
 	return nil
+}
+
+// tiendaDeUsuario: la tienda conectada con la cuenta de Mercado Pago del aviso (nil si ninguna).
+func (s *Servicio) tiendaDeUsuario(ctx context.Context, usuario json.RawMessage) (*string, error) {
+	n, err := strconv.ParseInt(crudo(usuario), 10, 64)
+	if err != nil {
+		return nil, nil
+	}
+	return s.tiendaDelAviso(ctx, `SELECT app.tienda_de_mp($1)::text`, n)
+}
+
+func (s *Servicio) tiendaDelAviso(ctx context.Context, q string, arg any) (*string, error) {
+	var tienda *string
+	err := s.Pool.EnTx(ctx, func(t pgx.Tx) error { return t.QueryRow(ctx, q, arg).Scan(&tienda) })
+	return tienda, err
 }
 
 // Manejadores del outbox para el worker.
@@ -140,6 +180,31 @@ func (s *Servicio) Manejadores() map[string]outbox.Manejador {
 				return nil
 			}
 			return s.ConciliarPago(ctx, ev.TiendaID, n)
+		},
+		// La suscripción de una tienda (§51). Si el preapproval no es de una tienda, puede ser el abono
+		// de Tu Local Web con una cuenta que además está conectada como tienda.
+		"mp.suscripcion": func(ctx context.Context, ev outbox.Evento) error {
+			id, err := leer(ev)
+			if err != nil {
+				return err
+			}
+			deTienda, err := s.ConciliarSuscripcionCliente(ctx, ev.TiendaID, id)
+			if err != nil || deTienda || s.Config.TokenPlataforma == "" {
+				return err
+			}
+			err = s.ConciliarSuscripcion(ctx, id)
+			var e *ErrorMP
+			if errors.As(err, &e) && e.Estado == http.StatusNotFound {
+				return nil
+			}
+			return err
+		},
+		"mp.cobro_suscripcion": func(ctx context.Context, ev outbox.Evento) error {
+			id, err := leer(ev)
+			if err != nil {
+				return err
+			}
+			return s.ConciliarCobroSuscripcion(ctx, ev.TiendaID, id)
 		},
 		"mp.orden": func(ctx context.Context, ev outbox.Evento) error {
 			id, err := leer(ev)

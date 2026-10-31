@@ -22,6 +22,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/turnos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/arca"
@@ -115,8 +116,10 @@ type Tienda struct {
 	Envios    Envios            `json:"envios"`
 	Vitrina   bool              `json:"vitrina"`
 	// Turnos: servicios, profesionales, seña y horario; null si la tienda no toma turnos.
-	Turnos   *turnos.Resumen `json:"turnos"`
-	Medicion Medicion        `json:"medicion"`
+	Turnos *turnos.Resumen `json:"turnos"`
+	// Suscripciones: los planes activos (§51); vacío si no tiene o no conectó Mercado Pago.
+	Suscripciones []suscripciones.PlanPublico `json:"suscripciones"`
+	Medicion      Medicion                    `json:"medicion"`
 	// Dominio: el propio que eligió como principal, ya verificado (null: sólo /t/<slug>).
 	Dominio *string `json:"dominio"`
 }
@@ -277,6 +280,9 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			out.Envios.GratisDesde = &g
 		}
 		if out.Turnos, err = turnos.ResumenDe(ctx, t, id, mp); err != nil {
+			return err
+		}
+		if out.Suscripciones, err = suscripciones.PlanesDe(ctx, t, id, mp); err != nil {
 			return err
 		}
 

@@ -60,6 +60,10 @@ import type {
 	CambioDireccion,
 	DisponibilidadDireccion,
 	AjustesTurnos,
+	PanelSuscripciones,
+	PlanSuscripcion,
+	PlanSuscripcionEditable,
+	Suscriptor,
 	EstadoTurno,
 	Profesional,
 	ProfesionalEditable,
@@ -202,7 +206,9 @@ import { plantilla as buscarPlantilla } from '#lib/plantillas.ts';
 import { SITE } from '#lib/site.ts';
 import { TARJETA_INICIAL } from '#lib/panel/tarjeta.ts';
 import type {
+	PlanPublico,
 	ProximosTurnos,
+	SuscripcionPublica,
 	TiendaPublica,
 	TurnoPublico,
 	TurnosTienda
@@ -220,6 +226,14 @@ import {
 	superpone
 } from '#lib/turnos/libres.ts';
 import { ENTIDAD as ENTIDAD_TURNOS, turnosDemo } from './turnos.ts';
+import {
+	ENTIDAD as ENTIDAD_SUSCRIPCIONES,
+	mezclar as mezclarSuscripciones,
+	nuevoCodigo as codigoSuscripcion,
+	planPublico,
+	publica as suscripcionPublicaDe
+} from './suscripciones.ts';
+import { diasDe } from '#lib/tienda/suscripciones.ts';
 import type { CuponTienda, Historial } from '#lib/tienda/cupon.ts';
 import { validarGa4, validarPixel } from '#lib/tienda/medicion.ts';
 import { generarVariantes, precioDe, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
@@ -2917,7 +2931,7 @@ export class DatosSandbox implements Datos {
 	 * ejemplo de una plantilla para mirar, sin carrito real.
 	 */
 	async tiendaPublica(vitrina = false): Promise<TiendaPublica> {
-		const [d, t, c, conf, productos, mp, turnos, medicion, cr, respuestasQ, entregas] =
+		const [d, t, c, conf, productos, mp, turnos, medicion, cr, respuestasQ, entregas, planes] =
 			await Promise.all([
 				this.demo(),
 				this.tienda(),
@@ -2929,7 +2943,8 @@ export class DatosSandbox implements Datos {
 				vitrina ? null : this.medicion(),
 				this.cambiosResenas(),
 				this.respuestasPreguntas(),
-				this.entregas()
+				this.entregas(),
+				this.estadoSuscripciones()
 			]);
 		const diseno = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
 		const plantillaId = diseno.plantilla || t.plantilla;
@@ -3054,6 +3069,10 @@ export class DatosSandbox implements Datos {
 				correo: false
 			},
 			turnos,
+			// Como en Go: sin Mercado Pago conectado la tienda no ofrece planes.
+			suscripciones: mp.conectada
+				? planes.planes.filter((x) => x.activo).map((x) => planPublico(x, productos))
+				: [],
 			vitrina,
 			// La vitrina de una plantilla nunca mide: no es de nadie.
 			medicion: { ga4: medicion?.ga4 ?? null, pixel: medicion?.pixel ?? null }
@@ -3593,6 +3612,181 @@ export class DatosSandbox implements Datos {
 	async contextoHornero(): Promise<ContextoHornero> {
 		const c = contextoDemo(await this.demo(), Date.now());
 		return PERMISOS_DE[this.rol].includes('finanzas') ? c : contextoSinMontos(c);
+	}
+
+	// ---------------------------------------------------------------- Suscripciones (§51)
+
+	/** Planes y suscriptores: los de ejemplo con lo que cambió el visitante. */
+	private async estadoSuscripciones() {
+		const c = await cambiosDe(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES);
+		return mezclarSuscripciones(c, this.plantilla(), this.sb.creadoEn);
+	}
+
+	private async guardarSuscriptor(x: Suscriptor) {
+		await guardarCambio(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES, `s:${x.id}`, x);
+	}
+
+	async suscripcionesPanel(): Promise<PanelSuscripciones> {
+		const [e, mp] = await Promise.all([this.estadoSuscripciones(), this.mercadoPago()]);
+		return { mercadoPago: mp.conectada, planes: e.planes, suscriptores: e.suscriptores };
+	}
+
+	async guardarPlanSuscripcion(
+		id: string | null,
+		p: PlanSuscripcionEditable
+	): Promise<PlanSuscripcion | null | 'invalido'> {
+		const [e, productos] = await Promise.all([this.estadoSuscripciones(), this.regProductos()]);
+		const previo = id ? e.planes.find((x) => x.id === id) : null;
+		if (id && !previo) return null;
+		// Cada producto es de la tienda y, con opciones, trae una variante suya (como en Go).
+		for (const x of p.productos) {
+			const r = productos.find((y) => y.id === x.productoId);
+			if (
+				!r ||
+				r.opciones.length > 0 !== !!x.varianteId ||
+				(x.varianteId && !r.variantes.some((v) => v.id === x.varianteId))
+			)
+				return 'invalido';
+		}
+		const { suscriptores = 0, ...base } = previo ?? {};
+		const guardado: Omit<PlanSuscripcion, 'suscriptores'> = {
+			...base,
+			...p,
+			id: previo?.id ?? crypto.randomUUID(),
+			orden: previo?.orden ?? Math.max(-1, ...e.planes.map((x) => x.orden)) + 1
+		};
+		await guardarCambio(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES, `p:${guardado.id}`, guardado);
+		return { ...guardado, suscriptores };
+	}
+
+	async borrarPlanSuscripcion(id: string): Promise<Resultado> {
+		const e = await this.estadoSuscripciones();
+		if (!e.planes.some((x) => x.id === id)) return 'no-existe';
+		if (e.suscriptores.some((x) => x.planId === id)) return 'no-se-puede';
+		await guardarCambio(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES, `p:${id}`, null);
+		return 'ok';
+	}
+
+	async cancelarSuscriptor(id: string): Promise<Suscriptor | 'no-existe' | 'mercadopago'> {
+		const x = (await this.estadoSuscripciones()).suscriptores.find((y) => y.id === id);
+		if (!x) return 'no-existe';
+		if (x.estado === 'cancelada') return x;
+		const nuevo: Suscriptor = {
+			...x,
+			estado: 'cancelada',
+			canceladaPor: 'tienda',
+			proximoCobro: null
+		};
+		await this.guardarSuscriptor(nuevo);
+		return nuevo;
+	}
+
+	/** Los planes activos de la tienda (la página del plan los busca acá). */
+	async planesTienda(): Promise<PlanPublico[]> {
+		const [e, productos] = await Promise.all([this.estadoSuscripciones(), this.regProductos()]);
+		return e.planes.filter((x) => x.activo).map((x) => planPublico(x, productos));
+	}
+
+	/**
+	 * El alta desde la tienda de la demo: queda activa sin cobrar (en la demo no hay Mercado Pago de
+	 * verdad). El precio sale del plan, como en Go.
+	 */
+	async suscribirPublico(
+		a: {
+			planId: string;
+			nombre: string;
+			email: string;
+			telefono: string;
+			entrega: 'envio' | 'retiro';
+			direccion: string;
+			cp: string;
+		},
+		ahora = Date.now()
+	): Promise<{ codigo: string } | 'no-existe' | 'cupo' | 'invalido'> {
+		const e = await this.estadoSuscripciones();
+		const p = e.planes.find((x) => x.id === a.planId && x.activo);
+		if (!p) return 'no-existe';
+		if ((a.entrega === 'envio' && !p.envio) || (a.entrega === 'retiro' && !p.retiro))
+			return 'invalido';
+		if (p.cupo !== null && p.suscriptores >= p.cupo) return 'cupo';
+		const codigo = codigoSuscripcion();
+		const x: Suscriptor = {
+			id: crypto.randomUUID(),
+			planId: p.id,
+			plan: p.nombre,
+			precio: p.precio,
+			frecuencia: p.frecuencia,
+			nombre: a.nombre,
+			email: a.email,
+			telefono: a.telefono,
+			entrega: a.entrega,
+			direccion: a.entrega === 'envio' ? a.direccion : '',
+			estado: 'activa',
+			proximoCobro: new Date(ahora + diasDe(p.frecuencia) * 86_400_000).toISOString(),
+			cobros: 0,
+			ultimoCobro: null,
+			creadaEn: new Date(ahora).toISOString(),
+			canceladaPor: null
+		};
+		await Promise.all([
+			this.guardarSuscriptor(x),
+			guardarCambio(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES, `c:${codigo}`, { id: x.id })
+		]);
+		return { codigo };
+	}
+
+	private async suscriptorDeCodigo(codigo: string) {
+		const ref = (await cambiosDe(this.db, this.sb.id, ENTIDAD_SUSCRIPCIONES)).get(`c:${codigo}`) as
+			{ id: string } | undefined;
+		if (!ref) return null;
+		const e = await this.estadoSuscripciones();
+		const x = e.suscriptores.find((y) => y.id === ref.id);
+		return x ? { x, plan: e.planes.find((p) => p.id === x.planId) } : null;
+	}
+
+	async suscripcionPublica(codigo: string): Promise<SuscripcionPublica | null> {
+		const [r, conf, t] = await Promise.all([
+			this.suscriptorDeCodigo(codigo),
+			this.configuracion(),
+			this.tienda()
+		]);
+		return r
+			? suscripcionPublicaDe(r.x, codigo, r.plan, {
+					nombre: t.nombre,
+					whatsapp: conf.negocio.whatsapp ?? ''
+				})
+			: null;
+	}
+
+	/** Pausar, reanudar o cancelar desde el link privado. */
+	async cambiarSuscripcionPublica(
+		codigo: string,
+		accion: 'pausar' | 'reanudar' | 'cancelar',
+		ahora = Date.now()
+	): Promise<SuscripcionPublica | 'no-existe' | 'estado'> {
+		const r = await this.suscriptorDeCodigo(codigo);
+		if (!r) return 'no-existe';
+		const { x } = r;
+		if (!(x.estado === 'cancelada' && accion === 'cancelar')) {
+			if (
+				x.estado === 'cancelada' ||
+				(accion === 'pausar' && x.estado !== 'activa') ||
+				(accion === 'reanudar' && x.estado !== 'pausada')
+			)
+				return 'estado';
+			const estado =
+				accion === 'pausar' ? 'pausada' : accion === 'reanudar' ? 'activa' : 'cancelada';
+			await this.guardarSuscriptor({
+				...x,
+				estado,
+				canceladaPor: estado === 'cancelada' ? 'comprador' : x.canceladaPor,
+				proximoCobro:
+					estado === 'activa'
+						? new Date(ahora + diasDe(x.frecuencia) * 86_400_000).toISOString()
+						: null
+			});
+		}
+		return (await this.suscripcionPublica(codigo)) ?? 'no-existe';
 	}
 
 	// ---------------------------------------------------------------- Turnos

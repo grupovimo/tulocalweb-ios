@@ -13,6 +13,10 @@ import type {
 	CambioDireccion,
 	DisponibilidadDireccion,
 	AjustesTurnos,
+	PanelSuscripciones,
+	PlanSuscripcion,
+	PlanSuscripcionEditable,
+	Suscriptor,
 	EstadoTurno,
 	Profesional,
 	ProfesionalEditable,
@@ -825,6 +829,39 @@ export class DatosApi implements Datos {
 			return p?.code === 'sin_cobros' ? ('sin-cobros' as const) : ('sin-sena' as const);
 		}
 		return (await r.json()) as Turno;
+	}
+
+	// ---- Suscripciones de la tienda (§51)
+
+	suscripcionesPanel() {
+		return this.pedir<PanelSuscripciones>('/v1/panel/suscripciones');
+	}
+	async guardarPlanSuscripcion(id: string | null, p: PlanSuscripcionEditable) {
+		const r = id
+			? await this.intentar(
+					`/v1/panel/suscripciones/planes/${encodeURIComponent(id)}`,
+					'PUT',
+					p,
+					[400]
+				)
+			: await this.intentar('/v1/panel/suscripciones/planes', 'POST', p, [400]);
+		if (r.status === 400) return 'invalido' as const;
+		return r.ok ? ((await r.json()) as PlanSuscripcion) : null;
+	}
+	async borrarPlanSuscripcion(id: string) {
+		return resultado(
+			await this.intentar(`/v1/panel/suscripciones/planes/${encodeURIComponent(id)}`, 'DELETE')
+		);
+	}
+	async cancelarSuscriptor(id: string) {
+		const r = await this.intentar(
+			`/v1/panel/suscripciones/${encodeURIComponent(id)}/cancelar`,
+			'POST',
+			{},
+			[502]
+		);
+		if (r.status === 502) return 'mercadopago' as const;
+		return r.ok ? ((await r.json()) as Suscriptor) : ('no-existe' as const);
 	}
 
 	/** Como `pedir`, pero 404 y 409 vuelven como respuesta (son resultados, no errores). */

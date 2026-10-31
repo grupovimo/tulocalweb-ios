@@ -2748,6 +2748,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/suscripciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suscripciones (§51) — los planes de la tienda (activos y pausados), los suscriptores y si tiene Mercado Pago conectado (sin eso no puede ofrecer planes). */
+        get: operations["suscripcionesPanel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/suscripciones/planes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Un plan nuevo (va al final del orden). Tiene que incluir productos del catálogo, texto o los dos. */
+        post: operations["crearPlanSuscripcion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/suscripciones/planes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edita el plan. Lo que pagan quienes ya se suscribieron no cambia (la suscripción copió el precio). */
+        put: operations["guardarPlanSuscripcion"];
+        post?: never;
+        /** Lo borra si nunca tuvo suscriptores; si tuvo, 409 en_uso (se pausa). */
+        delete: operations["borrarPlanSuscripcion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/suscripciones/{id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** La tienda da de baja una suscripción (primero en Mercado Pago). Cancelar una cancelada no es error. */
+        post: operations["cancelarSuscriptor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/suscripciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** El alta desde la tienda: el precio sale del plan. Devuelve el link privado (codigo) y adónde autorizar el débito en Mercado Pago (url). Tope de 10 por IP y 5 por email por hora. */
+        post: operations["suscribirse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/suscripciones/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** La suscripción por su link privado (sin cuenta). */
+        get: operations["suscripcionPublica"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/suscripciones/{codigo}/{accion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pausar (activa), reanudar (pausada) o cancelar, desde el link privado. Primero en Mercado Pago. */
+        post: operations["cambiarSuscripcionPublica"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panel/telegram": {
         parameters: {
             query?: never;
@@ -5229,6 +5349,132 @@ export interface components {
             cancelable: boolean;
             tienda: string;
             direccion: string;
+            whatsapp: string;
+        };
+        /**
+         * @description Cada 14 días, cada mes o cada 2 meses (lo que acepta la API de suscripciones de Mercado Pago)
+         * @enum {string}
+         */
+        FrecuenciaSuscripcion: "quincenal" | "mensual" | "bimestral";
+        /**
+         * @description pendiente: falta autorizar el débito en Mercado Pago
+         * @enum {string}
+         */
+        EstadoSuscripcion: "pendiente" | "activa" | "pausada" | "cancelada";
+        ProductoPlan: {
+            productoId: string;
+            /** @description Vacío si el producto no tiene opciones */
+            varianteId: string;
+            cantidad: number;
+        };
+        PlanSuscripcionEditable: {
+            nombre: string;
+            descripcion: string;
+            foto: string | null;
+            /** @description Pesos por período (envío incluido si se envía) */
+            precio: number;
+            frecuencia: components["schemas"]["FrecuenciaSuscripcion"];
+            productos: components["schemas"]["ProductoPlan"][];
+            /** @description Qué incluye, en texto libre */
+            incluye: string;
+            envio: boolean;
+            retiro: boolean;
+            /** @description Suscripciones vigentes como máximo (null = sin tope) */
+            cupo: number | null;
+            activo: boolean;
+        };
+        PlanSuscripcion: components["schemas"]["PlanSuscripcionEditable"] & {
+            id: string;
+            orden: number;
+            /** @description Vigentes: activas y pausadas */
+            suscriptores: number;
+        };
+        Suscriptor: {
+            id: string;
+            planId: string;
+            /** @description El nombre del plan cuando se suscribió */
+            plan: string;
+            /** @description Lo que autorizó en Mercado Pago */
+            precio: number;
+            frecuencia: components["schemas"]["FrecuenciaSuscripcion"];
+            nombre: string;
+            email: string;
+            telefono: string;
+            /** @enum {string} */
+            entrega: "envio" | "retiro";
+            direccion: string;
+            estado: components["schemas"]["EstadoSuscripcion"];
+            /** Format: date-time */
+            proximoCobro: string | null;
+            /** @description Cobros aprobados */
+            cobros: number;
+            /** Format: date-time */
+            ultimoCobro: string | null;
+            /** Format: date-time */
+            creadaEn: string;
+            /** @enum {string|null} */
+            canceladaPor: "comprador" | "tienda" | "mercadopago" | null;
+        };
+        PanelSuscripciones: {
+            /** @description Sin Mercado Pago conectado la tienda no puede ofrecer planes */
+            mercadoPago: boolean;
+            planes: components["schemas"]["PlanSuscripcion"][];
+            suscriptores: components["schemas"]["Suscriptor"][];
+        };
+        /** @description TiendaPublica.suscripciones[]: los planes activos (vacío sin Mercado Pago) */
+        PlanPublico: {
+            id: string;
+            nombre: string;
+            descripcion: string;
+            foto: string | null;
+            precio: number;
+            frecuencia: components["schemas"]["FrecuenciaSuscripcion"];
+            incluye: string;
+            productos: {
+                id: string;
+                nombre: string;
+                foto: string | null;
+                cantidad: number;
+                variante: string | null;
+            }[];
+            envio: boolean;
+            retiro: boolean;
+            /** @description Tiene cupo y está lleno */
+            agotado: boolean;
+        };
+        AltaSuscripcion: {
+            planId: string;
+            /** Format: email */
+            email: string;
+            nombre: string;
+            telefono: string;
+            /** @enum {string} */
+            entrega: "envio" | "retiro";
+            /** @description Obligatoria con envío */
+            direccion: string;
+            cp: string;
+        };
+        /** @description Lo que ve quien se suscribió en su link privado (/t/{slug}/suscripcion/{codigo}) */
+        SuscripcionPublica: {
+            codigo: string;
+            planId: string;
+            plan: string;
+            foto: string | null;
+            incluye: string;
+            precio: number;
+            frecuencia: components["schemas"]["FrecuenciaSuscripcion"];
+            /** @description Sólo el primer nombre */
+            nombre: string;
+            /** @enum {string} */
+            entrega: "envio" | "retiro";
+            direccion: string;
+            estado: components["schemas"]["EstadoSuscripcion"];
+            /** Format: date-time */
+            proximoCobro: string | null;
+            cobros: number;
+            /** Format: date-time */
+            creadaEn: string;
+            tienda: string;
             whatsapp: string;
         };
         Problema: {
@@ -10694,6 +10940,234 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+        };
+    };
+    suscripcionesPanel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planes y suscriptores */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelSuscripciones"];
+                };
+            };
+        };
+    };
+    crearPlanSuscripcion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanSuscripcionEditable"];
+            };
+        };
+        responses: {
+            /** @description Creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanSuscripcion"];
+                };
+            };
+            400: components["responses"]["Problema"];
+        };
+    };
+    guardarPlanSuscripcion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanSuscripcionEditable"];
+            };
+        };
+        responses: {
+            /** @description Como quedó */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanSuscripcion"];
+                };
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+        };
+    };
+    borrarPlanSuscripcion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Borrado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problema"];
+            /** @description en_uso: tiene suscriptores */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    cancelarSuscriptor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Como quedó */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suscriptor"];
+                };
+            };
+            404: components["responses"]["Problema"];
+            502: components["responses"]["Problema"];
+        };
+    };
+    suscribirse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AltaSuscripcion"];
+            };
+        };
+        responses: {
+            /** @description Pendiente de autorizar en Mercado Pago */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        codigo: string;
+                        url?: string;
+                    };
+                };
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            /** @description cupo (el plan se llenó) o sin_cobros (la tienda no tiene Mercado Pago) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            429: components["responses"]["Problema"];
+            502: components["responses"]["Problema"];
+        };
+    };
+    suscripcionPublica: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suscripción */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuscripcionPublica"];
+                };
+            };
+            404: components["responses"]["Problema"];
+        };
+    };
+    cambiarSuscripcionPublica: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                codigo: string;
+                accion: "pausar" | "reanudar" | "cancelar";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Como quedó */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuscripcionPublica"];
+                };
+            };
+            404: components["responses"]["Problema"];
+            /** @description estado: no se puede en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            502: components["responses"]["Problema"];
         };
     };
     estadoTelegram: {

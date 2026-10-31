@@ -45,6 +45,7 @@ export const AREAS: Area[] = [
 		items: [
 			it('Pedidos', I.phPackage, I.phPackageFill, 'pedidos'),
 			it('Turnos', I.phCalendarBlank, I.phCalendarBlankFill),
+			it('Suscripciones', I.phArrowsClockwise, I.phArrowsClockwiseFill),
 			it('Devoluciones', I.phArrowUUpLeft, I.phArrowUUpLeftFill),
 			it('Ventas en local', I.phStorefront, I.phStorefrontFill),
 			it('Carritos abandonados', I.phShoppingCartSimple, I.phShoppingCartSimpleFill, 'carritos'),
