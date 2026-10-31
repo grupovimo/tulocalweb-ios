@@ -19,6 +19,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/visitas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/conversiones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadolibre"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadopago"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/telegram"
@@ -113,9 +114,14 @@ func correr() error {
 	if err != nil {
 		slog.Error("push: las claves VAPID no sirven, no se mandan avisos al panel instalado", "error", err)
 	}
+	// API de conversiones de Meta (§47): las compras con consentimiento, con el token de cada tienda.
+	conv := &conversiones.Servicio{Pool: app}
+	if c, err := cifrado.Nuevo(cfg.ClaveCifrado); err == nil && cfg.ClaveCifrado != "" {
+		conv.Cifra = c
+	}
 	ps := push.Nuevo(app, cliAPNs, slog.Default()).ConWeb(cliWeb)
 	for _, ms := range []map[string]outbox.Manejador{mp.Manejadores(), ml.Manejadores(), av.Manejadores(), mc.Manejadores(), tg.Manejadores(), equipo.Manejadores(mails), imp.Manejadores(),
-		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores()} {
+		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores()} {
 		for tipo, m := range ms {
 			w.Manejadores[tipo] = m
 		}

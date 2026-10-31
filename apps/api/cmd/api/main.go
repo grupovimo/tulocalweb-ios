@@ -18,6 +18,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/formularios"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ia"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/importacion"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/conversiones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/correoargentino"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadolibre"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadopago"
@@ -125,6 +126,7 @@ func correr() error {
 			Telegram:           &telegram.Servicio{Pool: app},
 			Equipo:             eq,
 			Importacion:        importacionDe(app, cfg.ClaveCifrado, cfg.OAuth["tiendanube"]),
+			Conversiones:       conversionesDe(app, cfg.ClaveCifrado),
 			VAPIDPublica:       vapidPublica(cfg),
 			TiempoReal:         hub,
 			TiempoRealOrigenes: cfg.TiempoRealOrigenes,
@@ -178,6 +180,18 @@ func facturacionDe(app *db.Pool, claveCifrado string) *facturacion.Servicio {
 			s.Cifra = c
 		} else {
 			slog.Error("facturacion: clave de cifrado inválida", "error", err)
+		}
+	}
+	return s
+}
+
+// conversionesDe arma la API de conversiones de Meta. Sin clave de cifrado se puede leer el estado
+// pero no guardar un token.
+func conversionesDe(app *db.Pool, claveCifrado string) *conversiones.Servicio {
+	s := &conversiones.Servicio{Pool: app}
+	if claveCifrado != "" {
+		if c, err := cifrado.Nuevo(claveCifrado); err == nil {
+			s.Cifra = c
 		}
 	}
 	return s

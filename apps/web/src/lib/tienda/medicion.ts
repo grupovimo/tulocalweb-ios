@@ -49,6 +49,20 @@ export function pideConsentimiento(t: Pick<TiendaPublica, 'vitrina' | 'medicion'
 	return !t.vitrina && !!(t.medicion?.ga4 || t.medicion?.pixel);
 }
 
+/**
+ * La cookie que lee el checkout del servidor: con 'si', la compra va además a la API de conversiones
+ * de Meta (§47). Refleja lo que quedó en localStorage; sin elección, no hay cookie.
+ */
+export const cookieMedir = (slug: string) => `tlw-medir-${slug}`;
+
+function marcarCookie(slug: string, si: boolean) {
+	try {
+		document.cookie = `${cookieMedir(slug)}=${si ? 'si' : 'no'}; path=/; max-age=31536000; samesite=lax; secure`;
+	} catch {
+		// Sin cookies: la compra se mide sólo desde el navegador.
+	}
+}
+
 /** true: aceptó; false: sólo necesarias; null: todavía no eligió. */
 export function leerConsentimiento(slug: string): boolean | null {
 	try {
@@ -67,6 +81,7 @@ export function guardarConsentimiento(slug: string, si: boolean) {
 		// Sin almacenamiento (modo privado): vale para esta visita.
 		sinAlmacenamiento.set(slug, si);
 	}
+	marcarCookie(slug, si);
 	if (si && activa?.slug === slug) {
 		cargar(activa);
 		pagina();
@@ -138,7 +153,11 @@ export function preparar(t: TiendaPublica) {
 	activa = pideConsentimiento(t)
 		? { slug: t.slug, medicion: t.medicion, productos: t.productos }
 		: null;
-	if (activa && acepto(activa.slug)) cargar(activa);
+	if (!activa) return;
+	// Quien eligió antes de que existiera la cookie (o la borró): se vuelve a marcar.
+	const eligio = leerConsentimiento(activa.slug);
+	if (eligio !== null) marcarCookie(activa.slug, eligio);
+	if (acepto(activa.slug)) cargar(activa);
 }
 
 function script(src: string) {

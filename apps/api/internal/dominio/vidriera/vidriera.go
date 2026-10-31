@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"sort"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/turnos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/arca"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/conversiones"
 )
 
 var (
@@ -447,6 +449,9 @@ type Compra struct {
 	// Factura A: sólo si la tienda la ofrece (cobros.facturaA); la razón social, si no viene, es el nombre.
 	CUIT        string `json:"cuit"`
 	RazonSocial string `json:"razonSocial"`
+	// Medicion: sólo si quien compra aceptó las cookies de medición de la tienda (lo arma el BFF con
+	// su navegador). Con la API de conversiones conectada, la compra se manda a Meta (§47).
+	Medicion *conversiones.Navegador `json:"medicion"`
 }
 
 // Resultado de comprar: el pedido, su código público y (con Mercado Pago) adónde pagar.
@@ -583,11 +588,38 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	}
 	// Compró: su carrito abandonado (si había) queda recuperado.
 	_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email) })
+	if c.Medicion != nil && t.Medicion.Pixel != nil {
+		medirCompra(ctx, pool, id, c, n, porID, numero, total, hoy)
+	}
 	r := Resultado{Numero: numero, Codigo: n.CodigoPublico, Total: total}
 	if c.Pago == "mercadopago" {
 		r.URL, err = mp.PagarPedido(ctx, id, numero, fmt.Sprintf("%s/t/%s/pedido/%s", sitio, slug, r.Codigo))
 	}
 	return r, err
+}
+
+// medirCompra encola la compra para la API de conversiones de Meta. Si falla, la compra sigue (sólo
+// se pierde esa medición, que el píxel del navegador igual mandó).
+func medirCompra(ctx context.Context, pool tx, tienda string, c Compra, n pedidos.PedidoNuevo, porID map[string]ProductoPublico,
+	numero int, total int64, hoy time.Time) {
+	lineas := make([]conversiones.Linea, 0, len(n.Items))
+	for _, l := range n.Items {
+		precio, _ := precioDe(porID[l.ProductoID], l.VarianteID)
+		lineas = append(lineas, conversiones.Linea{ID: l.ProductoID, Cantidad: l.Cantidad, Precio: precio})
+	}
+	nav := *c.Medicion
+	recortar := func(s string, n int) string {
+		if len(s) > n {
+			return s[:n]
+		}
+		return s
+	}
+	nav.IP, nav.UA, nav.FBP, nav.FBC, nav.URL = recortar(nav.IP, 64), recortar(nav.UA, 512), recortar(nav.FBP, 200), recortar(nav.FBC, 300), recortar(nav.URL, 300)
+	compra := conversiones.Compra{Numero: numero, Total: total, Hora: hoy.Unix(), Lineas: lineas,
+		Email: conversiones.HashEmail(c.Email), Telefono: conversiones.HashTelefono(c.Telefono), Navegador: nav}
+	if err := conversiones.Encolar(ctx, pool, tienda, compra); err != nil {
+		slog.Error("vidriera: no se encoló la compra para Meta", "error", err)
+	}
 }
 
 // facturaDe: el CUIT del checkout, sólo si la tienda ofrece factura A. Vacío, sin factura; inválido, error.

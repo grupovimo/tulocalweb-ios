@@ -1165,6 +1165,38 @@ paths:
       responses:
         '204': { description: Guardado }
         '400': { $ref: '#/components/responses/Problema' }
+  /v1/panel/integraciones/medicion/conversiones:
+    get:
+      operationId: conversiones
+      summary: Cómo está la API de conversiones de Meta de la tienda (nunca devuelve el token).
+      responses:
+        '200':
+          description: Conversiones
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversiones' }
+    put:
+      operationId: guardarConversiones
+      summary: Comprueba el token con Meta (que lea el píxel) y lo guarda cifrado. Token vacío con la conexión hecha cambia sólo el código de prueba.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, maxLength: 500 }
+                codigoPrueba: { type: string, maxLength: 24, description: 'Código de eventos de prueba (TEST…); vacío lo saca' }
+      responses:
+        '204': { description: Guardado }
+        '400': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+    delete:
+      operationId: borrarConversiones
+      summary: Desconecta la API de conversiones (borra el token).
+      responses:
+        '204': { description: Desconectada }
   /v1/publico/tiendas/{slug}:
     get:
       operationId: tiendaPublica
@@ -4332,6 +4364,14 @@ components:
           properties:
             gm: { type: boolean, description: 'Cargó el feed en Google Merchant Center' }
             meta: { type: boolean, description: 'Cargó el feed en Meta Commerce Manager' }
+    Conversiones:
+      type: object
+      required: [conectada, codigoPrueba, ultimoEnvio, ultimoError]
+      properties:
+        conectada: { type: boolean }
+        codigoPrueba: { type: [string, 'null'] }
+        ultimoEnvio: { type: [string, 'null'], format: date-time }
+        ultimoError: { type: [string, 'null'], description: 'Lo que respondió Meta la última vez que rechazó una compra' }
     ConexionML:
       type: object
       required: [disponible, conectada, reautorizar, recargo, pausarSinStock, publicaciones, preguntas]

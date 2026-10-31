@@ -1029,3 +1029,19 @@ avisos que el iPhone de §40.
 - **La cola**: `app.encolar_factura` emite A (tipo 1, DocTipo 80, condición 1) cuando el pedido trae
   CUIT y la tienda es RI; si no, B a consumidor final como antes. Sólo se pide como responsable
   inscripto: a monotributistas que piden A no se les pregunta la condición (quedaría mal informada).
+
+## 47. API de conversiones de Meta (migración 00064)
+
+- **Para qué**: la compra llega a Meta desde el servidor además del píxel, así las campañas la
+  cuentan aunque el navegador bloquee el píxel. Mismo evento (`Purchase`) y mismo `event_id` (el
+  número de pedido): Meta junta los dos y no la cuenta doble.
+- **El token**: lo genera la tienda en el Administrador de eventos y lo pega en Integraciones › Meta
+  Ads. Go lo comprueba (un GET al píxel, que no crea eventos) y lo guarda cifrado con la clave de la
+  tienda (`meta_conversiones`). Nunca vuelve al navegador. Código de eventos de prueba opcional.
+- **Consentimiento**: sólo con las cookies de medición aceptadas. El aviso de la tienda deja la
+  cookie `tlw-medir-<slug>` y el checkout del BFF manda IP, navegador, `_fbp`/`_fbc` y la URL sólo
+  con `si`. El email y el teléfono se hashean (SHA-256) antes de encolar.
+- **Envío**: outbox `meta.compra` → worker (`integraciones/conversiones`). Meta caída o 429: se
+  reintenta. Un rechazo (token vencido, píxel ajeno): no se reintenta y el panel muestra el motivo.
+  Compras de más de 7 días se descartan (Meta no las acepta).
+- **La demo** no la tiene: conectar responde que es una tienda de ejemplo.

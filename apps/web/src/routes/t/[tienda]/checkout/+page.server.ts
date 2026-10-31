@@ -11,6 +11,7 @@ import { precioDe } from '#lib/tienda/variantes.ts';
 import type { Actions } from './$types';
 import { irAfuera } from '#lib/server/afuera.ts';
 import { cuitValido, limpiarCuit } from '#lib/panel/cuit.ts';
+import { cookieMedir } from '#lib/tienda/medicion.ts';
 
 const Pedido = v.object({
 	carrito: v.pipe(
@@ -53,7 +54,7 @@ const Pedido = v.object({
 });
 
 export const actions: Actions = {
-	default: async ({ request, params, cookies, platform }) => {
+	default: async ({ request, params, cookies, platform, getClientAddress, url }) => {
 		const r = await resolverTienda(params.tienda, cookies.get(COOKIE));
 		if (!r) error(404, 'Esta tienda no existe.');
 		if (r.tienda.vitrina)
@@ -78,12 +79,24 @@ export const actions: Actions = {
 			return fail(400, { error: 'Elegí la sucursal de Correo Argentino donde retirás.' });
 		// Con la API real, el pedido lo arma Go (precios, envío y Mercado Pago salen de ahí).
 		if (!r.datos || !r.sandboxId) {
+			// Con el píxel y las cookies de medición aceptadas, Go manda la compra también a la API de
+			// conversiones de Meta (§47) con estos datos del navegador.
+			const medicion =
+				r.tienda.medicion?.pixel && cookies.get(cookieMedir(r.tienda.slug)) === 'si'
+					? {
+							ip: request.headers.get('cf-connecting-ip') ?? getClientAddress(),
+							ua: request.headers.get('user-agent') ?? '',
+							fbp: cookies.get('_fbp') ?? '',
+							fbc: cookies.get('_fbc') ?? '',
+							url: `${url.origin}${url.pathname}`
+						}
+					: null;
 			const res = await fetch(
 				`${String(env.API_URL)}/v1/publico/tiendas/${r.tienda.slug}/pedidos`,
 				{
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(p)
+					body: JSON.stringify({ ...p, medicion })
 				}
 			);
 			if (!res.ok) {

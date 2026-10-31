@@ -1132,6 +1132,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/integraciones/medicion/conversiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cómo está la API de conversiones de Meta de la tienda (nunca devuelve el token). */
+        get: operations["conversiones"];
+        /** Comprueba el token con Meta (que lea el píxel) y lo guarda cifrado. Token vacío con la conexión hecha cambia sólo el código de prueba. */
+        put: operations["guardarConversiones"];
+        post?: never;
+        /** Desconecta la API de conversiones (borra el token). */
+        delete: operations["borrarConversiones"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/publico/tiendas/{slug}": {
         parameters: {
             query?: never;
@@ -4167,6 +4186,14 @@ export interface components {
                 /** @description Cargó el feed en Meta Commerce Manager */
                 meta: boolean;
             };
+        };
+        Conversiones: {
+            conectada: boolean;
+            codigoPrueba: string | null;
+            /** Format: date-time */
+            ultimoEnvio: string | null;
+            /** @description Lo que respondió Meta la última vez que rechazó una compra */
+            ultimoError: string | null;
         };
         ConexionML: {
             disponible: boolean;
@@ -7431,6 +7458,72 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["Problema"];
+        };
+    };
+    conversiones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversiones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversiones"];
+                };
+            };
+        };
+    };
+    guardarConversiones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    /** @description Código de eventos de prueba (TEST…); vacío lo saca */
+                    codigoPrueba?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Guardado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+        };
+    };
+    borrarConversiones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Desconectada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     tiendaPublica: {

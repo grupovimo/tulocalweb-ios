@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { plural } from '#lib/panel/formato.ts';
+	import { haceCorto, plural } from '#lib/panel/formato.ts';
 	import { deslizable } from '#lib/panel/deslizable.ts';
 	import { invalidateAll, replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -195,6 +195,56 @@
 			title: id === 'ga' ? 'Google Analytics conectado' : 'Píxel de Meta guardado',
 			desc: 'Mide a quienes acepten las cookies de tu tienda'
 		});
+	}
+
+	// API de conversiones de Meta (§47): el token se manda una vez y no vuelve (Go lo guarda cifrado).
+	let capiToken = $state('');
+	let capiCodigo = $derived(data.conversiones?.codigoPrueba ?? '');
+	let capiError = $state<string | null>(null);
+	let capiGuardando = $state(false);
+
+	const cuando = (iso: string) => {
+		const h = haceCorto(iso);
+		return h === 'ayer' ? 'ayer' : `hace ${h}`;
+	};
+
+	async function pedirConversiones(metodo: 'PUT' | 'DELETE', cuerpo?: object) {
+		capiGuardando = true;
+		try {
+			const r = await fetch('/panel/integraciones/medicion/conversiones', {
+				method: metodo,
+				headers: cuerpo ? { 'content-type': 'application/json' } : undefined,
+				body: cuerpo ? JSON.stringify(cuerpo) : undefined
+			});
+			if (!r.ok) {
+				capiError =
+					((await r.json().catch(() => null)) as { message?: string } | null)?.message ??
+					'No se pudo guardar. Probá de nuevo.';
+				return false;
+			}
+			capiError = null;
+			await invalidateAll();
+			return true;
+		} finally {
+			capiGuardando = false;
+		}
+	}
+
+	async function guardarConversiones() {
+		const yaEstaba = !!data.conversiones?.conectada;
+		if (!yaEstaba && !capiToken.trim()) return (capiError = 'Pegá el token de acceso.');
+		if (!(await pedirConversiones('PUT', { token: capiToken, codigoPrueba: capiCodigo }))) return;
+		capiToken = '';
+		ui.toast({
+			k: 'ok',
+			title: yaEstaba ? 'API de conversiones actualizada' : 'API de conversiones conectada',
+			desc: 'Las compras llegan a Meta aunque el navegador bloquee el píxel'
+		});
+	}
+
+	async function desconectarConversiones() {
+		if (await pedirConversiones('DELETE'))
+			ui.toast({ k: 'ok', title: 'API de conversiones desconectada', desc: 'Queda sólo el píxel' });
 	}
 
 	async function yaLoCargue(id: 'gm' | 'meta') {
@@ -663,6 +713,83 @@
 					{#if errorId}<div class="m-error" role="alert">{errorId}</div>{/if}
 				</form>
 			{/if}
+			{#if !gm && data.conversiones && data.medicion.pixel}
+				{@const cv = data.conversiones}
+				<div class="m-sec">API de conversiones</div>
+				<form
+					class="m-form"
+					novalidate
+					onsubmit={(e) => {
+						e.preventDefault();
+						void guardarConversiones();
+					}}
+				>
+					{#if cv.conectada}
+						<div class="m-hecho">
+							<Icon icon={I.phCheckCircleFill} size={16} />{cv.ultimoEnvio
+								? `Conectada · última compra enviada ${cuando(cv.ultimoEnvio)}`
+								: 'Conectada · todavía no hubo compras'}
+						</div>
+						{#if cv.ultimoError}
+							<div class="m-error" role="alert">
+								Meta rechazó la última compra: {cv.ultimoError}
+							</div>
+						{/if}
+					{:else}
+						<div class="m-ayuda">
+							Las compras llegan a Meta desde nuestro servidor, aunque el navegador bloquee el
+							píxel: tus campañas cuentan mejor las&nbsp;ventas.
+						</div>
+					{/if}
+					<label class="field">
+						{cv.conectada ? 'Token nuevo (opcional)' : 'Token de acceso'}
+						<input
+							class="input"
+							type="password"
+							name="token"
+							autocomplete="off"
+							placeholder={cv.conectada ? 'Dejalo vacío para no cambiarlo' : 'EAAG…'}
+							bind:value={capiToken}
+						/>
+					</label>
+					<div class="m-ayuda">
+						Administrador de eventos › tu píxel › Configuración › API de conversiones › Generar
+						token de&nbsp;acceso.
+					</div>
+					<label class="field">
+						Código de prueba (opcional)
+						<input
+							class="input"
+							name="codigoPrueba"
+							autocomplete="off"
+							placeholder="TEST12345"
+							bind:value={capiCodigo}
+						/>
+					</label>
+					<div class="m-ayuda">
+						Con un código, las compras se ven en «Eventos de prueba» y no cuentan para tus campañas.
+						Borralo cuando veas que&nbsp;llegan.
+					</div>
+					{#if capiError}<div class="m-error" role="alert">{capiError}</div>{/if}
+					<div class="capi-acc">
+						<button type="submit" class="b-sec b-chico" disabled={capiGuardando}
+							>{cv.conectada ? 'Guardar' : 'Conectar'}</button
+						>
+						{#if cv.conectada}
+							<button
+								type="button"
+								class="b-sec b-chico rojo"
+								disabled={capiGuardando}
+								onclick={desconectarConversiones}>Desconectar</button
+							>
+						{/if}
+					</div>
+				</form>
+				<div class="m-cuenta">
+					Sólo se mandan las compras de quien aceptó las cookies de tu tienda, con su email y
+					teléfono cifrados (SHA-256).
+				</div>
+			{/if}
 			<div class="m-sec">{gm ? 'Feed de productos' : 'Catálogo'}</div>
 			<div class="m-feed">
 				<code>{data.feed}</code>
@@ -706,8 +833,7 @@
 					>
 				{/if}
 				<div class="m-cuenta">
-					El píxel se carga sólo si quien compra acepta las cookies de tu tienda. Próximamente: API
-					de&nbsp;conversiones.
+					El píxel se carga sólo si quien compra acepta las cookies de tu&nbsp;tienda.
 				</div>
 			{/if}
 		{:else if abierta.opciones.length}
@@ -1208,6 +1334,11 @@
 		font-size: 13.5px;
 		font-weight: 600;
 		color: #237550;
+	}
+	.capi-acc {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
 	}
 	.b-chico {
 		margin-top: 12px;

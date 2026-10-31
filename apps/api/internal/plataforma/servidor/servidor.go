@@ -37,6 +37,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/vidriera"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/visitas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/conversiones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/correoargentino"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadolibre"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadopago"
@@ -81,6 +82,8 @@ type Dependencias struct {
 	Equipo *equipo.Servicio
 	// Importar la tienda desde otra plataforma (el avance lo hace el worker). nil: no se monta.
 	Importacion *importacion.Servicio
+	// API de conversiones de Meta (§47): el token de cada tienda. nil: no se monta.
+	Conversiones *conversiones.Servicio
 	// Clave pública VAPID del push web del panel instalado (vacía: apagado; §43).
 	VAPIDPublica string
 	// Tiempo real (§44): el hub que reparte los avisos de Postgres. nil: no se monta.
@@ -205,6 +208,9 @@ func Nuevo(d Dependencias) http.Handler {
 		}
 		if d.Importacion != nil {
 			d.Importacion.Rutas(mux)
+		}
+		if d.Conversiones != nil {
+			d.Conversiones.Rutas(mux)
 		}
 		ip := func(r *http.Request) string { return cuentas.ClienteDe(r, d.ClaveBFF).IP }
 		dev := &devoluciones.Servicio{Pool: d.App, Correo: d.Correo}
