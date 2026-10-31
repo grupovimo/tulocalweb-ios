@@ -303,11 +303,13 @@
 			Suscriptos <span>{plural(suscriptos.length, 'persona', 'personas')}</span>
 		</div>
 		{#each suscriptos.slice(0, cuantos) as s (s.id)}
-			<div class="fila">
-				<span class="av">{iniciales(s.email.split('@')[0].replace(/[._-]+/g, ' '))}</span>
+			<div class="sus">
+				<span class="av"
+					>{iniciales(s.email.split('@')[0].replace(/[._-]+/g, ' ')).toUpperCase()}</span
+				>
 				<span class="quien"
 					><span class="n">{s.email}</span><span class="s"
-						>Desde el {diaDeMes(new Date(s.creado))} · {origenDe(s.origen)}</span
+						>Desde el {diaDeMes(new Date(s.creado))}&nbsp;· {origenDe(s.origen)}</span
 					></span
 				>
 				<span class="estado" class:activa={s.confirmado}
@@ -722,7 +724,7 @@
 		color: var(--mu);
 		margin-left: 6px;
 	}
-	.fila {
+	.sus {
 		display: flex;
 		align-items: center;
 		gap: 14px;
@@ -806,7 +808,7 @@
 		}
 	}
 	@media (max-width: 520px) {
-		.fila {
+		.sus {
 			gap: 10px;
 			padding-left: 12px;
 		}
