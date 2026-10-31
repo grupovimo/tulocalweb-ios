@@ -15,6 +15,8 @@ type Problema struct {
 	Detalle string  `json:"detail,omitempty"`
 	Codigo  string  `json:"code,omitempty"`
 	Campos  []Campo `json:"issues,omitempty"`
+	// Restantes: intentos que quedan antes del bloqueo (sólo en el ingreso con contraseña).
+	Restantes *int `json:"restantes,omitempty"`
 }
 
 // Campo es un error de validación de un campo puntual.

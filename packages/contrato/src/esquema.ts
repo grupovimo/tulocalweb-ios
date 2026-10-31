@@ -54,6 +54,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/proveedores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Qué ingresos están prendidos. La app de iPhone saca de acá la clave publicable de Clerk. */
+        get: operations["proveedores"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/salir": {
         parameters: {
             query?: never;
@@ -5671,6 +5688,8 @@ export interface components {
             status: number;
             detail?: string;
             code?: string;
+            /** @description Ingreso con contraseña: intentos que quedan antes de pausarlo */
+            restantes?: number;
             issues?: {
                 path: string;
                 message: string;
@@ -6063,8 +6082,43 @@ export interface operations {
                     "application/json": components["schemas"]["Sesion"];
                 };
             };
-            401: components["responses"]["Problema"];
+            /** @description Email o contraseña mal (`credenciales_invalidas`), con `restantes`: los intentos que quedan antes de pausar el ingreso de ese email 15 minutos (5 por ventana; se dice exista o no la cuenta) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             429: components["responses"]["Problema"];
+        };
+    };
+    proveedores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Proveedores */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description mercadopago, mercadolibre */
+                        oauth: string[];
+                        clerk: boolean;
+                        /** @description pk_live_… de la instancia que verifica Go (vacía: Clerk apagado). Es pública */
+                        clerkPublicable: string;
+                        whatsapp: boolean;
+                    };
+                };
+            };
         };
     };
     salir: {

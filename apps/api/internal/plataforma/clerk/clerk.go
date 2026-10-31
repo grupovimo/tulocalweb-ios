@@ -40,6 +40,9 @@ type Cliente struct {
 	Secreto string
 	// Emisor de los tokens (`iss`): la Frontend API de la instancia, p. ej. https://clerk.grupovimo.com.ar.
 	Emisor string
+	// Clave publicable (pk_live_… / pk_test_…): es pública. La app de iPhone la pide a
+	// /v1/auth/proveedores para hablar con la Frontend API de la misma instancia que verifica Go.
+	Publicable string
 	// Orígenes que pueden haber pedido el token (`azp`). Un token sin `azp` (la app nativa de
 	// iPhone, que no tiene origen) se acepta; uno con `azp` tiene que estar en la lista.
 	Origenes []string
@@ -77,7 +80,7 @@ func Nuevo(secreto, publicable string, origenes []string) (*Cliente, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Cliente{Secreto: secreto, Emisor: emisor, Origenes: origenes}, nil
+	return &Cliente{Secreto: secreto, Emisor: emisor, Publicable: publicable, Origenes: origenes}, nil
 }
 
 func (c *Cliente) ahora() time.Time {

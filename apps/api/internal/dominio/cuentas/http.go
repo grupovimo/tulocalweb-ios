@@ -270,7 +270,14 @@ func (s *Servicio) rutasEquipo(mux *http.ServeMux, claveBFF string) {
 // rutasSociales: proveedores OAuth y link por WhatsApp.
 func (s *Servicio) rutasSociales(mux *http.ServeMux, claveBFF string) {
 	mux.HandleFunc("GET /v1/auth/proveedores", func(w http.ResponseWriter, _ *http.Request) {
-		escribir(w, http.StatusOK, map[string]any{"oauth": s.Disponibles(), "clerk": s.Clerk != nil, "whatsapp": s.WhatsApp != nil})
+		// clerkPublicable: la app de iPhone habla con la Frontend API de esta instancia (sin
+		// configurarla aparte); vacía si Clerk está apagado.
+		publicable := ""
+		if s.Clerk != nil {
+			publicable = s.Clerk.Publicable
+		}
+		escribir(w, http.StatusOK, map[string]any{"oauth": s.Disponibles(), "clerk": s.Clerk != nil, "clerkPublicable": publicable,
+			"whatsapp": s.WhatsApp != nil})
 	})
 	mux.HandleFunc("POST /v1/auth/oauth/{proveedor}/inicio", func(w http.ResponseWriter, r *http.Request) {
 		u, err := s.IniciarOAuth(r.Context(), r.PathValue("proveedor"), ClienteDe(r, claveBFF))
@@ -354,6 +361,11 @@ func escribirError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrCredenciales):
 		p := problema.SinSesion()
 		p.Codigo, p.Titulo, p.Detalle = "credenciales_invalidas", "No pudimos ingresar", "El email o la contraseña no son correctos."
+		// Cuántos intentos quedan antes de pausar el ingreso de ese email (la app de iPhone lo dice).
+		var c ErrClave
+		if errors.As(err, &c) {
+			p.Restantes = &c.Restantes
+		}
 		problema.Escribir(w, p)
 	case errors.Is(err, ErrOtroEmail):
 		problema.Escribir(w, problema.Conflicto("otro_email", "Esta invitación es para otro email. Entrá con la cuenta de ese email o pedile a quien te invitó que te mande una nueva."))

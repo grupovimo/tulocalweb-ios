@@ -50,8 +50,25 @@ paths:
                 recordarme: { type: boolean }
       responses:
         '200': { description: Sesión, content: { application/json: { schema: { $ref: '#/components/schemas/Sesion' } } } }
-        '401': { $ref: '#/components/responses/Problema' }
+        '401': { description: 'Email o contraseña mal (`credenciales_invalidas`), con `restantes`: los intentos que quedan antes de pausar el ingreso de ese email 15 minutos (5 por ventana; se dice exista o no la cuenta)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
         '429': { $ref: '#/components/responses/Problema' }
+  /v1/auth/proveedores:
+    get:
+      operationId: proveedores
+      summary: Qué ingresos están prendidos. La app de iPhone saca de acá la clave publicable de Clerk.
+      responses:
+        '200':
+          description: Proveedores
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [oauth, clerk, clerkPublicable, whatsapp]
+                properties:
+                  oauth: { type: array, items: { type: string }, description: 'mercadopago, mercadolibre' }
+                  clerk: { type: boolean }
+                  clerkPublicable: { type: string, description: 'pk_live_… de la instancia que verifica Go (vacía: Clerk apagado). Es pública' }
+                  whatsapp: { type: boolean }
   /v1/auth/salir:
     post:
       operationId: salir
@@ -5899,6 +5916,7 @@ components:
         status: { type: integer }
         detail: { type: string }
         code: { type: string }
+        restantes: { type: integer, description: 'Ingreso con contraseña: intentos que quedan antes de pausarlo' }
         issues:
           type: array
           items:

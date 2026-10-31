@@ -41,6 +41,15 @@ var (
 	ErrSinSesion = errors.New("sin sesión")
 )
 
+// MaxIntentosIngreso: intentos con contraseña por email cada 15 minutos; después se pausa el ingreso.
+const MaxIntentosIngreso = 5
+
+// ErrClave es ErrCredenciales con los intentos que quedan antes de pausar el ingreso de ese email.
+type ErrClave struct{ Restantes int }
+
+func (e ErrClave) Error() string          { return ErrCredenciales.Error() }
+func (e ErrClave) Is(objetivo error) bool { return objetivo == ErrCredenciales }
+
 // ErrInvalido es un dato mal cargado, con el campo.
 type ErrInvalido struct{ Campo, Mensaje string }
 
@@ -259,20 +268,22 @@ func (s *Servicio) Ingresar(ctx context.Context, email, clave string, recordarme
 	if clave == "" {
 		return Sesion{}, ErrInvalido{"clave", "Escribí tu contraseña."}
 	}
-	for _, l := range []struct {
-		clave string
-		max   int
-	}{{"ingreso:email:" + email, 5}, {"ingreso:ip:" + cl.IP, 30}} {
-		if ok, err := s.permitido(ctx, l.clave, l.max, 15*time.Minute); err != nil || !ok {
-			return Sesion{}, errOr(err, ErrDemasiadosIntentos)
-		}
+	intentos, err := limite.Sumar(ctx, s.Pool, "ingreso:email:"+email, 15*time.Minute)
+	if err != nil || intentos > MaxIntentosIngreso {
+		return Sesion{}, errOr(err, ErrDemasiadosIntentos)
 	}
+	if ok, err := s.permitido(ctx, "ingreso:ip:"+cl.IP, 30, 15*time.Minute); err != nil || !ok {
+		return Sesion{}, errOr(err, ErrDemasiadosIntentos)
+	}
+	// Con la contraseña mal se dice cuántos intentos quedan (igual exista o no la cuenta: no
+	// delata qué emails tienen cuenta).
+	claveMal := ErrClave{Restantes: MaxIntentosIngreso - intentos}
 	var usuario string
 	var hash *string
 	err = s.Pool.QueryRow(ctx, `SELECT id, clave_hash FROM auth.usuarios WHERE email = $1`, email).Scan(&usuario, &hash)
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && hash == nil) {
 		_, _ = VerificarClave(clave, hashFalso) // mismo tiempo que con una cuenta real
-		return Sesion{}, ErrCredenciales
+		return Sesion{}, claveMal
 	}
 	if err != nil {
 		return Sesion{}, err
@@ -282,7 +293,7 @@ func (s *Servicio) Ingresar(ctx context.Context, email, clave string, recordarme
 		return Sesion{}, err
 	}
 	if !ok {
-		return Sesion{}, ErrCredenciales
+		return Sesion{}, claveMal
 	}
 	_, _ = s.Pool.Exec(ctx, `DELETE FROM auth.intentos WHERE clave = $1`, "ingreso:email:"+email)
 	vida := SesionCorta

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/clerk"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/servidor"
 )
 
@@ -99,5 +100,57 @@ func TestClienteDeSoloLeCreeAlBFF(t *testing.T) {
 	}
 	if c := cuentas.ClienteDe(r, ""); c.IP != "10.0.0.1" {
 		t.Fatal("sin clave configurada no se le cree a nadie")
+	}
+}
+
+// La app de iPhone dice cuántos intentos quedan antes de pausar el ingreso (handoff 1b/1c), exista
+// o no la cuenta.
+func TestIngresoDiceCuantosIntentosQuedan(t *testing.T) {
+	s, _, b := nuevo(t)
+	h := servidor.Nuevo(servidor.Dependencias{App: b.App, Cuentas: s})
+	if rec := pedir(h, "POST", "/v1/auth/registro", `{"nombre":"Lucía","tienda":"La Esquina","email":"lucia@laesquina.com.ar","clave":"Abcdefghijk1"}`, ""); rec.Code != 201 {
+		t.Fatalf("registro: %d %s", rec.Code, rec.Body)
+	}
+	for _, email := range []string{"lucia@laesquina.com.ar", "nadie@laesquina.com.ar"} {
+		for quedan := cuentas.MaxIntentosIngreso - 1; quedan >= 0; quedan-- {
+			rec := pedir(h, "POST", "/v1/auth/ingresar", `{"email":"`+email+`","clave":"mal"}`, "")
+			var p struct {
+				Code      string `json:"code"`
+				Restantes *int   `json:"restantes"`
+			}
+			_ = json.Unmarshal(rec.Body.Bytes(), &p)
+			if rec.Code != 401 || p.Code != "credenciales_invalidas" || p.Restantes == nil || *p.Restantes != quedan {
+				t.Fatalf("%s, quedan %d: %d %s", email, quedan, rec.Code, rec.Body)
+			}
+		}
+		if rec := pedir(h, "POST", "/v1/auth/ingresar", `{"email":"`+email+`","clave":"Abcdefghijk1"}`, ""); rec.Code != 429 || rec.Header().Get("Retry-After") == "" {
+			t.Fatalf("%s, después de 5: %d %s", email, rec.Code, rec.Body)
+		}
+	}
+}
+
+// La app de iPhone saca de acá la clave publicable de Clerk: la de la instancia que verifica Go.
+func TestProveedoresDaLaClavePublicableDeClerk(t *testing.T) {
+	s, _, b := nuevo(t)
+	h := servidor.Nuevo(servidor.Dependencias{App: b.App, Cuentas: s})
+	leer := func() map[string]any {
+		rec := pedir(h, "GET", "/v1/auth/proveedores", "", "")
+		var m map[string]any
+		if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &m) != nil {
+			t.Fatalf("proveedores: %d %s", rec.Code, rec.Body)
+		}
+		return m
+	}
+	if m := leer(); m["clerk"] != false || m["clerkPublicable"] != "" {
+		t.Fatalf("sin Clerk: %v", m)
+	}
+	const pk = "pk_test_Y2xlcmsuZ3J1cG92aW1vLmNvbS5hciQ" // clerk.grupovimo.com.ar$
+	c, err := clerk.Nuevo("sk_test_x", pk, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Clerk = c
+	if m := leer(); m["clerk"] != true || m["clerkPublicable"] != pk {
+		t.Fatalf("con Clerk: %v", m)
 	}
 }
