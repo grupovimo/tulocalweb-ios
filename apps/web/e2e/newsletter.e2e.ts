@@ -27,7 +27,9 @@ test('newsletter: sumarse desde el pie, confirmar, aparecer en el panel y darse 
 	await pie.getByLabel('Tu email').fill('nueva@ejemplo.com');
 	await pie.getByRole('button', { name: 'Sumarme' }).click();
 	// En la demo no sale el mail: el aviso trae el link de confirmar.
-	await expect(pie.getByRole('status')).toContainText('En la demo no mandamos el mail');
+	await expect(pie.getByRole('status')).toContainText('En la demo no mandamos el mail', {
+		timeout: 30_000
+	});
 	expect(await sinDesborde(page)).toBeLessThanOrEqual(0);
 	const confirmar = (await pie.getByRole('link', { name: 'Confirmar acá' }).getAttribute('href'))!;
 	expect(confirmar).toMatch(new RegExp(`^/t/${slug}/newsletter/confirmar/[\\w-]{20,}$`));

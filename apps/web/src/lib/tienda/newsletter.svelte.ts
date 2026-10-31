@@ -21,6 +21,7 @@ export class AltaNewsletter {
 			return;
 		}
 		this.enviando = true;
+		this.aviso = null;
 		try {
 			const r = await fetch(`/t/${this.slug()}/newsletter`, {
 				method: 'POST',
