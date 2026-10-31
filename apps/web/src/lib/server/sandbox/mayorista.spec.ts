@@ -43,7 +43,7 @@ describe('venta mayorista en la demo (como Go, §49)', () => {
 		expect(con.length).toBeGreaterThan(0);
 		for (const p of con) expect(p.mayorista!).toBeLessThan(p.precio);
 		const a = (await datos.cupones()).automaticas.find((x) => x.id === 'mayorista')!;
-		expect(a.detalle).toMatch(/^Desde 12 unidades, con el precio mayorista/);
+		expect(a.detalle).toMatch(/^Desde 12\u00a0unidades, con el precio mayorista/);
 	});
 
 	it('el mínimo se valida, se guarda y apagada no publica nada', async () => {
