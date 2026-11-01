@@ -97,6 +97,8 @@ struct Tablero: Codable {
     struct Hornero: Codable {
         var carritos: Int
         var carritosMonto: Int?
+        /// Alguno de los carritos ya recibió el mail de recordatorio.
+        var recordados: Bool?
         var ideasHechas: [String]
     }
     struct MasVendido: Codable, Identifiable {

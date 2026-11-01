@@ -362,7 +362,8 @@ struct Inicio: View {
 
     private func ideasDe(_ t: Tablero) -> [Idea] {
         var r: [Idea] = []
-        if t.hornero.carritos > 0, !t.hornero.ideasHechas.contains("carritos") {
+        // Ya recordados: el mail salió y no se repite antes de 24 h, así que la idea no vuelve.
+        if t.hornero.carritos > 0, !t.hornero.ideasHechas.contains("carritos"), t.hornero.recordados != true {
             var s = AttributedString(t.hornero.carritos == 1 ? "Hay 1 carrito abandonado" : "Hay \(t.hornero.carritos) carritos abandonados")
             if let m = t.hornero.carritosMonto, t.montos {
                 s += AttributedString(" por ")
@@ -370,8 +371,8 @@ struct Inicio: View {
                 monto.font = Estilo(tamano: 16, peso: .bold, relativo: .body).font
                 s += monto
             }
-            s += AttributedString(". ¿Les escribo para recordarles?")
-            r.append(Idea(id: "carritos", texto: s, boton: "Escribiles") { await recordarCarritos() })
+            s += AttributedString(". ¿Les mando un mail para recordarles lo que dejaron?")
+            r.append(Idea(id: "carritos", texto: s, boton: "Sí, mandales") { await recordarCarritos() })
         }
         if t.paraHacer.sinStock > 0, !t.hornero.ideasHechas.contains("stock") {
             let n = t.paraHacer.sinStock
@@ -391,8 +392,14 @@ struct Inicio: View {
         do {
             let r: R = try await estado.api.enviar("POST", "/v1/panel/carritos/recordar", [String: String]())
             Haptico.exito()
-            estado.avisar(r.enviados == 1 ? "Le escribimos a 1 cliente" : "Les escribimos a \(r.enviados) clientes")
+            if r.enviados == 0 {
+                // Ya se les mandó en las últimas 24 horas (no se repite para no molestar).
+                estado.avisar("Ya les mandamos un mail hace menos de un día. Mañana podés volver a recordarles.")
+            } else {
+                estado.avisar(r.enviados == 1 ? "Listo: le mandamos un mail a 1 cliente" : "Listo: les mandamos un mail a \(r.enviados) clientes")
+            }
             ideasOcultas.insert("carritos")
+            estado.version += 1
         } catch let e as ErrorApi {
             estado.avisar(e.detalle, ok: false)
         } catch {}
