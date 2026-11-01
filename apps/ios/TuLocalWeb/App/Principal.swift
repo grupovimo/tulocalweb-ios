@@ -93,14 +93,16 @@ struct Principal: View {
         @Bindable var nav = nav
         let enRaiz = nav.caminoActual.isEmpty
         ZStack(alignment: .bottom) {
-            TabView(selection: $nav.pestana) {
-                pila($nav.inicio) { Inicio() }.tag(Pestana.inicio)
-                pila($nav.pedidos) { ListaPedidos() }.tag(Pestana.pedidos)
-                pila($nav.productos) { ListaProductos() }.tag(Pestana.productos)
-                pila($nav.tincho) { TinchoChat() }.tag(Pestana.tincho)
-                pila($nav.mas) { Mas() }.tag(Pestana.mas)
+            // Sin TabView: en iOS 26 su barra (una píldora vacía) reaparecía en las pantallas de adentro
+            // aunque se ocultara. Las cinco pilas viven a la vez (cada una guarda su camino) y se ve
+            // sólo la de la pestaña elegida; la barra es BarraTabs.
+            ZStack {
+                pestana(.inicio) { pila($nav.inicio) { Inicio() } }
+                pestana(.pedidos) { pila($nav.pedidos) { ListaPedidos() } }
+                pestana(.productos) { pila($nav.productos) { ListaProductos() } }
+                pestana(.tincho) { pila($nav.tincho) { TinchoChat() } }
+                pestana(.mas) { pila($nav.mas) { Mas() } }
             }
-            .toolbar(.hidden, for: .tabBar)
 
             if enRaiz && (nav.pestana == .inicio || nav.pestana == .productos) {
                 BotonMas { nav.crear = true }
@@ -160,16 +162,21 @@ struct Principal: View {
         }
     }
 
+    private func pestana<V: View>(_ p: Pestana, @ViewBuilder _ vista: () -> V) -> some View {
+        let activa = nav.pestana == p
+        return vista()
+            .opacity(activa ? 1 : 0)
+            .allowsHitTesting(activa)
+            .accessibilityHidden(!activa)
+            .zIndex(activa ? 1 : 0)
+    }
+
     private func pila<V: View>(_ camino: Binding<[Destino]>, @ViewBuilder raiz: () -> V) -> some View {
         NavigationStack(path: camino) {
             raiz()
                 .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: M.tabBar) }
-                // La barra del sistema no se usa (va BarraTabs): oculta en cada pantalla, no sólo en el
-                // TabView, porque al entrar a una pantalla volvía como una píldora vacía.
-                .toolbar(.hidden, for: .tabBar)
                 .navigationDestination(for: Destino.self) { d in
                     destino(d)
-                        .toolbar(.hidden, for: .tabBar)
                         // Las raíces ocultan la barra; las pantallas de adentro la muestran (con «‹ volver»).
                         .toolbar(.visible, for: .navigationBar)
                         .navigationBarBackButtonHidden(false)
