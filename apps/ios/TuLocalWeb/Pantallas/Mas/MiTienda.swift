@@ -102,19 +102,20 @@ struct MiTiendaEditor: View {
                             .buttonStyle(BotonSecundario())
                             .disabled(slug.isEmpty || direccion.contains(slug))
                     }
-                    VStack(spacing: 10) {
-                        Button(guardando ? "Publicando…" : "Publicar cambios") { Task { await guardar(publicar: true) } }
-                            .buttonStyle(BotonPrincipal()).disabled(guardando || subiendo != nil)
-                        Button("Guardar borrador") { Task { await guardar(publicar: false) } }
-                            .buttonStyle(BotonTexto()).disabled(guardando || subiendo != nil)
-                    }
-                    .padding(.top, 4)
                 }
             }
             .margenPantalla()
             .padding(.bottom, 32)
         }
         .scrollDismissesKeyboard(.interactively)
+        .barraAccion {
+            if cargado {
+                Button(guardando ? "Publicando…" : "Publicar cambios") { Task { await guardar(publicar: true) } }
+                    .buttonStyle(BotonPrincipal()).disabled(guardando || subiendo != nil)
+                Button("Guardar borrador") { Task { await guardar(publicar: false) } }
+                    .buttonStyle(BotonTexto()).disabled(guardando || subiendo != nil)
+            }
+        }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .task { await cargar() }

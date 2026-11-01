@@ -545,3 +545,22 @@ enum Haptico {
     static func impacto() { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
     static func seleccion() { UISelectionFeedbackGenerator().selectionChanged() }
 }
+
+
+extension View {
+    /// La acción principal de una pantalla (Guardar, Publicar…) fija abajo, siempre a la vista. Va
+    /// como `safeAreaInset`: el contenido se corre para arriba y al bajar del todo no queda tapado.
+    func barraAccion<Botones: View>(@ViewBuilder _ botones: () -> Botones) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 4) { botones() }
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+                .frame(maxWidth: .infinity)
+                .background {
+                    // Funde el contenido que pasa por debajo con el fondo.
+                    LinearGradient(stops: [.init(color: C.fondo.opacity(0), location: 0), .init(color: C.fondo, location: 0.3)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+        }
+    }
+}

@@ -65,12 +65,6 @@ struct EditorProducto: View {
                         TextField("Contá cómo es, de qué está hecho, medidas…", text: $descripcion, axis: .vertical)
                             .lineLimit(3...8)
                     }
-                    Button(guardando ? "Guardando…" : (id == nil ? "Cargar producto" : "Guardar cambios")) {
-                        Task { await guardar() }
-                    }
-                    .buttonStyle(BotonPrincipal())
-                    .disabled(!valido || guardando || subiendo > 0)
-                    .padding(.top, 6)
                     if id != nil {
                         Button("Borrar producto") { borrar = true }
                             .buttonStyle(BotonTexto(color: C.errorTinta))
@@ -81,6 +75,13 @@ struct EditorProducto: View {
             .padding(.bottom, 32)
         }
         .scrollDismissesKeyboard(.interactively)
+        .barraAccion {
+            Button(guardando ? "Guardando…" : (id == nil ? "Cargar producto" : "Guardar cambios")) {
+                Task { await guardar() }
+            }
+            .buttonStyle(BotonPrincipal())
+            .disabled(!valido || guardando || subiendo > 0)
+        }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .task { await cargar() }

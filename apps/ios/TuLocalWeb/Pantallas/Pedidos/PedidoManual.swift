@@ -81,10 +81,6 @@ struct PedidoManual: View {
                 EtiquetaSeccion(texto: "Entrega").padding(.horizontal, 4).padding(.top, 6)
                 Segmentado(opciones: PedidoManual.envios, elegido: $envio)
                 campo("Nota (opcional)", $nota)
-                Button(guardando ? "Creando…" : "Crear pedido") { Task { await crear() } }
-                    .buttonStyle(BotonPrincipal())
-                    .disabled(items.isEmpty || guardando)
-                    .padding(.top, 6)
                 if !pagado {
                     Text(Formato.sinViudas("Queda «Sin pagar»: desde el pedido le mandás el link de pago o confirmás la transferencia."))
                         .estilo(.footnote).foregroundStyle(C.texto3).padding(.horizontal, 4)
@@ -94,6 +90,11 @@ struct PedidoManual: View {
             .padding(.bottom, 32)
         }
         .scrollDismissesKeyboard(.interactively)
+        .barraAccion {
+            Button(guardando ? "Creando…" : "Crear pedido") { Task { await crear() } }
+                .buttonStyle(BotonPrincipal())
+                .disabled(items.isEmpty || guardando)
+        }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $buscar) {

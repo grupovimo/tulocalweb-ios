@@ -147,14 +147,18 @@ struct NegocioCobro: View {
                                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.linea2, lineWidth: 1))
                         }
                     }
-                    Button(guardando ? "Guardando…" : "Guardar") { Task { await guardar() } }
-                        .buttonStyle(BotonPrincipal()).disabled(guardando).padding(.top, 8)
                 }
             }
             .margenPantalla()
             .padding(.bottom, 32)
         }
         .scrollDismissesKeyboard(.interactively)
+        .barraAccion {
+            if cargado {
+                Button(guardando ? "Guardando…" : "Guardar") { Task { await guardar() } }
+                    .buttonStyle(BotonPrincipal()).disabled(guardando)
+            }
+        }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .task {
