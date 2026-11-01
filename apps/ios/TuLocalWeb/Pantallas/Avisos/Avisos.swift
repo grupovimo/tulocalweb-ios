@@ -159,6 +159,7 @@ struct Avisos: View {
             ("/panel/facturacion", .facturacion), ("/panel/plan", .plan), ("/panel/integraciones", .integraciones),
             ("/panel/usuarios-y-permisos", .usuarios), ("/panel/clientes", .clientes), ("/panel/ventas-en-local", .caja),
             ("/panel/configuracion", .negocio), ("/panel/notificaciones", .preferenciasAvisos), ("/panel/links", .links),
+            ("/panel/informes", .estadisticas), ("/panel/mi-tienda", .miTienda), ("/panel/tienda", .miTienda),
             ("/ayuda", .ayuda),
         ]
         return tabla.first { ruta.hasPrefix($0.0) }?.1

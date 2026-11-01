@@ -17,6 +17,10 @@ struct Mas: View {
             VStack(alignment: .leading, spacing: 8) {
                 EncabezadoGrande(titulo: "Más").padding(.top, 4)
                 if let t = estado.tienda { tarjetaTienda(t).padding(.top, 4) }
+                grupo("Tu tienda online", tono: (C.crema, C.primarioTexto), filas: [
+                    Fila(texto: "Editar mi tienda", simbolo: "paintbrush.pointed", destino: .miTienda, permiso: "cuenta"),
+                    Fila(texto: "Estadísticas", simbolo: "chart.bar.xaxis", destino: .estadisticas, permiso: "pedidos"),
+                ])
                 grupo("Ventas y clientes", tono: (C.pista, C.primarioTexto), filas: [
                     Fila(texto: "Clientes", simbolo: "person.2", destino: .clientes, permiso: "clientes"),
                     Fila(texto: "Caja del día", simbolo: "banknote", destino: .caja, permiso: "pedidos",

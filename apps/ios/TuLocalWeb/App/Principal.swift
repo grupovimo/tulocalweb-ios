@@ -14,7 +14,7 @@ enum Destino: Hashable {
     case clientes
     case cliente(ClienteFila)
     case caja, carritos, resenas, devoluciones, cupones, finanzas, facturacion, plan, integraciones, usuarios
-    case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda, miTienda
+    case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda, miTienda, estadisticas
 }
 
 /// La navegación de la app: la pestaña, el camino de cada una y los filtros con los que se abre una
@@ -164,8 +164,12 @@ struct Principal: View {
         NavigationStack(path: camino) {
             raiz()
                 .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: M.tabBar) }
+                // La barra del sistema no se usa (va BarraTabs): oculta en cada pantalla, no sólo en el
+                // TabView, porque al entrar a una pantalla volvía como una píldora vacía.
+                .toolbar(.hidden, for: .tabBar)
                 .navigationDestination(for: Destino.self) { d in
                     destino(d)
+                        .toolbar(.hidden, for: .tabBar)
                         // Las raíces ocultan la barra; las pantallas de adentro la muestran (con «‹ volver»).
                         .toolbar(.visible, for: .navigationBar)
                         .navigationBarBackButtonHidden(false)
@@ -200,6 +204,7 @@ struct Principal: View {
                     case .inventario: EscanearInventario()
                     case .ayuda: CentroAyuda()
                     case .miTienda: MiTiendaEditor()
+                    case .estadisticas: Estadisticas()
                     }
     }
 }
