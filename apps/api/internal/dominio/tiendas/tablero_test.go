@@ -89,7 +89,11 @@ func TestTableroConVentas(t *testing.T) {
 	if len(tb.Canales) != 2 || len(tb.UltimosPedidos) != 4 || len(tb.MasVendidos) != 1 {
 		t.Fatalf("canales %v, últimos %d, más vendidos %v", tb.Canales, len(tb.UltimosPedidos), tb.MasVendidos)
 	}
-	if tb.ParaHacer.Preparar != 1 || tb.ParaHacer.Transferencias != 1 || *tb.ParaHacer.TransferenciasMonto != 99_000 || tb.Meta.Actual < 15_000 {
+	// La meta es del mes en Argentina: en las primeras horas del mes, las ventas de hace 1 a 3 horas
+	// son del mes anterior y no cuentan.
+	ar, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
+	mismoMes := ahora.Add(-3*time.Hour).In(ar).Month() == ahora.In(ar).Month()
+	if tb.ParaHacer.Preparar != 1 || tb.ParaHacer.Transferencias != 1 || *tb.ParaHacer.TransferenciasMonto != 99_000 || (mismoMes && tb.Meta.Actual < 15_000) {
 		t.Fatalf("para hacer %+v, meta %+v", tb.ParaHacer, tb.Meta)
 	}
 
