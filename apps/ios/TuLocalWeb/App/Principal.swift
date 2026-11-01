@@ -165,6 +165,16 @@ struct Principal: View {
             raiz()
                 .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: M.tabBar) }
                 .navigationDestination(for: Destino.self) { d in
+                    destino(d)
+                        // Las raíces ocultan la barra; las pantallas de adentro la muestran (con «‹ volver»).
+                        .toolbar(.visible, for: .navigationBar)
+                        .navigationBarBackButtonHidden(false)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func destino(_ d: Destino) -> some View {
                     switch d {
                     case let .pedido(n): DetallePedido(numero: n)
                     case .avisos: Avisos()
@@ -190,8 +200,6 @@ struct Principal: View {
                     case .inventario: EscanearInventario()
                     case .ayuda: CentroAyuda()
                     }
-                }
-        }
     }
 }
 

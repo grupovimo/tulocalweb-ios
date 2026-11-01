@@ -767,9 +767,10 @@ struct Integraciones: View {
     @State private var correo = false
     @State private var conectando: String?
 
-    struct MP: Decodable { var disponible: Bool; var conectada: Bool; var usuario: String; var reautorizar: Bool }
-    struct ML: Decodable { var disponible: Bool; var conectada: Bool; var apodo: String; var reautorizar: Bool }
-    struct Correo: Decodable { var disponible: Bool; var conectada: Bool; var email: String }
+    // Todo opcional: sin cuenta conectada la API no manda usuario, apodo ni mail.
+    struct MP: Decodable { var conectada: Bool?; var usuario: String?; var reautorizar: Bool? }
+    struct ML: Decodable { var conectada: Bool?; var apodo: String?; var reautorizar: Bool? }
+    struct Correo: Decodable { var conectada: Bool?; var email: String? }
     struct Datos { var mp: MP?; var ml: ML?; var correo: Correo? }
 
     var body: some View {
@@ -779,11 +780,15 @@ struct Integraciones: View {
             async let co: Correo? = try? await estado.api.get("/v1/panel/integraciones/correo")
             return await Datos(mp: mp, ml: ml, correo: co)
         } contenido: { d, actualizar in
+            let mp = d.mp?.conectada == true, ml = d.ml?.conectada == true, co = d.correo?.conectada == true
             let filas = [
-                d.mp.map { FilaIntegracion(id: "mp", nombre: "Mercado Pago", detalle: $0.conectada ? $0.usuario : "Cobrá con tarjeta, QR y link", conectada: $0.conectada, alerta: $0.reautorizar) },
-                d.ml.map { FilaIntegracion(id: "ml", nombre: "Mercado Libre", detalle: $0.conectada ? $0.apodo : "Publicá y sincronizá el stock", conectada: $0.conectada, alerta: $0.reautorizar) },
-                d.correo.map { FilaIntegracion(id: "correo", nombre: "Correo Argentino", detalle: $0.conectada ? $0.email : "Etiquetas y seguimiento de envíos", conectada: $0.conectada, alerta: false) },
-            ].compactMap { $0 }
+                FilaIntegracion(id: "mp", nombre: "Mercado Pago", detalle: mp ? (d.mp?.usuario ?? "Conectada") : "Cobrá con tarjeta, QR y link",
+                                conectada: mp, alerta: d.mp?.reautorizar == true),
+                FilaIntegracion(id: "ml", nombre: "Mercado Libre", detalle: ml ? (d.ml?.apodo ?? "Conectada") : "Publicá y sincronizá el stock",
+                                conectada: ml, alerta: d.ml?.reautorizar == true),
+                FilaIntegracion(id: "correo", nombre: "Correo Argentino", detalle: co ? (d.correo?.email ?? "Conectada") : "Etiquetas y seguimiento de envíos",
+                                conectada: co, alerta: false),
+            ]
             GrupoFilas(elementos: filas) { f in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
