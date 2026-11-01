@@ -4,7 +4,7 @@
 
 ## 31/10/2026
 
-**En producción** (migraciones hasta 00069, cada una con pg_dumpall previo en /var/backups/vimo/manual):
+**En producción** (migraciones hasta 00070, cada una con pg_dumpall previo en /var/backups/vimo/manual):
 
 | § | Qué |
 |---|---|
@@ -18,11 +18,10 @@
 | — | Política de cambios y devoluciones por tienda (Configuración › Negocio, sin migración) |
 | §53 | Ingreso para la app de iPhone: `/v1/auth/proveedores` (la API ya está; la app no) |
 
-**App de iPhone** (`apps/ios`, SwiftUI iOS 17, XcodeGen): primer corte en main (ingreso por contraseña,
-Apple y Google con Clerk; Inicio, Pedidos, Productos, venta en el local, clientes, avisos y cuenta). Falta
-probarla en el simulador y subir el primer build a TestFlight. La app «Tu Local Web» ya existe en App Store
-Connect y la clave de API está en `~/Trabajo/vimo/credenciales-apple/asc.env`. Xcode 26.5 con el runtime
-iOS 26.5. Las sesiones comparten la Mac por turnos (`~/Trabajo/vimo/.xcode-turno`).
+**App de iPhone** (`apps/ios`, SwiftUI iOS 17, XcodeGen): completa y en TestFlight, todo nativo y sin saltos
+al panel web, con widgets y Live Activity actualizada por el servidor (§54, migración 00070, en producción el 1/11).
+Se compila y se sube sólo por GitHub Actions (`ios.yml` y `testflight.yml`), nunca en la Mac. Nahuel la prueba y
+pasa lo que encuentra; se arregla en tandas completas.
 
 **Push Android:** proyecto Firebase `grupo-vimo` (plan Spark, sin facturación), una app Android por producto y
 una cuenta de servicio por producto con rol FCM. La de Tu Local Web está en `/opt/tulocalweb/claves/fcm.json`
