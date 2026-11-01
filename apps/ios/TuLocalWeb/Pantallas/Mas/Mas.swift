@@ -101,7 +101,7 @@ struct Mas: View {
             }
             .buttonStyle(.plain)
             HStack(spacing: 8) {
-                AccionRapida(simbolo: "arrow.up.right.square", texto: "Ver tienda", alto: 54) { nav.web = url }
+                AccionRapida(simbolo: "paintbrush.pointed", texto: "Editar", alto: 54) { nav.mas.append(.miTienda) }
                 ShareLink(item: url, message: Text("Mirá mi tienda: \(t.nombre)")) {
                     VStack(spacing: 3) {
                         Image(systemName: "square.and.arrow.up").font(.system(size: 18)).foregroundStyle(C.primarioTexto)

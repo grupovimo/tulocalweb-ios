@@ -35,3 +35,16 @@ describe('dominio propio', () => {
 		expect(pathInterno('luna', '/t/lunares')).toBe('/t/luna/t/lunares');
 	});
 });
+
+describe('slugDeSubdominio', () => {
+	it('saca la tienda del subdominio, salvo los de la plataforma', async () => {
+		const { slugDeSubdominio } = await import('./dominio.ts');
+		expect(slugDeSubdominio('la-esquina.tulocalweb.com.ar')).toBe('la-esquina');
+		expect(slugDeSubdominio('LA-ESQUINA.tulocalweb.com.ar')).toBe('la-esquina');
+		expect(slugDeSubdominio('api.tulocalweb.com.ar')).toBeNull();
+		expect(slugDeSubdominio('www.tulocalweb.com.ar')).toBeNull();
+		expect(slugDeSubdominio('tulocalweb.com.ar')).toBeNull();
+		expect(slugDeSubdominio('a.b.tulocalweb.com.ar')).toBeNull();
+		expect(slugDeSubdominio('mitienda.com.ar')).toBeNull();
+	});
+});

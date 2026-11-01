@@ -14,7 +14,7 @@ enum Destino: Hashable {
     case clientes
     case cliente(ClienteFila)
     case caja, carritos, resenas, devoluciones, cupones, finanzas, facturacion, plan, integraciones, usuarios
-    case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda
+    case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda, miTienda
 }
 
 /// La navegación de la app: la pestaña, el camino de cada una y los filtros con los que se abre una
@@ -199,6 +199,7 @@ struct Principal: View {
                     case .links: LinksPago()
                     case .inventario: EscanearInventario()
                     case .ayuda: CentroAyuda()
+                    case .miTienda: MiTiendaEditor()
                     }
     }
 }

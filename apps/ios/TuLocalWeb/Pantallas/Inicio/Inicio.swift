@@ -652,9 +652,10 @@ struct SinVentas: View {
     @Environment(Estado.self) private var estado
     @Environment(Navegacion.self) private var nav
     @State private var conProductos: Bool?
+    @State private var mpConectada = false
 
     var body: some View {
-        let mp = estado.resumen?.canales?.contains("mp") ?? false
+        let mp = mpConectada || (estado.resumen?.canales?.contains("mp") ?? false)
         let url = URL(string: "https://\(estado.tienda?.direccion ?? "tulocalweb.com.ar")")!
         VStack(spacing: 8) {
             Image(Tincho.saludo.imagen).resizable().scaledToFit().frame(width: 150, height: 150).accessibilityHidden(true)
@@ -683,7 +684,9 @@ struct SinVentas: View {
         .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 18)
         .background(C.crema2, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color(hex: 0xB0441D, alfa: 0.14), lineWidth: 1))
-        .task {
+        .task(id: estado.version) {
+            struct MP: Decodable { var conectada: Bool? }
+            if let m: MP = try? await estado.api.get("/v1/panel/integraciones/mercadopago") { mpConectada = m.conectada ?? false }
             if let l: PaginaProductos = try? await estado.api.get("/v1/panel/listas/productos", query: [URLQueryItem(name: "cuantos", value: "1")]) {
                 conProductos = l.total > 0
             }

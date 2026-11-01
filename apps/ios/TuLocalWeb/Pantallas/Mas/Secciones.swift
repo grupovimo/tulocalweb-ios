@@ -120,7 +120,9 @@ struct CajaDelDia: View {
             var total: Int
             var medios: [Medio]
         }
+        struct Serie: Decodable { var actual: [Double]; var anterior: [Double] }
         var caja: Caja?
+        var serie: Serie?
     }
 
     var body: some View {
@@ -128,27 +130,21 @@ struct CajaDelDia: View {
             try await estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: "hoy")]) as Tablero
         } contenido: { t, _ in
             let caja = t.caja
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    if let a = caja?.abierta {
-                        ChipSimple(texto: "Abierta desde las \(Formato.horaDe(a))", fondo: C.okFondo, tinta: C.okTinta)
-                    } else {
-                        ChipSimple(texto: "Cerrada", fondo: C.pista, tinta: C.texto2)
-                    }
-                    Spacer()
+            TarjetaHeroe(etiqueta: "Vendido hoy en el local", valor: Formato.pesos(caja?.total ?? 0),
+                         detalle: caja?.abierta.map { "Caja abierta desde las \(Formato.horaDe($0))" } ?? "La caja está cerrada",
+                         tincho: .caja)
+            if let s = t.serie, s.actual.contains(where: { $0 > 0 }) {
+                TarjetaSeccion(titulo: "Cómo viene el día", simbolo: "chart.xyaxis.line") {
+                    GraficoVentas(actual: s.actual, anterior: s.anterior, alto: 140)
                 }
-                Text(Formato.pesos(caja?.total ?? 0)).estilo(.montoPantalla).monospacedDigit().foregroundStyle(C.texto)
-                Text("Vendido hoy en el local").estilo(.texto14).foregroundStyle(C.texto2)
             }
-            .padding(16).tarjeta(radio: 22)
             if let medios = caja?.medios, !medios.isEmpty {
-                EtiquetaSeccion(texto: "Por medio de pago").padding(.horizontal, 4).padding(.top, 8)
-                GrupoFilas(elementos: medios) { m in
-                    FilaDato(etiqueta: CajaDelDia.nombre(m.medio), valor: Formato.pesos(m.monto))
+                TarjetaSeccion(titulo: "Por medio de pago", simbolo: "creditcard") {
+                    DonaMedios(partes: medios.map { .init(nombre: CajaDelDia.nombre($0.medio), monto: $0.monto) })
                 }
             }
-            Button("Vender en el local") { nav.venta = true }
-                .buttonStyle(BotonPrincipal()).padding(.top, 12)
+            Button { nav.venta = true } label: { Label("Vender en el local", systemImage: "barcode.viewfinder") }
+                .buttonStyle(BotonPrincipal()).padding(.top, 4)
         }
     }
 
@@ -191,10 +187,16 @@ struct CarritosAbandonados: View {
         PantallaSeccion(titulo: "Carritos abandonados", que: "los carritos") {
             try await estado.api.get("/v1/panel/carritos") as Datos
         } contenido: { d, actualizar in
-            Indicadores(items: [
-                ("Abiertos", "\(d.abiertos)"), ("Monto en juego", Formato.pesos(d.monto)),
-                ("Recuperado", Formato.pesos(d.recuperado)), ("Tasa de recupero", Formato.porcentaje(d.tasa)),
-            ])
+            TarjetaHeroe(etiqueta: "En juego en carritos abiertos", valor: Formato.pesos(d.monto),
+                         detalle: Formato.cantidad(d.abiertos, "carrito para recordar", "carritos para recordar"), tincho: .whatsapp)
+            TarjetaSeccion(titulo: "Lo que ya recuperaste", simbolo: "arrow.uturn.backward.circle") {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(Formato.pesos(d.recuperado)).estilo(.indicador).monospacedDigit().foregroundStyle(C.okTinta)
+                    Spacer()
+                    Text("\(Formato.porcentaje(d.tasa > 1 ? d.tasa : d.tasa * 100)) recuperado").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                }
+                BarraProgreso(valor: d.tasa > 1 ? d.tasa / 100 : d.tasa)
+            }
             if d.carritos.isEmpty {
                 EstadoTincho(tincho: .durmiendo, titulo: "No hay carritos abandonados",
                              texto: "Cuando alguien deja productos sin comprar, aparece acá para que le recuerdes.")
@@ -268,6 +270,7 @@ struct ResenasYPreguntas: View {
         var resenas: [Resena]
         var promedio: Double?
         var total: Int
+        var porEstrellas: [Int]?
     }
 
     var body: some View {
@@ -304,12 +307,15 @@ struct ResenasYPreguntas: View {
                 }
             } else {
                 if let prom = d.promedio {
-                    HStack(spacing: 10) {
-                        Text(String(format: "%.1f", prom).replacingOccurrences(of: ".", with: ","))
-                            .estilo(.montoPantalla).foregroundStyle(C.texto)
-                        VStack(alignment: .leading) {
-                            Estrellas(n: Int(prom.rounded()))
-                            Text(Formato.cantidad(d.total, "reseña", "reseñas")).estilo(.texto14).foregroundStyle(C.texto2)
+                    TarjetaSeccion(titulo: "Lo que dicen de tu tienda", simbolo: "star.bubble") {
+                        HStack(alignment: .center, spacing: 18) {
+                            VStack(spacing: 4) {
+                                Text(String(format: "%.1f", prom).replacingOccurrences(of: ".", with: ","))
+                                    .estilo(.montoPantalla).foregroundStyle(C.texto)
+                                Estrellas(n: Int(prom.rounded()))
+                                Text(Formato.cantidad(d.total, "reseña", "reseñas")).estilo(.footnote).foregroundStyle(C.texto2)
+                            }
+                            BarrasEstrellas(porEstrellas: d.porEstrellas ?? [])
                         }
                     }
                 }
@@ -452,6 +458,11 @@ struct Devoluciones: View {
                 EstadoTincho(tincho: .exito, titulo: "No hay devoluciones", texto: "Cuando alguien use el botón de arrepentimiento, lo resolvés acá.")
                     .padding(.top, 30)
             } else {
+                let pendientes = d.devoluciones.filter { $0.estado == "Pendiente" }
+                TarjetaHeroe(etiqueta: "Devoluciones para resolver", valor: "\(pendientes.count)",
+                             detalle: "\(Formato.pesos(pendientes.reduce(0) { $0 + $1.monto })) en juego · \(Formato.porcentaje(d.tasa > 1 ? d.tasa : d.tasa * 100)) de los pedidos",
+                             tincho: .envio)
+                EtiquetaSeccion(texto: "Pedidos de devolución").padding(.horizontal, 4).padding(.top, 4)
                 GrupoFilas(elementos: d.devoluciones) { v in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 12) {
@@ -525,9 +536,11 @@ struct Cupones: View {
             Button { nuevo = true } label: { Label("Crear cupón", systemImage: "plus") }
                 .buttonStyle(BotonPrincipal(alto: 48))
                 .sheet(isPresented: $nuevo) { HojaCuponNuevo { await actualizar() }.hojaTLW([.large]) }
-            Indicadores(items: [
-                ("Activos", "\(d.kpis.activos)"), ("Usos este mes", "\(d.kpis.usosMes)"),
-                ("Vendido con cupón", Formato.pesos(d.kpis.vendido)), ("Descontado", Formato.pesos(d.kpis.descontado)),
+            TarjetaHeroe(etiqueta: "Vendido con cupones este mes", valor: Formato.pesos(d.kpis.vendido),
+                         detalle: "\(Formato.cantidad(d.kpis.usosMes, "uso", "usos")) · \(Formato.pesos(d.kpis.descontado)) de descuento", tincho: .ticket)
+            GrillaIndicadores(items: [
+                IndicadorIcono(simbolo: "ticket.fill", titulo: "Cupones activos", valor: "\(d.kpis.activos)"),
+                IndicadorIcono(simbolo: "percent", titulo: "Descontado", valor: Formato.pesos(d.kpis.descontado), tono: (C.okFondo, C.okTinta)),
             ])
             if d.cupones.isEmpty {
                 EstadoTincho(tincho: .ticket, titulo: "Todavía no tenés cupones", texto: "Un descuento con código para tus clientes: lo creás en un minuto.")
@@ -581,8 +594,11 @@ struct Finanzas: View {
     struct Datos: Decodable {
         struct Kpis: Decodable {
             var aLiquidar: Int?
+            var aLiquidarDetalle: String?
             var gastos: Int?
+            var gastosDetalle: String?
             var ganancia: Int?
+            var gananciaDetalle: String?
             var margen: Int?
             var mes: String
         }
@@ -593,10 +609,14 @@ struct Finanzas: View {
             var detalle: String
             var monto: Int
         }
+        struct Flujo: Decodable { var dia: Int; var entra: Int; var sale: Int }
+        struct Caja: Decodable { var ventas: Int; var gastos: Int; var meta: String; var metaPct: Int; var falta: Int }
         var vendido30: Int?
         var disponible: Int?
         var cuenta: String?
         var kpis: Kpis
+        var flujo: [Flujo]?
+        var caja: Caja?
         var movimientos: [Movimiento]
     }
 
@@ -604,26 +624,52 @@ struct Finanzas: View {
         PantallaSeccion(titulo: "Finanzas", que: "las finanzas") {
             try await estado.api.get("/v1/panel/finanzas") as Datos
         } contenido: { d, _ in
-            if let disp = d.disponible {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Disponible en Mercado Pago").estilo(.texto14).foregroundStyle(C.texto2)
-                    Text(Formato.pesos(disp)).estilo(.montoPantalla).monospacedDigit().foregroundStyle(C.texto)
-                    if let c = d.cuenta { Text(c).estilo(.footnote).foregroundStyle(C.texto3) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16).tarjeta(radio: 22)
-            }
+            TarjetaHeroe(etiqueta: d.disponible != nil ? "Disponible en Mercado Pago" : "Vendido en los últimos 30 días",
+                         valor: Formato.pesos(d.disponible ?? d.vendido30 ?? 0),
+                         detalle: d.cuenta ?? d.vendido30.map { d.disponible != nil ? "Vendiste \(Formato.pesos($0)) en 30 días" : "" },
+                         tincho: .grafico)
             EtiquetaSeccion(texto: Formato.mayuscula(d.kpis.mes)).padding(.horizontal, 4).padding(.top, 4)
-            Indicadores(items: [
-                ("Vendido (30 días)", d.vendido30.map(Formato.pesos) ?? "—"),
-                ("A liquidar", d.kpis.aLiquidar.map(Formato.pesos) ?? "—"),
-                ("Gastos", d.kpis.gastos.map(Formato.pesos) ?? "—"),
-                ("Ganancia", d.kpis.ganancia.map(Formato.pesos) ?? "—"),
+            GrillaIndicadores(items: [
+                IndicadorIcono(simbolo: "clock.arrow.circlepath", titulo: "A liquidar", valor: d.kpis.aLiquidar.map(Formato.pesos) ?? "—",
+                               detalle: d.kpis.aLiquidarDetalle),
+                IndicadorIcono(simbolo: "arrow.down.right", titulo: "Gastos", valor: d.kpis.gastos.map(Formato.pesos) ?? "—",
+                               detalle: d.kpis.gastosDetalle, tono: (C.errorFondo, C.errorTinta)),
+                IndicadorIcono(simbolo: "arrow.up.right", titulo: "Ganancia", valor: d.kpis.ganancia.map(Formato.pesos) ?? "—",
+                               detalle: d.kpis.gananciaDetalle, tono: (C.okFondo, C.okTinta)),
+                IndicadorIcono(simbolo: "percent", titulo: "Margen", valor: d.kpis.margen.map { "\($0) %" } ?? "—",
+                               tono: (C.avisoFondo, C.avisoTinta)),
             ])
+            if let c = d.caja, c.metaPct > 0 || !c.meta.isEmpty {
+                TarjetaSeccion(titulo: "Meta del mes", simbolo: "flag.checkered") {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(c.metaPct) %").estilo(.indicador).monospacedDigit().foregroundStyle(C.texto)
+                        Text(c.meta).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
+                        Spacer()
+                    }
+                    BarraProgreso(valor: Double(c.metaPct) / 100, alto: 12)
+                    if c.falta > 0 {
+                        Text("Faltan \(Formato.pesos(c.falta))").estilo(.footnote).foregroundStyle(C.texto2)
+                    }
+                }
+            }
+            if let f = d.flujo, f.contains(where: { $0.entra > 0 || $0.sale > 0 }) {
+                TarjetaSeccion(titulo: "Lo que entra y sale (próximos 14 días)", simbolo: "chart.bar.xaxis") {
+                    GraficoFlujo(dias: f.map { .init(dia: $0.dia, entra: $0.entra, sale: $0.sale) })
+                    HStack(spacing: 14) {
+                        Label("Entra", systemImage: "circle.fill").foregroundStyle(C.ok)
+                        Label("Sale", systemImage: "circle.fill").foregroundStyle(C.error)
+                    }
+                    .labelStyle(.titleAndIcon).font(.caption2.weight(.semibold))
+                }
+            }
             if !d.movimientos.isEmpty {
                 EtiquetaSeccion(texto: "Movimientos").padding(.horizontal, 4).padding(.top, 8)
-                GrupoFilas(elementos: d.movimientos) { m in
-                    HStack {
+                GrupoFilas(elementos: d.movimientos, inset: 62) { m in
+                    HStack(spacing: 12) {
+                        Image(systemName: simboloMovimiento(m.tipo)).font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(m.monto < 0 ? C.errorTinta : C.okTinta)
+                            .frame(width: 34, height: 34)
+                            .background(m.monto < 0 ? C.errorFondo : C.okFondo, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(m.titulo).estilo(.fila).foregroundStyle(C.texto).lineLimit(1)
                             Text(m.detalle).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
@@ -632,7 +678,7 @@ struct Finanzas: View {
                         Text((m.monto < 0 ? "−" : "+") + Formato.pesos(abs(m.monto)))
                             .estilo(.fila).monospacedDigit().foregroundStyle(m.monto < 0 ? C.errorTinta : C.okTinta)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .padding(.horizontal, 14).padding(.vertical, 12)
                 }
             }
         }
@@ -667,6 +713,20 @@ struct FacturacionArca: View {
                              accion: "Conectar ARCA", principal: true) { alta = true }
                     .padding(.top, 20)
             } else {
+                TarjetaHeroe(etiqueta: "ARCA conectada", valor: d.razonSocial.isEmpty ? d.cuit : d.razonSocial,
+                             detalle: "CUIT \(d.cuit) · punto de venta \(d.puntoVenta)", tincho: .portapapeles)
+                if let vence = d.certificadoVence {
+                    let dias = Calendar.current.dateComponents([.day], from: .now, to: vence).day ?? 0
+                    TarjetaSeccion(titulo: "Certificado", simbolo: "checkmark.seal") {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(dias > 0 ? Formato.cantidad(dias, "día", "días") : "Vencido").estilo(.indicador)
+                                .foregroundStyle(dias < 30 ? C.errorTinta : C.texto)
+                            Text(dias > 0 ? "hasta que venza" : "renovalo para seguir facturando").estilo(.footnote).foregroundStyle(C.texto2)
+                            Spacer()
+                        }
+                        BarraProgreso(valor: Double(max(0, min(730, dias))) / 730)
+                    }
+                }
                 GrupoFilas(elementos: [
                     FilaId("Razón social", d.razonSocial), FilaId("CUIT", d.cuit), FilaId("Condición", d.condicion),
                     FilaId("Punto de venta", "\(d.puntoVenta)"),
@@ -727,20 +787,14 @@ struct PlanCuenta: View {
         PantallaSeccion(titulo: "Plan", que: "tu plan") {
             try await estado.api.get("/v1/panel/cuenta/plan") as Datos
         } contenido: { d, actualizar in
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Plan \(Formato.mayuscula(d.actual))").estilo(.tituloHojaChico).foregroundStyle(C.texto)
-                    Spacer()
-                    if d.enPrueba {
-                        ChipSimple(texto: "Prueba · \(Formato.cantidad(d.diasPrueba, "día", "días"))", fondo: C.avisoFondo, tinta: C.avisoTinta)
-                    }
-                }
-                Text(d.proximoCobro.isEmpty ? Formato.mayuscula(d.ciclo) : "\(Formato.mayuscula(d.ciclo)) · próximo cobro \(d.proximoCobro)")
-                    .estilo(.texto14).foregroundStyle(C.texto2)
-            }
-            .padding(16).tarjeta(radio: 22)
-            Indicadores(items: [
-                ("Productos", "\(d.uso.productos)"), ("Personas", "\(d.uso.personas)"), ("Respuestas de Hornero", "\(d.uso.hornero)"),
+            TarjetaHeroe(etiqueta: d.enPrueba ? "Estás probando gratis" : "Tu plan", valor: "Plan \(Formato.mayuscula(d.actual))",
+                         detalle: d.enPrueba ? "Te quedan \(Formato.cantidad(d.diasPrueba, "día", "días")) de prueba"
+                             : (d.proximoCobro.isEmpty ? Formato.mayuscula(d.ciclo) : "Próximo cobro: \(d.proximoCobro)"),
+                         tincho: .celebrando)
+            GrillaIndicadores(items: [
+                IndicadorIcono(simbolo: "shippingbox.fill", titulo: "Productos", valor: "\(d.uso.productos)"),
+                IndicadorIcono(simbolo: "person.2.fill", titulo: "Personas del equipo", valor: "\(d.uso.personas)", tono: (C.okFondo, C.okTinta)),
+                IndicadorIcono(simbolo: "sparkles", titulo: "Respuestas de Tincho este mes", valor: "\(d.uso.hornero)", tono: (C.avisoFondo, C.avisoTinta)),
             ])
             if let m = d.medio {
                 GrupoFilas(elementos: [FilaId("Medio de pago", "\(m.marca) ·· \(m.ultimos)"), FilaId("Vence", m.vence)]) {
@@ -808,6 +862,7 @@ struct Integraciones: View {
                                 let ok = await ConectarCuenta.compartido.conectar(f.id == "mp" ? "mercadopago" : "mercadolibre", api: estado.api)
                                 conectando = nil
                                 estado.avisar(ok ? "\(f.nombre) conectado" : "No se completó la conexión", ok: ok)
+                                if ok { estado.version += 1 }
                                 await actualizar()
                             }
                         }
@@ -846,6 +901,12 @@ struct UsuariosYPermisos: View {
         PantallaSeccion(titulo: "Usuarios y permisos", que: "el equipo") {
             try await estado.api.get("/v1/panel/configuracion") as Datos
         } contenido: { d, actualizar in
+            let activos = d.equipo.filter { !$0.pendiente }.count
+            GrillaIndicadores(items: [
+                IndicadorIcono(simbolo: "person.2.fill", titulo: "En el equipo", valor: "\(activos)"),
+                IndicadorIcono(simbolo: "envelope.badge", titulo: "Invitaciones pendientes", valor: "\(d.equipo.count - activos)",
+                               tono: (C.avisoFondo, C.avisoTinta)),
+            ])
             GrupoFilas(elementos: d.equipo, inset: 68) { m in
                 HStack(spacing: 12) {
                     AvatarIniciales(nombre: m.nombre.isEmpty ? m.contacto : m.nombre, tam: 42)

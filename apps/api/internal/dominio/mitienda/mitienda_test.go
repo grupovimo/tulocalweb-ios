@@ -15,7 +15,7 @@ func TestBorradorYPublicado(t *testing.T) {
 	b := pruebadb.Nueva(t)
 	id := pruebadb.CrearTienda(t, b.App, "luna")
 	v, err := mitienda.Leer(ctx, b.App, id, "https://tulocalweb.com.ar")
-	if err != nil || v["sinPublicar"] != false || v["direccion"] != "tulocalweb.com.ar/t/luna" {
+	if err != nil || v["sinPublicar"] != false || v["direccion"] != "luna.tulocalweb.com.ar" {
 		t.Fatalf("inicial: %+v %v", v, err)
 	}
 	d := mitienda.Inicial()

@@ -38,8 +38,8 @@ struct Acceso: Codable, Equatable {
         var slug: String
         var rol: String
 
-        /// «tulocalweb.com.ar/t/almacen-lumbre».
-        var direccion: String { "tulocalweb.com.ar/t/\(slug)" }
+        /// «almacen-lumbre.tulocalweb.com.ar».
+        var direccion: String { "\(slug).tulocalweb.com.ar" }
     }
     var tiendaId: String
     var rol: String

@@ -153,7 +153,7 @@ func Leer(ctx context.Context, pool tx, tiendaID, sitio string) (map[string]any,
 		res = map[string]any{
 			"plantilla":   strings.ToUpper(plantilla[:1]) + plantilla[1:],
 			"plantillaId": plantilla,
-			"direccion":   strings.TrimPrefix(strings.TrimPrefix(sitio, "https://"), "http://") + "/t/" + slug,
+			"direccion":   slug + "." + strings.TrimPrefix(strings.TrimPrefix(sitio, "https://"), "http://"),
 			"diseno":      borrador,
 			"sinPublicar": string(a) != string(b),
 			"vista": map[string]any{

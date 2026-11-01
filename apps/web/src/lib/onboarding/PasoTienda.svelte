@@ -91,9 +91,9 @@
 							style:background="#A9CBA8"
 						></span>
 						<!-- El dominio entero y el nombre recortado con "…" si no entra (no desborda). -->
-						<span class="url" title={real ? `tulocalweb.com.ar/t/${real.slug}` : undefined}
-							>{#if real}<span class="u-dom">tulocalweb.com.ar/t/</span><span class="u-slug"
-									>{real.slug}</span
+						<span class="url" title={real ? `${real.slug}.tulocalweb.com.ar` : undefined}
+							>{#if real}<span class="u-slug">{real.slug}</span><span class="u-dom"
+									>.tulocalweb.com.ar</span
 								>{:else}laesquina.com.ar{/if}</span
 						>
 					</div>

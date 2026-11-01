@@ -31,7 +31,7 @@
 	// Con la API, la tienda de verdad; en la demo, la del handoff.
 	const real = $derived(page.data.tienda as { nombre: string; slug: string } | null);
 	const link = $derived(
-		real ? `https://tulocalweb.com.ar/t/${real.slug}` : 'https://laesquina.com.ar'
+		real ? `https://${real.slug}.tulocalweb.com.ar` : 'https://laesquina.com.ar'
 	);
 	const qrSvg = $derived(
 		'data:image/svg+xml;charset=utf-8,' +

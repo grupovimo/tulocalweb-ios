@@ -181,7 +181,7 @@ describe('imagen', () => {
 		]);
 		expect(c.detalle).toBe('2 productos');
 		expect(c.frase).toBe('Panes y Tortas');
-		expect(c.direccion).toBe('tulocalweb.com.ar/t/la-tienda-de-nahuel');
+		expect(c.direccion).toBe('la-tienda-de-nahuel.tulocalweb.com.ar');
 		expect(tarjetaDe({ ...t, dominio: 'nahuel.com.ar' }).direccion).toBe('nahuel.com.ar');
 	});
 	it('la URL es absoluta y cambia cuando cambia lo que se dibuja', () => {

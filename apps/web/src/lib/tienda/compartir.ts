@@ -210,7 +210,7 @@ export type TarjetaTienda = {
 	detalle: string;
 	/** Las categorías con más productos (hasta 5), con cuántos tiene cada una. */
 	categorias: { nombre: string; cantidad: number }[];
-	/** Dónde está la tienda (dominio propio o tulocalweb.com.ar/t/…). */
+	/** Dónde está la tienda (dominio propio o <slug>.tulocalweb.com.ar). */
 	direccion: string;
 	/** La portada y las fotos de productos (hasta 4, sin repetir). */
 	fotos: string[];
@@ -235,7 +235,7 @@ export type Tarjeta = TarjetaTienda | TarjetaProducto;
 
 /** Dirección visible: el dominio propio o la de Tu Local Web, sin https. */
 export function direccionDe(t: Pick<TiendaPublica, 'slug' | 'dominio'>) {
-	return t.dominio || `${SITE.replace(/^https?:\/\//, '')}/t/${t.slug}`;
+	return t.dominio || `${t.slug}.${SITE.replace(/^https?:\/\//, '')}`;
 }
 
 export function tarjetaDe(t: TiendaPublica): TarjetaTienda {

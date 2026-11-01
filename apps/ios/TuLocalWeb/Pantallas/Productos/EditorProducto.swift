@@ -25,6 +25,17 @@ struct EditorProducto: View {
     @State private var elegidas: [PhotosPickerItem] = []
     @State private var camara = false
     @State private var borrar = false
+    @State private var opciones: [Opcion] = []
+    @State private var variantes: [String: Combinacion] = [:]
+    @State private var teniaOpciones = false
+    @State private var nuevoValor: [Int: String] = [:]
+
+    struct Opcion: Equatable { var nombre: String; var valores: [String] }
+    struct Combinacion: Equatable { var stock = ""; var precio = ""; var sku = "" }
+    static let curvas: [(String, [String])] = [
+        ("Talle (letras)", ["XS", "S", "M", "L", "XL", "XXL"]), ("Talle (números)", ["36", "38", "40", "42", "44", "46"]),
+        ("Talle (calzado)", ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44"]), ("Color", []), ("Presentación", []),
+    ]
 
     var body: some View {
         ScrollView {
@@ -39,12 +50,13 @@ struct EditorProducto: View {
                         campo("Precio") { TextField("0", text: $precio).keyboardType(.numberPad) }
                         campo("Costo (opcional)") { TextField("0", text: $costo).keyboardType(.numberPad) }
                     }
-                    if conVariantes {
-                        Text(Formato.sinViudas("El stock y los precios de cada variante se ajustan desde la lista, en «Ajustar stock»."))
-                            .estilo(.footnote).foregroundStyle(C.texto2)
-                    } else {
+                    if let m = margen {
+                        Text(m).estilo(.footnoteFuerte).foregroundStyle(C.okTinta).padding(.horizontal, 4)
+                    }
+                    if opciones.isEmpty {
                         campo("Stock") { TextField("0", text: $stock).keyboardType(.numberPad) }
                     }
+                    seccionVariantes
                     HStack(spacing: 10) {
                         campo("SKU o código") { TextField("Opcional", text: $codigo).textInputAutocapitalization(.characters) }
                         campo("Categoría") { TextField("Opcional", text: $categoria) }
@@ -89,6 +101,108 @@ struct EditorProducto: View {
         } message: {
             Text("Deja de verse en la tienda. Los pedidos que ya tiene no cambian.")
         }
+    }
+
+    private var margen: String? {
+        let p = Int(precio.filter(\.isNumber)) ?? 0, c = Int(costo.filter(\.isNumber)) ?? 0
+        guard p > 0, c > 0, p > c else { return nil }
+        return "Ganás \(Formato.pesos(p - c)) por unidad (\(Int((Double(p - c) / Double(p) * 100).rounded())) %)"
+    }
+
+    /// Las combinaciones de todas las opciones, en orden («M · Rojo»).
+    private var combinaciones: [[String: String]] {
+        let validas = opciones.filter { !$0.nombre.trimmingCharacters(in: .whitespaces).isEmpty && !$0.valores.isEmpty }
+        guard !validas.isEmpty else { return [] }
+        var out: [[String: String]] = [[:]]
+        for o in validas {
+            out = out.flatMap { base in o.valores.map { v in var b = base; b[o.nombre] = v; return b } }
+        }
+        return Array(out.prefix(100))
+    }
+
+    private func clave(_ c: [String: String]) -> String {
+        opciones.map { c[$0.nombre] ?? "" }.joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private var seccionVariantes: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Talles, colores y más").estilo(.headline).foregroundStyle(C.texto)
+                Spacer()
+                if opciones.count < 3 {
+                    Menu {
+                        ForEach(EditorProducto.curvas, id: \.0) { c in
+                            Button(c.0) {
+                                let nombre = c.0.hasPrefix("Talle") ? "Talle" : c.0
+                                if !opciones.contains(where: { $0.nombre == nombre }) { opciones.append(Opcion(nombre: nombre, valores: c.1)) }
+                            }
+                        }
+                        Button("Otra opción") { opciones.append(Opcion(nombre: "", valores: [])) }
+                    } label: {
+                        Label("Agregar", systemImage: "plus").estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
+                    }
+                }
+            }
+            if opciones.isEmpty {
+                Text(Formato.sinViudas("¿Viene en talles o colores? Agregá las opciones y cargás el stock de cada combinación."))
+                    .estilo(.footnote).foregroundStyle(C.texto2)
+            }
+            ForEach(opciones.indices, id: \.self) { i in
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        TextField("Nombre (Talle, Color…)", text: $opciones[i].nombre).estilo(.fila).foregroundStyle(C.texto)
+                        Button { opciones.remove(at: i) } label: { Image(systemName: "trash").foregroundStyle(C.errorTinta) }
+                            .accessibilityLabel("Sacar opción")
+                    }
+                    FlujoChips(valores: opciones[i].valores) { v in opciones[i].valores.removeAll { $0 == v } }
+                    HStack {
+                        TextField("+ Valor (ej.: Rojo)", text: Binding(get: { nuevoValor[i] ?? "" }, set: { nuevoValor[i] = $0 }))
+                            .estilo(.body16).submitLabel(.done)
+                            .onSubmit { sumarValor(i) }
+                        Button("Agregar") { sumarValor(i) }.buttonStyle(BotonTonal())
+                            .disabled((nuevoValor[i] ?? "").trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+                .padding(14).tarjeta(radio: 16)
+            }
+            if !combinaciones.isEmpty {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Variante").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Stock").frame(width: 64)
+                        Text("Precio").frame(width: 92)
+                    }
+                    .estilo(.footnoteFuerte).foregroundStyle(C.texto2).padding(.horizontal, 14).padding(.vertical, 10)
+                    ForEach(combinaciones, id: \.self) { c in
+                        let k = clave(c)
+                        Separador()
+                        HStack {
+                            Text(k).estilo(.fila).foregroundStyle(C.texto).frame(maxWidth: .infinity, alignment: .leading).lineLimit(1)
+                            TextField("0", text: Binding(get: { variantes[k]?.stock ?? "" }, set: { variantes[k, default: Combinacion()].stock = $0 }))
+                                .keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 64)
+                                .padding(.vertical, 6)
+                                .background((Int(variantes[k]?.stock ?? "") ?? 0) == 0 ? C.errorFondo : C.pista, in: RoundedRectangle(cornerRadius: 8))
+                            TextField(precio.isEmpty ? "Igual" : precio, text: Binding(get: { variantes[k]?.precio ?? "" }, set: { variantes[k, default: Combinacion()].precio = $0 }))
+                                .keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 92)
+                                .padding(.vertical, 6).background(C.pista, in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        .estilo(.body16).monospacedDigit()
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                    }
+                }
+                .tarjeta(radio: 16)
+                Text("\(Formato.cantidad(combinaciones.count, "combinación", "combinaciones")) · stock total \(combinaciones.reduce(0) { $0 + (Int(variantes[clave($1)]?.stock ?? "") ?? 0) })")
+                    .estilo(.footnote).foregroundStyle(C.texto2).padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private func sumarValor(_ i: Int) {
+        let v = (nuevoValor[i] ?? "").trimmingCharacters(in: .whitespaces)
+        guard !v.isEmpty, !opciones[i].valores.contains(where: { $0.caseInsensitiveCompare(v) == .orderedSame }) else { return }
+        opciones[i].valores.append(String(v.prefix(20)))
+        nuevoValor[i] = ""
     }
 
     private var valido: Bool {
@@ -165,6 +279,17 @@ struct EditorProducto: View {
         descripcion = v["descripcion"]?.texto ?? ""
         fotos = v["fotos"]?.lista?.compactMap(\.texto) ?? (v["foto"]?.texto.map { [$0] } ?? [])
         conVariantes = !(v["variantes"]?.lista?.isEmpty ?? true)
+        opciones = v["opciones"]?.lista?.compactMap { o in
+            guard let n = o["nombre"]?.texto else { return nil }
+            return Opcion(nombre: n, valores: o["valores"]?.lista?.compactMap(\.texto) ?? [])
+        } ?? []
+        teniaOpciones = !opciones.isEmpty
+        for x in v["variantes"]?.lista ?? [] {
+            guard case let .objeto(vals)? = x["valores"] else { continue }
+            let c = vals.compactMapValues(\.texto)
+            variantes[clave(c)] = Combinacion(stock: x["stock"]?.entero.map(String.init) ?? "",
+                                              precio: x["precio"]?.entero.map(String.init) ?? "", sku: x["sku"]?.texto ?? "")
+        }
     }
 
     private func subir(_ img: UIImage) async {
@@ -191,7 +316,24 @@ struct EditorProducto: View {
         o["nombre"] = .texto(nombre.trimmingCharacters(in: .whitespaces))
         o["precio"] = .numero(Double(Int(precio.filter(\.isNumber)) ?? 0))
         o["costo"] = .numero(Double(Int(costo.filter(\.isNumber)) ?? 0))
-        if !conVariantes { o["stock"] = .numero(Double(Int(stock.filter(\.isNumber)) ?? 0)) }
+        let combos = combinaciones
+        if combos.isEmpty {
+            o["stock"] = .numero(Double(Int(stock.filter(\.isNumber)) ?? 0))
+            if teniaOpciones { o["opciones"] = .lista([]); o["variantes"] = .lista([]) } else { o.removeValue(forKey: "opciones"); o.removeValue(forKey: "variantes") }
+        } else {
+            o["opciones"] = .lista(opciones.filter { !$0.nombre.isEmpty && !$0.valores.isEmpty }.map {
+                .objeto(["nombre": .texto($0.nombre), "valores": .lista($0.valores.map { .texto($0) })])
+            })
+            o["variantes"] = .lista(combos.map { c in
+                let x = variantes[clave(c)] ?? Combinacion()
+                var v: [String: ValorJSON] = ["valores": .objeto(c.mapValues { .texto($0) }),
+                                              "stock": .numero(Double(Int(x.stock.filter(\.isNumber)) ?? 0))]
+                v["precio"] = Int(x.precio.filter(\.isNumber)).map { .numero(Double($0)) } ?? .nulo
+                if !x.sku.isEmpty { v["sku"] = .texto(x.sku) }
+                return .objeto(v)
+            })
+            o.removeValue(forKey: "stock")
+        }
         o["sku"] = .texto(codigo.trimmingCharacters(in: .whitespaces))
         o["categoria"] = categoria.trimmingCharacters(in: .whitespaces).isEmpty ? .nulo : .texto(categoria.trimmingCharacters(in: .whitespaces))
         o["descripcion"] = .texto(descripcion)
@@ -250,5 +392,27 @@ struct Camara: UIViewControllerRepresentable {
             padre.cerrar()
         }
         func imagePickerControllerDidCancel(_: UIImagePickerController) { padre.cerrar() }
+    }
+}
+
+
+/// Los valores de una opción como píldoras, con «×» para sacarlos.
+struct FlujoChips: View {
+    var valores: [String]
+    var sacar: (String) -> Void
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(valores, id: \.self) { v in
+                    HStack(spacing: 4) {
+                        Text(v).estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta)
+                        Button { sacar(v) } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(C.primarioTinta) }
+                            .accessibilityLabel("Sacar \(v)")
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(C.crema, in: Capsule())
+                }
+            }
+        }
     }
 }

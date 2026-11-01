@@ -26,19 +26,26 @@ final class ConectarCuenta: NSObject, ASWebAuthenticationPresentationContextProv
         let vuelta: URL? = await withCheckedContinuation { cont in
             let s = ASWebAuthenticationSession(url: url, callbackURLScheme: "ar.com.tulocalweb.app") { v, _ in cont.resume(returning: v) }
             s.presentationContextProvider = self
-            s.prefersEphemeralWebBrowserSession = false
+            // Efímera: sin las cookies de Safari. Con la sesión de la web abierta en Safari, la vuelta la
+            // canjeaba la web y dejaba a la persona en el panel web, sin volver a la app.
+            s.prefersEphemeralWebBrowserSession = true
             sesion = s
             s.start()
         }
         sesion = nil
+        // Si la vuelta no llegó a la app pero la cuenta quedó conectada igual, es un éxito.
+        struct Conectada: Decodable { var conectada: Bool? }
+        func yaConectada() async -> Bool {
+            ((try? await api.get("/v1/panel/integraciones/\(proveedor)") as Conectada)?.conectada) ?? false
+        }
         guard let vuelta, let c = URLComponents(url: vuelta, resolvingAgainstBaseURL: false),
               let codigo = c.queryItems?.first(where: { $0.name == "code" })?.value,
-              let estado = c.queryItems?.first(where: { $0.name == "state" })?.value else { return false }
+              let estado = c.queryItems?.first(where: { $0.name == "state" })?.value else { return await yaConectada() }
         struct V: Encodable { var codigo: String; var estado: String }
         do {
             try await api.hacer("POST", "/v1/panel/integraciones/\(proveedor)/vuelta", V(codigo: codigo, estado: estado))
             return true
-        } catch { return false }
+        } catch { return await yaConectada() }
     }
 
     /// Abre una página de pago (la suscripción al plan) y vuelve cuando se cierra.

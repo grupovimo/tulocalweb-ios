@@ -365,7 +365,7 @@ struct DetallePedido: View {
 
     private func urlPublica(_ p: PedidoDetalle) -> URL? {
         guard let c = p.codigo, let slug = estado.tienda?.slug else { return nil }
-        return URL(string: "https://tulocalweb.com.ar/t/\(slug)/pedido/\(c)")
+        return URL(string: "https://\(slug).tulocalweb.com.ar/pedido/\(c)")
     }
 
     private func textoCompartir(_ p: PedidoDetalle) -> String {

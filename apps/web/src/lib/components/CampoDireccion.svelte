@@ -14,7 +14,7 @@
 	} from '#lib/tienda/direccion.ts';
 
 	/**
-	 * La dirección de la tienda (tulocalweb.com.ar/t/<slug>) editable, con la disponibilidad en vivo
+	 * La dirección de la tienda (<slug>.tulocalweb.com.ar) editable, con la disponibilidad en vivo
 	 * (decisiones §38): el formato y los reservados se ven al escribir; si está libre lo dice Go
 	 * (GET /panel/configuracion/direccion), con una pausa para no preguntar en cada tecla.
 	 */
@@ -79,7 +79,6 @@
 <div class="cd">
 	<label class="cd-l" for={id}>{etiqueta}</label>
 	<div class="cd-caja" class:mal={estado === 'mal'} class:bien={estado === 'ok'}>
-		<span class="cd-pre" aria-hidden="true">{HOST}/t/</span>
 		<input
 			{id}
 			value={slug}
@@ -98,6 +97,7 @@
 			aria-describedby="{id}-estado"
 			aria-invalid={estado === 'mal'}
 		/>
+		<span class="cd-pre" aria-hidden="true">.{HOST}</span>
 	</div>
 	<div
 		class="cd-estado"
