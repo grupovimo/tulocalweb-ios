@@ -1,6 +1,38 @@
 # Estado del trabajo
 
-Última actualización: 28/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
+Última actualización: 31/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
+
+## 31/10/2026
+
+**En producción** (migraciones hasta 00069, cada una con pg_dumpall previo en /var/backups/vimo/manual):
+
+| § | Qué |
+|---|---|
+| §46 | Factura A desde el checkout (00063) |
+| §47 | API de conversiones de Meta (00064) |
+| §48 | Aviso de vencimiento del certificado de ARCA (00065) |
+| §49 | Precios mayoristas (00066) |
+| §50 | Newsletter de cada tienda (00067) |
+| §51 | Suscripciones con débito automático de Mercado Pago, club de Malbec y café de Mostaza (00068). Los eventos «Planes y suscripciones» ya están activos en el webhook de producción de la app de MP |
+| §52 | Lanzamientos, «Avisame», reserva y encargo con seña, oferta con fin, drops de Pampa y configurador de Quebracho (00069) |
+| — | Política de cambios y devoluciones por tienda (Configuración › Negocio, sin migración) |
+| §53 | Ingreso para la app de iPhone: `/v1/auth/proveedores` (la API ya está; la app no) |
+
+**App de iPhone** (`apps/ios`, SwiftUI iOS 17, XcodeGen): primer corte en main (ingreso por contraseña,
+Apple y Google con Clerk; Inicio, Pedidos, Productos, venta en el local, clientes, avisos y cuenta). Falta
+probarla en el simulador y subir el primer build a TestFlight. La app «Tu Local Web» ya existe en App Store
+Connect y la clave de API está en `~/Trabajo/vimo/credenciales-apple/asc.env`. Xcode 26.5 con el runtime
+iOS 26.5. Las sesiones comparten la Mac por turnos (`~/Trabajo/vimo/.xcode-turno`).
+
+**Push Android:** proyecto Firebase `grupo-vimo` (plan Spark, sin facturación), una app Android por producto y
+una cuenta de servicio por producto con rol FCM. La de Tu Local Web está en `/opt/tulocalweb/claves/fcm.json`
+(todavía sin usar: no hay app Android). `vimo-copia` respalda `claves/` de las cuatro apps.
+
+**Pendiente:**
+- Módulo Go compartido (apns, fcm, webpush, correo) para las cuatro apps: falta decidir si el repo es público o
+  privado.
+- La tienda 323 (Vercel, aparte de la plataforma) cobra con OAuth sobre la app de MP de Tu Local Web; el webhook
+  de la plataforma ignora los pagos de cuentas que no son tiendas.
 
 ## Hecho (mergeado y desplegado en tulocalweb.com.ar)
 
