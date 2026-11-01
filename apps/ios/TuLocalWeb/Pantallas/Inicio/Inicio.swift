@@ -86,7 +86,8 @@ struct Inicio: View {
 
     @ViewBuilder
     private func contenido(_ t: Tablero) -> some View {
-        if t.ultimosPedidos.isEmpty && t.masVendidos.isEmpty && (t.ventas?.actual ?? 0) == 0 && periodo == "hoy" {
+        if t.ultimosPedidos.isEmpty && t.masVendidos.isEmpty && (t.ventas?.actual ?? 0) == 0 && periodo == "hoy"
+            && !PrimerosPasos.ocultos(estado.tienda?.id) {
             SinVentas()
         } else {
             conVentas(t)
@@ -653,10 +654,14 @@ struct SinVentas: View {
     @Environment(Navegacion.self) private var nav
     @State private var conProductos: Bool?
     @State private var mpConectada = false
+    @AppStorage(PrimerosPasos.claveCompartido) private var compartidos = ""
+    @AppStorage(PrimerosPasos.claveOcultos) private var ocultos = ""
 
     var body: some View {
         let mp = mpConectada || (estado.resumen?.canales?.contains("mp") ?? false)
         let url = URL(string: "https://\(estado.tienda?.direccion ?? "tulocalweb.com.ar")")!
+        let id = estado.tienda?.id ?? ""
+        let compartio = PrimerosPasos.contiene(compartidos, id)
         VStack(spacing: 8) {
             Image(Tincho.saludo.imagen).resizable().scaledToFit().frame(width: 150, height: 150).accessibilityHidden(true)
             Text("Tu tienda ya está online").estilo(.tituloHoja).foregroundStyle(C.texto).multilineTextAlignment(.center)
@@ -674,12 +679,20 @@ struct SinVentas: View {
                 }
                 Separador(inset: 57)
                 ShareLink(item: url) {
-                    filaPaso(4, "Compartí el link", "Por WhatsApp o en tus redes", hecho: false, boton: nil)
+                    filaPaso(4, "Compartí el link", "Por WhatsApp o en tus redes", hecho: compartio, boton: nil)
                 }
                 .buttonStyle(.plain)
+                // Tocar «Compartir» alcanza para darlo por hecho (iOS no avisa si se mandó).
+                .simultaneousGesture(TapGesture().onEnded { compartidos = PrimerosPasos.sumar(compartidos, id) })
             }
             .tarjeta()
             .padding(.top, 8)
+            // Ningún paso es obligatorio: la tarjeta se puede cerrar y no vuelve.
+            Button((conProductos == true && mp) || compartio ? "Listo, ir al tablero" : "Ocultar estos pasos") {
+                withAnimation { ocultos = PrimerosPasos.sumar(ocultos, id) }
+                estado.version += 1
+            }
+            .buttonStyle(BotonTexto()).padding(.top, 4)
         }
         .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 18)
         .background(C.crema2, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -727,5 +740,26 @@ struct SinVentas: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
         .contentShape(Rectangle())
+    }
+}
+
+
+/// Los primeros pasos de Inicio: qué tiendas ya compartieron el link o cerraron la tarjeta (en el
+/// teléfono, por tienda).
+enum PrimerosPasos {
+    static let claveCompartido = "pasos.compartido"
+    static let claveOcultos = "pasos.ocultos"
+
+    static func contiene(_ lista: String, _ id: String) -> Bool {
+        !id.isEmpty && lista.split(separator: ",").contains(Substring(id))
+    }
+
+    static func sumar(_ lista: String, _ id: String) -> String {
+        guard !id.isEmpty, !contiene(lista, id) else { return lista }
+        return lista.isEmpty ? id : lista + "," + id
+    }
+
+    static func ocultos(_ id: String?) -> Bool {
+        contiene(UserDefaults.standard.string(forKey: claveOcultos) ?? "", id ?? "")
     }
 }
