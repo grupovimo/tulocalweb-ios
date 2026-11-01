@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 
@@ -56,6 +57,8 @@ type Negocio struct {
 	Alias   string `json:"alias"`
 	CBU     string `json:"cbu"`
 	Titular string `json:"titular"`
+	// Política de cambios y devoluciones que se muestra en la tienda (vacía: el texto legal base).
+	Politica string `json:"politica"`
 }
 
 var aliasValido = regexp.MustCompile(`^[a-zA-Z0-9.-]{6,20}$`)
@@ -261,6 +264,10 @@ func Leer(ctx context.Context, pool tx, geo geoip.Ubicador, tiendaID string, q Q
 func GuardarNegocio(ctx context.Context, pool tx, tiendaID string, n Negocio) error {
 	n.Nombre = strings.TrimSpace(n.Nombre)
 	n.Alias, n.CBU, n.Titular = strings.TrimSpace(n.Alias), strings.ReplaceAll(strings.TrimSpace(n.CBU), " ", ""), strings.TrimSpace(n.Titular)
+	n.Politica = strings.TrimSpace(n.Politica)
+	if utf8.RuneCountInString(n.Politica) > 1000 {
+		return ErrInvalido
+	}
 	if n.Nombre == "" || len(n.Nombre) > 80 || (n.Alias != "" && !aliasValido.MatchString(n.Alias)) ||
 		(n.CBU != "" && !CBUValido(n.CBU)) || len(n.Titular) > 80 {
 		return ErrInvalido

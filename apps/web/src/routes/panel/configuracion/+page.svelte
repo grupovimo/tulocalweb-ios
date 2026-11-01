@@ -74,7 +74,10 @@
 		['titular', 'Titular de la cuenta']
 	] as const;
 	let negocio = $derived({ ...data.negocio });
-	const cambiado = $derived(CAMPOS.some(([k]) => negocio[k] !== data.negocio[k]));
+	const cambiado = $derived(
+		CAMPOS.some(([k]) => negocio[k] !== data.negocio[k]) ||
+			(negocio.politica ?? '') !== (data.negocio.politica ?? '')
+	);
 	async function guardarNegocio() {
 		if (!(await pedir('/panel/configuracion/negocio', 'PUT', negocio))) return;
 		await invalidateAll();
@@ -279,6 +282,15 @@
 							/></label
 						>
 					{/each}
+					<label class="ancho"
+						>Cambios y devoluciones<textarea
+							value={negocio.politica ?? ''}
+							oninput={(e) => (negocio = { ...negocio, politica: e.currentTarget.value })}
+							maxlength={1000}
+							rows={4}
+							placeholder="Cambios dentro de los 30 días con el ticket y la etiqueta puesta."
+						></textarea></label
+					>
 					{#if cambiado}
 						<div class="guardar">
 							<button
@@ -629,7 +641,15 @@
 		font-weight: 600;
 		color: var(--mu);
 	}
-	.campos input {
+	.campos .ancho {
+		grid-column: 1 / -1;
+	}
+	.campos textarea {
+		resize: vertical;
+		line-height: 1.45;
+	}
+	.campos input,
+	.campos textarea {
 		padding: 11px 12px;
 		border-radius: 12px;
 		border: 1px solid var(--ln2);

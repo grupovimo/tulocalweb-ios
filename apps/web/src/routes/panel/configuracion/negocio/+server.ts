@@ -36,7 +36,12 @@ const Negocio = v.object({
 		),
 		''
 	),
-	titular: v.optional(txt(80), '')
+	titular: v.optional(txt(80), ''),
+	// Cambios y devoluciones, a la vista en la tienda (vacía: el texto legal base).
+	politica: v.optional(
+		v.pipe(v.string(), v.trim(), v.maxLength(1000, 'La política es muy larga (hasta 1000).')),
+		''
+	)
 });
 
 /** Datos del negocio. */

@@ -44,3 +44,30 @@ test('configuración: negocio, equipo, seguridad y plan', async ({ page, isMobil
 	await expect(page.locator('.plan.actual')).toContainText('Emprende');
 	if (!isMobile) await expect(page.locator('.prueba')).toContainText('Emprende');
 });
+
+test('configuración: la política de cambios llega a la tienda', async ({ page }) => {
+	await page.addInitScript(() => localStorage.setItem('tlw-cookies', 'nec'));
+	await page.goto('/prueba');
+	await listo(page);
+	await page.getByRole('button', { name: /^Litoral/ }).click();
+	await expect(page).toHaveURL(/\/panel$/);
+	const slug = (await page.locator('.t-d').first().textContent())!.split('/t/')[1].trim();
+	await page.goto('/panel/configuracion');
+	await listo(page);
+
+	const politica = 'Cambios dentro de los 30 días con el ticket y la etiqueta puesta.';
+	await page.getByLabel('Cambios y devoluciones').fill(politica);
+	await page.getByRole('button', { name: 'Guardar cambios' }).click();
+	await expect(page.getByText('Datos guardados')).toBeVisible();
+
+	// En la ficha del producto va antes del texto legal del botón de arrepentimiento.
+	await page.goto(`/t/${slug}/producto/bombilla-alpaca`);
+	await listo(page);
+	await page.getByRole('button', { name: 'Cambios y devoluciones' }).click();
+	const texto = page.getByText(politica);
+	await expect(texto).toBeVisible();
+	await expect(texto).toContainText(`${politica} Tenés 10 días desde que lo recibís`);
+	expect(
+		await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+	).toBeLessThanOrEqual(0);
+});

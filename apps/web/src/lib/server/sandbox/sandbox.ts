@@ -3362,6 +3362,7 @@ export class DatosSandbox implements Datos {
 			ciudad: d.catalogo.ciudad,
 			direccion: conf.negocio.direccion,
 			whatsapp: conf.negocio.whatsapp,
+			politica: conf.negocio.politica ?? '',
 			categorias,
 			productos: visibles.map((x) => ({
 				id: x.id,

@@ -97,6 +97,8 @@ export type TiendaPublica = {
 	ciudad: string;
 	direccion: string;
 	whatsapp: string;
+	/** Cambios y devoluciones (Configuración › Negocio); vacía: el texto legal base. */
+	politica?: string;
 	categorias: { nombre: string; cantidad: number; foto: string | null }[];
 	productos: ProductoPublico[];
 	/** Ids de los más vendidos, del más al menos. */

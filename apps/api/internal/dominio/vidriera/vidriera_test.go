@@ -137,6 +137,30 @@ func TestCotizar(t *testing.T) {
 	}
 }
 
+// La política de cambios y devoluciones de Configuración › Negocio llega a la tienda, sin espacios
+// de más; más de 1000 caracteres no se guarda.
+func TestPoliticaDeCambios(t *testing.T) {
+	ctx := context.Background()
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	if tienda, err := vidriera.Publica(ctx, b.App, "luna"); err != nil || tienda.Politica != "" {
+		t.Fatalf("de entrada: %q %v", tienda.Politica, err)
+	}
+	politica := "Cambios dentro de los 30 días con el ticket."
+	if err := configuracion.GuardarNegocio(ctx, b.App, luna, configuracion.Negocio{Nombre: "Luna", Politica: "  " + politica + "\n"}); err != nil {
+		t.Fatal(err)
+	}
+	if tienda, err := vidriera.Publica(ctx, b.App, "luna"); err != nil || tienda.Politica != politica {
+		t.Fatalf("guardada: %q %v", tienda.Politica, err)
+	}
+	if err := configuracion.GuardarNegocio(ctx, b.App, luna, configuracion.Negocio{Nombre: "Luna", Politica: strings.Repeat("ñ", 1000)}); err != nil {
+		t.Fatalf("1000 caracteres (2000 bytes): %v", err)
+	}
+	if err := configuracion.GuardarNegocio(ctx, b.App, luna, configuracion.Negocio{Nombre: "Luna", Politica: strings.Repeat("a", 1001)}); !errors.Is(err, configuracion.ErrInvalido) {
+		t.Fatalf("1001 caracteres: %v", err)
+	}
+}
+
 // Lo de Envíos y retiro llega a la tienda y al pedido: sin retiro no se puede retirar, y la moto
 // cobra su costo y queda como envío (con la dirección de entrega).
 func TestEntregasConfiguradas(t *testing.T) {

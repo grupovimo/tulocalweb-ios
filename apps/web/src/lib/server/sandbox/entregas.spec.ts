@@ -93,3 +93,15 @@ describe('Envíos y retiro (demo, como configuracion.Entregas en Go)', () => {
 		expect((await datos.entregas()).retiro).toBe(true);
 	});
 });
+
+describe('Cambios y devoluciones (demo, como configuracion.Negocio.Politica en Go)', () => {
+	it('arranca vacía y lo guardado en Negocio llega a la tienda', async () => {
+		const datos = await moda();
+		expect((await datos.tiendaPublica(false)).politica).toBe('');
+		const conf = await datos.configuracion();
+		const politica = 'Cambios dentro de los 30 días con el ticket.';
+		await datos.guardarNegocio({ ...conf.negocio, politica });
+		expect((await datos.configuracion()).negocio.politica).toBe(politica);
+		expect((await datos.tiendaPublica(false)).politica).toBe(politica);
+	});
+});

@@ -399,7 +399,7 @@
 					['Envíos', textoEnvios(tienda.envios)],
 					[
 						'Cambios y devoluciones',
-						'Tenés 10 días desde que lo recibís para arrepentirte de la compra, sin dar explicaciones (botón de arrepentimiento, abajo de\u00a0todo).'
+						`${tienda.politica ? `${tienda.politica} ` : ''}Tenés 10 días desde que lo recibís para arrepentirte de la compra, sin dar explicaciones (botón de arrepentimiento, abajo de\u00a0todo).`
 					]
 				].map(([t, d]) => ({ t, d, open: abierto === t, i: abierto === t ? I.phMinus : I.phPlus }))
 			: []
@@ -1522,7 +1522,7 @@
 										style="width:100%;display:flex;justify-content:space-between;padding:0;border:0;background:transparent;font:700 14px 'Instrument Sans';color:{T.ink};cursor:pointer;text-align:left"
 										>{a.t}<Icon icon={a.i} size={15} /></button
 									>{#if a.open}<p
-											style="margin:10px 0 0;font-size:14.5px;line-height:1.6;color:{T.mu}"
+											style="margin:10px 0 0;font-size:14.5px;line-height:1.6;color:{T.mu};text-wrap:pretty"
 										>
 											{a.d}
 										</p>{/if}

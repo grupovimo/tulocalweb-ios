@@ -4399,6 +4399,8 @@ export interface components {
             /** @description CBU o CVU de 22 dígitos, con sus verificadores (vacío si no hay) */
             cbu?: string;
             titular?: string;
+            /** @description Política de cambios y devoluciones que se muestra en la tienda (vacía: el texto legal base) */
+            politica?: string;
         };
         /** @description Un iPhone para los avisos push. El payload que llega tiene aps.alert (title/body), sound, thread-id (tienda-<id>, o cuenta) y, afuera de aps, ruta (pedido/<numero>, preguntas/ml/<id>, cuenta/seguridad) y tienda (el id) para abrir la pantalla. */
         Dispositivo: {

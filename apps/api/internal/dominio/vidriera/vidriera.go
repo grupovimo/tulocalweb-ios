@@ -107,10 +107,12 @@ type Tienda struct {
 	// Logo subido en Mi tienda (URL); vacío: el nombre en letras.
 	Logo string `json:"logo"`
 	// Compartir: título, descripción y foto propia de la vista previa al compartir (vacíos: lo sugerido).
-	Compartir   Compartir         `json:"compartir"`
-	Ciudad      string            `json:"ciudad"`
-	Direccion   string            `json:"direccion"`
-	Whatsapp    string            `json:"whatsapp"`
+	Compartir Compartir `json:"compartir"`
+	Ciudad    string    `json:"ciudad"`
+	Direccion string    `json:"direccion"`
+	Whatsapp  string    `json:"whatsapp"`
+	// Política de cambios y devoluciones (Configuración › Negocio); vacía: el texto legal base.
+	Politica    string            `json:"politica"`
 	Categorias  []Categoria       `json:"categorias"`
 	Productos   []ProductoPublico `json:"productos"`
 	MasVendidos []string          `json:"masVendidos"`
@@ -271,9 +273,9 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			}
 			out.Paleta = d.Paleta
 		}
-		var n struct{ Direccion, Whatsapp, Alias, CBU, Titular string }
+		var n struct{ Direccion, Whatsapp, Alias, CBU, Titular, Politica string }
 		_ = json.Unmarshal(negocio, &n)
-		out.Direccion, out.Whatsapp = n.Direccion, n.Whatsapp
+		out.Direccion, out.Whatsapp, out.Politica = n.Direccion, n.Whatsapp, n.Politica
 		out.Cobros = map[string]any{"transferencia": 0, "cuotas": cuotas, "mercadoPago": mp, "datosTransferencia": nil}
 		// Sin alias ni CBU cargados no se ofrece transferencia (nunca un alias inventado), ni su descuento.
 		if n.Alias != "" || n.CBU != "" {

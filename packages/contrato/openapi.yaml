@@ -4586,6 +4586,7 @@ components:
         alias: { type: string, maxLength: 20, pattern: '^([a-zA-Z0-9.-]{6,20})?$', description: 'Alias para cobrar por transferencia (6 a 20 caracteres; vacío si no hay)' }
         cbu: { type: string, maxLength: 22, pattern: '^([0-9]{22})?$', description: 'CBU o CVU de 22 dígitos, con sus verificadores (vacío si no hay)' }
         titular: { type: string, maxLength: 80 }
+        politica: { type: string, maxLength: 1000, description: 'Política de cambios y devoluciones que se muestra en la tienda (vacía: el texto legal base)' }
     Dispositivo:
       type: object
       description: >-
