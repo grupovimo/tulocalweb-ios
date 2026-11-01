@@ -2,8 +2,8 @@ import CoreImage
 import SwiftUI
 
 /// 8a · Más: la tarjeta de la tienda (cambiar, ver, compartir, QR) y los grupos Ventas y clientes,
-/// Plata y Tu cuenta, con «Cerrar sesión». Lo que todavía no tiene pantalla en la app abre el panel
-/// web adentro (SFSafariViewController), como lo que vive sólo en la web.
+/// Plata y Tu cuenta, con «Cerrar sesión». Todo tiene pantalla propia en la app; sólo Ayuda abre la
+/// web adentro (SFSafariViewController).
 struct Mas: View {
     @Environment(Estado.self) private var estado
     @Environment(Navegacion.self) private var nav
@@ -19,22 +19,22 @@ struct Mas: View {
                 if let t = estado.tienda { tarjetaTienda(t).padding(.top, 4) }
                 grupo("Ventas y clientes", tono: (C.pista, C.primarioTexto), filas: [
                     Fila(texto: "Clientes", simbolo: "person.2", destino: .clientes, permiso: "clientes"),
-                    Fila(texto: "Caja del día", simbolo: "banknote", ruta: "ventas-en-local", permiso: "pedidos",
+                    Fila(texto: "Caja del día", simbolo: "banknote", destino: .caja, permiso: "pedidos",
                          detalle: cajaAbierta.map { $0 ? ("Abierta", C.okTinta) : ("Cerrada", C.texto2) }),
-                    Fila(texto: "Carritos abandonados", simbolo: "cart", ruta: "carritos-abandonados", permiso: "clientes",
+                    Fila(texto: "Carritos abandonados", simbolo: "cart", destino: .carritos, permiso: "clientes",
                          insignia: estado.resumen?.insignias.carritos ?? 0),
-                    Fila(texto: "Reseñas y preguntas", simbolo: "star.bubble", ruta: "resenas-y-preguntas", permiso: "clientes"),
-                    Fila(texto: "Devoluciones", simbolo: "arrow.uturn.backward", ruta: "devoluciones", permiso: "pedidos"),
-                    Fila(texto: "Cupones", simbolo: "ticket", ruta: "cupones", permiso: "catalogo"),
+                    Fila(texto: "Reseñas y preguntas", simbolo: "star.bubble", destino: .resenas, permiso: "clientes"),
+                    Fila(texto: "Devoluciones", simbolo: "arrow.uturn.backward", destino: .devoluciones, permiso: "pedidos"),
+                    Fila(texto: "Cupones", simbolo: "ticket", destino: .cupones, permiso: "catalogo"),
                 ])
                 grupo("Plata", tono: (C.okFondo, C.okTinta), filas: [
-                    Fila(texto: "Finanzas", simbolo: "chart.line.uptrend.xyaxis", ruta: "finanzas", permiso: "finanzas"),
-                    Fila(texto: "Facturación de ARCA", simbolo: "doc.text", ruta: "facturacion", permiso: "finanzas"),
+                    Fila(texto: "Finanzas", simbolo: "chart.line.uptrend.xyaxis", destino: .finanzas, permiso: "finanzas"),
+                    Fila(texto: "Facturación de ARCA", simbolo: "doc.text", destino: .facturacion, permiso: "finanzas"),
                 ])
                 grupo("Tu cuenta", tono: (C.avisoFondo, C.avisoTinta), filas: [
-                    Fila(texto: "Plan", simbolo: "creditcard", ruta: "plan", permiso: "cuenta", detalle: plan),
-                    Fila(texto: "Integraciones", simbolo: "puzzlepiece.extension", ruta: "integraciones", permiso: "cuenta"),
-                    Fila(texto: "Usuarios y permisos", simbolo: "person.badge.key", ruta: "usuarios-y-permisos", permiso: "cuenta"),
+                    Fila(texto: "Plan", simbolo: "creditcard", destino: .plan, permiso: "cuenta", detalle: plan),
+                    Fila(texto: "Integraciones", simbolo: "puzzlepiece.extension", destino: .integraciones, permiso: "cuenta"),
+                    Fila(texto: "Usuarios y permisos", simbolo: "person.badge.key", destino: .usuarios, permiso: "cuenta"),
                     Fila(texto: "Perfil, seguridad y tema", simbolo: "person.crop.circle", destino: .cuenta),
                     Fila(texto: "Ayuda", simbolo: "questionmark.circle", ruta: "ayuda"),
                 ])

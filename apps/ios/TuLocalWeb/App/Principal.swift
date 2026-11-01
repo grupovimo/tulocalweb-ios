@@ -13,6 +13,7 @@ enum Destino: Hashable {
     case cuenta
     case clientes
     case cliente(ClienteFila)
+    case caja, carritos, resenas, devoluciones, cupones, finanzas, facturacion, plan, integraciones, usuarios
 }
 
 /// La navegación de la app: la pestaña, el camino de cada una y los filtros con los que se abre una
@@ -161,6 +162,16 @@ struct Principal: View {
                     case .cuenta: Cuenta()
                     case .clientes: Clientes()
                     case let .cliente(c): FichaCliente(cliente: c)
+                    case .caja: CajaDelDia()
+                    case .carritos: CarritosAbandonados()
+                    case .resenas: ResenasYPreguntas()
+                    case .devoluciones: Devoluciones()
+                    case .cupones: Cupones()
+                    case .finanzas: Finanzas()
+                    case .facturacion: FacturacionArca()
+                    case .plan: PlanCuenta()
+                    case .integraciones: Integraciones()
+                    case .usuarios: UsuariosYPermisos()
                     }
                 }
         }

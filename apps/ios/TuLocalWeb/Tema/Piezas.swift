@@ -128,6 +128,7 @@ struct BotonPrincipal: ButtonStyle {
         configuration.label
             .estilo(.headline)
             .foregroundStyle(.white)
+            .padding(.horizontal, 22)
             .frame(maxWidth: .infinity, minHeight: alto)
             .background(C.primario, in: RoundedRectangle(cornerRadius: alto >= 56 ? 15 : 14, style: .continuous))
             .shadow(color: C.sombraPrimario, radius: 8, x: 0, y: 6)
@@ -143,6 +144,7 @@ struct BotonTexto: ButtonStyle {
         configuration.label
             .estilo(.headline)
             .foregroundStyle(color)
+            .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: alto)
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)

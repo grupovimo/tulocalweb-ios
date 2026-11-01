@@ -131,8 +131,8 @@ struct Ingresar: View {
                         }
                         Button { Task { await social(apple: false) } } label: {
                             HStack(spacing: 10) {
-                                Text("G").font(Estilo(tamano: 19, peso: .bold, relativo: .headline).font)
-                                    .foregroundStyle(Color(hex: 0x4285F4))
+                                Image("LogoGoogle").resizable().scaledToFit().frame(width: 20, height: 20)
+                                    .accessibilityHidden(true)
                                 Text("Seguir con Google").foregroundStyle(C.texto)
                             }
                             .estilo(.headline)

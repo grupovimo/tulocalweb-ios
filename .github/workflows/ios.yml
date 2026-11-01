@@ -1,0 +1,38 @@
+# Compila la app de iPhone en GitHub cada vez que cambia apps/ios: en la Mac no se compila ni se usa el
+# simulador (decisión del 31/10). Sin firmar; la firma y la subida van por testflight.yml.
+name: iOS
+
+on:
+  pull_request:
+    paths: ['apps/ios/**', '.github/workflows/ios.yml']
+  push:
+    branches: [main]
+    paths: ['apps/ios/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar:
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v5
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.3'
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Compilar
+        run: |
+          set -o pipefail
+          xcodebuild build -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO \
+            | tee compilar.log | xcbeautify --renderer github-actions
+      - if: failure()
+        run: grep -E 'error:' compilar.log | sort -u | head -60
