@@ -31,7 +31,7 @@ struct ListaProductos: View {
                 }
                 EncabezadoGrande(titulo: "Productos") {
                     BotonRedondo(simbolo: "barcode.viewfinder", etiqueta: "Escanear un código") {
-                        nav.web = URL(string: "https://tulocalweb.com.ar/panel/inventario")
+                        nav.productos.append(.inventario)
                     }
                     .frame(width: 40, height: 40)
                 }
@@ -122,7 +122,8 @@ struct ListaProductos: View {
                 VStack(spacing: 0) {
                     ForEach(Array(d.filas.enumerated()), id: \.element.id) { i, p in
                         if i > 0 { Separador(inset: 82) }
-                        Button { stockDe = p } label: { FilaProducto(p: p) }
+                        NavigationLink(value: Destino.editorProducto(p.id)) { FilaProducto(p: p) }
+                            .contextMenu { Button("Ajustar stock", systemImage: "shippingbox") { stockDe = p } }
                             .buttonStyle(.plain)
                     }
                 }
@@ -150,7 +151,7 @@ struct ListaProductos: View {
         } else {
             EstadoTincho(tincho: .foto, titulo: "Cargá tu primer producto",
                          texto: "Con una foto y el precio alcanza para empezar a vender.",
-                         accion: "Cargar producto", principal: true) { nav.crear = true }
+                         accion: "Cargar producto", principal: true) { nav.productos.append(.nuevoProducto(nil)) }
         }
     }
 

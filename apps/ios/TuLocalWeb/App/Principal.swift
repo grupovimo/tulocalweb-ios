@@ -14,6 +14,7 @@ enum Destino: Hashable {
     case clientes
     case cliente(ClienteFila)
     case caja, carritos, resenas, devoluciones, cupones, finanzas, facturacion, plan, integraciones, usuarios
+    case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda
 }
 
 /// La navegación de la app: la pestaña, el camino de cada una y los filtros con los que se abre una
@@ -122,9 +123,11 @@ struct Principal: View {
         .environment(nav)
         .sheet(isPresented: $nav.crear) {
             HojaCrear().hojaTLW([.height(420)])
+                .environment(nav)
         }
         .fullScreenCover(isPresented: $nav.venta) {
             VentaLocal()
+                .environment(nav)
                 .overlay(alignment: .bottom) {
                     if let aviso = estado.aviso {
                         VistaAviso(aviso: aviso) { estado.aviso = nil }
@@ -135,7 +138,7 @@ struct Principal: View {
                 .animation(.spring(duration: 0.3), value: estado.aviso)
         }
         .sheet(item: Binding(get: { nav.web.map(PaginaWeb.init) }, set: { nav.web = $0?.url })) { p in
-            Safari(url: p.url).ignoresSafeArea()
+            Safari(url: p.url).ignoresSafeArea().environment(nav)
         }
         .onChange(of: estado.rutaPendiente) { _, r in
             if let r {
@@ -172,6 +175,14 @@ struct Principal: View {
                     case .plan: PlanCuenta()
                     case .integraciones: Integraciones()
                     case .usuarios: UsuariosYPermisos()
+                    case let .editorProducto(id): EditorProducto(id: id)
+                    case let .nuevoProducto(sku): EditorProducto(id: nil, sku: sku)
+                    case .pedidoManual: PedidoManual()
+                    case .preferenciasAvisos: PreferenciasAvisos()
+                    case .negocio: NegocioCobro()
+                    case .links: LinksPago()
+                    case .inventario: EscanearInventario()
+                    case .ayuda: CentroAyuda()
                     }
                 }
         }
@@ -309,20 +320,27 @@ struct HojaCrear: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { nav.venta = true }
             }
             opcion("Producto con la cámara", "Sacale fotos y cargalo en un minuto", simbolo: "camera", principal: false) {
-                web("productos")
+                ir(.productos, .nuevoProducto(nil))
             }
             opcion("Pedido manual", "Para ventas por WhatsApp o teléfono", simbolo: "doc.text", principal: false) {
-                web("pedidos/nuevo")
+                ir(.pedidos, .pedidoManual)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
     }
 
-    /// Mientras estas pantallas no están en la app, se abren las del panel web.
-    private func web(_ ruta: String) {
+    /// Cierra la hoja y abre la pantalla en su pestaña.
+    private func ir(_ p: Pestana, _ d: Destino) {
         cerrar()
-        nav.web = URL(string: "https://tulocalweb.com.ar/panel/\(ruta)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            nav.pestana = p
+            switch p {
+            case .productos: nav.productos = [d]
+            case .pedidos: nav.pedidos = [d]
+            default: break
+            }
+        }
     }
 
     private func opcion(_ titulo: String, _ texto: String, simbolo: String, principal: Bool, accion: @escaping () -> Void) -> some View {

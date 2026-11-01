@@ -40,9 +40,6 @@ struct DetallePedido: View {
                                 Label("Copiar el link del pedido", systemImage: "link")
                             }
                         }
-                        Button { abrir(URL(string: "https://tulocalweb.com.ar/panel/pedidos/\(numero)")!) } label: {
-                            Label("Abrir en el panel web", systemImage: "arrow.up.right.square")
-                        }
                         if puedeCancelar(p) {
                             Button(role: .destructive) { cancelar = true } label: {
                                 Label("Cancelar pedido", systemImage: "xmark.circle")
@@ -343,18 +340,18 @@ struct DetallePedido: View {
             }
             if p.envio != "retiro", p.entrega != nil {
                 Separador()
-                Button {
-                    abrir(URL(string: "https://tulocalweb.com.ar/panel/pedidos/imprimir?numeros=\(p.numero)")!)
-                } label: {
-                    HStack {
-                        Text("Etiqueta de envío").estilo(.body16).foregroundStyle(C.texto)
-                        Spacer()
-                        Image(systemName: "square.and.arrow.up").foregroundStyle(C.primarioTexto)
+                if let pdf = EtiquetaEnvio.pdf(p, tienda: estado.tienda?.nombre ?? "") {
+                    ShareLink(item: pdf) {
+                        HStack {
+                            Text("Etiqueta de envío").estilo(.body16).foregroundStyle(C.texto)
+                            Spacer()
+                            Image(systemName: "printer").foregroundStyle(C.primarioTexto)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 14)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .tarjeta()

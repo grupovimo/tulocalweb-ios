@@ -52,16 +52,18 @@ struct Cuenta: View {
                         }
                     }
                     Separador()
-                    fila("Qué te avisamos") { nav.web = URL(string: "https://tulocalweb.com.ar/panel/notificaciones") }
+                    fila("Qué te avisamos") { nav.mas.append(.preferenciasAvisos) }
                 }
                 .tarjeta()
                 EtiquetaSeccion(texto: "Tema").padding(.horizontal, 4).padding(.top, 10)
                 Segmentado(opciones: [("claro", "Claro"), ("oscuro", "Oscuro"), ("sistema", "Sistema")], elegido: $tema)
                 EtiquetaSeccion(texto: "Ayuda").padding(.horizontal, 4).padding(.top, 10)
                 VStack(spacing: 0) {
-                    fila("Artículos de ayuda") { nav.web = URL(string: "https://tulocalweb.com.ar/ayuda") }
+                    fila("Artículos de ayuda") { nav.mas.append(.ayuda) }
                     Separador()
-                    fila("Escribirle a soporte") { nav.web = URL(string: "https://tulocalweb.com.ar/contacto") }
+                    fila("Escribirle a soporte") {
+                        if let u = URL(string: "mailto:hola@tulocalweb.com.ar?subject=Ayuda%20desde%20la%20app") { UIApplication.shared.open(u) }
+                    }
                 }
                 .tarjeta()
             }
@@ -128,32 +130,3 @@ struct Cuenta: View {
     }
 }
 
-/// La pestaña Tincho. El chat con IA vive todavía en el panel web (Workers AI); hasta que la API lo
-/// sirva, la app lo dice y lo abre allá.
-struct TinchoChat: View {
-    @Environment(Navegacion.self) private var nav
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Image(Tincho.avatar.imagen).resizable().scaledToFill().frame(width: 38, height: 38)
-                    .background(C.crema).clipShape(Circle())
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Tincho").estilo(.headline).foregroundStyle(C.texto)
-                    Text("Conoce tu tienda al día").estilo(.footnote).foregroundStyle(C.texto2)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .overlay(alignment: .bottom) { Rectangle().fill(C.linea).frame(height: 0.5) }
-            Spacer()
-            EstadoTincho(tincho: .pensando, titulo: "Tincho llega pronto a la app",
-                         texto: "Mientras tanto, preguntale lo que quieras desde el panel web: conoce tus ventas, tu stock y tus clientes.",
-                         tam: 210, accion: "Hablar con Tincho en la web", principal: true) {
-                nav.web = URL(string: "https://tulocalweb.com.ar/panel/hornero")
-            }
-            Spacer()
-        }
-        .background(C.fondo.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
-    }
-}

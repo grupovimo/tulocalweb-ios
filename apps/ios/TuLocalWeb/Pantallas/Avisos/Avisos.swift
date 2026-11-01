@@ -144,9 +144,24 @@ struct Avisos: View {
             nav.tocar(.pedidos)
         } else if ruta.hasPrefix("/panel/productos") || ruta.hasPrefix("/panel/inventario") {
             nav.tocar(.productos)
+        } else if let d = Avisos.destino(ruta) {
+            nav.inicio.append(d)
         } else if let u = URL(string: "https://tulocalweb.com.ar\(ruta)") {
             nav.web = u
         }
+    }
+
+    /// Las secciones del panel que tienen pantalla en la app.
+    static func destino(_ ruta: String) -> Destino? {
+        let tabla: [(String, Destino)] = [
+            ("/panel/carritos-abandonados", .carritos), ("/panel/resenas-y-preguntas", .resenas),
+            ("/panel/devoluciones", .devoluciones), ("/panel/cupones", .cupones), ("/panel/finanzas", .finanzas),
+            ("/panel/facturacion", .facturacion), ("/panel/plan", .plan), ("/panel/integraciones", .integraciones),
+            ("/panel/usuarios-y-permisos", .usuarios), ("/panel/clientes", .clientes), ("/panel/ventas-en-local", .caja),
+            ("/panel/configuracion", .negocio), ("/panel/notificaciones", .preferenciasAvisos), ("/panel/links", .links),
+            ("/ayuda", .ayuda),
+        ]
+        return tabla.first { ruta.hasPrefix($0.0) }?.1
     }
 
     private func leerTodo() async {

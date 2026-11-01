@@ -665,11 +665,11 @@ struct SinVentas: View {
                 paso(1, "Creaste la tienda", nil, hecho: true, boton: nil) {}
                 Separador(inset: 57)
                 paso(2, "Cargá tu primer producto", "Con una foto alcanza", hecho: conProductos == true,
-                     boton: conProductos == false ? "Cargar" : nil) { nav.crear = true }
+                     boton: conProductos == false ? "Cargar" : nil) { nav.inicio.append(.nuevoProducto(nil)) }
                 Separador(inset: 57)
                 paso(3, "Conectá Mercado Pago", "Para cobrar con tarjeta y QR", hecho: mp,
                      boton: conProductos == true && !mp ? "Conectar" : nil) {
-                    nav.web = URL(string: "https://tulocalweb.com.ar/panel/integraciones")
+                    nav.inicio.append(.integraciones)
                 }
                 Separador(inset: 57)
                 ShareLink(item: url) {

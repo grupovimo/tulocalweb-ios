@@ -26,6 +26,8 @@ struct Mas: View {
                     Fila(texto: "Reseñas y preguntas", simbolo: "star.bubble", destino: .resenas, permiso: "clientes"),
                     Fila(texto: "Devoluciones", simbolo: "arrow.uturn.backward", destino: .devoluciones, permiso: "pedidos"),
                     Fila(texto: "Cupones", simbolo: "ticket", destino: .cupones, permiso: "catalogo"),
+                    Fila(texto: "Links de pago", simbolo: "link", destino: .links, permiso: "pedidos"),
+                    Fila(texto: "Inventario", simbolo: "barcode.viewfinder", destino: .inventario, permiso: "catalogo"),
                 ])
                 grupo("Plata", tono: (C.okFondo, C.okTinta), filas: [
                     Fila(texto: "Finanzas", simbolo: "chart.line.uptrend.xyaxis", destino: .finanzas, permiso: "finanzas"),
@@ -33,10 +35,11 @@ struct Mas: View {
                 ])
                 grupo("Tu cuenta", tono: (C.avisoFondo, C.avisoTinta), filas: [
                     Fila(texto: "Plan", simbolo: "creditcard", destino: .plan, permiso: "cuenta", detalle: plan),
+                    Fila(texto: "Datos del negocio y cobro", simbolo: "building.2", destino: .negocio, permiso: "cuenta"),
                     Fila(texto: "Integraciones", simbolo: "puzzlepiece.extension", destino: .integraciones, permiso: "cuenta"),
                     Fila(texto: "Usuarios y permisos", simbolo: "person.badge.key", destino: .usuarios, permiso: "cuenta"),
                     Fila(texto: "Perfil, seguridad y tema", simbolo: "person.crop.circle", destino: .cuenta),
-                    Fila(texto: "Ayuda", simbolo: "questionmark.circle", ruta: "ayuda"),
+                    Fila(texto: "Ayuda", simbolo: "questionmark.circle", destino: .ayuda),
                 ])
                 Button("Cerrar sesión") { salir = true }
                     .font(Estilo.fila.font).foregroundStyle(C.errorTinta)

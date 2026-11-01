@@ -24,6 +24,8 @@ struct Cobrar: View {
     @State private var cobrando = false
     @State private var negocio: Negocio?
     @State private var qr: QRCobro?
+    @State private var editarNegocio = false
+    @State private var armarLink = false
 
     struct Negocio: Decodable { var alias: String?; var cbu: String?; var titular: String?; var nombre: String? }
     struct QRCobro: Identifiable { var numero: Int; var referencia: String; var datos: String; var id: String { referencia } }
@@ -88,6 +90,17 @@ struct Cobrar: View {
             struct Conf: Decodable { var negocio: Negocio? }
             if let c: Conf = try? await estado.api.get("/v1/panel/configuracion") { negocio = c.negocio }
         }
+        .sheet(isPresented: $editarNegocio, onDismiss: {
+            Task {
+                struct Conf: Decodable { var negocio: Negocio? }
+                if let c: Conf = try? await estado.api.get("/v1/panel/configuracion") { negocio = c.negocio }
+            }
+        }) {
+            NavigationStack { NegocioCobro() }.environment(estado)
+        }
+        .sheet(isPresented: $armarLink) {
+            NavigationStack { LinksPago(montoInicial: total) }.environment(estado)
+        }
         .fullScreenCover(item: $qr) { q in
             CobroQR(qr: q, total: total, nombreTienda: estado.tienda?.nombre ?? "") { ok in
                 qr = nil
@@ -100,7 +113,7 @@ struct Cobrar: View {
         switch medio {
         case "transf": return "Ya me transfirió"
         case "mp": return "Mostrar el QR"
-        case "link": return "Armar el link en la web"
+        case "link": return "Armar el link de pago"
         default: return "Confirmar cobro"
         }
     }
@@ -210,8 +223,8 @@ struct Cobrar: View {
             .buttonStyle(BotonSecundario())
         } else {
             EstadoTincho(tincho: .portapapeles, titulo: "Falta tu alias",
-                         texto: "Cargá el alias o el CVU en Configuración del panel web y te lo mostramos acá.", tam: 120,
-                         accion: "Abrir Configuración") { abrir(URL(string: "https://tulocalweb.com.ar/panel/configuracion")!) }
+                         texto: "Cargá el alias o el CVU una vez y te lo mostramos acá para cada cobro.", tam: 120,
+                         accion: "Cargar el alias") { editarNegocio = true }
         }
     }
 
@@ -243,7 +256,7 @@ struct Cobrar: View {
 
     private func confirmar() async {
         if medio == "link" {
-            abrir(URL(string: "https://tulocalweb.com.ar/panel/links")!)
+            armarLink = true
             return
         }
         struct Item: Encodable { var productoId: String; var varianteId: String?; var cantidad: Int }

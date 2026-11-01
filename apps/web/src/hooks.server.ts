@@ -72,6 +72,9 @@ function esDocumento(h: Headers) {
 	return dest ? dest === 'document' : (h.get('accept') ?? '').includes('text/html');
 }
 
+/** Rutas de la web que la app de iPhone llama con `Authorization: Bearer`. */
+const RUTAS_APP = new Set(['/panel/fotos', '/panel/hornero']);
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// www.tulocalweb.com.ar es el mismo Worker: se manda al dominio principal, con el mismo camino.
 	if (event.url.hostname.startsWith('www.')) {
@@ -118,6 +121,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// La sesión la valida Go en cada pedido del panel; acá sólo se lee la cookie.
 		event.locals.token =
 			event.cookies.get(COOKIE_SESION) ?? event.cookies.get(COOKIE_SESION_VIEJA) ?? null;
+		// La app de iPhone usa dos cosas de la web con su token (el mismo de la API, que Go valida):
+		// subir fotos y hablar con Tincho. Sólo en esas dos rutas.
+		if (!event.locals.token && RUTAS_APP.has(event.url.pathname)) {
+			const auth = event.request.headers.get('authorization') ?? '';
+			if (auth.startsWith('Bearer ')) event.locals.token = auth.slice(7).trim() || null;
+		}
 		if (event.url.pathname.startsWith('/staff'))
 			event.locals.equipo = event.cookies.get(COOKIE_EQUIPO) ?? null;
 		// Alguien del equipo viendo una tienda: el panel usa ese token de sólo lectura (Go rechaza
