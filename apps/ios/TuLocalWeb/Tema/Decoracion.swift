@@ -32,12 +32,12 @@ struct TarjetaHeroe<Pie: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(18)
-        .background(
+        .background {
             ZStack {
                 C.primario
                 RadialGradient(colors: [.white.opacity(0.18), .clear], center: .topTrailing, startRadius: 10, endRadius: 260)
-            },
-            in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: C.sombraPrimario, radius: 14, y: 8)
     }
