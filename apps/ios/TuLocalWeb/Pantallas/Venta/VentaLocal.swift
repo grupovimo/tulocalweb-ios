@@ -149,8 +149,6 @@ struct VentaLocal: View {
 
     private var camara: some View {
         ZStack {
-            Color.black
-            Escaner(linterna: linterna) { codigo in Task { await escaneado(codigo) } }
             // Visor de esquinas y línea de escaneo.
             Visor().frame(width: 260, height: 116)
             VStack {
@@ -167,9 +165,18 @@ struct VentaLocal: View {
                     .padding(.bottom, 36)
             }
         }
-        .frame(height: 300)
-        .clipped()
-        .ignoresSafeArea(edges: .top)
+        .frame(height: 250)
+        .frame(maxWidth: .infinity)
+        // La cámara llega hasta arriba de todo, pero los botones quedan debajo de la barra de estado
+        // (antes iban debajo de la hora y la X no se podía tocar).
+        .background {
+            ZStack {
+                Color.black
+                Escaner(linterna: linterna) { codigo in Task { await escaneado(codigo) } }
+            }
+            .clipped()
+            .ignoresSafeArea(edges: .top)
+        }
     }
 
     private func fila(_ l: LineaTicket) -> some View {
