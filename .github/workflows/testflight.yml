@@ -22,12 +22,30 @@ jobs:
         with:
           xcode-version: '26.3'
       - run: brew install xcodegen
-      - name: Clave de App Store Connect
+      - name: Clave de App Store Connect, certificado de distribución y perfil
+        # Firma manual: la automática pide un perfil de desarrollo y el equipo no tiene dispositivos
+        # registrados. El certificado y el perfil «App Store» se crearon una vez por la API de ASC
+        # (credenciales-apple/distribucion) y viajan como secretos.
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          DIST_P12: ${{ secrets.DIST_P12 }}
+          DIST_P12_CLAVE: ${{ secrets.DIST_P12_CLAVE }}
+          PERFIL: ${{ secrets.PERFIL_TULOCALWEB }}
         run: |
           mkdir -p "$RUNNER_TEMP/asc"
           printf '%s' "$ASC_KEY_P8" | base64 --decode > "$RUNNER_TEMP/asc/clave.p8"
+          printf '%s' "$DIST_P12" | base64 --decode > "$RUNNER_TEMP/asc/dist.p12"
+          LL="$RUNNER_TEMP/firma.keychain-db"
+          security create-keychain -p temporal "$LL"
+          security set-keychain-settings -lut 21600 "$LL"
+          security unlock-keychain -p temporal "$LL"
+          security import "$RUNNER_TEMP/asc/dist.p12" -P "$DIST_P12_CLAVE" -A -t cert -f pkcs12 -k "$LL"
+          security set-key-partition-list -S apple-tool:,apple: -k temporal "$LL" > /dev/null
+          security list-keychains -d user -s "$LL" $(security list-keychains -d user | tr -d '"')
+          for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$d"
+            printf '%s' "$PERFIL" | base64 --decode > "$d/tulocalweb-appstore.mobileprovision"
+          done
       - run: xcodegen generate
       - name: Archive firmado
         env:
@@ -38,10 +56,8 @@ jobs:
           xcodebuild -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/TuLocalWeb.xcarchive" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
-            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6935MSNQB \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/asc/clave.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6935MSNQB \
+            PROVISIONING_PROFILE_SPECIFIER="ar.com.tulocalweb.app App Store" \
             archive | tee archive.log | xcbeautify --renderer github-actions
       - name: Subir a TestFlight
         env:
@@ -56,7 +72,11 @@ jobs:
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>M6935MSNQB</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key><dict>
+              <key>ar.com.tulocalweb.app</key><string>ar.com.tulocalweb.app App Store</string>
+            </dict>
             <key>uploadSymbols</key><true/>
           </dict></plist>
           EOF
@@ -69,4 +89,6 @@ jobs:
       - if: failure()
         run: grep -hE 'error:|Error|No profiles|provisioning' archive.log exportar.log 2>/dev/null | sort -u | head -80
       - if: always()
-        run: rm -rf "$RUNNER_TEMP/asc"
+        run: |
+          rm -rf "$RUNNER_TEMP/asc"
+          security delete-keychain "$RUNNER_TEMP/firma.keychain-db" 2>/dev/null || true
