@@ -260,6 +260,9 @@ final class Estado {
 
     func registrarTokenPush(_ hex: String) async {
         tokenPush = hex
+        ActividadEnApp.api = api
+        ActividadEnApp.tokenPush = hex
+        ActividadEnApp.arrancarEscucha()
         guard api.token != nil else { return }
         struct Dispositivo: Encodable {
             var token: String

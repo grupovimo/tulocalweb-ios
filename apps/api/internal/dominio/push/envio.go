@@ -404,6 +404,8 @@ func (s *Servicio) venta(ctx context.Context, ev outbox.Evento) error {
 	if err := s.mandar(ctx, envios); err != nil {
 		return err
 	}
+	// La Live Activity de los pedidos por preparar (§54): con la app cerrada se actualiza por acá.
+	s.actualizarActividades(ctx, ev.TiendaID)
 	return s.Pool.EnTienda(ctx, ev.TiendaID, func(t pgx.Tx) error {
 		_, err := t.Exec(ctx, `UPDATE pedidos SET avisos = avisos || jsonb_build_object('push_venta', $2::text) WHERE numero = $1`,
 			d.Numero, time.Now().UTC().Format(time.RFC3339))

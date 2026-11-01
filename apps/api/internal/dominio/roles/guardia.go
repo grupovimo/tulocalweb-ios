@@ -31,6 +31,7 @@ var Rutas = map[string]Permiso{
 	"GET /v1/panel/turnos/ajustes":                  Panel, // el armazón decide si muestra Turnos
 	"POST /v1/panel/dispositivos":                   Panel, // el iPhone de la sesión (push)
 	"DELETE /v1/panel/dispositivos":                 Panel,
+	"PUT /v1/panel/dispositivos/actividad":          Panel, // la Live Activity del iPhone (§54)
 	"GET /v1/panel/push-web":                        Panel, // el panel instalado de la sesión (push web)
 	"POST /v1/panel/push-web":                       Panel,
 	"DELETE /v1/panel/push-web":                     Panel,

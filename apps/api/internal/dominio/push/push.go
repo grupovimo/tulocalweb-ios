@@ -140,6 +140,7 @@ func Rutas(mux *http.ServeMux, p Pool) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
+	rutasActividad(mux, p)
 }
 
 // Aviso es una notificación ya decidida, antes de pasar a JSON.

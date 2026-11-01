@@ -1275,3 +1275,37 @@ avisos que el iPhone de §40.
   ARCA, cupones, integraciones, usuarios) se abre en SFSafariViewController.
 - **Tincho**: el chat con IA está en el Worker de la web; la pestaña lo dice y lo abre allá hasta que
   la API lo sirva.
+
+## 54. La app de iPhone completa: todo nativo, widgets y Live Activity (1/11/2026)
+
+Nahuel la probó en su iPhone y pidió que **todo** se pueda hacer desde el celular («si no, la gente que
+no tiene computadora qué hace»). Esto reemplaza lo de §53 sobre «lo que vive en la web» y Tincho:
+
+- **Sin saltos al panel web.** Pantallas propias para Caja del día, Carritos, Reseñas y preguntas,
+  Devoluciones, Cupones (con alta), Finanzas, Facturación de ARCA (alta en tres pasos: datos → el
+  pedido .csr para cargar en ARCA → el certificado desde Archivos o pegado), Plan (cambio con la
+  suscripción de Mercado Pago), Integraciones (conectar MP, ML y Correo Argentino), Usuarios y
+  permisos (invitar, rol, quitar), Datos del negocio y cobro, Qué te avisamos, Links de pago,
+  Inventario (escáner), Ayuda (los artículos van en `Recursos/ayuda.json`, generado desde
+  `apps/web/src/lib/ayuda/articulos.ts`), alta y edición de productos con fotos (cámara y galería) y
+  pedido manual. La etiqueta de envío se arma en el celular (PDF). Sólo «Ver tienda» abre el navegador.
+- **Tincho nativo**: la app llama a `/panel/hornero` de la web con su token y muestra la respuesta en
+  vivo. La web acepta `Authorization: Bearer` (el token de la API, que valida Go) sólo en
+  `/panel/fotos` y `/panel/hornero` (`RUTAS_APP` en hooks.server.ts).
+- **Conectar MP y ML desde la app**: `ASWebAuthenticationSession` con el esquema
+  `ar.com.tulocalweb.app`. Si la vuelta del OAuth llega a la web sin sesión (la arrancó la app), la
+  web redirige a `ar.com.tulocalweb.app://integraciones/<proveedor>?code&state` y la app la canjea con
+  `/vuelta` y su token.
+- **Widgets** (chico y mediano: ventas de hoy, delta, sparkline, por preparar y último pedido) y **Live
+  Activity** de los pedidos por preparar («Ver pedido», «Preparado» con un `LiveActivityIntent`), en la
+  extensión `TuLocalWebWidgets` (`ar.com.tulocalweb.app.Widgets`). Comparten la sesión por el grupo de
+  llavero `$(AppIdentifierPrefix)ar.com.tulocalweb.app` (sin App Group). El código común está en
+  `apps/ios/Compartido`.
+- **La Live Activity con la app cerrada** (migración 00070): el iPhone guarda el token de la actividad
+  y el de «push to start» (`PUT /v1/panel/dispositivos/actividad`). Con cada venta nueva (`push.venta`)
+  el worker manda por APNs (`apns-push-type: liveactivity`) update, end (sin pendientes) o start (con
+  el token de inicio). El `ContentState` en Go (`push.EstadoActividad`) tiene que coincidir con
+  `Compartido/Actividad.swift`.
+- **Compilar y subir**: nada en la Mac. `ios.yml` compila en cada cambio de `apps/ios`;
+  `testflight.yml` firma con certificado y perfiles «App Store» por target (el de la app y el de los
+  widgets, en `project.yml` Release) y sube.
