@@ -59,6 +59,12 @@ final class Navegacion {
         case .avisos:
             pestana = .inicio
             inicio = [.avisos]
+        case .pedidos:
+            pestana = .pedidos
+            pedidos = []
+        case .inicio:
+            pestana = .inicio
+            inicio = []
         }
     }
 

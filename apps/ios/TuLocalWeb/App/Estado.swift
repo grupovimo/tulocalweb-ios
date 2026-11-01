@@ -10,6 +10,8 @@ enum Ruta: Hashable {
     case pedido(Int)
     case producto(String)
     case avisos
+    case pedidos
+    case inicio
 
     /// `pedido/1048` (el `ruta` del push) o `tulocalweb://pedido/1048`.
     init?(texto: String) {
@@ -23,6 +25,8 @@ enum Ruta: Hashable {
         case "pedido": guard partes.count > 1, let n = Int(partes[1]) else { return nil }; self = .pedido(n)
         case "producto": guard partes.count > 1 else { return nil }; self = .producto(partes[1])
         case "avisos": self = .avisos
+        case "pedidos": self = .pedidos
+        case "inicio": self = .inicio
         default: return nil
         }
     }
@@ -205,6 +209,7 @@ final class Estado {
     private func olvidarSesion() {
         Llavero.borrar("token")
         api.token = nil
+        ActividadEnApp.terminarTodo()
         datos = nil
         acceso = nil
         resumen = nil
@@ -220,6 +225,7 @@ final class Estado {
         if let r: ResumenPanel = try? await api.get("/v1/panel/resumen") {
             resumen = r
             try? await UNUserNotificationCenter.current().setBadgeCount(r.insignias.pedidos)
+            await ActividadEnApp.sincronizar(tienda: tienda?.nombre ?? "Tu Local Web")
         }
     }
 

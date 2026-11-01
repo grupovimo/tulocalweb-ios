@@ -23,11 +23,17 @@ targets:
       Release: Config/TuLocalWeb.xcconfig
     sources:
       - path: TuLocalWeb
+      - path: Compartido
+    dependencies:
+      - target: TuLocalWebWidgets
     entitlements:
       path: TuLocalWeb/TuLocalWeb.entitlements
       properties:
         # development en Debug (lo instalado desde Xcode), production en Release.
         aps-environment: $(APS_ENTORNO)
+        # La sesión, compartida con los widgets y la Live Activity.
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)ar.com.tulocalweb.app
         com.apple.developer.applesignin:
           - Default
     settings:
@@ -46,6 +52,10 @@ targets:
           APS_ENTORNO: development
         Release:
           APS_ENTORNO: production
+          # TestFlight por GitHub Actions con firma manual (testflight.yml): un perfil por target.
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: ar.com.tulocalweb.app App Store
     info:
       path: TuLocalWeb/Info.plist
       properties:
@@ -54,6 +64,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         TLWApi: $(TLW_API)
+        TLWGrupoLlavero: $(AppIdentifierPrefix)ar.com.tulocalweb.app
+        NSSupportsLiveActivities: true
         CFBundleURLTypes:
           # tulocalweb://pedido/{numero} y tulocalweb://producto/{id} (push, widgets, Siri).
           - CFBundleURLName: ar.com.tulocalweb.app.enlaces
@@ -79,6 +91,43 @@ targets:
         NSAppTransportSecurity:
           # Sólo para probar contra la API local (http://127.0.0.1:4000) en el simulador.
           NSAllowsLocalNetworking: true
+  TuLocalWebWidgets:
+    type: app-extension
+    platform: iOS
+    configFiles:
+      Debug: Config/TuLocalWeb.xcconfig
+      Release: Config/TuLocalWeb.xcconfig
+    sources:
+      - path: TuLocalWebWidgets
+      - path: Compartido
+    entitlements:
+      path: TuLocalWebWidgets/TuLocalWebWidgets.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)ar.com.tulocalweb.app
+    info:
+      path: TuLocalWebWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Tu Local Web
+        CFBundlePackageType: XPC!
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        TLWApi: $(TLW_API)
+        TLWGrupoLlavero: $(AppIdentifierPrefix)ar.com.tulocalweb.app
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ar.com.tulocalweb.app.Widgets
+        PRODUCT_NAME: TuLocalWebWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: ar.com.tulocalweb.app.Widgets App Store
   TuLocalWebTests:
     type: bundle.unit-test
     platform: iOS

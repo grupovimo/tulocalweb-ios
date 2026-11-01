@@ -7,9 +7,12 @@ enum Llavero {
     static let servicio = "ar.com.tulocalweb.app.sesion"
 
     private static func base(_ cuenta: String) -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: servicio,
-         kSecAttrAccount as String: cuenta]
+        var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+                                kSecAttrService as String: servicio,
+                                kSecAttrAccount as String: cuenta]
+        // El grupo compartido con los widgets y la Live Activity (TLWGrupoLlavero en el Info.plist).
+        if let g = SesionCompartida.grupo { q[kSecAttrAccessGroup as String] = g }
+        return q
     }
 
     static func guardar(_ valor: String, cuenta: String) {
