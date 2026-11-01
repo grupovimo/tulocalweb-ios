@@ -38,6 +38,7 @@ jobs:
           xcodebuild -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/TuLocalWeb.xcarchive" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=M6935MSNQB \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$RUNNER_TEMP/asc/clave.p8" \
             -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
