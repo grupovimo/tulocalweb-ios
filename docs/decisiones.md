@@ -1309,3 +1309,17 @@ no tiene computadora qué hace»). Esto reemplaza lo de §53 sobre «lo que vive
 - **Compilar y subir**: nada en la Mac. `ios.yml` compila en cada cambio de `apps/ios`;
   `testflight.yml` firma con certificado y perfiles «App Store» por target (el de la app y el de los
   widgets, en `project.yml` Release) y sube.
+
+## 55. Cada tienda en su subdominio: `<slug>.tulocalweb.com.ar` (31/10/2026)
+
+Nahuel: «el link de mi tienda debería ser minombre.tulocalweb.com.ar, no tulocalweb.com.ar/t/minombre».
+
+- **DNS**: registro `*` A al VPS, con proxy de Cloudflare. Los registros exactos (`api`, `www`, `mail`, `webmail`)
+  ganan sobre el comodín.
+- **Caddy**: sitio `*.tulocalweb.com.ar` en `/etc/caddy/sitios/tulocalweb.caddy`, igual al principal (tiempo real
+  a la API, el resto a la web) y con el certificado de origen, que ya cubría `*.tulocalweb.com.ar`.
+- **Web**: `reroute` (`hooks.ts`) lleva el subdominio a `/t/<slug>` con `slugDeSubdominio`, sin preguntarle a la API
+  (a diferencia del dominio propio). Los subdominios de la plataforma (`NO_TIENDA`) no son tiendas.
+- **Dirección visible**: `<slug>.tulocalweb.com.ar` en el onboarding, la tarjeta para compartir, Mi tienda
+  (`mitienda.go`) y la app. `tulocalweb.com.ar/t/<slug>` sigue andando: los links de mails y de pago todavía lo usan.
+

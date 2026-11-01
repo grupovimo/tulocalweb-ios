@@ -20,6 +20,9 @@
 
 **App de iPhone** (`apps/ios`, SwiftUI iOS 17, XcodeGen): completa y en TestFlight, todo nativo y sin saltos
 al panel web, con widgets y Live Activity actualizada por el servidor (§54, migración 00070, en producción el 1/11).
+Tanda del 31/10 a la noche: talles y colores con stock y precio por combinación en el editor de productos, «Mi
+tienda» (plantilla, estilo, portada, logo, secciones, compartir, dirección y publicar), Finanzas y las secciones de
+Más con gráficos (Swift Charts) y tarjetas (`Tema/Decoracion.swift`), y la tienda en `<slug>.tulocalweb.com.ar` (§55).
 Se compila y se sube sólo por GitHub Actions (`ios.yml` y `testflight.yml`), nunca en la Mac. Nahuel la prueba y
 pasa lo que encuentra; se arregla en tandas completas.
 
@@ -30,6 +33,12 @@ una cuenta de servicio por producto con rol FCM. La de Tu Local Web está en `/o
 **Pendiente:**
 - Módulo Go compartido (apns, fcm, webpush, correo) para las cuatro apps: falta decidir si el repo es público o
   privado.
+- **Links universales de la app de iPhone** (lo pidió Nahuel el 31/10, «otro día»): que los links a
+  `tulocalweb.com.ar/panel/...` (mails, avisos) abran la app en vez del navegador. Hace falta activar Associated
+  Domains en el bundle `ar.com.tulocalweb.app` (developer.apple.com o API de ASC), regenerar los dos perfiles
+  «App Store» y cargarlos en los secretos `PERFIL_*`, servir `/.well-known/apple-app-site-association` desde la
+  web con `/panel/*`, y en la app mapear la ruta con `Avisos.destino`. El ingreso a Mercado Pago no puede ir a su
+  app (su OAuth es sólo web): ya vuelve solo a la app por `ASWebAuthenticationSession` efímera.
 - La tienda 323 (Vercel, aparte de la plataforma) cobra con OAuth sobre la app de MP de Tu Local Web; el webhook
   de la plataforma ignora los pagos de cuentas que no son tiendas.
 
