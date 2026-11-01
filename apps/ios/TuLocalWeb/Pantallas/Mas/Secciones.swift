@@ -499,6 +499,7 @@ struct Devoluciones: View {
 
 struct Cupones: View {
     @Environment(Estado.self) private var estado
+    @State private var nuevo = false
 
     struct Cupon: Decodable, Identifiable {
         var id: String
@@ -521,12 +522,15 @@ struct Cupones: View {
         PantallaSeccion(titulo: "Cupones", que: "los cupones") {
             try await estado.api.get("/v1/panel/cupones") as Datos
         } contenido: { d, actualizar in
+            Button { nuevo = true } label: { Label("Crear cupón", systemImage: "plus") }
+                .buttonStyle(BotonPrincipal(alto: 48))
+                .sheet(isPresented: $nuevo) { HojaCuponNuevo { await actualizar() }.hojaTLW([.large]) }
             Indicadores(items: [
                 ("Activos", "\(d.kpis.activos)"), ("Usos este mes", "\(d.kpis.usosMes)"),
                 ("Vendido con cupón", Formato.pesos(d.kpis.vendido)), ("Descontado", Formato.pesos(d.kpis.descontado)),
             ])
             if d.cupones.isEmpty {
-                EstadoTincho(tincho: .ticket, titulo: "Todavía no tenés cupones", texto: "Crealos desde el panel web; acá los ves y los pausás.")
+                EstadoTincho(tincho: .ticket, titulo: "Todavía no tenés cupones", texto: "Un descuento con código para tus clientes: lo creás en un minuto.")
                     .padding(.top, 30)
             } else {
                 GrupoFilas(elementos: d.cupones) { c in
@@ -639,6 +643,7 @@ struct Finanzas: View {
 
 struct FacturacionArca: View {
     @Environment(Estado.self) private var estado
+    @State private var alta = false
 
     struct Datos: Decodable {
         var conectada: Bool
@@ -658,7 +663,8 @@ struct FacturacionArca: View {
         } contenido: { d, actualizar in
             if !d.conectada {
                 EstadoTincho(tincho: .portapapeles, titulo: "Todavía no conectaste ARCA",
-                             texto: "Para facturar hace falta el certificado de ARCA. Se carga una sola vez desde la computadora, en el panel web.")
+                             texto: "Para facturar hace falta el certificado de ARCA. Lo cargás una sola vez, en tres pasos.",
+                             accion: "Conectar ARCA", principal: true) { alta = true }
                     .padding(.top, 20)
             } else {
                 GrupoFilas(elementos: [
@@ -682,7 +688,10 @@ struct FacturacionArca: View {
                     .labelsHidden().tint(C.ok)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 12).tarjeta()
+                Button("Renovar el certificado") { alta = true }.buttonStyle(BotonSecundario()).frame(maxWidth: .infinity)
             }
+            Color.clear.frame(height: 0)
+                .sheet(isPresented: $alta) { HojaArca { await actualizar() }.hojaTLW([.large]) }
         }
     }
 }
@@ -698,6 +707,7 @@ struct FilaId: Identifiable {
 
 struct PlanCuenta: View {
     @Environment(Estado.self) private var estado
+    @State private var cambiar = false
 
     struct Datos: Decodable {
         struct Uso: Decodable { var productos: Int; var personas: Int; var hornero: Int }
@@ -716,7 +726,7 @@ struct PlanCuenta: View {
     var body: some View {
         PantallaSeccion(titulo: "Plan", que: "tu plan") {
             try await estado.api.get("/v1/panel/cuenta/plan") as Datos
-        } contenido: { d, _ in
+        } contenido: { d, actualizar in
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Plan \(Formato.mayuscula(d.actual))").estilo(.tituloHojaChico).foregroundStyle(C.texto)
@@ -743,8 +753,9 @@ struct PlanCuenta: View {
                     FilaDato(etiqueta: "\(f.numero) · \(f.detalle)", valor: Formato.pesos(f.total))
                 }
             }
-            Text(Formato.sinViudas("Para cambiar de plan o el medio de pago, entrá al panel desde la computadora."))
-                .estilo(.footnote).foregroundStyle(C.texto3).padding(.horizontal, 4)
+            Button("Cambiar de plan") { cambiar = true }
+                .buttonStyle(BotonPrincipal(alto: 48)).padding(.top, 6)
+                .sheet(isPresented: $cambiar) { HojaPlan(actual: d.actual) { await actualizar() }.hojaTLW([.medium, .large]) }
         }
     }
 }
@@ -753,6 +764,8 @@ struct PlanCuenta: View {
 
 struct Integraciones: View {
     @Environment(Estado.self) private var estado
+    @State private var correo = false
+    @State private var conectando: String?
 
     struct MP: Decodable { var disponible: Bool; var conectada: Bool; var usuario: String; var reautorizar: Bool }
     struct ML: Decodable { var disponible: Bool; var conectada: Bool; var apodo: String; var reautorizar: Bool }
@@ -765,7 +778,7 @@ struct Integraciones: View {
             async let ml: ML? = try? await estado.api.get("/v1/panel/integraciones/mercadolibre")
             async let co: Correo? = try? await estado.api.get("/v1/panel/integraciones/correo")
             return await Datos(mp: mp, ml: ml, correo: co)
-        } contenido: { d, _ in
+        } contenido: { d, actualizar in
             let filas = [
                 d.mp.map { FilaIntegracion(id: "mp", nombre: "Mercado Pago", detalle: $0.conectada ? $0.usuario : "Cobrá con tarjeta, QR y link", conectada: $0.conectada, alerta: $0.reautorizar) },
                 d.ml.map { FilaIntegracion(id: "ml", nombre: "Mercado Libre", detalle: $0.conectada ? $0.apodo : "Publicá y sincronizá el stock", conectada: $0.conectada, alerta: $0.reautorizar) },
@@ -778,17 +791,28 @@ struct Integraciones: View {
                         Text(f.detalle).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
                     }
                     Spacer()
-                    if f.alerta {
-                        ChipSimple(texto: "Volver a conectar", fondo: C.avisoFondo, tinta: C.avisoTinta)
+                    if f.conectada && !f.alerta {
+                        ChipSimple(texto: "Conectada", fondo: C.okFondo, tinta: C.okTinta)
+                    } else if conectando == f.id {
+                        ProgressView().tint(C.acento)
                     } else {
-                        ChipSimple(texto: f.conectada ? "Conectada" : "Sin conectar",
-                                   fondo: f.conectada ? C.okFondo : C.pista, tinta: f.conectada ? C.okTinta : C.texto2)
+                        Button(f.alerta ? "Volver a conectar" : "Conectar") {
+                            if f.id == "correo" { correo = true; return }
+                            Task {
+                                conectando = f.id
+                                let ok = await ConectarCuenta.compartido.conectar(f.id == "mp" ? "mercadopago" : "mercadolibre", api: estado.api)
+                                conectando = nil
+                                estado.avisar(ok ? "\(f.nombre) conectado" : "No se completó la conexión", ok: ok)
+                                await actualizar()
+                            }
+                        }
+                        .buttonStyle(BotonTonal())
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 12)
             }
-            Text(Formato.sinViudas("Conectar una cuenta pide entrar a Mercado Pago, Mercado Libre o Correo Argentino: se hace desde el panel web."))
-                .estilo(.footnote).foregroundStyle(C.texto3).padding(.horizontal, 4)
+            Color.clear.frame(height: 0)
+                .sheet(isPresented: $correo) { HojaCorreo { await actualizar() }.hojaTLW([.large]) }
         }
     }
 

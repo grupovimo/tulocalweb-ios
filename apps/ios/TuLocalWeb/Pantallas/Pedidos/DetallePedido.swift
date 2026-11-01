@@ -421,7 +421,7 @@ struct DetallePedido: View {
                 estado.avisar("Pedimos la factura a ARCA")
                 await cargar()
             } else {
-                estado.avisar("No se pudo facturar: revisá ARCA en el panel web.", ok: false)
+                estado.avisar("No se pudo facturar: revisá ARCA en Más › Facturación de ARCA.", ok: false)
             }
         } catch let e as ErrorApi {
             estado.avisar(e.detalle, ok: false)

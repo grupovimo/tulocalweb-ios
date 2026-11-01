@@ -66,7 +66,7 @@ struct Cobrar: View {
                         Text(Formato.sinViudas("Mostrale el QR: lo escanea con la app de Mercado Pago o la de su banco, y se confirma solo."))
                             .estilo(.subhead).foregroundStyle(C.texto2).multilineTextAlignment(.center).padding(.horizontal, 10)
                     default:
-                        Text(Formato.sinViudas("El link de pago se arma en el panel web y se manda por WhatsApp."))
+                        Text(Formato.sinViudas("Armás el link y lo mandás por WhatsApp: se paga con Mercado Pago."))
                             .estilo(.subhead).foregroundStyle(C.texto2).multilineTextAlignment(.center).padding(.horizontal, 10)
                     }
                 }
@@ -435,7 +435,7 @@ struct VentaConfirmada: View {
         do {
             let r: R = try await estado.api.enviar("POST", "/v1/panel/pedidos/lote", Cuerpo(numeros: [venta.numero]))
             facturada = r.hechos > 0
-            estado.avisar(r.hechos > 0 ? "Pedimos la factura a ARCA" : "Conectá ARCA en el panel web para facturar.", ok: r.hechos > 0)
+            estado.avisar(r.hechos > 0 ? "Pedimos la factura a ARCA" : "Conectá ARCA en Más › Facturación de ARCA para facturar.", ok: r.hechos > 0)
         } catch let e as ErrorApi {
             estado.avisar(e.detalle, ok: false)
         } catch {}
