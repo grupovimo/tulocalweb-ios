@@ -74,7 +74,7 @@ test('se retoma donde quedó, el atrás vuelve un paso y terminado va al panel',
 	expect((await terminado).ok()).toBe(true);
 	const tienda = page.getByRole('link', { name: 'Ver mi tienda' });
 	// Sin nombre en el registro ni cambio en «Tu negocio», la dirección sale del provisorio.
-	await expect(tienda).toHaveAttribute('href', /\/t\/la-tienda-de-ana(-\d+)?$/);
+	await expect(tienda).toHaveAttribute('href', /^https:\/\/la-tienda-de-ana(-\d+)?\.tulocalweb\.com\.ar$/);
 	await expect(page.getByText('Sumá a tu equipo')).toHaveCount(0);
 
 	// Ya terminado: volver al onboarding lleva al panel.
