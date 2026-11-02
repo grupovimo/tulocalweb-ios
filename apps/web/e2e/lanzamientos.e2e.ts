@@ -26,6 +26,8 @@ test('lanzamiento: «Próximamente» con cuenta, aviso, reserva con seña y sald
 	await page.goto('/panel/productos');
 	await listo(page);
 	await page.getByRole('button', { name: 'Nuevo producto' }).click();
+	// Primero pregunta qué es.
+	await page.getByRole('dialog').getByRole('button', { name: /^Otra cosa/ }).click();
 	const ed = page.getByRole('dialog');
 	await ed.getByLabel('Nombre', { exact: true }).fill('Drop de prueba');
 	await ed.getByLabel('Precio base').fill('40000');

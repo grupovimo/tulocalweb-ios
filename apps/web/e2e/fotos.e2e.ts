@@ -19,6 +19,8 @@ test('fotos: se suben desde el editor, quedan en la galería y se sirven desde /
 	await page.goto('/panel/productos');
 	await listo(page);
 	await page.getByRole('button', { name: 'Nuevo producto' }).click();
+	// Primero pregunta qué es.
+	await page.getByRole('dialog').getByRole('button', { name: /^Otra cosa/ }).click();
 	const ed = page.getByRole('dialog');
 	await ed.getByLabel('Nombre', { exact: true }).fill('Mate con foto');
 

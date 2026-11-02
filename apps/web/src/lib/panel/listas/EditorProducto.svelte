@@ -613,19 +613,17 @@
 						{#each defTipo?.campos ?? [] as c (c)}
 							{#if c === 'medidas'}
 								<div class="campo ancho">
-									Medidas (alto × ancho × largo)
+									Medidas en cm (alto × ancho × largo)
 									<div class="medidas">
 										{#each ['alto', 'ancho', 'largo'] as const as m (m)}
-											<span class="con-unidad"
-												><input
-													inputmode="numeric"
-													aria-label="{CAMPOS[m].nombre} en centímetros"
-													placeholder={CAMPOS[m].nombre}
-													value={atributos[m] ?? ''}
-													oninput={(e) =>
-														(atributos[m] = e.currentTarget.value.replace(/\D/g, '').slice(0, 8))}
-												/><i>cm</i></span
-											>
+											<input
+												inputmode="numeric"
+												aria-label="{CAMPOS[m].nombre} en centímetros"
+												placeholder={CAMPOS[m].nombre}
+												value={atributos[m] ?? ''}
+												oninput={(e) =>
+													(atributos[m] = e.currentTarget.value.replace(/\D/g, '').slice(0, 8))}
+											/>
 										{/each}
 									</div>
 								</div>
@@ -833,9 +831,12 @@
 				{/if}
 			{/if}
 			<button type="button" class="cancelar" onclick={() => (open = false)}>Cancelar</button>
-			<button type="button" class="guardar" onclick={guardar} disabled={guardando}
-				>Guardar y publicar</button
-			>
+			{#if !eligiendoTipo}<button
+					type="button"
+					class="guardar"
+					onclick={guardar}
+					disabled={guardando}>Guardar y publicar</button
+				>{/if}
 		</div>
 	{/snippet}
 </Hoja>
@@ -996,7 +997,7 @@
 	.tipos {
 		margin-top: 12px;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
 		gap: 8px;
 	}
 	.tipo {
@@ -1050,6 +1051,9 @@
 	}
 	.campo.ancho {
 		grid-column: 1 / -1;
+	}
+	.medidas input {
+		min-width: 0;
 	}
 	.medidas {
 		display: grid;

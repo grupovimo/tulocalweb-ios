@@ -21,13 +21,15 @@ test('variantes: se cargan en el panel y se compran eligiendo el talle', async (
 	await page.goto('/panel/productos');
 	await listo(page);
 	await page.getByRole('button', { name: 'Nuevo producto' }).click();
+	// Primero pregunta qué es.
+	await page.getByRole('dialog').getByRole('button', { name: /^Ropa y accesorios/ }).click();
 	const ed = page.getByRole('dialog');
 	await ed.getByLabel('Nombre', { exact: true }).fill('Buzo de prueba');
 	await ed.getByLabel('Precio base').fill('30000');
 	await ed.getByLabel('Precio base').blur();
 
 	// Talle con dos valores (separados por coma) y Color con uno: dos combinaciones.
-	await ed.getByRole('button', { name: 'Sumar talles, colores u otra opción' }).click();
+	await ed.getByRole('button', { name: 'Sumar talle, color u otra opción' }).click();
 	await ed.getByLabel('Sumar valores a Talle').fill('S, M');
 	await ed.getByLabel('Sumar valores a Talle').press('Enter');
 	await ed.getByRole('button', { name: 'Sumar otra opción' }).click();

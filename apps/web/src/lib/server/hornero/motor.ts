@@ -58,7 +58,7 @@ const variacion = (actual: number, anterior: number) => {
 const GUIAS: [RegExp, string][] = [
 	[
 		/(cargo|cargar|agrego|agregar|subo|subir|crear|creo|nuevo) (un )?producto/,
-		'Andá a **Productos → Nuevo producto**: nombre, precio, stock y fotos. Si tiene talles o colores, sumalos en «Sumar talles, colores u otra opción». Se publica solo en tu tienda.'
+		'Andá a **Productos → Nuevo producto**: primero elegís qué es (ropa, comida, hogar…) y después cargás nombre, precio, stock, fotos y los datos que van con ese tipo. Si viene en talles, colores u otras opciones, las sumás abajo. Se publica solo en tu tienda.'
 	],
 	[
 		/cupon|descuento|codigo de descuento/,

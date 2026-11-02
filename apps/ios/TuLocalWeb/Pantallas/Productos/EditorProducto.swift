@@ -212,7 +212,7 @@ struct EditorProducto: View {
                 }
                 if campos.contains(.alto) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Medidas (alto × ancho × largo)").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                        Text("Medidas en cm (alto × ancho × largo)").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
                         HStack(spacing: 8) {
                             ForEach([AtributoProducto.alto, .ancho, .largo], id: \.rawValue) { a in
                                 entrada(a, ejemplo: a.nombre)
@@ -241,7 +241,7 @@ struct EditorProducto: View {
                 TextField(ejemplo ?? a.ejemplo, text: valor)
             } else {
                 TextField(ejemplo ?? "0", text: valor).keyboardType(.numberPad)
-                Text(a.unidad ?? "").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                if !a.esMedida { Text(a.unidad ?? "").estilo(.footnoteFuerte).foregroundStyle(C.texto2) }
             }
         }
         .accessibilityLabel(a.unidad.map { "\(a.nombre) en \($0 == "g" ? "gramos" : "centímetros")" } ?? a.nombre)

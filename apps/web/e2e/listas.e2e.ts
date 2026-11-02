@@ -79,6 +79,8 @@ test('productos: pausar, editar, crear y exportar', async ({ page }) => {
 
 	await page.getByRole('button', { name: 'Nuevo producto' }).click();
 	const nuevo = page.getByRole('dialog', { name: 'Nuevo producto' });
+	// Primero pregunta qué es.
+	await nuevo.getByRole('button', { name: /^Otra cosa/ }).click();
 	await nuevo.getByLabel('Nombre').fill('Termo de prueba');
 	await nuevo.getByLabel('Precio base').fill('45000');
 	await nuevo.getByLabel('Precio base').blur();
