@@ -57,6 +57,20 @@ enum Web {
     }
 
     /// Una pregunta a Tincho: va devolviendo el texto a medida que llega.
+    /// Tincho con bloques (cifras, gráficos, tablas, botones y sugerencias): la respuesta entera en JSON.
+    static func tinchoConBloques(_ mensajes: [(rol: String, texto: String)], token: String?) async throws -> RespuestaTincho {
+        var r = URLRequest(url: base.appending(path: "panel/hornero"), timeoutInterval: 40)
+        r.httpMethod = "POST"
+        r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        struct M: Encodable { var rol: String; var texto: String }
+        struct C: Encodable { var mensajes: [M]; var formato = "bloques" }
+        r.httpBody = try JSONEncoder().encode(C(mensajes: mensajes.suffix(12).map { M(rol: $0.rol, texto: String($0.texto.prefix(1000))) }))
+        let (d, resp) = try await URLSession.shared.data(for: r)
+        guard let h = resp as? HTTPURLResponse, (200..<300).contains(h.statusCode) else { throw ErrorApi.desconocido }
+        return try JSONDecoder().decode(RespuestaTincho.self, from: d)
+    }
+
     static func tincho(_ mensajes: [(rol: String, texto: String)], token: String?) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { cont in
             let tarea = Task {

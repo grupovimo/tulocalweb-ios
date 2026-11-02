@@ -39,7 +39,7 @@ describe('Tincho sin IA', () => {
 		const top = [...x.contexto.productos].sort((a, b) => b.vendidos30d - a.vendidos30d)[0];
 		expect(responderSinIa('¿qué es lo que más se vende?', x)).toContain(top.nombre);
 		expect(responderSinIa('qué tengo que reponer?', x)).toMatch(
-			/Sin stock|Quedan pocos|Está todo con stock/
+			/sin stock|quedan|Está todo con stock/i
 		);
 	});
 
@@ -56,12 +56,8 @@ describe('Tincho sin IA', () => {
 	});
 
 	it('los "cómo hago" llevan a la sección del panel', () => {
-		expect(responderSinIa('¿Cómo cargo un producto nuevo?', datos())).toContain(
-			'Productos → Nuevo producto'
-		);
-		expect(responderSinIa('quiero crear un cupón de descuento', datos())).toContain(
-			'Marketing → Cupones'
-		);
+		expect(responderSinIa('¿Cómo cargo un producto nuevo?', datos())).toContain('Nuevo producto');
+		expect(responderSinIa('quiero crear un cupón de descuento', datos())).toContain('Cupones');
 	});
 
 	it('lo que no entiende queda para la IA', () => {

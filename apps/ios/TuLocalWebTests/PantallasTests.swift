@@ -129,6 +129,23 @@ final class PantallasTests: XCTestCase {
     func testTelegram() { montar(TelegramTincho()) }
     func testMedicion() { montar(MedicionTienda()) }
     func testIAConectadas() { montar(IAConectadas()) }
+    func testBloquesDeTincho() throws {
+        let json = """
+        {"texto": "Hoy llevás **$ 539.000** en 15 pedidos.", "bloques": [
+          {"tipo": "cifras", "items": [{"titulo": "Ventas", "valor": "$ 539.000", "detalle": "▲ 53 %", "tono": "ok"}, {"titulo": "Pedidos", "valor": "15"}]},
+          {"tipo": "barras", "titulo": "Más vendidos", "unidad": "unidades", "items": [{"etiqueta": "Yerba", "valor": 208, "destacado": true}, {"etiqueta": "Mate", "valor": 120}]},
+          {"tipo": "linea", "titulo": "Ventas por día", "unidad": "pesos", "puntos": [{"etiqueta": "lun 26", "valor": 500000}, {"etiqueta": "mar 27", "valor": 776400}, {"etiqueta": "mié 28", "valor": 344700}], "anterior": [400000, 600000, 300000]},
+          {"tipo": "tabla", "titulo": "Detalle", "columnas": ["Producto", "Stock"], "filas": [["Yerba", "17"], ["Kit", "Sin stock"]]},
+          {"tipo": "lista", "titulo": "Para reponer", "items": [{"titulo": "Kit matero", "detalle": "Se vende", "insignia": "Sin stock", "tono": "mal"}]},
+          {"tipo": "progreso", "titulo": "Meta del mes", "actual": 11011500, "objetivo": 21600000, "unidad": "pesos", "detalle": "Proyección"},
+          {"tipo": "nuevo-que-no-existe"}
+        ], "acciones": [{"texto": "Ver pedidos", "ir": "pedidos"}], "sugerencias": ["¿Y ayer?"]}
+        """
+        let r = try JSONDecoder().decode(RespuestaTincho.self, from: Data(json.utf8))
+        XCTAssertEqual(r.bloques?.count, 7)
+        XCTAssertEqual(VistaBloque.corto(1_250_000, "pesos"), "$\u{202F}1,2 M")
+        montar(ScrollView { VStack { ForEach(Array((r.bloques ?? []).enumerated()), id: \.offset) { _, b in VistaBloque(bloque: b) } } })
+    }
     func testEstadisticas() { montar(Estadisticas()) }
     func testIntegraciones() { montar(Integraciones()) }
     func testHojaHistoria() { montar(HojaHistoria(tienda: Self.tienda)) }

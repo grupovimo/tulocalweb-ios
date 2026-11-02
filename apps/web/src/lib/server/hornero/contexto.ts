@@ -12,6 +12,8 @@ export type DatosHornero = {
 	hola: string | null;
 	hoy: Tablero;
 	semana: Tablero;
+	/** Los últimos 30 días (para «¿cuánto vendí este mes?»); opcional para Telegram y la demo. */
+	mes?: Tablero;
 	contexto: ContextoHornero;
 };
 

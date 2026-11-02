@@ -7,7 +7,7 @@ import { cupoDemo, diaAr, POR_VISITANTE } from '#lib/server/hornero/cupo.ts';
 import { ideasDe } from '#lib/server/hornero/ideas.ts';
 import { responderConIa, type Mensaje } from '#lib/server/hornero/modelo.ts';
 import { responderSimulado } from '#lib/server/hornero/simulado.ts';
-import { ayuda, responderSinIa } from '#lib/server/hornero/motor.ts';
+import { ayuda, ayudaConBotones, responder } from '#lib/server/hornero/motor.ts';
 import { dbSandbox, sumarUsoHornero } from '#lib/server/sandbox/sandbox.ts';
 import type { RequestHandler } from './$types';
 
@@ -34,7 +34,9 @@ const Pedido = v.object({
 		v.minLength(1),
 		v.maxLength(12),
 		v.check((m) => m[m.length - 1].rol === 'persona', 'El último mensaje es de la persona.')
-	)
+	),
+	/** «bloques»: la respuesta en JSON, con cifras, gráficos, tablas, botones y sugerencias. */
+	formato: v.optional(v.picklist(['texto', 'bloques']), 'texto')
 });
 
 const texto = (t: string) =>
@@ -59,21 +61,35 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		if (conModelo && !(await cupoDemo())) conModelo = false;
 	}
 
-	const [tienda, hoy, semana, contexto] = await Promise.all([
+	const [tienda, hoy, semana, mes, contexto] = await Promise.all([
 		datos.tienda(),
 		datos.tablero('hoy'),
 		datos.tablero('7d'),
+		datos.tablero('30d').catch(() => undefined),
 		datos.contextoHornero()
 	]);
-	const d: DatosHornero = { tienda, hola: hoy.hola, hoy, semana, contexto };
+	const d: DatosHornero = { tienda, hola: hoy.hola, hoy, semana, mes, contexto };
 	const mensajes = cuerpo.output.mensajes;
 	const pregunta = mensajes[mensajes.length - 1].texto;
+	const anteriores = mensajes
+		.slice(0, -1)
+		.filter((m) => m.rol === 'persona')
+		.map((m) => m.texto);
+	const bloques = cuerpo.output.formato === 'bloques';
 
 	// Primero el motor propio: las preguntas de todos los días salen de los datos, sin IA.
-	const directa = responderSinIa(pregunta, d);
-	if (directa) return texto(directa);
-	if (!conModelo || !env.AI)
-		return texto(env.HORNERO === 'simulado' ? responderSimulado(pregunta, d) : ayuda());
+	const directa = responder(pregunta, d, anteriores);
+	if (directa)
+		return bloques
+			? json(directa, { headers: { 'cache-control': 'no-store' } })
+			: texto(directa.texto);
+	if (!conModelo || !env.AI) {
+		if (env.HORNERO === 'simulado') {
+			const t = responderSimulado(pregunta, d);
+			return bloques ? json({ texto: t }) : texto(t);
+		}
+		return bloques ? json(ayudaConBotones()) : texto(ayuda());
+	}
 
 	const conversacion: Mensaje[] = [
 		{ role: 'system', content: sistema(d) },
@@ -83,6 +99,14 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		}))
 	];
 	try {
+		// Con bloques, la respuesta del modelo va entera en el JSON (sin streaming).
+		if (bloques) {
+			const t = await new Response(await responderConIa(env.AI, conversacion)).text();
+			return json({
+				texto: t.trim() || ayudaConBotones().texto,
+				sugerencias: ayudaConBotones().sugerencias
+			});
+		}
 		return new Response(await responderConIa(env.AI, conversacion), {
 			headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
 		});
