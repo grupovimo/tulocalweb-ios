@@ -68,6 +68,11 @@ final class PantallasTests: XCTestCase {
     }
 
     func testCompartirTienda() { montar(CompartirTienda()) }
+    func testCompartirTiendaSinProductos() {
+        ApiFalsa.respuestas["/v1/panel/listas/productos"] = "{\"total\": 0, \"segmentos\": {}, \"filas\": []}"
+        ApiFalsa.respuestas["/v1/panel/cupones"] = nil
+        montar(CompartirTienda())
+    }
     func testHojaHistoria() { montar(HojaHistoria(tienda: Self.tienda)) }
     func testEditorProductoNuevoPreguntaElTipo() { montar(EditorProducto(id: nil)) }
     func testTipoDeLosProductosDeAntes() {

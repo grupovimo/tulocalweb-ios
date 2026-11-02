@@ -46,3 +46,10 @@ jobs:
             | tee probar.log | xcbeautify --renderer github-actions
       - if: failure()
         run: grep -E -B2 -A30 'Fatal error|crashed|Thread 0 Crashed|error:' probar.log | head -150
+      - if: failure()
+        name: Reportes de crash del simulador
+        run: |
+          for f in $(find ~/Library/Logs/DiagnosticReports -name 'TuLocalWeb*' -mmin -60 2>/dev/null | head -3); do
+            echo "== $f"
+            python3 -c "import json,sys; t=open(sys.argv[1]).read(); h,b=t.split(chr(10),1); d=json.loads(b); print(d.get('exception'), d.get('termination')); th=[x for x in d['threads'] if x.get('triggered')][0]; imgs=d['usedImages']; [print(i, imgs[f['imageIndex']].get('name'), f.get('symbol'), f.get('sourceFile'), f.get('sourceLine')) for i,f in enumerate(th['frames'][:40])]; print(d.get('asi'))" "$f" || head -c 6000 "$f"
+          done
