@@ -3,6 +3,7 @@ import SwiftUI
 /// Compartir la tienda: copiar el link, mandarlo por WhatsApp, la imagen para estados e historias,
 /// el QR, mensajes listos y el link de cada producto y cupón. Lo usan Inicio, Más, Productos y Mi
 /// tienda, para que el link no quede escondido.
+@MainActor
 enum Compartir {
     static func copiar(_ url: URL, _ estado: Estado, aviso: String = "Copiamos el link de tu tienda") {
         UIPasteboard.general.string = url.absoluteString
