@@ -21,6 +21,7 @@ struct Inicio: View {
             VStack(alignment: .leading, spacing: 0) {
                 encabezado
                 VStack(alignment: .leading, spacing: 14) {
+                    accionesRapidas
                     Segmentado(opciones: [("hoy", "Hoy"), ("7d", "7 días"), ("30d", "30 días")], elegido: $periodo)
                     switch carga {
                     case .cargando:
@@ -82,6 +83,19 @@ struct Inicio: View {
         .margenPantalla()
     }
 
+    // MARK: Acciones rápidas
+
+    private var accionesRapidas: some View {
+        HStack(spacing: 8) {
+            AccionRapida(simbolo: "barcode.viewfinder", texto: "Vender") { nav.venta = true }
+            AccionRapida(simbolo: "camera", texto: "Producto") { nav.inicio.append(.nuevoProducto(nil)) }
+            if estado.puede("pedidos") {
+                AccionRapida(simbolo: "link", texto: "Cobrar") { nav.inicio.append(.links) }
+            }
+            AccionRapida(simbolo: "square.and.arrow.up", texto: "Compartir") { nav.inicio.append(.compartir) }
+        }
+    }
+
     // MARK: Contenido
 
     @ViewBuilder
@@ -89,6 +103,7 @@ struct Inicio: View {
         if t.ultimosPedidos.isEmpty && t.masVendidos.isEmpty && (t.ventas?.actual ?? 0) == 0 && periodo == "hoy"
             && !PrimerosPasos.ocultos(estado.tienda?.id) {
             SinVentas()
+            TarjetaTiendaOnline(visitas: t.visitas, periodo: periodo)
         } else {
             conVentas(t)
         }
@@ -100,6 +115,7 @@ struct Inicio: View {
             tarjetaVentas(t, v)
         }
         indicadores(t)
+        TarjetaTiendaOnline(visitas: t.visitas, periodo: periodo)
         paraHacer(t)
         if t.montos, let m = t.meta { meta(m) }
         ideas(t)
@@ -205,7 +221,8 @@ struct Inicio: View {
 
     // MARK: Para hacer hoy
 
-    private func filasPendientes(_ ph: Tablero.ParaHacer) -> [AnyView] {
+    private func filasPendientes(_ t: Tablero) -> [AnyView] {
+        let ph = t.paraHacer
         var filas: [AnyView] = []
         if ph.preparar > 0 {
             filas.append(AnyView(FilaPendiente(n: ph.preparar, fondo: C.avisoFondo, tinta: C.avisoTinta,
@@ -231,12 +248,41 @@ struct Inicio: View {
                 nav.tocar(.productos)
             }))
         }
+        if let n = t.resenas?.nuevas.count, n > 0, estado.puede("clientes") {
+            filas.append(AnyView(FilaPendiente(n: n, fondo: C.crema, tinta: C.primarioTinta,
+                                               titulo: n == 1 ? "Reseña sin responder" : "Reseñas sin responder",
+                                               detalle: "Contestarlas suma confianza") {
+                nav.inicio.append(.resenas)
+            }))
+        }
         return filas
+    }
+
+    /// La fila de compartir cuando no hay nada urgente o la tienda no tuvo visitas hoy: «Para hacer»
+    /// nunca queda en «Todo al día» sin una acción.
+    private func filaCompartir(_ t: Tablero) -> some View {
+        let hoy = Int(t.visitas?.hoy.actual ?? 0)
+        return Button { nav.inicio.append(.compartir) } label: {
+            HStack(spacing: 13) {
+                Image(systemName: "square.and.arrow.up").font(.system(size: 16, weight: .semibold)).foregroundStyle(C.primarioTexto)
+                    .frame(width: 40, height: 40).background(C.crema, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Compartí tu tienda").estilo(.fila).foregroundStyle(C.texto)
+                    Text(hoy == 0 ? "Hoy todavía no tuvo visitas" : "Más visitas, más ventas").estilo(.footnote).foregroundStyle(C.texto2)
+                }
+                Spacer(minLength: 4)
+                Chevron()
+            }
+            .padding(.horizontal, 16).padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private func paraHacer(_ t: Tablero) -> some View {
-        let filas = filasPendientes(t.paraHacer)
+        let filas = filasPendientes(t)
+        let compartir = filas.isEmpty || Int(t.visitas?.hoy.actual ?? 0) == 0
         TituloSeccion(texto: "Para hacer hoy").padding(.top, 14)
         VStack(spacing: 0) {
             if filas.isEmpty {
@@ -255,6 +301,10 @@ struct Inicio: View {
                     if i > 0 { Separador(inset: 69) }
                     f
                 }
+            }
+            if compartir {
+                Separador(inset: 69)
+                filaCompartir(t)
             }
         }
         .tarjeta()
@@ -383,6 +433,15 @@ struct Inicio: View {
                 nav.segmentoProductos = "out"
                 nav.tocar(.productos)
             })
+        }
+        if let v = t.visitas, !t.hornero.ideasHechas.contains("compartir") {
+            let n = Int(v.dias7.actual)
+            if v.desde == nil || n < 30 {
+                let s = AttributedString(v.desde == nil || n == 0
+                    ? "Tu tienda todavía no tuvo visitas. ¿Te armo una imagen con el QR para tus estados de WhatsApp?"
+                    : "En 7 días te visitaron \(n == 1 ? "1 persona" : "\(n) personas"). Con una historia o un estado llegás a muchas más. ¿La armamos?")
+                r.append(Idea(id: "compartir", texto: s, boton: "Armarla") { nav.inicio.append(.compartir) })
+            }
         }
         return r
     }

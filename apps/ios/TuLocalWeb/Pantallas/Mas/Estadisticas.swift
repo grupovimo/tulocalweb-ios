@@ -58,6 +58,7 @@ struct Estadisticas: View {
                     DonaMedios(partes: canales.map { .init(nombre: Marcas.canal($0.canal), monto: Int(($0.parte * 1000).rounded())) })
                 }
             }
+            visitas(t)
             if !t.masVendidos.isEmpty {
                 TarjetaSeccion(titulo: "Lo más vendido", simbolo: "flame") {
                     let tope = max(1, t.masVendidos.map(\.unidades).max() ?? 1)
@@ -107,6 +108,48 @@ struct Estadisticas: View {
                                 Image(systemName: "lightbulb.fill").font(.system(size: 12)).foregroundStyle(C.aviso)
                                 Text(Formato.sinViudas(s)).estilo(.texto14).foregroundStyle(C.texto)
                                     .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Las visitas de la tienda online: personas, páginas vistas, conversión y lo más mirado.
+    @ViewBuilder
+    private func visitas(_ t: Tablero) -> some View {
+        if let v = t.visitas {
+            if v.desde == nil {
+                TarjetaSeccion(titulo: "Visitas de tu tienda", simbolo: "eye") {
+                    Text(Formato.sinViudas("Todavía no hay visitas medidas. Compartí el link y acá vas a ver quién entra."))
+                        .estilo(.texto14).foregroundStyle(C.texto2)
+                    NavigationLink(value: Destino.compartir) { Text("Compartir mi tienda") }.buttonStyle(BotonTonal())
+                }
+            } else {
+                GrillaIndicadores(items: [
+                    IndicadorIcono(simbolo: "eye.fill", titulo: "Visitas", valor: Formato.numero(Int(v.visitantes.actual)),
+                                   detalle: variacion(v.visitantes)),
+                    IndicadorIcono(simbolo: "cart.fill", titulo: "Visitas que compran", valor: Formato.porcentaje(((t.kpis.conversion?.actual ?? 0) * 10).rounded() / 10),
+                                   detalle: variacion(t.kpis.conversion), tono: (C.okFondo, C.okTinta)),
+                ])
+                if !v.masVistos.isEmpty {
+                    TarjetaSeccion(titulo: "Lo más mirado", simbolo: "eye") {
+                        let tope = max(1, v.masVistos.map(\.visitantes).max() ?? 1)
+                        VStack(spacing: 12) {
+                            ForEach(v.masVistos) { p in
+                                HStack(spacing: 10) {
+                                    Miniatura(foto: p.foto, tam: 38, radio: 10)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Text(p.nombre).estilo(.fila).foregroundStyle(C.texto).lineLimit(1)
+                                            Spacer(minLength: 6)
+                                            Text(Formato.cantidad(p.visitantes, "persona", "personas")).estilo(.footnoteFuerte)
+                                                .monospacedDigit().foregroundStyle(C.texto2)
+                                        }
+                                        BarraProgreso(valor: Double(p.visitantes) / Double(tope), alto: 7)
+                                    }
+                                }
                             }
                         }
                     }

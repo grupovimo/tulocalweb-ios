@@ -150,12 +150,28 @@ struct MiTiendaEditor: View {
                     ChipSimple(texto: "Publicada", fondo: C.okFondo, tinta: C.okTinta)
                 }
                 Spacer()
-                Button("Ver tienda") { if let u = URL(string: direccion.hasPrefix("http") ? direccion : "https://\(direccion)") { abrir(u) } }
+                Button("Ver tienda") { if let u = urlTienda { abrir(u) } }
                     .estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
             }
             .padding(12)
+            if let u = urlTienda, !sinPublicar {
+                HStack(spacing: 8) {
+                    Button { Compartir.copiar(u, estado) } label: { Label("Copiar link", systemImage: "doc.on.doc").frame(maxWidth: .infinity) }
+                    if let t = estado.tienda {
+                        ShareLink(item: u, message: Text(Compartir.mensajeTienda(t))) {
+                            Label("Compartir", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                .buttonStyle(BotonTonal(alto: 38))
+                .padding(.horizontal, 12).padding(.bottom, 12)
+            }
         }
         .tarjeta(radio: 20)
+    }
+
+    private var urlTienda: URL? {
+        direccion.isEmpty ? estado.tienda?.url : URL(string: direccion.hasPrefix("http") ? direccion : "https://\(direccion)")
     }
 
     private func selectorFoto(_ titulo: String, url: String, item: Binding<PhotosPickerItem?>) -> some View {
@@ -238,7 +254,7 @@ struct MiTiendaEditor: View {
                 try await estado.api.hacer("POST", "/v1/panel/mi-tienda/publicar")
                 sinPublicar = false
                 Haptico.exito()
-                estado.avisar("¡Publicamos los cambios!")
+                estado.avisar("¡Publicamos los cambios! Ahora compartí el link")
             } else {
                 sinPublicar = true
                 estado.avisar("Guardamos el borrador")

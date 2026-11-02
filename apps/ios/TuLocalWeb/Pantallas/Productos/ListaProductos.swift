@@ -123,7 +123,18 @@ struct ListaProductos: View {
                     ForEach(Array(d.filas.enumerated()), id: \.element.id) { i, p in
                         if i > 0 { Separador(inset: 82) }
                         NavigationLink(value: Destino.editorProducto(p.id)) { FilaProducto(p: p) }
-                            .contextMenu { Button("Ajustar stock", systemImage: "shippingbox") { stockDe = p } }
+                            .contextMenu {
+                                Button("Ajustar stock", systemImage: "shippingbox") { stockDe = p }
+                                if let t = estado.tienda, p.publicado {
+                                    let u = t.url(producto: p.id)
+                                    ShareLink(item: u, message: Text(Compartir.mensajeProducto(p.nombre, precio: p.precio, url: u))) {
+                                        Label("Compartir", systemImage: "square.and.arrow.up")
+                                    }
+                                    Button("Copiar link", systemImage: "doc.on.doc") {
+                                        Compartir.copiar(u, estado, aviso: "Copiamos el link del producto")
+                                    }
+                                }
+                            }
                             .buttonStyle(.plain)
                     }
                 }

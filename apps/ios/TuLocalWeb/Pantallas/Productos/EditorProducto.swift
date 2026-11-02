@@ -9,6 +9,7 @@ struct EditorProducto: View {
     var sku: String? = nil
     @Environment(Estado.self) private var estado
     @Environment(\.dismiss) private var cerrar
+    @Environment(\.openURL) private var abrirWeb
     @State private var original: [String: ValorJSON] = [:]
     @State private var cargando = true
     @State private var guardando = false
@@ -84,6 +85,23 @@ struct EditorProducto: View {
         }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let id, !cargando, let t = estado.tienda, original["publicado"]?.bool != false {
+                let u = t.url(producto: original["slug"]?.texto ?? id)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        ShareLink(item: u, message: Text(Compartir.mensajeProducto(nombre, precio: Int(precio.filter(\.isNumber)), url: u))) {
+                            Label("Compartir", systemImage: "square.and.arrow.up")
+                        }
+                        Button("Copiar link", systemImage: "doc.on.doc") { Compartir.copiar(u, estado, aviso: "Copiamos el link del producto") }
+                        Button("Ver en la tienda", systemImage: "arrow.up.right.square") { abrirWeb(u) }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up").foregroundStyle(C.primarioTexto)
+                    }
+                    .accessibilityLabel("Compartir el producto")
+                }
+            }
+        }
         .task { await cargar() }
         .onChange(of: elegidas) { _, items in
             guard !items.isEmpty else { return }

@@ -18,6 +18,7 @@ struct Mas: View {
                 EncabezadoGrande(titulo: "Más").padding(.top, 4)
                 if let t = estado.tienda { tarjetaTienda(t).padding(.top, 4) }
                 grupo("Tu tienda online", tono: (C.crema, C.primarioTexto), filas: [
+                    Fila(texto: "Compartí tu tienda", simbolo: "square.and.arrow.up", destino: .compartir),
                     Fila(texto: "Editar mi tienda", simbolo: "paintbrush.pointed", destino: .miTienda, permiso: "cuenta"),
                     Fila(texto: "Estadísticas", simbolo: "chart.bar.xaxis", destino: .estadisticas, permiso: "pedidos"),
                 ])
@@ -69,7 +70,7 @@ struct Mas: View {
                 .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $qr) {
-            if let t = estado.tienda { QRTienda(tienda: t).hojaTLW([.medium]) }
+            if let t = estado.tienda { QRTienda(tienda: t).hojaTLW([.large]) }
         }
         .confirmationDialog("¿Cerrás la sesión en este iPhone?", isPresented: $salir, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await estado.salir() } }
@@ -84,8 +85,7 @@ struct Mas: View {
     }
 
     private func tarjetaTienda(_ t: Acceso.Tienda) -> some View {
-        let url = URL(string: "https://\(t.direccion)")!
-        return VStack(spacing: 14) {
+        VStack(spacing: 14) {
             Button {
                 if (estado.acceso?.tiendas.count ?? 0) > 1 { cambiarTienda = true }
             } label: {
@@ -105,16 +105,9 @@ struct Mas: View {
             }
             .buttonStyle(.plain)
             HStack(spacing: 8) {
-                AccionRapida(simbolo: "paintbrush.pointed", texto: "Editar", alto: 54) { nav.mas.append(.miTienda) }
-                ShareLink(item: url, message: Text("Mirá mi tienda: \(t.nombre)")) {
-                    VStack(spacing: 3) {
-                        Image(systemName: "square.and.arrow.up").font(.system(size: 18)).foregroundStyle(C.primarioTexto)
-                        Text("Compartir").estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 54)
-                    .background(C.crema2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
+                AccionRapida(simbolo: "arrow.up.right.square", texto: "Ver", alto: 54) { nav.web = t.url }
+                AccionRapida(simbolo: "doc.on.doc", texto: "Copiar", alto: 54) { Compartir.copiar(t.url, estado) }
+                AccionRapida(simbolo: "square.and.arrow.up", texto: "Compartir", alto: 54) { nav.mas.append(.compartir) }
                 AccionRapida(simbolo: "qrcode", texto: "QR", alto: 54) { qr = true }
             }
         }
@@ -181,14 +174,18 @@ struct Mas: View {
     }
 }
 
-/// El QR de la tienda (para mostrar en el mostrador).
+/// El QR de la tienda (para mostrar en el mostrador, imprimirlo o mandarlo como imagen).
 struct QRTienda: View {
     var tienda: Acceso.Tienda
+    @Environment(Estado.self) private var estado
+    @State private var cartel: UIImage?
     var body: some View {
         VStack(spacing: 16) {
             Grabber()
             Text(tienda.nombre).estilo(.tituloHojaChico).foregroundStyle(C.texto)
-            if let img = QRTienda.imagen("https://\(tienda.direccion)") {
+            Text(Formato.sinViudas("Que lo escaneen con la cámara y entran directo a tu tienda."))
+                .estilo(.subhead).foregroundStyle(C.texto2).multilineTextAlignment(.center)
+            if let img = QRTienda.imagen(tienda.url.absoluteString) {
                 Image(uiImage: img).interpolation(.none).resizable().scaledToFit()
                     .frame(width: 220, height: 220)
                     .padding(18)
@@ -196,10 +193,41 @@ struct QRTienda: View {
                     .shadow(color: Color(hex: 0x2A140C, alfa: 0.2), radius: 20, y: 14)
                     .accessibilityLabel("Código QR de \(tienda.direccion)")
             }
-            Text(tienda.direccion).estilo(.subhead).foregroundStyle(C.texto2)
+            Text(tienda.direccion).estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
             Spacer(minLength: 0)
+            if let cartel {
+                ShareLink(item: Image(uiImage: cartel), preview: SharePreview("QR de \(tienda.nombre)", image: Image(uiImage: cartel))) {
+                    Label("Imprimir, guardar o mandar", systemImage: "printer")
+                }
+                .buttonStyle(BotonPrincipal())
+            }
+            Button { Compartir.copiar(tienda.url, estado) } label: { Label("Copiar link", systemImage: "doc.on.doc") }
+                .buttonStyle(BotonTexto())
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 20).padding(.bottom, 12)
+        .task { cartel = QRTienda.cartel(tienda) }
+    }
+
+    /// El cartel para imprimir: el QR grande con el nombre y el link, en blanco (A6 vertical).
+    @MainActor
+    static func cartel(_ t: Acceso.Tienda) -> UIImage? {
+        guard let qr = imagen(t.url.absoluteString) else { return nil }
+        let vista = VStack(spacing: 18) {
+            Text(t.nombre).font(Estilo(tamano: 28, peso: .bold, relativo: .title).font).multilineTextAlignment(.center)
+            Text("Escaneá y comprá online").font(Estilo(tamano: 17, peso: .semibold, relativo: .body).font)
+                .foregroundStyle(Color(hex: 0x6B5446))
+            Image(uiImage: qr).interpolation(.none).resizable().scaledToFit().frame(width: 260, height: 260)
+            Text(t.direccion).font(Estilo(tamano: 16, peso: .bold, relativo: .body).font).foregroundStyle(Color(hex: 0xB0441D))
+                .lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .foregroundStyle(Color(hex: 0x2A140C))
+        .padding(32)
+        .frame(width: 400, height: 566)
+        .background(.white)
+        .environment(\.colorScheme, .light)
+        let r = ImageRenderer(content: vista)
+        r.scale = 3
+        return r.uiImage
     }
 
     static func imagen(_ texto: String) -> UIImage? {

@@ -23,7 +23,10 @@ al panel web, con widgets y Live Activity actualizada por el servidor (§54, mig
 Tanda del 31/10 a la noche: talles y colores con stock y precio por combinación en el editor de productos, «Mi
 tienda» (plantilla, estilo, portada, logo, secciones, compartir, dirección y publicar), Finanzas y las secciones de
 Más con gráficos (Swift Charts) y tarjetas (`Tema/Decoracion.swift`), y la tienda en `<slug>.tulocalweb.com.ar` (§55).
-Se compila y se sube sólo por GitHub Actions (`ios.yml` y `testflight.yml`), nunca en la Mac. Nahuel la prueba y
+1/11: compartir la tienda bien a mano (`Pantallas/Compartir`): «Compartí tu tienda» (link, WhatsApp, imagen 9:16
+para estados e historias, QR imprimible, mensajes listos, productos y cupones), tarjeta de la tienda con visitas
+y acciones rápidas en Inicio, «Para hacer» que nunca queda sin acción, visitas en Estadísticas y compartir cada
+producto. Las visitas salen de `tablero.visitas`, que la app antes ignoraba. Se compila y se sube sólo por GitHub Actions (`ios.yml` y `testflight.yml`), nunca en la Mac. Nahuel la prueba y
 pasa lo que encuentra; se arregla en tandas completas.
 
 **Push Android:** proyecto Firebase `grupo-vimo` (plan Spark, sin facturación), una app Android por producto y

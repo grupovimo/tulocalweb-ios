@@ -12,6 +12,7 @@ enum Ruta: Hashable {
     case avisos
     case pedidos
     case inicio
+    case compartir
 
     /// `pedido/1048` (el `ruta` del push) o `tulocalweb://pedido/1048`.
     init?(texto: String) {
@@ -27,6 +28,7 @@ enum Ruta: Hashable {
         case "avisos": self = .avisos
         case "pedidos": self = .pedidos
         case "inicio": self = .inicio
+        case "compartir": self = .compartir
         default: return nil
         }
     }

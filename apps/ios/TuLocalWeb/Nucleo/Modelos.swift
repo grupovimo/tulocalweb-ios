@@ -40,6 +40,12 @@ struct Acceso: Codable, Equatable {
 
         /// «almacen-lumbre.tulocalweb.com.ar».
         var direccion: String { "\(slug).tulocalweb.com.ar" }
+        /// El link de la tienda, para copiar y compartir.
+        var url: URL { URL(string: "https://\(direccion)")! }
+        /// El link de un producto (la tienda acepta el id y redirige al slug).
+        func url(producto: String) -> URL {
+            url.appendingPathComponent("producto").appendingPathComponent(producto)
+        }
     }
     var tiendaId: String
     var rol: String
@@ -84,6 +90,8 @@ struct Tablero: Codable {
         var pedidos: Comparado
         var ticket: Comparado?
         var clientesNuevos: Comparado
+        /// Pedidos web por cada 100 visitas (en cero mientras no se midan visitas).
+        var conversion: Comparado?
     }
     struct Canal: Codable { var canal: String; var parte: Double }
     struct Meta: Codable { var objetivo: Int; var actual: Int; var proyeccion: Int }
@@ -122,6 +130,33 @@ struct Tablero: Codable {
     var paraHacer: ParaHacer
     var hornero: Hornero
     var masVendidos: [MasVendido]
+    var visitas: Visitas?
+    var resenas: Resenas?
+
+    /// Las visitas de la tienda online (personas distintas por día). `desde` en nil: todavía no hay.
+    struct Visitas: Codable {
+        struct Producto: Codable, Identifiable {
+            var productoId: String
+            var nombre: String
+            var foto: String?
+            var vistas: Int
+            var visitantes: Int
+            var id: String { productoId }
+        }
+        var desde: String?
+        var hoy: Comparado
+        var dias7: Comparado
+        var dias30: Comparado
+        /// Las del período del tablero.
+        var visitantes: Comparado
+        var vistas: Comparado
+        var masVistos: [Producto]
+    }
+    struct Resenas: Codable {
+        var promedio: Double?
+        /// Las últimas sin responder (hasta tres).
+        var nuevas: [ValorJSON]
+    }
 }
 
 struct PedidoBreve: Codable, Identifiable {
