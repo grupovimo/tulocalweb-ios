@@ -64,13 +64,12 @@ struct CompartirTienda: View {
         if let t = estado.tienda {
             let conCupones = estado.puede("catalogo")
             PantallaSeccion(titulo: "Compartí tu tienda", que: "tu tienda") { () async throws -> Datos in
-                async let v: Tablero? = try? await estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: "7d")])
-                async let p: PaginaProductos? = try? await estado.api.get("/v1/panel/listas/productos", query: [
-                    URLQueryItem(name: "seg", value: "active"), URLQueryItem(name: "orden", value: "sold"),
-                    URLQueryItem(name: "cuantos", value: "12"),
-                ])
-                async let c: Cupones.Datos? = conCupones ? (try? await estado.api.get("/v1/panel/cupones")) : nil
-                return await Datos(visitas: v?.visitas, productos: p?.filas ?? [], cupones: c?.cupones.filter { $0.estado == "activo" } ?? [])
+                // Cada pedido en su función: un `async let` con un ternario que hace `await` en una sola
+                // rama rompía el asignador de tareas en Release (swift_task_dealloc → la app se cerraba).
+                async let v = tablero()
+                async let p = masVendidos()
+                async let c = cuponesActivos(conCupones)
+                return await Datos(visitas: v?.visitas, productos: p, cupones: c)
             } contenido: { d, _ in
                 heroe(t, d.visitas)
                 canales(t)
@@ -81,6 +80,24 @@ struct CompartirTienda: View {
             .sheet(isPresented: $qr) { QRTienda(tienda: t).hojaTLW([.large]) }
             .sheet(isPresented: $historia) { HojaHistoria(tienda: t).hojaTLW([.large]) }
         }
+    }
+
+    private func tablero() async -> Tablero? {
+        try? await estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: "7d")])
+    }
+
+    private func masVendidos() async -> [ProductoFila] {
+        let p: PaginaProductos? = try? await estado.api.get("/v1/panel/listas/productos", query: [
+            URLQueryItem(name: "seg", value: "active"), URLQueryItem(name: "orden", value: "sold"),
+            URLQueryItem(name: "cuantos", value: "12"),
+        ])
+        return p?.filas ?? []
+    }
+
+    private func cuponesActivos(_ conCupones: Bool) async -> [Cupones.Cupon] {
+        guard conCupones else { return [] }
+        let c: Cupones.Datos? = try? await estado.api.get("/v1/panel/cupones")
+        return c?.cupones.filter { $0.estado == "activo" } ?? []
     }
 
     // MARK: El link

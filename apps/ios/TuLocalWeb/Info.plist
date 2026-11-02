@@ -52,6 +52,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Para sacarles fotos a tus productos y escanear códigos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Para guardar en tus fotos la imagen de tu tienda para estados e historias.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Para entrar a tu tienda y confirmar las acciones sensibles, como cancelar un pedido.</string>
 	<key>TLWApi</key>
