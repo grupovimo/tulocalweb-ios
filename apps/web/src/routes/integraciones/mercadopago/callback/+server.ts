@@ -15,7 +15,9 @@ export const GET: RequestHandler = async ({ locals, url, cookies }) => {
 	if (!locals.token && !usaSandbox() && codigo && estado)
 		redirect(
 			303,
-			`ar.com.tulocalweb.app://integraciones/mercadopago?code=${encodeURIComponent(codigo)}&state=${encodeURIComponent(estado)}`
+			`ar.com.tulocalweb.app://integraciones/mercadopago?code=${encodeURIComponent(codigo)}&state=${encodeURIComponent(estado)}`,
+			// Un esquema de la app: SvelteKit 3 sólo deja salir del sitio a propósito.
+			{ external: true }
 		);
 	// La persona canceló en Mercado Pago, o falta algo.
 	const r =
