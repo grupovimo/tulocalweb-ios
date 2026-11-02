@@ -3852,6 +3852,14 @@ components:
           type: object
           description: 'Dónde se publica: web, ml, ig, google'
           additionalProperties: { type: boolean }
+        tipo:
+          type: [string, 'null']
+          enum: [ropa, calzado, alimentos, belleza, hogar, tecnologia, otro, null]
+          description: 'Qué es: según el tipo el editor pide talle y color, contenido, peso y medidas… Sin mandar (o null): queda el que había. En la ficha, null: no se eligió'
+        atributos:
+          type: object
+          description: 'Los datos del tipo: peso (gramos), alto, ancho y largo (centímetros), contenido, material, marca, modelo, garantia. Textos de hasta 60 letras; los vacíos se descartan. Sin mandar: quedan los que había'
+          additionalProperties: { type: string, maxLength: 60 }
     OpcionProducto:
       type: object
       required: [nombre, valores]
@@ -3896,7 +3904,7 @@ components:
       allOf:
         - { $ref: '#/components/schemas/ProductoEditable' }
         - type: object
-          required: [id, publicado, vendidos30d, slug, fotos, opciones, variantes]
+          required: [id, publicado, vendidos30d, slug, fotos, opciones, variantes, tipo, atributos]
           properties:
             id: { type: string }
             publicado: { type: boolean }

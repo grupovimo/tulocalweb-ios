@@ -59,7 +59,7 @@ func Duplicar(ctx context.Context, pool tx, tiendaID, id string, ahora time.Time
 	cero, vacio := 0, ""
 	e := Editable{Nombre: string(nombre), Descripcion: &p.Descripcion, Categoria: p.Categoria, Precio: p.Precio,
 		Costo: &p.Costo, SKU: &vacio, Stock: &cero, Foto: p.Foto, Canales: map[string]bool{"web": true}, Fotos: p.Fotos,
-		Opciones: p.Opciones}
+		Opciones: p.Opciones, Tipo: p.Tipo, Atributos: p.Atributos}
 	for _, v := range p.Variantes {
 		e.Variantes = append(e.Variantes, VarianteEditable{Valores: v.Valores, SKU: &vacio, Precio: v.Precio, Stock: &cero,
 			Foto: v.Foto, Activa: &v.Activa})

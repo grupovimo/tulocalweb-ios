@@ -836,7 +836,9 @@ export class DatosSandbox implements Datos {
 			fotos: p.fotos,
 			opciones: p.opciones,
 			variantes: p.variantes.map((v) => ({ ...v, sku: '', stock: 0 })),
-			canales: { web: false }
+			canales: { web: false },
+			tipo: p.tipo,
+			atributos: p.atributos
 		});
 		return copia;
 	}
@@ -1256,7 +1258,9 @@ export class DatosSandbox implements Datos {
 			),
 			publicado: p.publicado,
 			vendidos30d: p.vendidos30,
-			slug: slugProducto(p.nombre)
+			slug: slugProducto(p.nombre),
+			tipo: p.tipo,
+			atributos: p.atributos
 		};
 	}
 
@@ -1341,6 +1345,12 @@ export class DatosSandbox implements Datos {
 			opciones,
 			variantes,
 			canales: p.canales ?? antes.canales,
+			// Como Go: sin venir quedan los que había; los datos vacíos se descartan.
+			tipo: p.tipo ?? antes.tipo,
+			atributos:
+				p.atributos !== undefined
+					? Object.fromEntries(Object.entries(p.atributos).filter(([, x]) => x?.trim()))
+					: antes.atributos,
 			publicado: true,
 			...(id ? {} : { nuevo: true, creado: Date.now() })
 		} satisfies CambioProducto);

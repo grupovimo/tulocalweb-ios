@@ -69,6 +69,13 @@ final class PantallasTests: XCTestCase {
 
     func testCompartirTienda() { montar(CompartirTienda()) }
     func testHojaHistoria() { montar(HojaHistoria(tienda: Self.tienda)) }
+    func testEditorProductoNuevoPreguntaElTipo() { montar(EditorProducto(id: nil)) }
+    func testTipoDeLosProductosDeAntes() {
+        XCTAssertEqual(TipoProducto.adivinar(["Talle": ["S", "M"]]), .ropa)
+        XCTAssertEqual(TipoProducto.adivinar(["Talle": ["38", "39"], "Color": ["Negro"]]), .calzado)
+        XCTAssertNil(TipoProducto.adivinar(["Sabor": ["Limón"]]))
+        XCTAssertTrue(TipoProducto.hogar.campos.contains(.alto))
+    }
     func testTarjetaHistoria() {
         let r = ImageRenderer(content: TarjetaHistoria(tienda: Self.tienda, portada: nil, logo: nil))
         r.scale = 3

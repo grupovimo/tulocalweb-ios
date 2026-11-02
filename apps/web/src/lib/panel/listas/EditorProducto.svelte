@@ -18,6 +18,14 @@
 	} from '#lib/tienda/variantes.ts';
 	import type { components } from '@mostrador/contrato/esquema';
 	import type { VentaMayorista } from '#lib/tienda/mayorista.ts';
+	import {
+		adivinarTipo,
+		CAMPOS,
+		tipoDe,
+		TIPOS,
+		type Atributo,
+		type TipoProducto
+	} from '#lib/tienda/tipo-producto.ts';
 	import { compartirProducto } from '../compartir.ts';
 	import { subir } from '../fotos.ts';
 	import { pesos } from '../formato.ts';
@@ -69,6 +77,25 @@
 	let opciones = $state<{ nombre: string; valores: string[] }[]>([]);
 	let variantes = $state<Variante[]>([]);
 	let nuevoValor = $state<string[]>([]);
+	// Qué es (ropa, comida, un mueble…): según eso se piden sus datos y se proponen las opciones. En
+	// el alta se pregunta primero; los productos de antes lo adivinan por sus opciones.
+	let tipo = $state<TipoProducto | null>(null);
+	let atributos = $state<Record<string, string>>({});
+	let eligiendoTipo = $state(false);
+	const defTipo = $derived(tipoDe(tipo));
+	const ICONOS_TIPO: Record<TipoProducto, I.IconData> = {
+		ropa: I.phTShirtFill,
+		calzado: I.phSneakerFill,
+		alimentos: I.phBowlFoodFill,
+		belleza: I.phSparkleFill,
+		hogar: I.phCouchFill,
+		tecnologia: I.phDeviceMobileFill,
+		otro: I.phDotsThreeOutlineFill
+	};
+	function elegirTipo(t: TipoProducto) {
+		tipo = t;
+		eligiendoTipo = false;
+	}
 	// La galería: la primera es la portada.
 	let fotos = $state<string[]>([]);
 	let subiendo = $state(0);
@@ -137,6 +164,9 @@
 			valores: { ...v.valores }
 		}));
 		nuevoValor = (p?.opciones ?? []).map(() => '');
+		tipo = (p?.tipo as TipoProducto | null | undefined) ?? adivinarTipo(p?.opciones ?? []);
+		atributos = { ...(p?.atributos ?? {}) };
+		eligiendoTipo = !p;
 		fotos = p?.fotos?.length ? [...p.fotos] : p?.foto ? [p.foto] : [];
 		error = null;
 	});
@@ -214,7 +244,8 @@
 	function sumarOpcion() {
 		if (opciones.length >= MAX_OPCIONES) return;
 		const usadas = new Set(opciones.map((o) => normal(o.nombre)));
-		const nombre = ['Talle', 'Color', 'Presentación'].find((n) => !usadas.has(normal(n))) ?? '';
+		const sugeridas = defTipo?.opciones.map((o) => o.nombre) ?? ['Talle', 'Color', 'Presentación'];
+		const nombre = sugeridas.find((n) => !usadas.has(normal(n))) ?? '';
 		opciones = [...opciones, { nombre, valores: [] }];
 		nuevoValor = [...nuevoValor, ''];
 	}
@@ -252,6 +283,17 @@
 		opciones[i].valores = opciones[i].valores.filter((v) => v !== valor);
 		recombinar();
 	}
+	const camposTipo = $derived<Atributo[]>(
+		(defTipo?.campos ?? []).flatMap((c) => (c === 'medidas' ? ['alto', 'ancho', 'largo'] : [c]))
+	);
+	const textoSumar = $derived.by(() => {
+		if (opciones.length) return 'Sumar otra opción';
+		if (!defTipo) return 'Sumar talles, colores u otra opción';
+		const ns = defTipo.opciones.map((o) => o.nombre.toLowerCase());
+		return `Sumar ${ns.join(', ')} u otra opción`;
+	});
+	const ejemploOpcion = (nombre: string) =>
+		defTipo?.opciones.find((o) => normal(o.nombre) === normal(nombre))?.ejemplo ?? 'S, M, L…';
 	const nombreVariante = (v: Variante) => listas.map((o) => v.valores[o.nombre.trim()]).join(' · ');
 	const colorVariante = (v: Variante) =>
 		listas.map((o) => colorDe(o.nombre, v.valores[o.nombre.trim()])).find(Boolean) ?? null;
@@ -330,7 +372,14 @@
 					// Si se sacó de la galería la foto de una variante, la variante queda sin foto.
 					...(v.foto && !fotos.includes(v.foto) ? { foto: null } : {})
 				})),
-				canales
+				canales,
+				...(tipo ? { tipo } : {}),
+				// Sólo los datos de este tipo: lo que se cargó con otro tipo se va al cambiarlo.
+				atributos: Object.fromEntries(
+					Object.entries(atributos).filter(
+						([k, x]) => x.trim() && camposTipo.includes(k as Atributo)
+					)
+				)
 			})
 		});
 		if (!r.ok) {
@@ -395,280 +444,358 @@
 	{/snippet}
 
 	<div class="cuerpo">
-		<input
-			bind:this={elegirFoto}
-			type="file"
-			accept="image/jpeg,image/png,image/webp"
-			multiple
-			hidden
-			aria-label="Elegir fotos"
-			onchange={(e) => sumarFotos(e.currentTarget.files)}
-		/>
-		<div class="fotos">
-			{#each fotos as f, i (f)}
-				<div class="foto" class:f-1={i === 0}>
-					<img src={unsplash(f, i === 0 ? 500 : 200, i === 0 ? '&h=500' : '&h=200')} alt="" />
+		{#if eligiendoTipo}
+			<div class="tarjeta">
+				<div class="t">¿Qué vas a vender?</div>
+				<p class="t-sub">Así te pedimos sólo los datos que van con tu producto.</p>
+				<div class="tipos">
+					{#each TIPOS as t (t.id)}
+						<button
+							type="button"
+							class="tipo"
+							class:elegido={tipo === t.id}
+							aria-pressed={tipo === t.id}
+							onclick={() => elegirTipo(t.id)}
+							><Icon icon={ICONOS_TIPO[t.id]} size={22} /><span class="tp-n">{t.nombre}</span><span
+								class="tp-e">{t.ejemplo}</span
+							></button
+						>
+					{/each}
+				</div>
+			</div>
+		{:else}
+			<input
+				bind:this={elegirFoto}
+				type="file"
+				accept="image/jpeg,image/png,image/webp"
+				multiple
+				hidden
+				aria-label="Elegir fotos"
+				onchange={(e) => sumarFotos(e.currentTarget.files)}
+			/>
+			<div class="fotos">
+				{#each fotos as f, i (f)}
+					<div class="foto" class:f-1={i === 0}>
+						<img src={unsplash(f, i === 0 ? 500 : 200, i === 0 ? '&h=500' : '&h=200')} alt="" />
+						<button
+							type="button"
+							class="f-x"
+							aria-label="Sacar la foto {i + 1}"
+							onclick={() => sacarFoto(f)}><Icon icon={I.phXBold} size={11} /></button
+						>{#if i > 0}<button
+								type="button"
+								class="f-portada"
+								aria-label="Usar la foto {i + 1} de portada"
+								onclick={() => portada(f)}><Icon icon={I.phStarFill} size={11} /></button
+							>{/if}
+					</div>
+				{:else}
 					<button
 						type="button"
-						class="f-x"
-						aria-label="Sacar la foto {i + 1}"
-						onclick={() => sacarFoto(f)}><Icon icon={I.phXBold} size={11} /></button
-					>{#if i > 0}<button
-							type="button"
-							class="f-portada"
-							aria-label="Usar la foto {i + 1} de portada"
-							onclick={() => portada(f)}><Icon icon={I.phStarFill} size={11} /></button
-						>{/if}
-				</div>
-			{:else}
-				<button
-					type="button"
-					class="f-1 f-vacia"
-					onclick={() => elegirFoto?.click()}
-					disabled={subiendo > 0}
-					><Icon icon={I.phCameraPlusFill} size={28} /><span
-						>{subiendo ? 'Subiendo…' : 'Sumá la primera foto'}</span
-					></button
-				>
-			{/each}
-			{#if fotos.length && fotos.length < MAX_FOTOS}<button
-					type="button"
-					class="f-mas"
-					aria-label={subiendo ? 'Subiendo la foto' : 'Sumar una foto'}
-					onclick={() => elegirFoto?.click()}
-					disabled={subiendo > 0}
-					><Icon icon={subiendo ? I.phSpinnerGap : I.phPlusBold} size={18} /></button
-				>{/if}
-		</div>
-
-		<div class="tarjeta campos">
-			<label class="campo"
-				>Nombre<input
-					bind:value={nombre}
-					maxlength="120"
-					aria-invalid={error && nombre.trim().length < 2 ? 'true' : undefined}
-				/></label
-			>
-			<div class="campo">
-				<span class="c-fila"
-					><label for="desc-prod">Descripción</label><button
+						class="f-1 f-vacia"
+						onclick={() => elegirFoto?.click()}
+						disabled={subiendo > 0}
+						><Icon icon={I.phCameraPlusFill} size={28} /><span
+							>{subiendo ? 'Subiendo…' : 'Sumá la primera foto'}</span
+						></button
+					>
+				{/each}
+				{#if fotos.length && fotos.length < MAX_FOTOS}<button
 						type="button"
-						class="hornero"
-						onclick={mejorar}
-						disabled={mejorando}
-						>{mejorando ? 'Tincho está escribiendo…' : '✦ Mejorar con Tincho'}</button
-					></span
-				>
-				<textarea id="desc-prod" bind:value={descripcion} maxlength="4000"></textarea>
+						class="f-mas"
+						aria-label={subiendo ? 'Subiendo la foto' : 'Sumar una foto'}
+						onclick={() => elegirFoto?.click()}
+						disabled={subiendo > 0}
+						><Icon icon={subiendo ? I.phSpinnerGap : I.phPlusBold} size={18} /></button
+					>{/if}
 			</div>
-			<label class="campo"
-				>Categoría<input
-					bind:value={categoria}
-					maxlength="60"
-					placeholder="Por ejemplo: Mates"
-				/></label
-			>
-		</div>
 
-		<div class="tarjeta">
-			<div class="t">{recargoML === null ? 'Precio' : 'Precio por canal'}</div>
-			<div class="precios">
-				{#each PRECIOS as [t, v, nota], i (t)}
-					<div class="precio">
-						<div class="p-t">{t}</div>
-						{#if i === 0}
+			<div class="tarjeta campos">
+				<div class="tipo-actual">
+					{#if defTipo}<Icon icon={ICONOS_TIPO[defTipo.id]} size={18} /><span
+							><b>{defTipo.nombre}</b></span
+						>{:else}<span>¿Qué tipo de producto es?</span>{/if}
+					<button type="button" class="hornero" onclick={() => (eligiendoTipo = true)}
+						>{defTipo ? 'Cambiar' : 'Elegir'}</button
+					>
+				</div>
+				<label class="campo"
+					>Nombre<input
+						bind:value={nombre}
+						maxlength="120"
+						aria-invalid={error && nombre.trim().length < 2 ? 'true' : undefined}
+					/></label
+				>
+				<div class="campo">
+					<span class="c-fila"
+						><label for="desc-prod">Descripción</label><button
+							type="button"
+							class="hornero"
+							onclick={mejorar}
+							disabled={mejorando}
+							>{mejorando ? 'Tincho está escribiendo…' : '✦ Mejorar con Tincho'}</button
+						></span
+					>
+					<textarea id="desc-prod" bind:value={descripcion} maxlength="4000"></textarea>
+				</div>
+				<label class="campo"
+					>Categoría<input
+						bind:value={categoria}
+						maxlength="60"
+						placeholder="Por ejemplo: Mates"
+					/></label
+				>
+			</div>
+
+			<div class="tarjeta">
+				<div class="t">{recargoML === null ? 'Precio' : 'Precio por canal'}</div>
+				<div class="precios">
+					{#each PRECIOS as [t, v, nota], i (t)}
+						<div class="precio">
+							<div class="p-t">{t}</div>
+							{#if i === 0}
+								<input
+									class="p-in"
+									inputmode="numeric"
+									aria-label="Precio base"
+									readonly={!conPrecios}
+									placeholder="$ 0"
+									value={precio ? pesos(precio) : ''}
+									onchange={(e) => (precio = numero(e.currentTarget.value))}
+								/>
+							{:else}
+								<div class="p-v">{pesos(v)}</div>
+							{/if}
+							<div class="p-n">{nota}</div>
+						</div>
+					{/each}
+					{#if verMayorista}
+						<div class="precio">
+							<div class="p-t">Mayorista</div>
 							<input
 								class="p-in"
 								inputmode="numeric"
-								aria-label="Precio base"
+								aria-label="Precio mayorista"
 								readonly={!conPrecios}
-								placeholder="$ 0"
-								value={precio ? pesos(precio) : ''}
-								onchange={(e) => (precio = numero(e.currentTarget.value))}
+								placeholder="Sin precio"
+								value={precioMayor ? pesos(precioMayor) : ''}
+								onchange={(e) => (precioMayor = numero(e.currentTarget.value))}
 							/>
-						{:else}
-							<div class="p-v">{pesos(v)}</div>
-						{/if}
-						<div class="p-n">{nota}</div>
-					</div>
-				{/each}
-				{#if verMayorista}
-					<div class="precio">
-						<div class="p-t">Mayorista</div>
-						<input
-							class="p-in"
-							inputmode="numeric"
-							aria-label="Precio mayorista"
-							readonly={!conPrecios}
-							placeholder="Sin precio"
-							value={precioMayor ? pesos(precioMayor) : ''}
-							onchange={(e) => (precioMayor = numero(e.currentTarget.value))}
-						/>
-						<div class="p-n" class:mal={mayorMal}>
-							{mayorMal ? 'Tiene que ser menor que el precio' : notaMayorista}
+							<div class="p-n" class:mal={mayorMal}>
+								{mayorMal ? 'Tiene que ser menor que el precio' : notaMayorista}
+							</div>
 						</div>
+					{/if}
+				</div>
+				{#if conPrecios}
+					<div class="margen">
+						Margen {#if margen === null}<b>sin dato</b>{:else}<b class:bajo={margen < 25}
+								>{margen} %</b
+							>{/if} · costo
+						<input
+							class="costo"
+							inputmode="numeric"
+							aria-label="Costo"
+							placeholder="$ 0"
+							value={costo ? pesos(costo) : ''}
+							onchange={(e) => (costo = numero(e.currentTarget.value))}
+						/>
 					</div>
+				{:else}
+					<div class="margen">Los precios los cambia la dueña o administración.</div>
 				{/if}
 			</div>
-			{#if conPrecios}
-				<div class="margen">
-					Margen {#if margen === null}<b>sin dato</b>{:else}<b class:bajo={margen < 25}
-							>{margen} %</b
-						>{/if} · costo
-					<input
-						class="costo"
-						inputmode="numeric"
-						aria-label="Costo"
-						placeholder="$ 0"
-						value={costo ? pesos(costo) : ''}
-						onchange={(e) => (costo = numero(e.currentTarget.value))}
-					/>
-				</div>
-			{:else}
-				<div class="margen">Los precios los cambia la dueña o administración.</div>
-			{/if}
-		</div>
 
-		<div class="tarjeta">
-			<div class="t">Variantes y stock</div>
-			{#each opciones as o, i (i)}
-				<div class="opcion">
-					<span class="o-fila"
-						><input
-							class="o-n"
-							aria-label="Opción {i + 1}"
-							placeholder="Talle, color…"
-							maxlength="20"
-							value={o.nombre}
-							onchange={(e) => renombrar(i, e.currentTarget.value)}
-						/><button
-							type="button"
-							class="o-quitar"
-							aria-label="Quitar la opción {o.nombre}"
-							onclick={() => quitarOpcion(i)}><Icon icon={I.phXBold} size={12} /></button
-						></span
-					>
-					<div class="valores">
-						{#each o.valores as x (x)}<span class="valor"
-								>{#if colorDe(o.nombre, x)}<span
-										class="v-color chico"
-										style="background:{colorDe(o.nombre, x)}"
-									></span>{/if}{x}<button
-									type="button"
-									aria-label="Quitar {x}"
-									onclick={() => quitarValor(i, x)}><Icon icon={I.phXBold} size={10} /></button
-								></span
-							>{/each}<input
-							class="v-nuevo"
-							aria-label="Sumar valores a {o.nombre || 'la opción'}"
-							placeholder={o.valores.length ? 'Otro valor' : 'S, M, L…'}
-							bind:value={nuevoValor[i]}
-							onkeydown={(e) => {
-								if (e.key === 'Enter' || e.key === ',') {
-									e.preventDefault();
-									sumarValores(i);
-								}
-							}}
-							onblur={() => nuevoValor[i]?.trim() && sumarValores(i)}
-						/>
+			{#if camposTipo.length}
+				<div class="tarjeta campos">
+					<div class="t">Datos del producto</div>
+					<div class="datos">
+						{#each defTipo?.campos ?? [] as c (c)}
+							{#if c === 'medidas'}
+								<div class="campo ancho">
+									Medidas (alto × ancho × largo)
+									<div class="medidas">
+										{#each ['alto', 'ancho', 'largo'] as const as m (m)}
+											<span class="con-unidad"
+												><input
+													inputmode="numeric"
+													aria-label="{CAMPOS[m].nombre} en centímetros"
+													placeholder={CAMPOS[m].nombre}
+													value={atributos[m] ?? ''}
+													oninput={(e) =>
+														(atributos[m] = e.currentTarget.value.replace(/\D/g, '').slice(0, 8))}
+												/><i>cm</i></span
+											>
+										{/each}
+									</div>
+								</div>
+							{:else}
+								{@const f = CAMPOS[c]}
+								<label class="campo"
+									>{f.nombre}{#if f.numero}<span class="con-unidad"
+											><input
+												inputmode="numeric"
+												placeholder={f.placeholder}
+												value={atributos[c] ?? ''}
+												oninput={(e) =>
+													(atributos[c] = e.currentTarget.value.replace(/\D/g, '').slice(0, 8))}
+											/><i>{f.unidad}</i></span
+										>{:else}<input
+											maxlength="60"
+											placeholder={f.placeholder}
+											bind:value={atributos[c]}
+										/>{/if}</label
+								>
+							{/if}
+						{/each}
 					</div>
+					{#if camposTipo.includes('peso')}<p class="t-sub">
+							El peso y las medidas sirven para cotizar el envío.
+						</p>{/if}
 				</div>
-			{/each}
-			<div class="variantes">
-				{#if listas.length}
-					{#each variantes as v (nombreVariante(v))}
-						<div class="variante" class:apagada={!v.activa} class:con-mayor={verMayorista}>
-							<span class="v-color" style:background={colorVariante(v)}></span><span class="v-n"
-								>{nombreVariante(v)}</span
-							>
-							<input
-								class="v-p"
-								inputmode="numeric"
-								aria-label="Precio de {nombreVariante(v)}"
-								readonly={!conPrecios}
-								placeholder={pesos(precio)}
-								value={v.precio === null ? '' : pesos(v.precio)}
-								onchange={(e) =>
-									(v.precio = e.currentTarget.value.trim() ? numero(e.currentTarget.value) : null)}
+			{/if}
+
+			<div class="tarjeta">
+				<div class="t">Variantes y stock</div>
+				{#each opciones as o, i (i)}
+					<div class="opcion">
+						<span class="o-fila"
+							><input
+								class="o-n"
+								aria-label="Opción {i + 1}"
+								placeholder="Talle, color…"
+								maxlength="20"
+								value={o.nombre}
+								onchange={(e) => renombrar(i, e.currentTarget.value)}
+							/><button
+								type="button"
+								class="o-quitar"
+								aria-label="Quitar la opción {o.nombre}"
+								onclick={() => quitarOpcion(i)}><Icon icon={I.phXBold} size={12} /></button
+							></span
+						>
+						<div class="valores">
+							{#each o.valores as x (x)}<span class="valor"
+									>{#if colorDe(o.nombre, x)}<span
+											class="v-color chico"
+											style="background:{colorDe(o.nombre, x)}"
+										></span>{/if}{x}<button
+										type="button"
+										aria-label="Quitar {x}"
+										onclick={() => quitarValor(i, x)}><Icon icon={I.phXBold} size={10} /></button
+									></span
+								>{/each}<input
+								class="v-nuevo"
+								aria-label="Sumar valores a {o.nombre || 'la opción'}"
+								placeholder={o.valores.length ? 'Otro valor' : ejemploOpcion(o.nombre)}
+								bind:value={nuevoValor[i]}
+								onkeydown={(e) => {
+									if (e.key === 'Enter' || e.key === ',') {
+										e.preventDefault();
+										sumarValores(i);
+									}
+								}}
+								onblur={() => nuevoValor[i]?.trim() && sumarValores(i)}
 							/>
-							{#if verMayorista}
-								<!-- Vacío: el mayorista del producto, si la variante va al precio del producto. -->
+						</div>
+					</div>
+				{/each}
+				<div class="variantes">
+					{#if listas.length}
+						{#each variantes as v (nombreVariante(v))}
+							<div class="variante" class:apagada={!v.activa} class:con-mayor={verMayorista}>
+								<span class="v-color" style:background={colorVariante(v)}></span><span class="v-n"
+									>{nombreVariante(v)}</span
+								>
 								<input
 									class="v-p"
 									inputmode="numeric"
-									aria-label="Precio mayorista de {nombreVariante(v)}"
+									aria-label="Precio de {nombreVariante(v)}"
 									readonly={!conPrecios}
-									placeholder={precioMayor && v.precio === null ? pesos(precioMayor) : 'Mayorista'}
-									value={v.precioMayorista ? pesos(v.precioMayorista) : ''}
+									placeholder={pesos(precio)}
+									value={v.precio === null ? '' : pesos(v.precio)}
 									onchange={(e) =>
-										(v.precioMayorista = e.currentTarget.value.trim()
-											? numero(e.currentTarget.value) || null
+										(v.precio = e.currentTarget.value.trim()
+											? numero(e.currentTarget.value)
 											: null)}
 								/>
-							{/if}
+								{#if verMayorista}
+									<!-- Vacío: el mayorista del producto, si la variante va al precio del producto. -->
+									<input
+										class="v-p"
+										inputmode="numeric"
+										aria-label="Precio mayorista de {nombreVariante(v)}"
+										readonly={!conPrecios}
+										placeholder={precioMayor && v.precio === null
+											? pesos(precioMayor)
+											: 'Mayorista'}
+										value={v.precioMayorista ? pesos(v.precioMayorista) : ''}
+										onchange={(e) =>
+											(v.precioMayorista = e.currentTarget.value.trim()
+												? numero(e.currentTarget.value) || null
+												: null)}
+									/>
+								{/if}
+								<input
+									class="v-s"
+									inputmode="numeric"
+									aria-label="Stock de {nombreVariante(v)}"
+									value={v.stock}
+									onchange={(e) => (v.stock = numero(e.currentTarget.value))}
+								/><span class="v-u">u</span>
+								<Interruptor label="Vender {nombreVariante(v)}" bind:checked={v.activa} />
+							</div>
+						{/each}
+						<div class="v-total">
+							{variantes.length}
+							{variantes.length === 1 ? 'combinación' : 'combinaciones'} · {total} u en total
+						</div>
+					{:else}
+						<div class="variante">
+							<span class="v-color"></span><span class="v-n">Única</span>
 							<input
 								class="v-s"
 								inputmode="numeric"
-								aria-label="Stock de {nombreVariante(v)}"
-								value={v.stock}
-								onchange={(e) => (v.stock = numero(e.currentTarget.value))}
+								aria-label="Stock"
+								value={stock}
+								onchange={(e) => (stock = numero(e.currentTarget.value))}
 							/><span class="v-u">u</span>
-							<Interruptor label="Vender {nombreVariante(v)}" bind:checked={v.activa} />
 						</div>
-					{/each}
-					<div class="v-total">
-						{variantes.length}
-						{variantes.length === 1 ? 'combinación' : 'combinaciones'} · {total} u en total
-					</div>
-				{:else}
-					<div class="variante">
-						<span class="v-color"></span><span class="v-n">Única</span>
-						<input
-							class="v-s"
-							inputmode="numeric"
-							aria-label="Stock"
-							value={stock}
-							onchange={(e) => (stock = numero(e.currentTarget.value))}
-						/><span class="v-u">u</span>
-					</div>
-				{/if}
-			</div>
-			{#if opciones.length < MAX_OPCIONES}<button
-					type="button"
-					class="o-sumar"
-					onclick={sumarOpcion}
-					><Icon icon={I.phPlusBold} size={14} />{opciones.length
-						? 'Sumar otra opción'
-						: 'Sumar talles, colores u otra opción'}</button
-				>{/if}
-		</div>
-
-		<LanzamientoProducto
-			bind:this={lanzamiento}
-			id={producto?.id ?? null}
-			abierto={open}
-			{precio}
-			{conPrecios}
-		/>
-
-		<div class="tarjeta canales">
-			<div class="t">Dónde se publica</div>
-			{#each CANALES as [k, icon, t, col] (k)}
-				<div class="canal">
-					<Icon {icon} size={18} style="color:{col}" />
-					<span>{t}</span>
-					<Interruptor label={t} bind:checked={canales[k]} />
+					{/if}
 				</div>
-			{/each}
-		</div>
+				{#if opciones.length < MAX_OPCIONES}<button
+						type="button"
+						class="o-sumar"
+						onclick={sumarOpcion}><Icon icon={I.phPlusBold} size={14} />{textoSumar}</button
+					>{/if}
+			</div>
 
-		<div class="tarjeta google">
-			<div class="g-t">Así aparece en Google</div>
-			<div class="g-u">{dominio} › {slug}</div>
-			<div class="g-n">{nombre || 'Nombre del producto'} | {tienda}</div>
-			<div class="g-d">{descripcion || 'La descripción aparece acá.'}</div>
-		</div>
+			<LanzamientoProducto
+				bind:this={lanzamiento}
+				id={producto?.id ?? null}
+				abierto={open}
+				{precio}
+				{conPrecios}
+			/>
 
+			<div class="tarjeta canales">
+				<div class="t">Dónde se publica</div>
+				{#each CANALES as [k, icon, t, col] (k)}
+					<div class="canal">
+						<Icon {icon} size={18} style="color:{col}" />
+						<span>{t}</span>
+						<Interruptor label={t} bind:checked={canales[k]} />
+					</div>
+				{/each}
+			</div>
+
+			<div class="tarjeta google">
+				<div class="g-t">Así aparece en Google</div>
+				<div class="g-u">{dominio} › {slug}</div>
+				<div class="g-n">{nombre || 'Nombre del producto'} | {tienda}</div>
+				<div class="g-d">{descripcion || 'La descripción aparece acá.'}</div>
+			</div>
+		{/if}
 		{#if error}<div class="error" role="alert">{error}</div>{/if}
 	</div>
 
@@ -860,6 +987,93 @@
 	.t {
 		font-size: 14px;
 		font-weight: 600;
+	}
+	.t-sub {
+		margin: 4px 0 0;
+		font-size: 12.5px;
+		color: var(--mu);
+	}
+	.tipos {
+		margin-top: 12px;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 8px;
+	}
+	.tipo {
+		padding: 12px;
+		border-radius: 14px;
+		border: 1.5px solid var(--ln2);
+		background: var(--bg);
+		color: var(--tx);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
+		text-align: left;
+	}
+	.tipo :global(svg) {
+		color: #d2582f;
+	}
+	.tipo.elegido {
+		border-color: #d2582f;
+		background: var(--sf3);
+	}
+	.tp-n {
+		font-size: 14px;
+		font-weight: 600;
+	}
+	.tp-e {
+		font-size: 12px;
+		color: var(--mu);
+	}
+	.tipo-actual {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13.5px;
+		color: var(--mu);
+	}
+	.tipo-actual :global(svg) {
+		color: #d2582f;
+	}
+	.tipo-actual b {
+		color: var(--tx);
+		font-weight: 600;
+	}
+	.tipo-actual span {
+		flex: 1;
+	}
+	.datos {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 10px;
+	}
+	.campo.ancho {
+		grid-column: 1 / -1;
+	}
+	.medidas {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+	.con-unidad {
+		position: relative;
+		display: flex;
+	}
+	.con-unidad input {
+		width: 100%;
+		min-width: 0;
+		padding-right: 34px;
+	}
+	.con-unidad i {
+		position: absolute;
+		right: 12px;
+		top: 50%;
+		transform: translateY(-50%);
+		font-style: normal;
+		font-size: 13px;
+		color: var(--mu);
+		pointer-events: none;
 	}
 	.precios {
 		margin-top: 10px;

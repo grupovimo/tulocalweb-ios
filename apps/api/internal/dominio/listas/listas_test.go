@@ -152,3 +152,34 @@ func TestVentaEnElLocalDescuentaStock(t *testing.T) {
 		t.Fatalf("stock: %d", p.Stock)
 	}
 }
+
+// El tipo y sus datos (00071): se guardan, sin mandarlos quedan y se copian al duplicar.
+func TestTipoYAtributos(t *testing.T) {
+	b := pruebadb.Nueva(t)
+	una := pruebadb.CrearTienda(t, b.App, "una")
+	hogar := "hogar"
+	p, err := listas.Guardar(ctx, b.App, una, "", listas.Editable{Nombre: "Mesa ratona", Precio: 90000, Tipo: &hogar,
+		Atributos: map[string]string{"peso": "8500", "alto": "45", "material": "Pino", "marca": ""}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Tipo == nil || *p.Tipo != "hogar" || p.Atributos["peso"] != "8500" || p.Atributos["material"] != "Pino" || len(p.Atributos) != 3 {
+		t.Fatalf("alta: %v %v", p.Tipo, p.Atributos)
+	}
+	p, err = listas.Guardar(ctx, b.App, una, p.ID, listas.Editable{Nombre: "Mesa ratona", Precio: 95000})
+	if err != nil || p.Tipo == nil || *p.Tipo != "hogar" || p.Atributos["alto"] != "45" {
+		t.Fatalf("sin mandarlos tienen que quedar: %v %v %v", p.Tipo, p.Atributos, err)
+	}
+	c, err := listas.Duplicar(ctx, b.App, una, p.ID, time.Now())
+	if err != nil || c.Tipo == nil || *c.Tipo != "hogar" || c.Atributos["peso"] != "8500" {
+		t.Fatalf("copia: %v %v %v", c.Tipo, c.Atributos, err)
+	}
+	sinTipo, err := listas.Guardar(ctx, b.App, una, "", listas.Editable{Nombre: "Termo", Precio: 1000})
+	if err != nil || sinTipo.Tipo != nil || sinTipo.Atributos == nil {
+		t.Fatalf("sin tipo: %v %v %v", sinTipo.Tipo, sinTipo.Atributos, err)
+	}
+	malo := "auto"
+	if _, err := listas.Guardar(ctx, b.App, una, "", listas.Editable{Nombre: "Auto", Precio: 1, Tipo: &malo}); err == nil {
+		t.Fatal("aceptó un tipo que no existe")
+	}
+}

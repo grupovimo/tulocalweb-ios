@@ -1,8 +1,9 @@
 import PhotosUI
 import SwiftUI
 
-/// 11c · Cargar o editar un producto: fotos (cámara o galería), nombre, precio, costo, stock, SKU,
-/// categoría y descripción. Edita el producto entero que da la API, así que lo que la app no muestra
+/// 11c · Cargar o editar un producto: primero qué es (ropa, comida, un mueble…), y según eso sus
+/// datos (talle y color, contenido, peso y medidas…); fotos (cámara o galería), nombre, precio, costo,
+/// stock, SKU, categoría y descripción. Edita el producto entero que da la API, así que lo que la app no muestra
 /// (opciones, variantes, canales) vuelve tal cual.
 struct EditorProducto: View {
     var id: String?
@@ -30,12 +31,15 @@ struct EditorProducto: View {
     @State private var variantes: [String: Combinacion] = [:]
     @State private var teniaOpciones = false
     @State private var nuevoValor: [Int: String] = [:]
+    @State private var tipo: TipoProducto?
+    @State private var atributos: [String: String] = [:]
+    @State private var eligiendoTipo = false
 
     struct Opcion: Equatable { var nombre: String; var valores: [String] }
     struct Combinacion: Equatable { var stock = ""; var precio = ""; var sku = "" }
-    static let curvas: [(String, [String])] = [
-        ("Talle (letras)", ["XS", "S", "M", "L", "XL", "XXL"]), ("Talle (números)", ["36", "38", "40", "42", "44", "46"]),
-        ("Talle (calzado)", ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44"]), ("Color", []), ("Presentación", []),
+    /// Sin tipo elegido, las de siempre.
+    static let curvas: [(nombre: String, valores: [String])] = [
+        ("Talle", ["XS", "S", "M", "L", "XL", "XXL"]), ("Color", []), ("Presentación", []),
     ]
 
     var body: some View {
@@ -44,9 +48,12 @@ struct EditorProducto: View {
                 Text(id == nil ? "Producto nuevo" : "Editar producto").estilo(.tituloGrande).foregroundStyle(C.texto)
                 if cargando {
                     EsqueletoFilas(filas: 4, miniatura: 0).padding(.top, 12)
+                } else if eligiendoTipo {
+                    elegirTipo
                 } else {
+                    filaTipo
                     seccionFotos
-                    campo("Nombre") { TextField("Ej.: Remera de algodón", text: $nombre) }
+                    campo("Nombre") { TextField(ejemploNombre, text: $nombre) }
                     HStack(spacing: 10) {
                         campo("Precio") { TextField("0", text: $precio).keyboardType(.numberPad) }
                         campo("Costo (opcional)") { TextField("0", text: $costo).keyboardType(.numberPad) }
@@ -57,6 +64,7 @@ struct EditorProducto: View {
                     if opciones.isEmpty {
                         campo("Stock") { TextField("0", text: $stock).keyboardType(.numberPad) }
                     }
+                    seccionDatos
                     seccionVariantes
                     HStack(spacing: 10) {
                         campo("SKU o código") { TextField("Opcional", text: $codigo).textInputAutocapitalization(.characters) }
@@ -77,11 +85,13 @@ struct EditorProducto: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .barraAccion {
-            Button(guardando ? "Guardando…" : (id == nil ? "Cargar producto" : "Guardar cambios")) {
-                Task { await guardar() }
+            if !eligiendoTipo {
+                Button(guardando ? "Guardando…" : (id == nil ? "Cargar producto" : "Guardar cambios")) {
+                    Task { await guardar() }
+                }
+                .buttonStyle(BotonPrincipal())
+                .disabled(!valido || guardando || subiendo > 0)
             }
-            .buttonStyle(BotonPrincipal())
-            .disabled(!valido || guardando || subiendo > 0)
         }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
@@ -128,6 +138,115 @@ struct EditorProducto: View {
         return "Ganás \(Formato.pesos(p - c)) por unidad (\(Int((Double(p - c) / Double(p) * 100).rounded())) %)"
     }
 
+    // MARK: Qué es
+
+    private var elegirTipo: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("¿Qué vas a vender?").estilo(.headline).foregroundStyle(C.texto)
+            Text(Formato.sinViudas("Así te pedimos sólo los datos que van con tu producto."))
+                .estilo(.footnote).foregroundStyle(C.texto2)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(TipoProducto.allCases) { t in
+                    Button {
+                        Haptico.seleccion()
+                        tipo = t
+                        eligiendoTipo = false
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Image(systemName: t.simbolo).font(.system(size: 20, weight: .semibold)).foregroundStyle(C.primarioTexto)
+                                .frame(width: 40, height: 40).background(C.crema, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            Text(t.nombre).estilo(.subheadFuerte).foregroundStyle(C.texto)
+                                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                            Text(t.ejemplo).estilo(.footnote).foregroundStyle(C.texto2)
+                                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+                        .padding(14)
+                        .tarjeta(radio: 16)
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(tipo == t ? C.acento : .clear, lineWidth: 1.5))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(tipo == t ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private var filaTipo: some View {
+        HStack(spacing: 12) {
+            Image(systemName: tipo?.simbolo ?? "questionmark").font(.system(size: 16, weight: .semibold)).foregroundStyle(C.primarioTexto)
+                .frame(width: 38, height: 38).background(C.crema, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Tipo de producto").estilo(.footnote).foregroundStyle(C.texto2)
+                Text(tipo?.nombre ?? "Sin elegir").estilo(.fila).foregroundStyle(C.texto)
+            }
+            Spacer(minLength: 4)
+            Button(tipo == nil ? "Elegir" : "Cambiar") { eligiendoTipo = true }.buttonStyle(BotonTonal())
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .tarjeta(radio: 16)
+    }
+
+    private var ejemploNombre: String {
+        switch tipo {
+        case .ropa: "Ej.: Remera de algodón"
+        case .calzado: "Ej.: Zapatillas urbanas"
+        case .alimentos: "Ej.: Yerba orgánica"
+        case .belleza: "Ej.: Crema de manos"
+        case .hogar: "Ej.: Mesa ratona de pino"
+        case .tecnologia: "Ej.: Auriculares inalámbricos"
+        default: "Ej.: Mate de calabaza"
+        }
+    }
+
+    /// Los datos del tipo: texto libre de a uno, peso con su unidad y las tres medidas juntas.
+    @ViewBuilder
+    private var seccionDatos: some View {
+        if let tipo {
+            let campos = tipo.campos
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Datos del producto").estilo(.headline).foregroundStyle(C.texto).padding(.top, 4)
+                ForEach(campos.filter { !$0.esMedida }, id: \.rawValue) { a in
+                    campo(a.nombre) { entrada(a) }
+                }
+                if campos.contains(.alto) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Medidas (alto × ancho × largo)").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                        HStack(spacing: 8) {
+                            ForEach([AtributoProducto.alto, .ancho, .largo], id: \.rawValue) { a in
+                                entrada(a, ejemplo: a.nombre)
+                                    .estilo(.body16).foregroundStyle(C.texto)
+                                    .padding(.horizontal, 12).padding(.vertical, 12)
+                                    .background(C.superficie, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.linea2, lineWidth: 1))
+                            }
+                        }
+                    }
+                }
+                if campos.contains(.peso) {
+                    Text(Formato.sinViudas("El peso y las medidas sirven para cotizar el envío."))
+                        .estilo(.footnote).foregroundStyle(C.texto2).padding(.horizontal, 4)
+                }
+            }
+        }
+    }
+
+    private func entrada(_ a: AtributoProducto, ejemplo: String? = nil) -> some View {
+        let valor = Binding(get: { atributos[a.rawValue] ?? "" }, set: { nuevo in
+            atributos[a.rawValue] = a.unidad == nil ? String(nuevo.prefix(60)) : String(nuevo.filter(\.isNumber).prefix(8))
+        })
+        return HStack(spacing: 6) {
+            if a.unidad == nil {
+                TextField(ejemplo ?? a.ejemplo, text: valor)
+            } else {
+                TextField(ejemplo ?? "0", text: valor).keyboardType(.numberPad)
+                Text(a.unidad ?? "").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+            }
+        }
+        .accessibilityLabel(a.unidad.map { "\(a.nombre) en \($0 == "g" ? "gramos" : "centímetros")" } ?? a.nombre)
+    }
+
     /// Las combinaciones de todas las opciones, en orden («M · Rojo»).
     private var combinaciones: [[String: String]] {
         let validas = opciones.filter { !$0.nombre.trimmingCharacters(in: .whitespaces).isEmpty && !$0.valores.isEmpty }
@@ -147,14 +266,13 @@ struct EditorProducto: View {
     private var seccionVariantes: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Talles, colores y más").estilo(.headline).foregroundStyle(C.texto)
+                Text("Variantes y stock").estilo(.headline).foregroundStyle(C.texto)
                 Spacer()
                 if opciones.count < 3 {
                     Menu {
-                        ForEach(EditorProducto.curvas, id: \.0) { c in
-                            Button(c.0) {
-                                let nombre = c.0.hasPrefix("Talle") ? "Talle" : c.0
-                                if !opciones.contains(where: { $0.nombre == nombre }) { opciones.append(Opcion(nombre: nombre, valores: c.1)) }
+                        ForEach(sugeridas, id: \.nombre) { c in
+                            Button(c.nombre) {
+                                if !opciones.contains(where: { $0.nombre == c.nombre }) { opciones.append(Opcion(nombre: c.nombre, valores: c.valores)) }
                             }
                         }
                         Button("Otra opción") { opciones.append(Opcion(nombre: "", valores: [])) }
@@ -164,7 +282,7 @@ struct EditorProducto: View {
                 }
             }
             if opciones.isEmpty {
-                Text(Formato.sinViudas("¿Viene en talles o colores? Agregá las opciones y cargás el stock de cada combinación."))
+                Text(Formato.sinViudas(textoVariantes))
                     .estilo(.footnote).foregroundStyle(C.texto2)
             }
             ForEach(opciones.indices, id: \.self) { i in
@@ -176,7 +294,7 @@ struct EditorProducto: View {
                     }
                     FlujoChips(valores: opciones[i].valores) { v in opciones[i].valores.removeAll { $0 == v } }
                     HStack {
-                        TextField("+ Valor (ej.: Rojo)", text: Binding(get: { nuevoValor[i] ?? "" }, set: { nuevoValor[i] = $0 }))
+                        TextField("+ Valor (ej.: \(ejemploValor(opciones[i].nombre)))", text: Binding(get: { nuevoValor[i] ?? "" }, set: { nuevoValor[i] = $0 }))
                             .estilo(.body16).submitLabel(.done)
                             .onSubmit { sumarValor(i) }
                         Button("Agregar") { sumarValor(i) }.buttonStyle(BotonTonal())
@@ -214,6 +332,29 @@ struct EditorProducto: View {
                 Text("\(Formato.cantidad(combinaciones.count, "combinación", "combinaciones")) · stock total \(combinaciones.reduce(0) { $0 + (Int(variantes[clave($1)]?.stock ?? "") ?? 0) })")
                     .estilo(.footnote).foregroundStyle(C.texto2).padding(.horizontal, 4)
             }
+        }
+    }
+
+    private var sugeridas: [(nombre: String, valores: [String])] {
+        (tipo?.opciones ?? EditorProducto.curvas).filter { s in !opciones.contains { $0.nombre == s.nombre } }
+    }
+
+    private var textoVariantes: String {
+        guard let tipo else { return "¿Viene en talles o colores? Agregá las opciones y cargás el stock de cada combinación." }
+        let ns = tipo.opciones.map { $0.nombre.lowercased() }
+        return "¿Tiene opciones como \(ns.joined(separator: " o "))? Agregalas y cargás el stock de cada combinación."
+    }
+
+    private func ejemploValor(_ opcion: String) -> String {
+        switch opcion.lowercased() {
+        case "color": "Rojo"
+        case "talle": "M"
+        case "presentación": "500 g"
+        case "sabor": "Limón"
+        case "fragancia": "Vainilla"
+        case "tamaño": "Grande"
+        case "capacidad": "128 GB"
+        default: "Clásico"
         }
     }
 
@@ -282,6 +423,7 @@ struct EditorProducto: View {
         defer { cargando = false }
         guard let id, original.isEmpty else {
             if let sku, codigo.isEmpty { codigo = sku }
+            if id == nil && tipo == nil { eligiendoTipo = true }
             return
         }
         guard let v: ValorJSON = try? await estado.api.get("/v1/panel/productos/\(id)"), case let .objeto(o) = v else {
@@ -303,6 +445,9 @@ struct EditorProducto: View {
             return Opcion(nombre: n, valores: o["valores"]?.lista?.compactMap(\.texto) ?? [])
         } ?? []
         teniaOpciones = !opciones.isEmpty
+        tipo = v["tipo"]?.texto.flatMap(TipoProducto.init(rawValue:))
+            ?? TipoProducto.adivinar(Dictionary(opciones.map { ($0.nombre, $0.valores) }, uniquingKeysWith: { a, _ in a }))
+        if case let .objeto(a)? = v["atributos"] { atributos = a.compactMapValues(\.texto) }
         for x in v["variantes"]?.lista ?? [] {
             guard case let .objeto(vals)? = x["valores"] else { continue }
             let c = vals.compactMapValues(\.texto)
@@ -358,6 +503,13 @@ struct EditorProducto: View {
         o["descripcion"] = .texto(descripcion)
         o["fotos"] = .lista(fotos.map { .texto($0) })
         o["foto"] = fotos.first.map { .texto($0) } ?? .nulo
+        if let tipo {
+            o["tipo"] = .texto(tipo.rawValue)
+            // Sólo los datos de este tipo: lo cargado con otro tipo se va al cambiarlo.
+            let campos = Set(tipo.campos.map(\.rawValue))
+            o["atributos"] = .objeto(atributos.filter { campos.contains($0.key) && !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
+                .mapValues { .texto($0.trimmingCharacters(in: .whitespaces)) })
+        }
         do {
             if let id {
                 try await estado.api.hacer("PUT", "/v1/panel/productos/\(id)", ValorJSON.objeto(o))

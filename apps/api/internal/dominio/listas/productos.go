@@ -36,6 +36,9 @@ type Editable struct {
 	Opciones []Opcion `json:"opciones"`
 	// Variantes: sólo las combinaciones que se quieren tocar; las demás se conservan o se generan.
 	Variantes []VarianteEditable `json:"variantes"`
+	// Tipo (ropa, alimentos, hogar…) y sus datos (peso, medidas, contenido…): nil deja lo que había.
+	Tipo      *string           `json:"tipo"`
+	Atributos map[string]string `json:"atributos"`
 	// SinPrecios: quien guarda no puede tocar precios ni costos (rol Ventas, docs/decisiones.md §37):
 	// quedan los que había, también los de las variantes. No viene del cliente.
 	SinPrecios bool `json:"-"`
@@ -61,6 +64,9 @@ type Producto struct {
 	Fotos           []string        `json:"fotos"`
 	Opciones        []Opcion        `json:"opciones"`
 	Variantes       []Variante      `json:"variantes"`
+	// Tipo: null si todavía no se eligió (los productos de antes de 00071).
+	Tipo      *string           `json:"tipo"`
+	Atributos map[string]string `json:"atributos"`
 }
 
 // Validar revisa lo que se carga.
@@ -76,6 +82,14 @@ func (e Editable) Validar() error {
 		return errors.New("el precio mayorista tiene que ser menor que el precio")
 	}
 	return nil
+}
+
+// jsonONulo: un mapa nil va como NULL (el coalesce del UPDATE deja lo que había).
+func jsonONulo(m map[string]string) any {
+	if m == nil {
+		return nil
+	}
+	return m
 }
 
 func valor[T any](p *T, def T) T {
@@ -124,6 +138,10 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 			return "", err
 		}
 	}
+	tipo, atributos, err := limpiarTipo(e.Tipo, e.Atributos)
+	if err != nil {
+		return "", err
+	}
 	opciones, fotos := []Opcion{}, []string{}
 	var antes antesProducto
 	if id != "" {
@@ -171,10 +189,13 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 		if e.PrecioMayorista != nil && *e.PrecioMayorista > 0 && !e.SinPrecios {
 			mayor = e.PrecioMayorista
 		}
-		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones, precio_mayorista)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+		if atributos == nil {
+			atributos = map[string]string{}
+		}
+		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones, precio_mayorista, tipo, atributos)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
 			tiendaID, strings.TrimSpace(e.Nombre), valor(e.Descripcion, ""), e.Categoria, e.Precio, valor(e.Costo, 0),
-			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones, mayor).Scan(&id); err != nil {
+			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones, mayor, tipo, atributos).Scan(&id); err != nil {
 			return "", err
 		}
 		nombre := strings.TrimSpace(e.Nombre)
@@ -187,10 +208,11 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 			categoria = $5, precio = CASE WHEN $14 THEN precio ELSE $6 END,
 			costo = CASE WHEN $14 THEN costo ELSE coalesce($7, costo) END, sku = coalesce($8, sku),
 			stock = coalesce($9, stock), foto = $10, canales = $11, publicado = true, fotos = $12, opciones = $13,
-			precio_mayorista = CASE WHEN $14 OR $15::bigint IS NULL THEN precio_mayorista ELSE nullif($15::bigint, 0) END
+			precio_mayorista = CASE WHEN $14 OR $15::bigint IS NULL THEN precio_mayorista ELSE nullif($15::bigint, 0) END,
+			tipo = coalesce($16, tipo), atributos = coalesce($17, atributos)
 		WHERE tienda_id = $1 AND id::text = $2`,
 		tiendaID, id, strings.TrimSpace(e.Nombre), e.Descripcion, e.Categoria, e.Precio, e.Costo, e.SKU, stock, foto, canales,
-		fotos, opciones, e.SinPrecios, e.PrecioMayorista); err != nil {
+		fotos, opciones, e.SinPrecios, e.PrecioMayorista, tipo, jsonONulo(atributos)); err != nil {
 		return "", err
 	} else if err := registrarEdicion(ctx, t, tiendaID, id, antes, e, len(opciones) == 0); err != nil {
 		return "", err
@@ -202,7 +224,7 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 		return id, nil
 	}
 	// El trigger suma con cada cambio de variante; esto cubre el caso de opciones nuevas sin cambios.
-	_, err := t.Exec(ctx, `UPDATE productos SET stock = (SELECT coalesce(sum(stock), 0) FROM variantes
+	_, err = t.Exec(ctx, `UPDATE productos SET stock = (SELECT coalesce(sum(stock), 0) FROM variantes
 			WHERE tienda_id = $1 AND producto_id::text = $2 AND activa)
 		WHERE tienda_id = $1 AND id::text = $2`, tiendaID, id)
 	return id, err
@@ -260,7 +282,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 			return err
 		}
 		filas, err := t.Query(ctx, `SELECT id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, publicado, fotos, opciones, slug,
-				precio_mayorista
+				precio_mayorista, tipo, atributos
 			FROM productos WHERE tienda_id = $1 ORDER BY creado_en DESC`, tiendaID)
 		if err != nil {
 			return err
@@ -268,7 +290,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 		for filas.Next() {
 			var p Producto
 			if err := filas.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Costo, &p.SKU, &p.Stock, &p.Foto, &p.Canales, &p.Publicado, &p.Fotos, &p.Opciones, &p.Slug,
-				&p.PrecioMayorista); err != nil {
+				&p.PrecioMayorista, &p.Tipo, &p.Atributos); err != nil {
 				return err
 			}
 			p.Variantes = porProducto[p.ID]

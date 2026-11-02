@@ -3723,6 +3723,15 @@ export interface components {
             canales?: {
                 [key: string]: boolean;
             };
+            /**
+             * @description Qué es: según el tipo el editor pide talle y color, contenido, peso y medidas… Sin mandar (o null): queda el que había. En la ficha, null: no se eligió
+             * @enum {string|null}
+             */
+            tipo?: "ropa" | "calzado" | "alimentos" | "belleza" | "hogar" | "tecnologia" | "otro" | null;
+            /** @description Los datos del tipo: peso (gramos), alto, ancho y largo (centímetros), contenido, material, marca, modelo, garantia. Textos de hasta 60 letras; los vacíos se descartan. Sin mandar: quedan los que había */
+            atributos?: {
+                [key: string]: string;
+            };
         };
         OpcionProducto: {
             nombre: string;

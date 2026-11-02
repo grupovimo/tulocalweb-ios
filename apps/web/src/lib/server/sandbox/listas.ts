@@ -7,6 +7,7 @@
 import type { components } from '@mostrador/contrato/esquema';
 import type { Demo, Pedido } from './demo.ts';
 import type { OpcionProducto } from '#lib/tienda/tipos.ts';
+import { adivinarTipo, type TipoProducto } from '#lib/tienda/tipo-producto.ts';
 import { stockTotal, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
 
 type ListaGenerica = components['schemas']['ListaGenerica'];
@@ -336,6 +337,9 @@ export type CambioProducto = {
 	precio?: number;
 	/** Precio mayorista (§49): null lo sacó; sin venir, el de ejemplo. */
 	precioMayorista?: number | null;
+	/** Qué es (00071) y sus datos: peso, medidas, contenido… */
+	tipo?: TipoProducto | null;
+	atributos?: Record<string, string>;
 	costo?: number;
 	sku?: string;
 	stock?: number;
@@ -366,6 +370,8 @@ export type RegProducto = {
 	precio: number;
 	/** Precio mayorista (§49); null: no tiene. */
 	precioMayorista: number | null;
+	tipo: TipoProducto | null;
+	atributos: Record<string, string>;
 	costo: number;
 	/** null: sin costo cargado. */
 	margen: number | null;
@@ -465,6 +471,8 @@ export function registrosProductos(
 			categoria: (c.categoria ?? p.categoria) || 'Sin categoría',
 			precio,
 			precioMayorista,
+			tipo: c.tipo !== undefined ? c.tipo : adivinarTipo(v.opciones),
+			atributos: c.atributos ?? {},
 			costo: c.costo ?? Math.round((precio * (1 - margen / 100)) / 10) * 10,
 			stock: v.opciones.length
 				? stockTotal(v.variantes)
@@ -489,6 +497,8 @@ export function registrosProductos(
 				categoria: c.categoria || 'Sin categoría',
 				precio: c.precio ?? 0,
 				precioMayorista: c.precioMayorista ?? null,
+				tipo: c.tipo ?? null,
+				atributos: c.atributos ?? {},
 				costo: c.costo ?? 0,
 				stock: v.opciones.length
 					? stockTotal(v.variantes)

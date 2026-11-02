@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { datosDe } from '#lib/server/datos/index.ts';
+import { CAMPOS, TIPOS, type Atributo } from '#lib/tienda/tipo-producto.ts';
 import { errorOpciones, errorVariantes, MAX_FOTOS, MAX_VARIANTES } from '#lib/tienda/variantes.ts';
 import type { RequestHandler } from './$types';
 
@@ -59,7 +60,24 @@ const Editable = v.object({
 			v.maxLength(MAX_VARIANTES)
 		)
 	),
-	canales: v.optional(v.record(v.picklist(['web', 'ml', 'ig', 'google']), v.boolean()))
+	canales: v.optional(v.record(v.picklist(['web', 'ml', 'ig', 'google']), v.boolean())),
+	// Qué es y sus datos (peso, medidas, contenido…): sin venir, quedan los que había.
+	tipo: v.optional(v.nullable(v.picklist(TIPOS.map((t) => t.id)))),
+	atributos: v.optional(
+		v.pipe(
+			v.record(
+				v.picklist(Object.keys(CAMPOS) as Atributo[]),
+				v.pipe(v.string(), v.trim(), v.maxLength(60, 'Cada dato puede tener hasta 60 letras.'))
+			),
+			v.check(
+				(a) =>
+					Object.entries(a).every(
+						([k, x]) => !x || !CAMPOS[k as Atributo].numero || /^[1-9]\d{0,7}$/.test(x)
+					),
+				'El peso y las medidas van en números enteros (gramos y centímetros).'
+			)
+		)
+	)
 });
 
 /** La ficha del producto (el editor). */
