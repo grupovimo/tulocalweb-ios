@@ -36,3 +36,11 @@ jobs:
             | tee compilar.log | xcbeautify --renderer github-actions
       - if: failure()
         run: grep -E 'error:' compilar.log | sort -u | head -60
+      - name: Probar
+        run: |
+          set -o pipefail
+          xcodebuild test -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO \
+            | tee probar.log | xcbeautify --renderer github-actions
+      - if: failure()
+        run: grep -E -B2 -A30 'Fatal error|crashed|Thread 0 Crashed|error:' probar.log | head -150
