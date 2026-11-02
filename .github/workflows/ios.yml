@@ -39,8 +39,10 @@ jobs:
       - name: Probar
         run: |
           set -o pipefail
-          xcodebuild test -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO \
+          # En Release, como lo que llega a TestFlight (optimizado), con testability para @testable.
+          xcodebuild test -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Release \
+            -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO ENABLE_TESTABILITY=YES \
+            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
             | tee probar.log | xcbeautify --renderer github-actions
       - if: failure()
         run: grep -E -B2 -A30 'Fatal error|crashed|Thread 0 Crashed|error:' probar.log | head -150
