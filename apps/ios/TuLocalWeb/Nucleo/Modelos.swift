@@ -37,6 +37,8 @@ struct Acceso: Codable, Equatable {
         var nombre: String
         var slug: String
         var rol: String
+        /// El logo que se cargó en Mi tienda (foto subida o URL); nil: sus iniciales.
+        var logo: String?
 
         /// «almacen-lumbre.tulocalweb.com.ar».
         var direccion: String { "\(slug).tulocalweb.com.ar" }

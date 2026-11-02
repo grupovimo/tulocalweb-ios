@@ -133,7 +133,8 @@
 	}
 	.chico img {
 		border-radius: 9px;
-		object-fit: cover;
+		object-fit: contain;
+		background: var(--sf);
 		flex: none;
 	}
 	.sec {

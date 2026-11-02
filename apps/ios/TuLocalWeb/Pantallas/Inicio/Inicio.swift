@@ -71,8 +71,7 @@ struct Inicio: View {
                 }
                 .frame(width: 40, height: 40)
                 Button { nav.tocar(.mas) } label: {
-                    AvatarIniciales(nombre: estado.tienda?.nombre ?? "", tam: 40)
-                        .font(Estilo(tamano: 14, peso: .bold, relativo: .body).font)
+                    AvatarTienda(tienda: estado.tienda, tam: 40, radio: 20)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Tu tienda, \(estado.tienda?.nombre ?? "")")

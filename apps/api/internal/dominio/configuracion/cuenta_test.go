@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 	"net/url"
 	"testing"
 	"time"
@@ -124,10 +125,19 @@ func TestEquipo(t *testing.T) {
 		if err != nil || d.TiendaID != id || d.Rol != "ventas" {
 			t.Fatalf("sesión: %+v %v", d, err)
 		}
+		// El logo de Mi tienda viaja con las tiendas de la persona (la app lo muestra en vez de las iniciales).
+		dis := mitienda.Inicial()
+		dis.Logo = "https://tulocalweb.com.ar/f/fotos/logo.webp"
+		if err := mitienda.Guardar(ctx, b.App, leo.TiendaID, dis); err != nil {
+			t.Fatal(err)
+		}
 		a, err := s.AccesoDe(ctx, d)
 		if err != nil || len(a.Tiendas) != 2 || a.Tiendas[0].ID != leo.TiendaID || a.Tiendas[1].Rol != "ventas" ||
 			len(a.Permisos) != 4 {
 			t.Fatalf("acceso: %+v %v", a, err)
+		}
+		if a.Tiendas[0].Logo == nil || *a.Tiendas[0].Logo != dis.Logo || a.Tiendas[1].Logo != nil {
+			t.Fatalf("logo de las tiendas: %v %v", a.Tiendas[0].Logo, a.Tiendas[1].Logo)
 		}
 		if err := s.ElegirTienda(ctx, leo.Token, leo.TiendaID); err != nil {
 			t.Fatal(err)

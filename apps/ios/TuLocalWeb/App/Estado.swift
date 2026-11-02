@@ -117,6 +117,13 @@ final class Estado {
         Guardado.guardar(aa, clave: "acceso")
     }
 
+    /// Vuelve a pedir las tiendas de la persona (por ejemplo, después de cambiar el logo en Mi tienda).
+    func refrescarAcceso() async {
+        guard let a: Acceso = try? await api.get("/v1/auth/tiendas") else { return }
+        acceso = a
+        Guardado.guardar(a, clave: "acceso")
+    }
+
     func cargarProveedores() async {
         if proveedores != nil { return }
         proveedores = try? await api.get("/v1/auth/proveedores")

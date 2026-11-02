@@ -23,7 +23,7 @@ final class ApiFalsa: URLProtocol {
 /// (en la Mac no se usa el simulador).
 @MainActor
 final class PantallasTests: XCTestCase {
-    static let tienda = Acceso.Tienda(id: "t1", nombre: "Almacén Lumbre", slug: "almacen-lumbre", rol: "owner")
+    static let tienda = Acceso.Tienda(id: "t1", nombre: "Almacén Lumbre", slug: "almacen-lumbre", rol: "owner", logo: "https://api.prueba/logo.png")
 
     override func setUp() {
         let c = "{\"actual\": 12, \"anterior\": 4}"

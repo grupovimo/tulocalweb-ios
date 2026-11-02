@@ -90,7 +90,7 @@ struct Mas: View {
                 if (estado.acceso?.tiendas.count ?? 0) > 1 { cambiarTienda = true }
             } label: {
                 HStack(spacing: 12) {
-                    AvatarIniciales(nombre: t.nombre, tam: 50, radio: 14)
+                    AvatarTienda(tienda: t, tam: 50, radio: 14)
                         .font(Estilo(tamano: 17, peso: .bold, relativo: .body).font)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t.nombre).estilo(.nombreTienda).foregroundStyle(C.texto).lineLimit(1)

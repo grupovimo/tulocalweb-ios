@@ -494,6 +494,32 @@ struct AvatarIniciales: View {
     }
 }
 
+/// La tienda: su logo de Mi tienda (entero, sobre blanco) o, si no cargó uno, sus iniciales.
+struct AvatarTienda: View {
+    var tienda: Acceso.Tienda?
+    var tam: CGFloat = 40
+    var radio: CGFloat = 12
+    var fondo: Color = C.crema
+    var tinta: Color = C.primarioTexto
+    var body: some View {
+        if let u = urlDeFoto(tienda?.logo, ancho: Int(tam * 3)) {
+            AsyncImage(url: u) { fase in
+                if let img = fase.image {
+                    img.resizable().scaledToFit().padding(tam * 0.08)
+                } else {
+                    AvatarIniciales(nombre: tienda?.nombre ?? "", tam: tam, radio: radio, fondo: fondo, tinta: tinta)
+                }
+            }
+            .frame(width: tam, height: tam)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: radio, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: radio, style: .continuous).strokeBorder(C.linea2, lineWidth: 1))
+            .accessibilityHidden(true)
+        } else {
+            AvatarIniciales(nombre: tienda?.nombre ?? "", tam: tam, radio: radio, fondo: fondo, tinta: tinta)
+        }
+    }
+}
+
 /// Colores del avatar de una tienda o clienta, estables por nombre (como 1d: crema, verde, neutro).
 func coloresAvatar(_ nombre: String) -> (Color, Color) {
     let paleta: [(Color, Color)] = [(C.crema, C.primarioTexto), (Color.tema(0xE7EFE9, 0x3FA877, alfaOscuro: 0.18), C.okTinta),

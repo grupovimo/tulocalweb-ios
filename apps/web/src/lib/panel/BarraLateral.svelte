@@ -340,7 +340,9 @@
 	}
 	.tienda img {
 		border-radius: 10px;
-		object-fit: cover;
+		/* Un logo no se recorta: entra entero sobre la superficie. */
+		object-fit: contain;
+		background: var(--sf);
 		flex: none;
 	}
 	.t-txt {

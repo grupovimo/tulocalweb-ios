@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
@@ -66,6 +66,9 @@
 	// La tienda pública, para abrirla (la dirección viene sin protocolo).
 	const enlace = $derived(data.direccion.replace(/^[^/]+/, ''));
 
+	// El logo que muestra la barra del panel: al guardarse otro, se recarga el armazón.
+	// svelte-ignore state_referenced_locally -- el de la carga; después lo lleva el guardado
+	let logoDelPanel = data.diseno.logo ?? '';
 	// Los guardados van en fila: si dos salen juntos, el último en llegar tiene que ser el último hecho.
 	let fila = Promise.resolve();
 	function guardar() {
@@ -88,8 +91,14 @@
 				headers: { 'content-type': 'application/json' },
 				body: cuerpo
 			});
-			if (r.ok) vuelta++;
-			else
+			if (r.ok) {
+				vuelta++;
+				// El logo nuevo se ve enseguida en la barra del panel (en vez de las iniciales).
+				if (logo !== logoDelPanel) {
+					logoDelPanel = logo;
+					void invalidate('tienda:armazon');
+				}
+			} else
 				ui.toast({
 					k: 'err',
 					title: 'No se guardó el cambio',

@@ -375,7 +375,7 @@ struct TarjetaTiendaOnline: View {
         if let t = estado.tienda {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 12) {
-                    AvatarIniciales(nombre: t.nombre, tam: 44, radio: 13)
+                    AvatarTienda(tienda: t, tam: 44, radio: 13)
                         .font(Estilo(tamano: 15, peso: .bold, relativo: .body).font)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {

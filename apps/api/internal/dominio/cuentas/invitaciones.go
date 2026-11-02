@@ -222,6 +222,8 @@ type TiendaDeLaPersona struct {
 	Nombre string `json:"nombre"`
 	Slug   string `json:"slug"`
 	Rol    string `json:"rol"`
+	// Logo: el que se cargó en Mi tienda (foto subida o URL); null si no tiene.
+	Logo *string `json:"logo"`
 }
 
 // Acceso: la tienda que se ve, el rol con sus permisos y todas las tiendas de la persona.
@@ -239,14 +241,14 @@ func (s *Servicio) AccesoDe(ctx context.Context, d Datos) (Acceso, error) {
 	if d.IA != "" || d.Mirada {
 		return a, nil
 	}
-	filas, err := s.Pool.Query(ctx, `SELECT id::text, nombre, slug, rol FROM app.tiendas_de_usuario($1)`, d.Usuario.ID)
+	filas, err := s.Pool.Query(ctx, `SELECT id::text, nombre, slug, rol, logo FROM app.tiendas_de_usuario($1)`, d.Usuario.ID)
 	if err != nil {
 		return a, err
 	}
 	defer filas.Close()
 	for filas.Next() {
 		var t TiendaDeLaPersona
-		if err := filas.Scan(&t.ID, &t.Nombre, &t.Slug, &t.Rol); err != nil {
+		if err := filas.Scan(&t.ID, &t.Nombre, &t.Slug, &t.Rol, &t.Logo); err != nil {
 			return a, err
 		}
 		a.Tiendas = append(a.Tiendas, t)

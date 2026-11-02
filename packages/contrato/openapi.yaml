@@ -5589,6 +5589,7 @@ components:
               nombre: { type: string }
               slug: { type: string }
               rol: { type: string, enum: [duenio, admin, ventas, local] }
+              logo: { type: [string, 'null'], description: 'El logo de Mi tienda (el del borrador o, si no, el publicado): foto subida o URL. Se muestra en vez de las iniciales' }
     Invitacion:
       type: object
       required: [tienda, rol, email, invita, vence, tieneCuenta]

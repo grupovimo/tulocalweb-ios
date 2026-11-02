@@ -5342,6 +5342,8 @@ export interface components {
                 slug: string;
                 /** @enum {string} */
                 rol: "duenio" | "admin" | "ventas" | "local";
+                /** @description El logo de Mi tienda (el del borrador o, si no, el publicado): foto subida o URL. Se muestra en vez de las iniciales */
+                logo?: string | null;
             }[];
         };
         Invitacion: {

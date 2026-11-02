@@ -2,7 +2,11 @@ import { env } from 'cloudflare:workers';
 import { datosDe, usaSandbox } from '#lib/server/datos/index.ts';
 import { plantilla } from '#lib/plantillas.ts';
 import type { PaginaNotificaciones } from '#lib/server/datos/tipos.ts';
+import { unsplash } from '#lib/landing/formato.ts';
 import type { LayoutServerLoad } from './$types';
+
+/** El logo de Mi tienda (una foto subida, que es una URL, o un id de Unsplash), listo para un <img>. */
+const logoTienda = (logo: string | null | undefined) => (logo ? unsplash(logo, 120) : null);
 
 /**
  * El armazón del panel: la tienda, el resumen (insignias, notificaciones, prueba) y las preferencias
@@ -29,9 +33,11 @@ export const load: LayoutServerLoad = async ({ locals, cookies, depends }) => {
 		resumen,
 		notificaciones,
 		acceso,
-		// En la demo, la portada de su plantilla; una tienda real no tiene foto propia todavía, así que
-		// van sus iniciales y no la foto de stock de la plantilla.
-		fotoTienda: usaSandbox() ? (plantilla(tienda.plantilla)?.img ?? null) : null,
+		// El logo que se cargó en Mi tienda; sin logo, sus iniciales (nunca la foto de stock de la
+		// plantilla). En la demo, la portada de su plantilla.
+		fotoTienda: usaSandbox()
+			? (plantilla(tienda.plantilla)?.img ?? null)
+			: logoTienda(acceso.tiendas.find((t) => t.id === acceso.tiendaId)?.logo),
 		demo: usaSandbox(),
 		// Alguien del equipo de Tu Local Web viendo la tienda en sólo lectura (aviso fijo).
 		mirada: locals.mirada,

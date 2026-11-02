@@ -349,7 +349,7 @@ struct ElegirTienda: View {
             Haptico.seleccion()
         } label: {
             HStack(spacing: 14) {
-                AvatarIniciales(nombre: t.nombre, tam: 46, radio: 13, fondo: fondo, tinta: tinta)
+                AvatarTienda(tienda: t, tam: 46, radio: 13, fondo: fondo, tinta: tinta)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t.nombre).estilo(.headline).foregroundStyle(C.texto)
                     Text("\(t.direccion) · \(nombreDelRol(t.rol))").estilo(.texto14).foregroundStyle(C.texto2).lineLimit(1)

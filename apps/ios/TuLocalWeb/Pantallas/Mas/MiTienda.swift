@@ -249,6 +249,8 @@ struct MiTiendaEditor: View {
         d["secciones"] = .lista(secciones.map { .objeto(["id": .texto($0.id), "visible": .booleano($0.visible)]) })
         do {
             try await estado.api.hacer("PUT", "/v1/panel/mi-tienda", ValorJSON.objeto(d))
+            // El logo nuevo se ve enseguida en Inicio y en Más (en vez de las iniciales).
+            if d["logo"]?.texto != estado.tienda?.logo { Task { await estado.refrescarAcceso() } }
             diseno = d
             if publicar {
                 try await estado.api.hacer("POST", "/v1/panel/mi-tienda/publicar")
