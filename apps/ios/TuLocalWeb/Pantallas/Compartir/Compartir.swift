@@ -295,9 +295,8 @@ struct HojaHistoria: View {
 
     private func armar() async {
         if let v: ValorJSON = try? await estado.api.get("/v1/panel/mi-tienda"), case let .objeto(d)? = v["diseno"] {
-            async let p = bajar(d["portada"]?.texto)
-            async let l = bajar(d["logo"]?.texto)
-            (portada, logo) = await (p, l)
+            portada = await bajar(d["portada"]?.texto)
+            logo = await bajar(d["logo"]?.texto)
         }
         let r = ImageRenderer(content: TarjetaHistoria(tienda: tienda, portada: portada, logo: logo))
         r.scale = 3

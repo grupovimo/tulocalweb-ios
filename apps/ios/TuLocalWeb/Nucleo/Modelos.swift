@@ -41,7 +41,7 @@ struct Acceso: Codable, Equatable {
         /// «almacen-lumbre.tulocalweb.com.ar».
         var direccion: String { "\(slug).tulocalweb.com.ar" }
         /// El link de la tienda, para copiar y compartir.
-        var url: URL { URL(string: "https://\(direccion)")! }
+        var url: URL { URL(string: "https://\(direccion)") ?? URL(string: "https://tulocalweb.com.ar")! }
         /// El link de un producto (la tienda acepta el id y redirige al slug).
         func url(producto: String) -> URL {
             url.appendingPathComponent("producto").appendingPathComponent(producto)

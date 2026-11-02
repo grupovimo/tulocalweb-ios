@@ -829,10 +829,11 @@ struct Integraciones: View {
 
     var body: some View {
         PantallaSeccion(titulo: "Integraciones", que: "las integraciones") { () async throws -> Datos in
-            async let mp: MP? = try? await estado.api.get("/v1/panel/integraciones/mercadopago")
-            async let ml: ML? = try? await estado.api.get("/v1/panel/integraciones/mercadolibre")
-            async let co: Correo? = try? await estado.api.get("/v1/panel/integraciones/correo")
-            return await Datos(mp: mp, ml: ml, correo: co)
+            // Sin `async let` en la carga de PantallaSeccion: en Release cerraba la app (ver Compartir).
+            let mp: MP? = try? await estado.api.get("/v1/panel/integraciones/mercadopago")
+            let ml: ML? = try? await estado.api.get("/v1/panel/integraciones/mercadolibre")
+            let co: Correo? = try? await estado.api.get("/v1/panel/integraciones/correo")
+            return Datos(mp: mp, ml: ml, correo: co)
         } contenido: { d, actualizar in
             let mp = d.mp?.conectada == true, ml = d.ml?.conectada == true, co = d.correo?.conectada == true
             let filas = [

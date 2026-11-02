@@ -28,9 +28,10 @@ struct Estadisticas: View {
 
     var body: some View {
         PantallaSeccion(titulo: "Estadísticas", que: "las estadísticas") { () async throws -> Datos in
-            async let t: Tablero = estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: periodo)])
-            async let i: Informes? = try? await estado.api.get("/v1/panel/informes")
-            return try await Datos(tablero: t, informes: i)
+            // Sin `async let` en la carga de PantallaSeccion: en Release cerraba la app (ver Compartir).
+            let t: Tablero = try await estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: periodo)])
+            let i: Informes? = try? await estado.api.get("/v1/panel/informes")
+            return Datos(tablero: t, informes: i)
         } contenido: { d, actualizar in
             Segmentado(opciones: [("hoy", "Hoy"), ("7d", "7 días"), ("30d", "30 días")], elegido: $periodo)
                 .onChange(of: periodo) { Task { await actualizar() } }

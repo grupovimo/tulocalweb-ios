@@ -49,6 +49,14 @@ final class PantallasTests: XCTestCase {
              "kpis": {"activos": 1, "usosMes": 0, "vendido": 0, "descontado": 0}}
             """,
             "/v1/panel/mi-tienda": "{\"diseno\": {\"portada\": null, \"logo\": null}}",
+            "/v1/panel/productos/p1": """
+            {"id": "p1", "nombre": "Mesa ratona", "descripcion": "", "categoria": null, "precio": 90000, "costo": 0,
+             "sku": "", "stock": 2, "foto": null, "fotos": [], "canales": {"web": true}, "publicado": true,
+             "vendidos30d": 0, "slug": "mesa-ratona", "tipo": "hogar", "atributos": {"peso": "8500", "alto": "45"},
+             "opciones": [{"nombre": "Color", "valores": ["Natural", "Negro"]}],
+             "variantes": [{"id": "v1", "valores": {"Color": "Natural"}, "sku": "", "precio": null, "stock": 1, "foto": null, "activa": true},
+                           {"id": "v2", "valores": {"Color": "Negro"}, "sku": "", "precio": null, "stock": 1, "foto": null, "activa": true}]}
+            """,
         ]
     }
 
@@ -73,6 +81,32 @@ final class PantallasTests: XCTestCase {
         ApiFalsa.respuestas["/v1/panel/cupones"] = nil
         montar(CompartirTienda())
     }
+    // Todas las pantallas de la app, en Release y con la API simulada (lo que no está, 404): un crash al abrirlas salta acá.
+    func testPantallaInicio() { montar(Inicio()) }
+    func testPantallaListaPedidos() { montar(ListaPedidos()) }
+    func testPantallaListaProductos() { montar(ListaProductos()) }
+    func testPantallaTinchoChat() { montar(TinchoChat()) }
+    func testPantallaMas() { montar(Mas()) }
+    func testPantallaDetallePedido() { montar(DetallePedido(numero: 1048)) }
+    func testPantallaAvisos() { montar(Avisos()) }
+    func testPantallaCuenta() { montar(Cuenta()) }
+    func testPantallaClientes() { montar(Clientes()) }
+    func testPantallaCajaDelDia() { montar(CajaDelDia()) }
+    func testPantallaCarritosAbandonados() { montar(CarritosAbandonados()) }
+    func testPantallaResenasYPreguntas() { montar(ResenasYPreguntas()) }
+    func testPantallaDevoluciones() { montar(Devoluciones()) }
+    func testPantallaCupones() { montar(Cupones()) }
+    func testPantallaFinanzas() { montar(Finanzas()) }
+    func testPantallaFacturacionArca() { montar(FacturacionArca()) }
+    func testPantallaPlanCuenta() { montar(PlanCuenta()) }
+    func testPantallaUsuariosYPermisos() { montar(UsuariosYPermisos()) }
+    func testPantallaEditorProductoExistente() { montar(EditorProducto(id: "p1")) }
+    func testPantallaPedidoManual() { montar(PedidoManual()) }
+    func testPantallaPreferenciasAvisos() { montar(PreferenciasAvisos()) }
+    func testPantallaNegocioCobro() { montar(NegocioCobro()) }
+    func testPantallaLinksPago() { montar(LinksPago()) }
+    func testPantallaCentroAyuda() { montar(CentroAyuda()) }
+    func testPantallaMiTiendaEditor() { montar(MiTiendaEditor()) }
     func testEstadisticas() { montar(Estadisticas()) }
     func testIntegraciones() { montar(Integraciones()) }
     func testHojaHistoria() { montar(HojaHistoria(tienda: Self.tienda)) }
