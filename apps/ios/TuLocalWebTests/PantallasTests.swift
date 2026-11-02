@@ -49,6 +49,22 @@ final class PantallasTests: XCTestCase {
              "kpis": {"activos": 1, "usosMes": 0, "vendido": 0, "descontado": 0}}
             """,
             "/v1/panel/mi-tienda": "{\"diseno\": {\"portada\": null, \"logo\": null}}",
+            "/v1/rubros": """
+            [{"id": "indumentaria", "nombre": "Indumentaria", "plantilla": "ceibo", "tienda": "Ceibo"},
+             {"id": "gastronomia", "nombre": "Gastronomía", "plantilla": "miga", "tienda": "Miga"}]
+            """,
+            "/v1/panel/onboarding": "{\"plantilla\": \"ceibo\", \"elecciones\": {\"rubro\": \"indumentaria\", \"pasoApp\": 2}, \"terminado\": false}",
+            "/v1/panel/importaciones/actual": """
+            {"id": "i1", "plataforma": "shopify", "urlOrigen": "https://x.myshopify.com", "estado": "corriendo", "etapa": "productos",
+             "progreso": {"productos": 12, "clientes": 0, "pedidos": 0, "redirecciones": 0, "repetidos": 1, "recortados": 0},
+             "errores": [], "creada": "2026-11-02T03:00:00Z", "terminada": null}
+            """,
+            "/v1/panel/telegram": "{\"vinculado\": false}",
+            "/v1/panel/integraciones/medicion": "{\"ga4\": \"G-ABC1234\", \"pixel\": null, \"feeds\": {\"gm\": true, \"meta\": false}}",
+            "/v1/panel/ia": """
+            {"permisos": {"leer": true, "escribir": true}, "conexiones": [{"id": "c1", "cliente": "Claude", "persona": "Nahuel",
+             "acciones": true, "creadaEn": "2026-11-01T10:00:00Z", "usadaEn": "2026-11-02T01:00:00Z"}]}
+            """,
             "/v1/panel/productos/p1": """
             {"id": "p1", "nombre": "Mesa ratona", "descripcion": "", "categoria": null, "precio": 90000, "costo": 0,
              "sku": "", "stock": 2, "foto": null, "fotos": [], "canales": {"web": true}, "publicado": true,
@@ -107,6 +123,12 @@ final class PantallasTests: XCTestCase {
     func testPantallaLinksPago() { montar(LinksPago()) }
     func testPantallaCentroAyuda() { montar(CentroAyuda()) }
     func testPantallaMiTiendaEditor() { montar(MiTiendaEditor()) }
+    func testOnboarding() { montar(Onboarding()) }
+    func testCrearTienda() { montar(CrearTienda()) }
+    func testImportarTienda() { montar(ImportarTienda()) }
+    func testTelegram() { montar(TelegramTincho()) }
+    func testMedicion() { montar(MedicionTienda()) }
+    func testIAConectadas() { montar(IAConectadas()) }
     func testEstadisticas() { montar(Estadisticas()) }
     func testIntegraciones() { montar(Integraciones()) }
     func testHojaHistoria() { montar(HojaHistoria(tienda: Self.tienda)) }

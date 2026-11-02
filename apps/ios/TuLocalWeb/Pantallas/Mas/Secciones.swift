@@ -874,10 +874,39 @@ struct Integraciones: View {
             }
             Color.clear.frame(height: 0)
                 .sheet(isPresented: $correo) { HojaCorreo { await actualizar() }.hojaTLW([.large]) }
+            EtiquetaSeccion(texto: "Más integraciones").padding(.horizontal, 4).padding(.top, 8)
+            VStack(spacing: 0) {
+                ForEach(Array(Integraciones.otras.enumerated()), id: \.element.destino) { i, o in
+                    if i > 0 { Separador() }
+                    NavigationLink(value: o.destino) {
+                        HStack(spacing: 12) {
+                            Image(systemName: o.simbolo).font(.system(size: 15, weight: .semibold)).foregroundStyle(C.primarioTexto)
+                                .frame(width: 34, height: 34).background(C.crema, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(o.nombre).estilo(.fila).foregroundStyle(C.texto)
+                                Text(o.detalle).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                            Chevron(ancho: 8)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .tarjeta()
         }
     }
 
     struct FilaIntegracion: Identifiable { var id: String; var nombre: String; var detalle: String; var conectada: Bool; var alerta: Bool }
+
+    /// Las que tienen su pantalla: Telegram, medición y las IA.
+    static let otras: [(destino: Destino, nombre: String, detalle: String, simbolo: String)] = [
+        (.telegram, "Tincho en Telegram", "Avisos de ventas y consultas por chat", "paperplane"),
+        (.medicion, "Google y Meta", "Analytics, píxel y catálogo de productos", "chart.xyaxis.line"),
+        (.ia, "Tu IA (Claude, ChatGPT)", "Manejá la tienda desde tu asistente", "sparkles"),
+    ]
 }
 
 // MARK: - Usuarios y permisos

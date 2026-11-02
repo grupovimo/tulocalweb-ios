@@ -21,6 +21,7 @@ struct Mas: View {
                     Fila(texto: "Compartí tu tienda", simbolo: "square.and.arrow.up", destino: .compartir),
                     Fila(texto: "Editar mi tienda", simbolo: "paintbrush.pointed", destino: .miTienda, permiso: "cuenta"),
                     Fila(texto: "Estadísticas", simbolo: "chart.bar.xaxis", destino: .estadisticas, permiso: "pedidos"),
+                    Fila(texto: "Traer mi tienda de otra plataforma", simbolo: "arrow.down.doc", destino: .importar, permiso: "catalogo"),
                 ])
                 grupo("Ventas y clientes", tono: (C.pista, C.primarioTexto), filas: [
                     Fila(texto: "Clientes", simbolo: "person.2", destino: .clientes, permiso: "clientes"),

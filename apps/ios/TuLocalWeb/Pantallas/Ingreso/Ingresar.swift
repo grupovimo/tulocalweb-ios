@@ -22,7 +22,6 @@ struct Splash: View {
 struct Ingresar: View {
     var fondoDeSelector = false
     @Environment(Estado.self) private var estado
-    @Environment(\.openURL) private var abrir
     @State private var email = ""
     @State private var clave = ""
     @State private var mostrar = false
@@ -30,6 +29,7 @@ struct Ingresar: View {
     @State private var errorEmail: String?
     @State private var cargando = false
     @State private var bloqueadoHasta: Date?
+    @State private var crear = false
     @FocusState private var foco: CampoIngreso?
 
     enum CampoIngreso { case email, clave }
@@ -151,16 +151,18 @@ struct Ingresar: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            (Text("¿Todavía no tenés tienda? ").foregroundColor(C.texto2)
-                + Text("Creala en la web").foregroundColor(C.primarioTexto).fontWeight(.semibold))
-                .estilo(.texto14)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 8)
-                .background(C.fondo)
-                .onTapGesture { abrir(URL(string: "https://tulocalweb.com.ar/empezar")!) }
-                .accessibilityAddTraits(.isLink)
+            Button { crear = true } label: {
+                (Text("¿Todavía no tenés tienda? ").foregroundColor(C.texto2)
+                    + Text("Creala gratis").foregroundColor(C.primarioTexto).fontWeight(.semibold))
+                    .estilo(.texto14)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 4)
+            .background(C.fondo)
         }
+        .sheet(isPresented: $crear) { CrearTienda().hojaTLW([.large]) }
     }
 
     private func entrar() async {

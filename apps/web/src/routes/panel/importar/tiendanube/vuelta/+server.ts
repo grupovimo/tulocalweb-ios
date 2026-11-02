@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { datosDe } from '#lib/server/datos/index.ts';
+import { datosDe, usaSandbox } from '#lib/server/datos/index.ts';
 import type { RequestHandler } from './$types';
 
 /**
@@ -11,6 +11,13 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const codigo = url.searchParams.get('code') ?? '';
 	const estado = url.searchParams.get('state') ?? '';
+	// Sin sesión de la web: la importación la arrancó la app de iPhone (que no comparte la cookie). Se
+	// le devuelve el código a la app, que lo canjea con su token (como Mercado Pago y Mercado Libre).
+	if (!locals.token && !usaSandbox() && codigo && estado)
+		redirect(
+			303,
+			`ar.com.tulocalweb.app://importar/tiendanube?code=${encodeURIComponent(codigo)}&state=${encodeURIComponent(estado)}`
+		);
 	const r =
 		url.searchParams.has('error') || !codigo || !estado
 			? 'cancelada'

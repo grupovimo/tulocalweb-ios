@@ -48,6 +48,32 @@ final class ConectarCuenta: NSObject, ASWebAuthenticationPresentationContextProv
         } catch { return await yaConectada() }
     }
 
+    /// Traer la tienda de Tiendanube: su login; la web devuelve el código a la app
+    /// (ar.com.tulocalweb.app://importar/tiendanube) y la app lo canjea, lo que arranca la importación.
+    func importarTiendanube(api: Api) async -> Bool {
+        struct U: Decodable { var url: String }
+        guard let u: U = try? await api.enviar("POST", "/v1/panel/importaciones/tiendanube/conectar", [String: String]()),
+              let url = URL(string: u.url) else { return false }
+        let vuelta: URL? = await withCheckedContinuation { cont in
+            let s = ASWebAuthenticationSession(url: url, callbackURLScheme: "ar.com.tulocalweb.app") { v, _ in cont.resume(returning: v) }
+            s.presentationContextProvider = self
+            s.prefersEphemeralWebBrowserSession = true
+            sesion = s
+            s.start()
+        }
+        sesion = nil
+        // Si la vuelta no llegó a la app pero la importación arrancó igual, es un éxito.
+        func arranco() async -> Bool { (try? await api.get("/v1/panel/importaciones/actual") as Importacion)?.enCurso ?? false }
+        guard let vuelta, let c = URLComponents(url: vuelta, resolvingAgainstBaseURL: false),
+              let codigo = c.queryItems?.first(where: { $0.name == "code" })?.value,
+              let estado = c.queryItems?.first(where: { $0.name == "state" })?.value else { return await arranco() }
+        struct V: Encodable { var codigo: String; var estado: String }
+        do {
+            let _: Importacion = try await api.enviar("POST", "/v1/panel/importaciones/tiendanube/vuelta", V(codigo: codigo, estado: estado))
+            return true
+        } catch { return await arranco() }
+    }
+
     /// Abre una página de pago (la suscripción al plan) y vuelve cuando se cierra.
     func abrir(_ url: URL) async {
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
@@ -74,7 +100,7 @@ struct CampoTexto: View {
                 if seguro { SecureField(titulo, text: $texto) } else { TextField(titulo, text: $texto) }
             }
             .keyboardType(teclado)
-            .textInputAutocapitalization(teclado == .emailAddress ? .never : .sentences)
+            .textInputAutocapitalization(teclado == .emailAddress || teclado == .URL ? .never : .sentences)
             .autocorrectionDisabled(teclado != .default)
             .estilo(.body16).foregroundStyle(C.texto)
             .padding(.horizontal, 14).padding(.vertical, 12)

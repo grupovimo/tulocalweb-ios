@@ -61,6 +61,9 @@ struct Raiz: View {
             case .permisos:
                 Permisos()
                     .transition(.opacity)
+            case .onboarding:
+                Onboarding()
+                    .transition(.opacity)
             case .adentro:
                 Principal()
                     .transition(.opacity)

@@ -44,6 +44,8 @@ final class Estado {
         case afuera
         case eligiendoTienda
         case permisos
+        /// La tienda recién creada: el onboarding (tu negocio, traer tu tienda, plantilla, cobros).
+        case onboarding
         case adentro
     }
 
@@ -67,6 +69,12 @@ final class Estado {
     var permisosVistos: Bool {
         get { UserDefaults.standard.bool(forKey: "permisosVistos") }
         set { UserDefaults.standard.set(newValue, forKey: "permisosVistos") }
+    }
+    /// Una cuenta creada desde la app (o nueva con Apple/Google) que todavía no terminó el onboarding.
+    /// Sólo así se muestra: a quien ya usaba la tienda no se le pide de nuevo.
+    var onboardingPendiente: Bool {
+        get { UserDefaults.standard.bool(forKey: "onboardingPendiente") }
+        set { UserDefaults.standard.set(newValue, forKey: "onboardingPendiente") }
     }
     /// Entrar con Face ID (1g, y en Perfil, seguridad y tema).
     var conFaceID: Bool {
@@ -92,6 +100,11 @@ final class Estado {
         do {
             try await cargarSesion()
             if conFaceID { bloqueada = true }
+            // Se cerró la app a mitad del onboarding: se retoma.
+            if onboardingPendiente && acceso?.rol == "duenio" {
+                fase = .onboarding
+                return
+            }
             fase = .adentro
             await refrescarResumen()
             await pedirTokenPushSiCorresponde()
@@ -155,6 +168,15 @@ final class Estado {
     private func canjearClerk(_ jwt: String) async throws {
         struct Cuerpo: Encodable { var token: String }
         let s: SesionNueva = try await api.enviar("POST", "/v1/auth/clerk", Cuerpo(token: jwt))
+        if s.nueva == true { onboardingPendiente = true }
+        try await entrar(s)
+    }
+
+    /// Crear la cuenta y la tienda desde la app (POST /v1/auth/registro); sigue el onboarding.
+    func registrar(nombre: String, tienda: String, email: String, clave: String) async throws {
+        struct Cuerpo: Encodable { var nombre: String; var tienda: String; var email: String; var clave: String }
+        let s: SesionNueva = try await api.enviar("POST", "/v1/auth/registro", Cuerpo(nombre: nombre, tienda: tienda, email: email, clave: clave))
+        onboardingPendiente = true
         try await entrar(s)
     }
 
@@ -171,6 +193,23 @@ final class Estado {
     }
 
     func seguirDespuesDeElegir() {
+        if onboardingPendiente && acceso?.rol == "duenio" {
+            fase = .onboarding
+        } else if permisosVistos {
+            fase = .adentro
+            Task {
+                await refrescarResumen()
+                await pedirTokenPushSiCorresponde()
+            }
+        } else {
+            fase = .permisos
+        }
+    }
+
+    /// Fin del onboarding (o «lo hago después»): sigue a los permisos o al panel.
+    func terminarOnboarding() {
+        onboardingPendiente = false
+        version += 1
         if permisosVistos {
             fase = .adentro
             Task {
@@ -209,7 +248,7 @@ final class Estado {
     }
 
     private func sesionPerdida() {
-        guard fase == .adentro || fase == .eligiendoTienda || fase == .permisos else { return }
+        guard fase == .adentro || fase == .eligiendoTienda || fase == .permisos || fase == .onboarding else { return }
         olvidarSesion()
         fase = .afuera
         avisar("Tu sesión venció. Entrá de nuevo.", ok: false)
@@ -218,6 +257,7 @@ final class Estado {
     private func olvidarSesion() {
         Llavero.borrar("token")
         api.token = nil
+        onboardingPendiente = false
         ActividadEnApp.terminarTodo()
         datos = nil
         acceso = nil
