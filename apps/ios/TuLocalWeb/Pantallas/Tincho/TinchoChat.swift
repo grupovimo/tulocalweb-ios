@@ -62,7 +62,21 @@ struct TinchoChat: View {
         .task {
             guard !saludado else { return }
             saludado = true
-            preguntar("¿Cómo vengo hoy?", oculta: true)
+            if let p = nav.preguntaTincho {
+                nav.preguntaTincho = nil
+                preguntar(p)
+            } else {
+                preguntar("¿Cómo vengo hoy?", oculta: true)
+            }
+        }
+        .onChange(of: nav.preguntaTincho) { _, p in
+            guard let p else { return }
+            nav.preguntaTincho = nil
+            if escribiendo {
+                Task { while escribiendo { try? await Task.sleep(for: .milliseconds(200)) }; preguntar(p) }
+            } else {
+                preguntar(p)
+            }
         }
     }
 

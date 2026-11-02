@@ -19,6 +19,8 @@ struct ListaPedidos: View {
         var filas: [PedidoFila]
         var total: Int
         var etapas: [String: Int]
+        /// La suma en pesos de los pedidos del filtro (0 si el rol no ve montos).
+        var suma = 0
     }
 
     private static let etapas: [(String?, String)] = [
@@ -34,6 +36,8 @@ struct ListaPedidos: View {
                     BannerSinConexion(guardado: guardadoEn).padding(.horizontal, 16).padding(.top, 2).padding(.bottom, 8)
                 }
                 EncabezadoGrande(titulo: "Pedidos") {
+                    BotonRedondo(simbolo: "magnifyingglass", etiqueta: "Buscar") { nav.buscar = true }
+                        .frame(width: 40, height: 40)
                     Menu {
                         Picker("Orden", selection: $orden) {
                             Text("Más nuevos primero").tag("nuevos")
@@ -52,6 +56,18 @@ struct ListaPedidos: View {
                 }
                 .padding(.top, 4)
                 .margenPantalla()
+                if let d = carga.valor {
+                    resumen(d).padding(.top, 2).margenPantalla()
+                    let e = d.etapas
+                    TiraEstados(estados: [
+                        .init(titulo: "Sin pagar", numero: e["Sin pagar"] ?? 0, color: C.aviso, filtro: "Sin pagar"),
+                        .init(titulo: "Para preparar", numero: e["Para preparar"] ?? 0, color: C.acento, filtro: "Para preparar"),
+                        .init(titulo: "Listo para despachar", numero: e["Listo para despachar"] ?? 0, color: Color(hex: 0xC9962C), filtro: "Listo para despachar"),
+                        .init(titulo: "En camino", numero: e["En camino"] ?? 0, color: Color(hex: 0x4A7FB5), filtro: "En camino"),
+                        .init(titulo: "Entregados", numero: e["Entregado"] ?? 0, color: C.ok, filtro: "Entregado"),
+                    ], elegido: filtro) { filtro = $0 }
+                    .padding(.top, 12)
+                }
                 Buscador(placeholder: "Número, cliente o producto", texto: $busqueda)
                     .padding(.top, 12).margenPantalla()
                 chips.padding(.top, 12)
@@ -96,6 +112,16 @@ struct ListaPedidos: View {
     }
 
     // MARK: Chips
+
+    /// «12 pedidos · $ 340.000 · ticket promedio $ 28.300».
+    @ViewBuilder
+    private func resumen(_ d: Datos) -> some View {
+        let total = d.etapas.values.reduce(0, +)
+        let suma = d.suma > 0 ? d.suma : nil
+        (Text("\(Formato.numero(total))").fontWeight(.bold) + Text(total == 1 ? " pedido" : " pedidos")
+            + Text(suma.map { s in " · \(Formato.pesos(s))" + (total > 0 ? " · ticket promedio \(Formato.pesos(s / max(1, total)))" : "") } ?? ""))
+            .estilo(.subhead).foregroundStyle(C.texto2)
+    }
 
     private var chips: some View {
         let etapas = carga.valor?.etapas ?? [:]
@@ -226,7 +252,7 @@ struct ListaPedidos: View {
     private func cargar() async {
         do {
             let l: PaginaPedidos = try await estado.api.get("/v1/panel/pedidos", query: query(desde: 0))
-            carga = .listo(Datos(filas: l.filas, total: l.total, etapas: l.etapas))
+            carga = .listo(Datos(filas: l.filas, total: l.total, etapas: l.etapas, suma: l.suma))
             guardadoEn = nil
             if busqueda.isEmpty { Guardado.guardar(l, clave: clave) }
         } catch is CancellationError {

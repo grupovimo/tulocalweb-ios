@@ -30,6 +30,8 @@ struct ListaProductos: View {
                     BannerSinConexion(guardado: guardadoEn).padding(.horizontal, 16).padding(.top, 2)
                 }
                 EncabezadoGrande(titulo: "Productos") {
+                    BotonRedondo(simbolo: "magnifyingglass", etiqueta: "Buscar") { nav.buscar = true }
+                        .frame(width: 40, height: 40)
                     BotonRedondo(simbolo: "barcode.viewfinder", etiqueta: "Escanear un código") {
                         nav.productos.append(.inventario)
                     }
@@ -37,6 +39,30 @@ struct ListaProductos: View {
                 }
                 .padding(.top, 8)
                 .margenPantalla()
+                if estado.puede("catalogo") {
+                    HStack(spacing: 8) {
+                        Button { nav.productos.append(.nuevoProducto(nil)) } label: {
+                            Label("Nuevo producto", systemImage: "plus").estilo(.subheadFuerte).foregroundStyle(.white)
+                                .padding(.horizontal, 16).frame(height: 42)
+                                .background(C.primario, in: Capsule())
+                        }
+                        Button { nav.productos.append(.importar) } label: {
+                            Label("Traer mi tienda", systemImage: "arrow.down.doc").estilo(.subheadFuerte).foregroundStyle(C.texto)
+                                .padding(.horizontal, 16).frame(height: 42)
+                                .overlay(Capsule().strokeBorder(C.linea2, lineWidth: 1))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 12).margenPantalla()
+                }
+                if let seg = carga.valor?.segmentos {
+                    TiraEstados(estados: [
+                        .init(titulo: "Publicados", numero: (seg["active"] ?? 0) + (seg["out"] ?? 0), color: C.ok, filtro: "active,out"),
+                        .init(titulo: "Sin stock", numero: seg["out"] ?? 0, color: C.errorTinta, filtro: "out"),
+                        .init(titulo: "Pausados", numero: (seg["paused"] ?? 0) + (seg["draft"] ?? 0), color: C.texto3, filtro: "paused,draft"),
+                    ], elegido: segmento) { segmento = $0 }
+                    .padding(.top, 12)
+                }
                 Buscador(placeholder: "Nombre, SKU o código", texto: $busqueda)
                     .padding(.top, 12).margenPantalla()
                 chips.padding(.top, 12)

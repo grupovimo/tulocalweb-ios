@@ -35,6 +35,10 @@ final class Navegacion {
     var crear = false
     /// La venta en el local (4a), a pantalla completa.
     var venta = false
+    /// El buscador (secciones, acciones y preguntarle a Tincho).
+    var buscar = false
+    /// Una pregunta para Tincho tocada desde otra pantalla (la toma el chat al abrirse).
+    var preguntaTincho: String?
     /// Una página web dentro de la app (lo que vive sólo en la web).
     var web: URL?
 
@@ -132,6 +136,12 @@ struct Principal: View {
         .animation(.spring(duration: 0.3), value: estado.aviso)
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .environment(nav)
+        .sheet(isPresented: $nav.buscar) {
+            Buscar().environment(nav)
+                .presentationDetents([.large])
+                .presentationCornerRadius(28)
+                .presentationBackground(C.elevado)
+        }
         .sheet(isPresented: $nav.crear) {
             HojaCrear().hojaTLW([.height(420)])
                 .environment(nav)

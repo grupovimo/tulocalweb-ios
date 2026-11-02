@@ -590,3 +590,50 @@ extension View {
         }
     }
 }
+
+/// Las tarjetas de estado arriba de Pedidos y Productos (como en el panel web): punto de color,
+/// el nombre, el número grande y una barra; tocar una filtra la lista.
+struct TiraEstados: View {
+    struct Estado: Identifiable {
+        var titulo: String
+        var numero: Int
+        var color: Color
+        var filtro: String?
+        var id: String { titulo }
+    }
+    var estados: [Estado]
+    var elegido: String?
+    var elegir: (String?) -> Void
+    @Environment(\.margen) private var margen
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(Array(estados.enumerated()), id: \.element.id) { i, e in
+                    if i > 0 { Rectangle().fill(C.linea).frame(width: 1).padding(.vertical, 12) }
+                    Button {
+                        Haptico.seleccion()
+                        elegir(elegido == e.filtro ? nil : e.filtro)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 6) {
+                                Circle().fill(e.color).frame(width: 8, height: 8)
+                                Text(e.titulo).estilo(.footnoteFuerte).foregroundStyle(C.texto2).lineLimit(1)
+                            }
+                            Text(Formato.numero(e.numero)).estilo(.saludo).monospacedDigit().foregroundStyle(C.texto)
+                            Capsule().fill(e.color.opacity(elegido == e.filtro ? 1 : 0.75)).frame(height: 4)
+                        }
+                        .padding(14)
+                        .frame(width: 128, alignment: .leading)
+                        .background(elegido == e.filtro && e.filtro != nil ? C.crema2 : .clear)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(e.titulo): \(e.numero)")
+                    .accessibilityAddTraits(elegido == e.filtro ? .isSelected : [])
+                }
+            }
+            .tarjeta(radio: 18)
+            .padding(.horizontal, margen)
+        }
+    }
+}

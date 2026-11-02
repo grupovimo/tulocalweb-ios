@@ -233,6 +233,10 @@
 			0 0 0 1px var(--ln);
 		overflow: hidden;
 		outline: none;
+		/* La lista toma lo que queda de la pantalla visible (con o sin teclado) y scrollea ella. */
+		display: flex;
+		flex-direction: column;
+		max-height: calc(100dvh - 11vh - 24px);
 	}
 	:global(.cmdk[data-state='open']) {
 		animation: cmdk-entra 0.28s cubic-bezier(0.2, 0.7, 0.1, 1) both;
@@ -271,9 +275,19 @@
 		white-space: nowrap;
 	}
 	.lista {
+		flex: 1 1 auto;
+		min-height: 0;
 		max-height: 440px;
-		overflow: auto;
+		overflow-y: auto;
+		/* En el iPhone, con el fondo bloqueado, el gesto tiene que quedar en la lista. */
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+		touch-action: pan-y;
 		padding: 8px;
+	}
+	.cab,
+	.pie {
+		flex: none;
 	}
 	.g {
 		padding: 12px 12px 4px;
@@ -392,6 +406,10 @@
 	@media (max-width: 759px) {
 		:global(.cmdk) {
 			top: 12px;
+			max-height: calc(100dvh - 24px);
+		}
+		.lista {
+			max-height: none;
 		}
 		.pie {
 			display: none;

@@ -22,6 +22,7 @@ struct Inicio: View {
                 encabezado
                 VStack(alignment: .leading, spacing: 14) {
                     accionesRapidas
+                    BarraPreguntarTincho()
                     Segmentado(opciones: [("hoy", "Hoy"), ("7d", "7 días"), ("30d", "30 días")], elegido: $periodo)
                     switch carga {
                     case .cargando:
@@ -66,6 +67,8 @@ struct Inicio: View {
             }
             Spacer(minLength: 8)
             HStack(spacing: 10) {
+                BotonRedondo(simbolo: "magnifyingglass", etiqueta: "Buscar") { nav.buscar = true }
+                    .frame(width: 40, height: 40)
                 BotonRedondo(simbolo: "bell", etiqueta: sinLeer > 0 ? "Avisos, \(sinLeer) sin leer" : "Avisos", punto: sinLeer > 0) {
                     nav.inicio.append(.avisos)
                 }
@@ -119,7 +122,14 @@ struct Inicio: View {
         if t.montos, let m = t.meta { meta(m) }
         ideas(t)
         if !t.ultimosPedidos.isEmpty { ultimos(t) }
+        if let v = t.enVivo, v.personas > 0 || v.carritos > 0 { TarjetaEnVivo(vivo: v, montos: t.montos) }
+        if t.montos, let c = t.caja, c.abierta != nil || c.total > 0 { TarjetaCajaLocal(caja: c) }
+        if t.montos, let l = t.liquidaciones, !l.isEmpty { TarjetaLiquidaciones(liquidaciones: l) }
+        if estado.puede("cuenta") { TarjetaIntegraciones() }
         if !t.masVendidos.isEmpty { masVendidos(t) }
+        if let v = t.visitas, !v.masVistos.isEmpty { TarjetaMasVistos(visitas: v) }
+        if let r = t.resenas, !r.nuevas.isEmpty { TarjetaResenas(resenas: r) }
+        if let e = t.envios, e.paquetes > 0 || !e.retiros.isEmpty { TarjetaEnvios(envios: e) }
         if t.montos, let canales = t.canales, !canales.isEmpty, let v = t.ventas, v.actual > 0 {
             canalesVista(canales, total: v.actual)
         }

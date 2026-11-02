@@ -134,6 +134,42 @@ struct Tablero: Codable {
     var masVendidos: [MasVendido]
     var visitas: Visitas?
     var resenas: Resenas?
+    // Lo que el Inicio de la web ya mostraba (opcional: la API lo manda según el rol y lo conectado).
+    var enVivo: EnVivo?
+    var caja: Caja?
+    var liquidaciones: [Liquidacion]?
+    var bandeja: [Chat]?
+    var integraciones: [Integracion]?
+    var envios: Envios?
+
+    struct EnVivo: Codable {
+        struct Pagina: Codable { var nombre: String; var personas: Int }
+        var personas: Int
+        var paginas: [Pagina]
+        var carritos: Int
+        var carritosMonto: Int?
+    }
+    struct Caja: Codable {
+        struct Medio: Codable { var medio: String; var monto: Int }
+        var abierta: String?
+        var total: Int
+        var medios: [Medio]
+    }
+    struct Liquidacion: Codable { var medio: String; var fecha: String; var monto: Int }
+    struct Chat: Codable {
+        var nombre: String
+        var foto: String?
+        var mensaje: String
+        var creado: Date
+        var atiende: String
+        var sinLeer: Int
+    }
+    struct Integracion: Codable { var id: String; var valor: Int }
+    struct Envios: Codable {
+        struct Retiro: Codable { var hora: String; var transporte: String; var paquetes: Int; var ciudad: String?; var proximo: Bool }
+        var paquetes: Int
+        var retiros: [Retiro]
+    }
 
     /// Las visitas de la tienda online (personas distintas por día). `desde` en nil: todavía no hay.
     struct Visitas: Codable {
@@ -153,6 +189,8 @@ struct Tablero: Codable {
         var visitantes: Comparado
         var vistas: Comparado
         var masVistos: [Producto]
+        struct Pagina: Codable { var pagina: String; var vistas: Int }
+        var paginas: [Pagina]?
     }
     struct Resenas: Codable {
         var promedio: Double?
