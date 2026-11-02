@@ -27,7 +27,7 @@
 
 <div class="staff">
 	<header class="equipo">
-		<span class="marca"><img src="/mark.svg" alt="" width="20" height="20" />Equipo</span>
+		<span class="marca"><img src="/logo.svg" alt="" width="20" height="20" />Equipo</span>
 		<span class="quien"
 			>{data.sesion.miembro.nombre}<span class="rol">{nombreRol(data.sesion.rol)}</span></span
 		>

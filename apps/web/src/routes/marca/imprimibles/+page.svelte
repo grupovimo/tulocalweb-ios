@@ -827,7 +827,7 @@
 							>
 								<span>cafebruma.com.ar · @cafebruma</span><span
 									style="display:flex;align-items:center;gap:4px"
-									><img src="/mark.svg" alt="" style="width:3.5mm" />Hecho con Tu Local Web</span
+									><img src="/logo.svg" alt="" style="width:3.5mm" />Hecho con Tu Local Web</span
 								>
 							</div>
 						</div></Lamina

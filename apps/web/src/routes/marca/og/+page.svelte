@@ -316,7 +316,7 @@
 							></span>
 							<span
 								style="width:50px;height:50px;border-radius:16px;background:#2A140C;display:grid;place-items:center"
-								><img src="/mark.svg" alt="" style="width:26px" /></span
+								><img src="/logo.svg" alt="" style="width:26px" /></span
 							>
 						</div>
 					</div>
@@ -556,7 +556,7 @@
 						style="position:absolute;left:72px;top:64px;bottom:64px;width:620px;display:flex;flex-direction:column"
 					>
 						<div style="display:flex;align-items:center;gap:14px">
-							<img src="/mark.svg" alt="" style="width:40px" /><span
+							<img src="/logo.svg" alt="" style="width:40px" /><span
 								style="font-size:28px;color:#8A7F76">+</span
 							><span
 								style="display:flex;align-items:center;gap:10px;font-size:30px;font-weight:700;letter-spacing:-.03em"

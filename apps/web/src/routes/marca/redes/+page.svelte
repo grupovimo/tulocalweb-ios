@@ -60,7 +60,7 @@
 								style="position:absolute;inset:0;background:url(/textura/grain.png);opacity:.22;mix-blend-mode:multiply"
 							></div>
 							<img
-								src="/mark.svg"
+								src="/logo.svg"
 								alt=""
 								style="width:96px;position:relative;filter:brightness(0) invert(1);margin-top:6px"
 							/>
@@ -69,12 +69,12 @@
 					<div
 						style="width:64px;height:64px;border-radius:50%;background:#D2582F;display:grid;place-items:center"
 					>
-						<img src="/mark.svg" alt="" style="width:31px;filter:brightness(0) invert(1)" />
+						<img src="/logo.svg" alt="" style="width:31px;filter:brightness(0) invert(1)" />
 					</div>
 					<div
 						style="width:32px;height:32px;border-radius:50%;background:#D2582F;display:grid;place-items:center"
 					>
-						<img src="/mark.svg" alt="" style="width:16px;filter:brightness(0) invert(1)" />
+						<img src="/logo.svg" alt="" style="width:16px;filter:brightness(0) invert(1)" />
 					</div>
 				</div>
 			</div>
@@ -285,7 +285,7 @@
 						<div
 							style="position:absolute;left:507px;right:507px;top:509px;height:423px;border:4px dashed rgba(232,135,95,.6);display:flex;align-items:center;gap:60px;padding:0 70px;background:#2A140C"
 						>
-							<img src="/mark.svg" alt="" style="width:170px;flex:none" />
+							<img src="/logo.svg" alt="" style="width:170px;flex:none" />
 							<div style="flex:1">
 								<div style="font-size:96px;line-height:1;letter-spacing:-.04em;font-weight:600">
 									Aprendé a vender más.
@@ -441,7 +441,7 @@
 							<div
 								style="display:flex;align-items:center;gap:30px;padding:40px;border-radius:32px;background:#2A140C;color:#fff"
 							>
-								<img src="/mark.svg" alt="" style="width:60px" /><span
+								<img src="/logo.svg" alt="" style="width:60px" /><span
 									style="flex:1;font-size:40px;font-weight:600"
 									>Tu Local Web · {VS_PRO.plan.nombre}</span
 								><span style="font-size:64px;font-weight:600;color:#E8875F"
@@ -589,7 +589,7 @@
 						style="width:1080px;height:1350px;background:#131211;position:relative;overflow:hidden;padding:90px;color:#F4EEE6"
 					>
 						<div style="display:flex;align-items:center;gap:20px;font-size:44px;font-weight:600">
-							<img src="/mark.svg" alt="" style="width:64px" /><span style="color:#8A7F76">+</span
+							<img src="/logo.svg" alt="" style="width:64px" /><span style="color:#8A7F76">+</span
 							><img
 								src="/caja/01-saludo.png"
 								alt=""
@@ -912,7 +912,7 @@
 						<div
 							style="position:absolute;left:70px;bottom:70px;display:flex;align-items:center;gap:16px;padding:16px 28px;border-radius:999px;background:#2A140C;font-size:34px;font-weight:600"
 						>
-							<img src="/mark.svg" alt="" style="width:40px" />Paso a paso
+							<img src="/logo.svg" alt="" style="width:40px" />Paso a paso
 						</div>
 					</div></Lamina
 				>
@@ -949,7 +949,7 @@
 							VS
 						</div>
 						<div style="text-align:center">
-							<img src="/mark.svg" alt="" style="width:110px" />
+							<img src="/logo.svg" alt="" style="width:110px" />
 							<div style="font-size:120px;font-weight:700;color:#E8875F;letter-spacing:-.04em">
 								{fmt(VS_PRO.plan.precio)}
 							</div>

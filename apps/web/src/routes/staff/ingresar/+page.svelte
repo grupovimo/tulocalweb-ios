@@ -26,7 +26,7 @@
 			};
 		}}
 	>
-		<span class="marca"><img src="/mark.svg" alt="" width="22" height="22" />Equipo</span>
+		<span class="marca"><img src="/logo.svg" alt="" width="22" height="22" />Equipo</span>
 		<h1>Ingresar al backoffice</h1>
 		<p class="sub">Sólo para el equipo de Tu Local Web.</p>
 		<label class="campo"

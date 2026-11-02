@@ -44,7 +44,7 @@
 		'@type': 'Organization',
 		name: 'Tu Local Web',
 		url: 'https://tulocalweb.com.ar',
-		logo: 'https://tulocalweb.com.ar/mark.svg'
+		logo: 'https://tulocalweb.com.ar/logo.png'
 	}}
 />
 

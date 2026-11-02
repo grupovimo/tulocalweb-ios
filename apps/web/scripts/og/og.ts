@@ -127,6 +127,8 @@ const OGS: Og[] = [
 
 function html(o: Og) {
 	const wordmark = o.fondo === 'claro' ? 'wordmark-brown.webp' : 'wordmark-cream.webp';
+	// El isotipo del tablero de identidad (static/marca/logo/), en la variante de cada fondo.
+	const logo = { claro: 'logo', oscuro: 'logo-sobre-oscuro', terracota: 'logo-crema' }[o.fondo];
 	return `<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:IS;font-weight:400 700;src:url(${fuente('wght')})}
 *{box-sizing:border-box}
@@ -138,7 +140,9 @@ body{margin:0;width:1200px;height:630px;overflow:hidden;font-family:IS,system-ui
 .claro .mancha{background:radial-gradient(closest-side,#fcede5 0%,#fcede5 55%,rgba(252,237,229,0) 100%)}
 .oscuro .mancha{background:radial-gradient(closest-side,rgba(210,88,47,.55) 0%,rgba(210,88,47,.18) 55%,rgba(210,88,47,0) 100%)}
 .terracota .mancha{background:radial-gradient(closest-side,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 100%)}
-.wm{position:absolute;left:64px;top:56px;height:34px}
+.marca{position:absolute;left:64px;top:50px;display:flex;align-items:center;gap:14px}
+.marca .iso{width:46px;height:46px}
+.marca .wm{height:34px}
 .izq{position:absolute;left:64px;top:150px;width:640px}
 h1{margin:0;font-size:68px;line-height:1;letter-spacing:-.045em;font-weight:600;text-wrap:balance}
 h1 span{color:#d2582f;display:block}
@@ -158,7 +162,7 @@ p{margin:22px 0 0;font-size:25px;line-height:1.38;font-weight:400;max-width:560p
 .burbuja.mia{border-radius:18px 18px 6px 18px;background:#2a140c;color:#fbf7f2}
 </style></head><body class="${o.fondo}">
 <div class="mancha"></div>
-<img class="wm" src="${archivo(wordmark)}">
+<div class="marca"><img class="iso" src="${archivo('marca/logo/' + logo + '.svg')}"><img class="wm" src="${archivo(wordmark)}"></div>
 <div class="izq"><h1>${o.titulo} <span>${o.acento}</span></h1><p>${o.texto}</p>${o.pie ?? ''}</div>
 <img class="tincho" src="${archivo('hornero/' + o.tincho + '.webp')}">
 ${o.extra ?? ''}

@@ -135,7 +135,7 @@
 							<div
 								style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3mm"
 							>
-								<img src="/mark.svg" alt="" style="width:16mm;filter:brightness(0) invert(1)" /><img
+								<img src="/logo.svg" alt="" style="width:16mm;filter:brightness(0) invert(1)" /><img
 									src="/wordmark-cream.png"
 									alt="Tu Local Web"
 									style="height:4mm"
@@ -154,7 +154,7 @@
 									</div>
 									<div style="font-size:8.5px;color:#7A6252;margin-top:1px">{persona.cargo}</div>
 								</div>
-								<img src="/mark.svg" alt="" style="width:7mm" />
+								<img src="/logo.svg" alt="" style="width:7mm" />
 							</div>
 							<div
 								style="margin-top:auto;display:flex;flex-direction:column;gap:1.2mm;font-size:8px;color:#2A140C"
@@ -322,7 +322,7 @@
 						>
 							<span>{EMPRESA.titular} · CUIT {EMPRESA.cuit} · IVA Responsable Inscripto</span><span
 								style="display:flex;align-items:center;gap:6px;white-space:nowrap"
-								><img src="/mark.svg" alt="" style="width:5mm" />tulocalweb.com.ar</span
+								><img src="/logo.svg" alt="" style="width:5mm" />tulocalweb.com.ar</span
 							>
 						</div>
 						<div style="position:absolute;left:0;top:0;bottom:0;width:4mm;background:#D2582F"></div>
@@ -346,7 +346,7 @@
 						<div
 							style="position:absolute;right:-30mm;top:-46mm;width:110mm;height:90mm;border-radius:55mm 55mm 0 0;border:14mm solid #D2582F;border-bottom:0;opacity:.95"
 						></div>
-						<img src="/mark.svg" alt="" style="width:12mm;position:relative" />
+						<img src="/logo.svg" alt="" style="width:12mm;position:relative" />
 						<div
 							style="margin-top:4mm;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#C24E25"
 						>
@@ -407,7 +407,7 @@
 						style="width:220mm;height:110mm;background:#FBF7F2;position:relative;overflow:hidden;padding:10mm 12mm;box-shadow:0 24px 50px -26px rgba(42,20,12,.45)"
 					>
 						<div style="display:flex;align-items:center;gap:3mm">
-							<img src="/mark.svg" alt="" style="width:8mm" />
+							<img src="/logo.svg" alt="" style="width:8mm" />
 							<div style="font-size:8.5px;line-height:1.45;color:#7A6252">
 								{EMPRESA.titular}<br />{EMPRESA.domicilio}
 							</div>
@@ -490,7 +490,7 @@
 									<span>{persona.telefono}</span><span style="color:#C24E25">{DOMINIO}</span>
 								</div>
 							</div>
-							<img src="/mark.svg" alt="" style="width:30px;align-self:flex-start" />
+							<img src="/logo.svg" alt="" style="width:30px;align-self:flex-start" />
 						</div>
 						<div
 							style="margin-top:18px;border-radius:12px;background:#FCEDE5;padding:12px 14px;display:flex;align-items:center;gap:12px"
@@ -528,7 +528,7 @@
 						style="width:600px;padding:22px;background:#fff;border-radius:8px;box-shadow:0 18px 40px -24px rgba(42,20,12,.4)"
 					>
 						<div style="display:flex;align-items:center;gap:12px">
-							<img src="/mark.svg" alt="" style="width:26px" />
+							<img src="/logo.svg" alt="" style="width:26px" />
 							<div style="font-size:13.5px;line-height:1.45">
 								<b>Equipo de Soporte</b> · Tu Local Web<br /><span style="color:#7A6252"
 									>De lunes a sábado de 8 a 22 h · {MAIL.ayuda}</span
@@ -669,7 +669,7 @@
 								</div>
 							</div>
 							<div style="display:flex;align-items:center;gap:6px;color:#7A6252">
-								<img src="/mark.svg" alt="" style="width:6mm" />Gracias por vender con nosotros
+								<img src="/logo.svg" alt="" style="width:6mm" />Gracias por vender con nosotros
 							</div>
 						</div>
 					</div></Lamina
@@ -699,7 +699,7 @@
 							MODELO
 						</div>
 						<div style="display:flex;align-items:start;gap:6mm">
-							<img src="/mark.svg" alt="" style="width:12mm" />
+							<img src="/logo.svg" alt="" style="width:12mm" />
 							<div style="flex:1;line-height:1.55;color:#4A3428">
 								<b style="color:#2A140C;font-size:12px">{EMPRESA.titular}</b><br
 								/>{EMPRESA.domicilio}<br />CUIT {EMPRESA.cuit}
@@ -896,7 +896,7 @@
 						style="width:230mm;height:310mm;background:#FBF7F2;position:relative;overflow:hidden;box-shadow:0 30px 60px -30px rgba(42,20,12,.45);"
 					>
 						<div style="padding:22mm">
-							<img src="/mark.svg" alt="" style="width:14mm" />
+							<img src="/logo.svg" alt="" style="width:14mm" />
 							<div
 								style="margin-top:8mm;font-size:22px;line-height:1.15;letter-spacing:-.03em;font-weight:600;max-width:150mm"
 							>
@@ -1061,7 +1061,7 @@
 				<div
 					style="width:38mm;height:30mm;border-radius:19mm 19mm 2mm 2mm;background:#D2582F;display:grid;place-items:center;box-shadow:0 0 0 1.6mm #fff,0 0 0 2mm #E7DED3"
 				>
-					<img src="/mark.svg" alt="" style="width:20mm;filter:brightness(0) invert(1)" />
+					<img src="/logo.svg" alt="" style="width:20mm;filter:brightness(0) invert(1)" />
 				</div>
 				<div
 					style="width:40mm;height:40mm;border-radius:50%;background:#FBF7F2;display:grid;place-items:center;box-shadow:0 0 0 1.6mm #fff,0 0 0 2mm #E7DED3"

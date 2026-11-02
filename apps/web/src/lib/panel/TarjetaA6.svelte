@@ -77,7 +77,7 @@
 		{/if}
 		<div class="pie">
 			<span>{tienda.dominio}{t.instagram ? ` · @${t.instagram}` : ''}</span><span class="hecho"
-				><img src="/mark.svg" alt="" />Hecho con Tu Local Web</span
+				><img src="/logo.svg" alt="" />Hecho con Tu Local Web</span
 			>
 		</div>
 	</div>

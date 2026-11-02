@@ -22,7 +22,10 @@ test('variantes: se cargan en el panel y se compran eligiendo el talle', async (
 	await listo(page);
 	await page.getByRole('button', { name: 'Nuevo producto' }).click();
 	// Primero pregunta qué es.
-	await page.getByRole('dialog').getByRole('button', { name: /^Ropa y accesorios/ }).click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /^Ropa y accesorios/ })
+		.click();
 	const ed = page.getByRole('dialog');
 	await ed.getByLabel('Nombre', { exact: true }).fill('Buzo de prueba');
 	await ed.getByLabel('Precio base').fill('30000');
