@@ -64,12 +64,12 @@ struct CompartirTienda: View {
         if let t = estado.tienda {
             let conCupones = estado.puede("catalogo")
             PantallaSeccion(titulo: "Compartí tu tienda", que: "tu tienda") { () async throws -> Datos in
-                // Cada pedido en su función: un `async let` con un ternario que hace `await` en una sola
-                // rama rompía el asignador de tareas en Release (swift_task_dealloc → la app se cerraba).
-                async let v = tablero()
-                async let p = masVendidos()
-                async let c = cuponesActivos(conCupones)
-                return await Datos(visitas: v?.visitas, productos: p, cupones: c)
+                // Uno detrás del otro, sin `async let`: en Release (Xcode 26.3) el async let dentro de este
+                // closure rompía el asignador de tareas (swift_task_dealloc) y la app se cerraba.
+                let v = await tablero()
+                let p = await masVendidos()
+                let c = await cuponesActivos(conCupones)
+                return Datos(visitas: v?.visitas, productos: p, cupones: c)
             } contenido: { d, _ in
                 heroe(t, d.visitas)
                 canales(t)
