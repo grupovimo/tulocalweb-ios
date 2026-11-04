@@ -149,7 +149,7 @@ struct EditorEstilo: View {
         }
     }
 
-    private func grupo<V: View>(_ id: String, _ titulo: String, _ simbolo: String, @ViewBuilder _ v: () -> V) -> some View {
+    private func grupo<V: View>(_ id: String, _ titulo: String, _ simbolo: String, @ViewBuilder _ v: @escaping () -> V) -> some View {
         TarjetaSeccion(titulo: titulo, simbolo: simbolo) {
             Button {
                 withAnimation(.snappy) { abierto = abierto == id ? nil : id }
