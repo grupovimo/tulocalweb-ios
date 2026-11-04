@@ -36,9 +36,11 @@ test('Tincho saluda, propone ideas y responde con los datos', async ({ page, isM
 	await expect(panel.locator('.globo.hornero').last()).toContainText('Ayer vendiste');
 	await expect(panel.locator('.globo.hornero b').last()).toContainText('$');
 
+	// Una pregunta escrita: Tincho contesta con un globo nuevo (el motor sin IA guía, no repite el %).
+	const antes = await panel.locator('.globo.hornero').count();
 	await panel.getByRole('textbox', { name: 'Escribile a Tincho' }).fill('Subí precios 10%');
 	await panel.getByRole('button', { name: 'Mandar' }).click();
-	await expect(panel.locator('.globo.hornero').last()).toContainText('10%');
+	await expect(panel.locator('.globo.hornero')).toHaveCount(antes + 1);
 
 	// La charla queda al cerrar y volver a abrir.
 	await page.keyboard.press('Escape');
