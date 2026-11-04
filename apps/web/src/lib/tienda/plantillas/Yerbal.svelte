@@ -1,4 +1,7 @@
 <script lang="ts">
+	import PieEstilo from '../PieEstilo.svelte';
+	import { menuPropio } from '../estilo/menu.ts';
+	import MenuTienda from '../MenuTienda.svelte';
 	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
@@ -187,29 +190,31 @@
 		tienda.masVendidos.slice(0, 6).flatMap((id) => (porId.get(id) ? [tarjeta(porId.get(id)!)] : []))
 	);
 	const TILE_BG = [
-		'#E8EEDF',
-		'#DDE8DF',
+		'var(--tc-e8eedf, #E8EEDF)',
+		'var(--tc-dde8df, #DDE8DF)',
 		'#F3EBD3',
-		'#EFE3D6',
-		'#E3EDE0',
+		'var(--tc-efe3d6, #EFE3D6)',
+		'var(--tc-e3ede0, #E3EDE0)',
 		'#F2EED2',
 		'#F3E2D8',
-		'#E3E9F2'
+		'var(--tc-e3e9f2, #E3E9F2)'
 	];
-	const nav = $derived([
-		...(tienda.turnos
-			? [{ t: 'Reservar turno', i: I.phCalendarCheckBold, href: `${base}/turnos` }]
-			: []),
-		...(ofertas.length
-			? [{ t: 'Ofertas', i: I.phTagBold, href: enlaceCat(null, 'vendidos', true) }]
-			: []),
-		...tienda.categorias.slice(0, 6).map((c) => ({
-			t: c.nombre,
-			i: I.phPackageBold,
-			href: enlaceCat(c.nombre)
-		})),
-		{ t: 'Nosotros', i: I.phStorefrontBold, href: `${base}/nosotros` }
-	]);
+	const nav = $derived(
+		menuPropio(tienda, base)?.map((n) => ({ ...n, i: I.phPackageBold })) ?? [
+			...(tienda.turnos
+				? [{ t: 'Reservar turno', i: I.phCalendarCheckBold, href: `${base}/turnos` }]
+				: []),
+			...(ofertas.length
+				? [{ t: 'Ofertas', i: I.phTagBold, href: enlaceCat(null, 'vendidos', true) }]
+				: []),
+			...tienda.categorias.slice(0, 6).map((c) => ({
+				t: c.nombre,
+				i: I.phPackageBold,
+				href: enlaceCat(c.nombre)
+			})),
+			{ t: 'Nosotros', i: I.phStorefrontBold, href: `${base}/nosotros` }
+		]
+	);
 	let cpInicio = $state('');
 	let cotizadoInicio = $state<OpcionEnvio[] | null>(null);
 	const iconoEnvio = (id: OpcionEnvio['id']) =>
@@ -492,17 +497,17 @@
 	]);
 	// Reseñas y preguntas con las piezas de Yerbal: Schibsted Grotesk, tarjetas blancas, esquinas de 10 px.
 	const tema: TemaOpiniones = {
-		texto: '#1E2B22',
-		suave: '#6B7A6E',
-		campo: '#EEF1E8',
-		tarjeta: '#fff',
-		borde: 'rgba(30,43,34,.14)',
-		acento: '#1E2B22',
-		sobreAcento: '#EEF1E8',
+		texto: 'var(--tc-1e2b22, #1E2B22)',
+		suave: 'var(--tc-6b7a6e, #6B7A6E)',
+		campo: 'var(--tc-eef1e8, #EEF1E8)',
+		tarjeta: 'var(--tc-ffffff, #fff)',
+		borde: 'var(--tc-1e2b22-140, rgba(30,43,34,.14))',
+		acento: 'var(--tc-1e2b22, #1E2B22)',
+		sobreAcento: 'var(--tc-eef1e8, #EEF1E8)',
 		estrella: '#D9A400',
 		radio: '10px',
-		fuente: "'Schibsted Grotesk', sans-serif",
-		titulos: "'Schibsted Grotesk', sans-serif",
+		fuente: "var(--tf-texto,'Schibsted Grotesk'), sans-serif",
+		titulos: "var(--tf-texto,'Schibsted Grotesk'), sans-serif",
 		pesoTitulos: 800
 	};
 	const estrellas = (n: number) =>
@@ -547,13 +552,13 @@
 
 {#snippet buscador()}
 	<label
-		style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:#fff;border:1.5px solid rgba(30,43,34,.12);font-size:14px;color:#6B7A6E"
+		style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:var(--tc-ffffff, #fff);border:1.5px solid var(--tc-1e2b22-120, rgba(30,43,34,.12));font-size:14px;color:var(--tc-6b7a6e, #6B7A6E)"
 		><Icon icon={I.phMagnifyingGlassBold} size={16} style="flex:none" /><input
 			bind:value={busca}
 			type="search"
 			aria-label="Buscar productos"
 			placeholder="Buscá entre {tienda.productos.length} productos"
-			style="flex:1;min-width:0;padding:0;border:0;background:transparent;font:400 14px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+			style="flex:1;min-width:0;padding:0;border:0;background:transparent;font:400 14px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 		/></label
 	>
 {/snippet}
@@ -562,19 +567,19 @@
 {#snippet paso(p: Tarjeta, alto: number)}
 	{@const q = enCarrito(p.id)}
 	{#if q}<span
-			style="display:flex;align-items:center;justify-content:space-between;padding:3px;border-radius:9px;background:var(--acento, #2F5D50);color:#fff;flex:none"
+			style="display:flex;align-items:center;justify-content:space-between;padding:3px;border-radius:9px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);flex:none"
 			><button
 				type="button"
 				aria-label="Uno menos"
 				onclick={() => carrito.fijar(p.id, q - 1)}
-				style="width:{alto}px;height:{alto}px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#fff;cursor:pointer"
+				style="width:{alto}px;height:{alto}px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-ffffff, #fff);cursor:pointer"
 				><Icon icon={I.phMinusBold} size={13} /></button
 			><b style="min-width:16px;text-align:center;font-size:14px">{q}</b><button
 				type="button"
 				aria-label="Uno más"
 				disabled={q >= p.stock}
 				onclick={() => sumar(p.id)}
-				style="width:{alto}px;height:{alto}px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#fff;cursor:pointer"
+				style="width:{alto}px;height:{alto}px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-ffffff, #fff);cursor:pointer"
 				><Icon icon={I.phPlusBold} size={13} /></button
 			></span
 		>{:else}<button
@@ -582,37 +587,37 @@
 			onclick={() => sumar(p.id)}
 			disabled={p.agotado || tienda.vitrina}
 			aria-label="Agregar {p.n}"
-			style="display:flex;justify-content:center;align-items:center;gap:6px;padding:9px;border-radius:9px;border:1.5px solid var(--acento, #2F5D50);background:transparent;color:var(--acento, #2F5D50);font:700 13.5px 'Schibsted Grotesk';cursor:pointer"
+			style="display:flex;justify-content:center;align-items:center;gap:6px;padding:9px;border-radius:9px;border:1.5px solid var(--acento, #2F5D50);background:transparent;color:var(--acento, #2F5D50);font:700 13.5px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 			><Icon icon={I.phPlusBold} size={13} />{p.agotado ? 'Sin stock' : 'Agregar'}</button
 		>{/if}
 {/snippet}
 
 {#snippet tarjetaGrilla(p: Tarjeta)}
 	<div
-		style="padding:10px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:6px;min-width:0"
+		style="padding:10px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:6px;min-width:0"
 	>
 		<a
 			href={p.href}
 			class="zoom"
-			style="position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#F2F4EE"
+			style="position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--tc-f2f4ee, #F2F4EE)"
 			>{#if p.img}<img
 					src={p.img}
 					alt=""
 					style="width:100%;height:100%;object-fit:cover"
 				/>{/if}{#if p.off}<span
-					style="position:absolute;top:6px;left:6px;padding:3px 7px;border-radius:5px;background:#C2412D;color:#fff;font-size:11.5px;font-weight:800"
+					style="position:absolute;top:6px;left:6px;padding:3px 7px;border-radius:5px;background:#C2412D;color:var(--tc-ffffff, #fff);font-size:11.5px;font-weight:800"
 					>{p.off}</span
 				>{/if}</a
 		>
 		<a
 			href={p.href}
-			style="font-size:13.5px;font-weight:600;line-height:1.3;min-height:35px;color:#1E2B22;text-decoration:none"
+			style="font-size:13.5px;font-weight:600;line-height:1.3;min-height:35px;color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 			>{p.n}</a
 		>
-		{#if p.tag}<span style="font-size:12px;color:#6B7A6E">{p.tag}</span>{/if}
+		{#if p.tag}<span style="font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)">{p.tag}</span>{/if}
 		<span style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"
 			><b style="font-size:17px;letter-spacing:-.02em">{p.price}</b>{#if p.old}<s
-					style="font-size:12px;color:#8A968C">{p.old}</s
+					style="font-size:12px;color:var(--tc-8a968c, #8A968C)">{p.old}</s
 				>{/if}</span
 		>
 		{#if tienda.cobros.transferencia > 0}<span
@@ -626,14 +631,14 @@
 
 <div
 	class="yerbal"
-	style="min-height:100vh;font-family:'Schibsted Grotesk',system-ui,sans-serif;font-variant-numeric:normal;color:#1E2B22;background:#EEF1E8"
+	style="min-height:100vh;font-family:var(--tf-texto,'Schibsted Grotesk'),system-ui,sans-serif;font-variant-numeric:normal;color:var(--tc-1e2b22, #1E2B22);background:var(--tc-eef1e8, #EEF1E8)"
 >
 	<div
-		style="container-type:inline-size;width:100%;background:#EEF1E8;position:relative;overflow-x:clip"
+		style="container-type:inline-size;width:100%;background:var(--tc-eef1e8, #EEF1E8);position:relative;overflow-x:clip"
 	>
 		<!-- barra promo -->
 		<div
-			style="display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--acento, #2F5D50);color:#EEF1E8;font-size:13px;font-weight:600;text-align:center"
+			style="display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--acento, #2F5D50);color:var(--tc-eef1e8, #EEF1E8);font-size:13px;font-weight:600;text-align:center"
 		>
 			<Icon icon={I.phTruckBold} size={15} /><span
 				>{tienda.envios.gratisDesde
@@ -650,14 +655,22 @@
 
 		<!-- header -->
 		<header
-			style="position:sticky;top:0;z-index:20;background:#EEF1E8;border-bottom:1px solid rgba(30,43,34,.1)"
+			data-t-enc
+			style="position:sticky;top:0;z-index:20;background:var(--tc-eef1e8, #EEF1E8);border-bottom:1px solid var(--tc-1e2b22-100, rgba(30,43,34,.1))"
 		>
 			<div style="display:flex;align-items:center;gap:14px;padding:12px clamp(12px,3cqw,32px)">
+				{#if nar}<MenuTienda
+						{tienda}
+						{base}
+						{nav}
+						estilo="display:grid;flex:none;color:var(--tc-1e2b22, #1E2B22)"
+						negrita
+					/>{/if}
 				<a
 					href={base || '/'}
 					style="display:flex;align-items:center;gap:8px;min-width:0;flex:{nar
 						? '0 1 auto'
-						: 'none'};color:#1E2B22;text-decoration:none"
+						: 'none'};color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 					>{#if !tienda.logo}<span
 							style="width:36px;height:36px;border-radius:10px;background:var(--acento, #2F5D50);color:#E8C547;display:grid;place-items:center;flex:none;font-weight:800;font-size:19px;letter-spacing:-.03em"
 							>{inicial}</span
@@ -677,7 +690,7 @@
 				<a
 					href="{base}/carrito"
 					aria-label="Carrito"
-					style="display:flex;align-items:center;gap:8px;flex:none;padding:10px 14px;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:700 14px 'Schibsted Grotesk';white-space:nowrap;text-decoration:none"
+					style="display:flex;align-items:center;gap:8px;flex:none;padding:10px 14px;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:700 14px var(--tf-texto,'Schibsted Grotesk');white-space:nowrap;text-decoration:none"
 					><Icon
 						icon={I.phShoppingCartSimpleBold}
 						size={17}
@@ -693,12 +706,12 @@
 				</div>{/if}
 			{#if encontrados.length || busca.trim().length >= 2}
 				<div
-					style="position:absolute;top:100%;left:clamp(12px,3cqw,32px);right:clamp(12px,3cqw,32px);z-index:30;padding:6px;border-radius:14px;background:#fff;box-shadow:0 18px 40px -16px rgba(30,43,34,.45);display:flex;flex-direction:column;gap:2px"
+					style="position:absolute;top:100%;left:clamp(12px,3cqw,32px);right:clamp(12px,3cqw,32px);z-index:30;padding:6px;border-radius:14px;background:var(--tc-ffffff, #fff);box-shadow:0 18px 40px -16px var(--tc-1e2b22-450, rgba(30,43,34,.45));display:flex;flex-direction:column;gap:2px"
 				>
 					{#each encontrados as p (p.id)}<a
 							href="{base}/producto/{p.slug ?? p.id}"
 							onclick={() => (busca = '')}
-							style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;color:#1E2B22;text-decoration:none"
+							style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 							>{#if p.foto}<img
 									src={img(p.foto, 120, 120)}
 									alt=""
@@ -707,7 +720,7 @@
 								style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
 								>{p.nombre}</span
 							><b style="font-size:14.5px;white-space:nowrap">{fmt(p.precio)}</b></a
-						>{:else}<span style="padding:10px;font-size:13.5px;color:#6B7A6E"
+						>{:else}<span style="padding:10px;font-size:13.5px;color:var(--tc-6b7a6e, #6B7A6E)"
 							>No encontramos productos con «{busca.trim()}».</span
 						>{/each}
 				</div>
@@ -717,13 +730,13 @@
 				>
 					{#each nav as n (n.t)}<a
 							href={n.href}
-							style="flex:none;display:flex;align-items:center;gap:6px;font:600 13.5px 'Schibsted Grotesk';padding:7px 11px;border-radius:8px;background:{(
+							style="flex:none;display:flex;align-items:center;gap:6px;font:600 13.5px var(--tf-texto,'Schibsted Grotesk');padding:7px 11px;border-radius:8px;background:{(
 								n.href === `${base}/turnos`
 									? pagina === 'turnos' || pagina === 'turno'
 									: pagina === 'catalogo' && categoria === n.t
 							)
-								? '#DDE8DF'
-								: 'transparent'};color:#1E2B22;white-space:nowrap;text-decoration:none"
+								? 'var(--tc-dde8df, #DDE8DF)'
+								: 'transparent'};color:var(--tc-1e2b22, #1E2B22);white-space:nowrap;text-decoration:none"
 							><Icon icon={n.i} size={15} style="color:var(--acento, #2F5D50)" />{n.t}</a
 						>{/each}
 				</nav>{/if}
@@ -731,7 +744,7 @@
 
 		{#if tienda.vitrina}
 			<div
-				style="padding:10px 16px;background:#E8C547;color:#1E2B22;font-size:13px;font-weight:600;text-align:center"
+				style="padding:10px 16px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font-size:13px;font-weight:600;text-align:center"
 			>
 				Es una tienda de ejemplo de la plantilla Yerbal: podés recorrerla, pero no se compra
 				de&nbsp;verdad.
@@ -752,7 +765,7 @@
 									? 'span 1'
 									: ladoHero
 										? 'span 2'
-										: '1 / -1'};position:relative;min-height:min(440px,100cqw);border-radius:16px;overflow:hidden;background:var(--acento, #2F5D50);color:#EEF1E8;padding:clamp(22px,4cqw,48px);display:flex;flex-direction:column;justify-content:flex-end"
+										: '1 / -1'};position:relative;min-height:min(440px,100cqw);border-radius:16px;overflow:hidden;background:var(--acento, #2F5D50);color:var(--tc-eef1e8, #EEF1E8);padding:clamp(22px,4cqw,48px);display:flex;flex-direction:column;justify-content:flex-end"
 							>
 								{#if tienda.portada.foto}<img
 										src={img(tienda.portada.foto, 1400)}
@@ -764,7 +777,7 @@
 								></div>
 								<div style="position:relative;max-width:560px;min-width:0">
 									{#if maxOff}<span
-											style="display:inline-flex;padding:5px 10px;border-radius:6px;background:#E8C547;color:#1E2B22;font-size:12.5px;font-weight:800"
+											style="display:inline-flex;padding:5px 10px;border-radius:6px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font-size:12.5px;font-weight:800"
 											>OFERTAS · HASTA {maxOff}% OFF</span
 										>{/if}
 									<h1
@@ -773,18 +786,18 @@
 										{titulo[0]}{#if titulo[1]}<br />{titulo[1]}{/if}
 									</h1>
 									{#if tienda.portada.lema}<p
-											style="margin:14px 0 0;font-size:16px;line-height:1.5;color:#D6E0D4"
+											style="margin:14px 0 0;font-size:16px;line-height:1.5;color:var(--tc-d6e0d4, #D6E0D4)"
 										>
 											{tienda.portada.lema}
 										</p>{/if}
 									<div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
 										<a
 											href={ofertas.length ? enlaceCat(null, 'vendidos', true) : `${base}/catalogo`}
-											style="padding:14px 22px;border-radius:10px;background:#E8C547;color:#1E2B22;font:800 15px 'Schibsted Grotesk';text-decoration:none"
+											style="padding:14px 22px;border-radius:10px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-decoration:none"
 											>{ofertas.length ? 'Ver ofertas' : 'Ver productos'}</a
 										>{#if tienda.categorias[0]}<a
 												href={enlaceCat(tienda.categorias[0].nombre)}
-												style="padding:14px 20px;border:1.5px solid rgba(238,241,232,.4);border-radius:10px;color:#EEF1E8;font:700 15px 'Schibsted Grotesk';text-decoration:none"
+												style="padding:14px 20px;border:1.5px solid var(--tc-eef1e8-400, rgba(238,241,232,.4));border-radius:10px;color:var(--tc-eef1e8, #EEF1E8);font:700 15px var(--tf-texto,'Schibsted Grotesk');text-decoration:none"
 												>{tienda.categorias[0].nombre}</a
 											>{/if}
 									</div>
@@ -798,18 +811,18 @@
 									{#if oferta}
 										<a
 											href="{base}/producto/{oferta.slug ?? oferta.id}"
-											style="padding:20px;border-radius:16px;background:#E8C547;color:#1E2B22;text-decoration:none;display:flex;flex-direction:column;justify-content:space-between;gap:10px"
+											style="padding:20px;border-radius:16px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);text-decoration:none;display:flex;flex-direction:column;justify-content:space-between;gap:10px"
 											><span style="display:flex;justify-content:space-between;align-items:start"
 												><b style="font-size:13px;letter-spacing:.04em"
 													>{relampago ? 'OFERTA RELÁMPAGO' : 'OFERTA'}</b
 												>{#if relampago}<span
 														style="display:flex;gap:3px;font-variant-numeric:tabular-nums"
 														>{#each conteo.partes(3) as c (c.u)}<span
-																style="padding:3px 6px;border-radius:5px;background:#1E2B22;color:#E8C547;font-size:12.5px;font-weight:700"
+																style="padding:3px 6px;border-radius:5px;background:var(--tc-1e2b22, #1E2B22);color:#E8C547;font-size:12.5px;font-weight:700"
 																>{c.v}</span
 															>{/each}</span
 													>{:else}<span
-														style="padding:3px 6px;border-radius:5px;background:#1E2B22;color:#E8C547;font-size:12.5px;font-weight:700"
+														style="padding:3px 6px;border-radius:5px;background:var(--tc-1e2b22, #1E2B22);color:#E8C547;font-size:12.5px;font-weight:700"
 														>−{maxOff}%</span
 													>{/if}</span
 											><span style="display:flex;gap:12px;align-items:center;min-width:0"
@@ -829,7 +842,7 @@
 										>
 									{/if}
 									{#if tienda.cobros.transferencia > 0}<div
-											style="padding:20px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:14px;flex-wrap:wrap"
+											style="padding:20px;border-radius:16px;background:var(--tc-ffffff, #fff);display:flex;align-items:center;gap:14px;flex-wrap:wrap"
 										>
 											<Icon
 												icon={I.phBankBold}
@@ -841,14 +854,14 @@
 													>{tienda.cobros.transferencia}% off por transferencia</b
 												>
 												{#if tienda.cobros.cuotas > 1}<div
-														style="font-size:13.5px;color:#56645A;margin-top:2px"
+														style="font-size:13.5px;color:var(--tc-56645a, #56645A);margin-top:2px"
 													>
 														O hasta {tienda.cobros.cuotas} cuotas sin interés con&nbsp;tarjeta
 													</div>{/if}
 											</div>
 											<a
 												href="{base}/catalogo"
-												style="padding:11px 14px;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:700 13.5px 'Schibsted Grotesk';white-space:nowrap;text-decoration:none"
+												style="padding:11px 14px;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:700 13.5px var(--tf-texto,'Schibsted Grotesk');white-space:nowrap;text-decoration:none"
 												>Comprar</a
 											>
 										</div>{/if}
@@ -862,7 +875,7 @@
 						>
 							{#each tienda.categorias as c, i (c.nombre)}<a
 									href={enlaceCat(c.nombre)}
-									style="padding:14px 8px;border-radius:14px;background:#fff;color:#1E2B22;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0"
+									style="padding:14px 8px;border-radius:14px;background:var(--tc-ffffff, #fff);color:var(--tc-1e2b22, #1E2B22);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0"
 									><span
 										style="width:48px;height:48px;border-radius:50%;overflow:hidden;background:{TILE_BG[
 											i % TILE_BG.length
@@ -892,11 +905,13 @@
 								<h2
 									style="margin:0;font-weight:800;font-size:clamp(28px,3.6cqw,42px);letter-spacing:-.04em"
 								>
-									Los más vendidos
+									{#if tienda.estilo?.textos?.prods?.trim()}{tienda.estilo.textos.prods}{:else}
+										Los más vendidos
+									{/if}
 								</h2>
 								<a
 									href="{base}/catalogo"
-									style="font:700 14px 'Schibsted Grotesk';color:var(--acento, #2F5D50);display:flex;align-items:center;gap:6px;text-decoration:none"
+									style="font:700 14px var(--tf-texto,'Schibsted Grotesk');color:var(--acento, #2F5D50);display:flex;align-items:center;gap:6px;text-decoration:none"
 									>Ver todos<Icon icon={I.phArrowRightBold} size={14} /></a
 								>
 							</div>
@@ -912,7 +927,7 @@
 							style="padding:clamp(32px,5cqw,56px) clamp(12px,3cqw,32px) 0"
 						>
 							<div
-								style="padding:clamp(18px,3cqw,32px);border-radius:16px;background:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;align-items:center"
+								style="padding:clamp(18px,3cqw,32px);border-radius:16px;background:var(--tc-ffffff, #fff);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;align-items:center"
 							>
 								<div>
 									<h2
@@ -920,7 +935,7 @@
 									>
 										¿Cuándo te llega?
 									</h2>
-									<p style="margin:6px 0 0;font-size:14.5px;color:#56645A">
+									<p style="margin:6px 0 0;font-size:14.5px;color:var(--tc-56645a, #56645A)">
 										Poné tu código postal y te decimos cuándo y&nbsp;cuánto.
 									</p>
 									<div style="margin-top:14px;display:flex;gap:6px;max-width:380px">
@@ -934,13 +949,13 @@
 												e.key === 'Enter' &&
 												cpValido(cpInicio) &&
 												cotizarYa(cpInicio, subtotal, tienda).then((o) => (cotizadoInicio = o))}
-											style="flex:1;min-width:0;padding:12px 14px;border-radius:10px;border:1.5px solid #1E2B22;background:transparent;font:600 15px 'Schibsted Grotesk';color:#1E2B22"
+											style="flex:1;min-width:0;padding:12px 14px;border-radius:10px;border:1.5px solid var(--tc-1e2b22, #1E2B22);background:transparent;font:600 15px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22)"
 										/><button
 											type="button"
 											onclick={() =>
 												cpValido(cpInicio) &&
 												cotizarYa(cpInicio, subtotal, tienda).then((o) => (cotizadoInicio = o))}
-											style="padding:12px 18px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:700 14px 'Schibsted Grotesk';cursor:pointer"
+											style="padding:12px 18px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:700 14px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 											>Calcular</button
 										>
 									</div>
@@ -948,7 +963,7 @@
 								{#if cotizadoInicio}
 									<div style="display:flex;flex-direction:column;gap:6px">
 										{#each cotizadoInicio as s (s.id)}<div
-												style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#F2F4EE"
+												style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--tc-f2f4ee, #F2F4EE)"
 											>
 												<Icon
 													icon={iconoEnvio(s.id)}
@@ -958,10 +973,10 @@
 													><b>{s.nombre}</b> · {s.detalle}</span
 												><b
 													style="font-size:14px;white-space:nowrap;color:{s.precio
-														? '#1E2B22'
+														? 'var(--tc-1e2b22, #1E2B22)'
 														: 'var(--acento, #2F5D50)'}">{s.precio ? fmt(s.precio) : 'Gratis'}</b
 												>
-											</div>{:else}<span style="font-size:14px;color:#56645A"
+											</div>{:else}<span style="font-size:14px;color:var(--tc-56645a, #56645A)"
 												>No llegamos a ese código postal&nbsp;todavía.</span
 											>{/each}
 									</div>
@@ -979,7 +994,7 @@
 								>
 									Suscripciones
 								</h2>
-								<span style="font-size:14px;color:#56645A"
+								<span style="font-size:14px;color:var(--tc-56645a, #56645A)"
 									>Débito automático con Mercado Pago · pausás cuando&nbsp;quieras</span
 								>
 							</div>
@@ -988,19 +1003,19 @@
 							>
 								{#each tienda.suscripciones as p (p.id)}<a
 										href="{base}/suscripciones/{p.id}"
-										style="padding:10px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:6px;min-width:0;text-decoration:none;color:#1E2B22"
+										style="padding:10px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:6px;min-width:0;text-decoration:none;color:var(--tc-1e2b22, #1E2B22)"
 										><span
-											style="position:relative;display:block;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#F2F4EE"
+											style="position:relative;display:block;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:var(--tc-f2f4ee, #F2F4EE)"
 											>{#if p.foto ?? p.productos[0]?.foto}<img
 													src={img(p.foto ?? p.productos[0]?.foto ?? null, 600, 450)}
 													alt=""
 													style="width:100%;height:100%;object-fit:cover;display:block"
 												/>{/if}</span
 										><span style="font-size:13.5px;font-weight:600;line-height:1.3">{p.nombre}</span
-										><span style="font-size:12px;color:#6B7A6E"
+										><span style="font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)"
 											>{p.agotado ? 'Sin lugar por ahora' : queIncluye(p) || entregasDe(p)}</span
 										><b style="font-size:17px;letter-spacing:-.02em"
-											>{fmt(p.precio)}<span style="font-weight:500;color:#56645A">
+											>{fmt(p.precio)}<span style="font-weight:500;color:var(--tc-56645a, #56645A)">
 												{CADA[p.frecuencia]}</span
 											></b
 										></a
@@ -1014,9 +1029,11 @@
 							<h2
 								style="margin:0;font-weight:800;font-size:clamp(28px,3.6cqw,42px);letter-spacing:-.04em"
 							>
-								{tienda.promedio
-									? `${tienda.promedio.toLocaleString('es-AR')} de promedio en reseñas`
-									: 'Lo que dicen'}
+								{#if tienda.estilo?.textos?.revs?.trim()}{tienda.estilo.textos.revs}{:else}
+									{tienda.promedio
+										? `${tienda.promedio.toLocaleString('es-AR')} de promedio en reseñas`
+										: 'Lo que dicen'}
+								{/if}
 							</h2>
 							<div
 								style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px"
@@ -1024,7 +1041,7 @@
 								{#each tienda.resenas.slice(0, 4) as r, i (i)}
 									{@const pr = tienda.productos.find((p) => p.nombre === r.producto)}
 									<div
-										style="display:flex;gap:12px;padding:12px;border-radius:14px;background:#fff"
+										style="display:flex;gap:12px;padding:12px;border-radius:14px;background:var(--tc-ffffff, #fff)"
 									>
 										{#if pr?.foto}<img
 												src={img(pr.foto, 160, 160)}
@@ -1036,7 +1053,7 @@
 												{#each estrellas(r.estrellas) as e, j (j)}<Icon icon={e} size={13} />{/each}
 											</div>
 											<p style="margin:5px 0 0;font-size:13.5px;line-height:1.4">{r.texto}</p>
-											<div style="margin-top:4px;font-size:12px;color:#6B7A6E">
+											<div style="margin-top:4px;font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)">
 												{r.autor}{#if r.producto}
 													· {r.conCompra ? 'compró' : 'sobre'} {r.producto}{/if}
 											</div>
@@ -1046,10 +1063,10 @@
 													<Icon icon={I.phSealCheckFill} size={13} />Compra verificada
 												</div>{/if}
 											{#if r.respuesta}<div
-													style="margin-top:8px;padding:8px 10px;border-radius:10px;background:#EEF1E8;font-size:12.5px;line-height:1.45;color:#56645A"
+													style="margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--tc-eef1e8, #EEF1E8);font-size:12.5px;line-height:1.45;color:var(--tc-56645a, #56645A)"
 												>
-													<b style="color:#1E2B22">Respuesta de {tienda.nombre}</b><br
-													/>{r.respuesta}
+													<b style="color:var(--tc-1e2b22, #1E2B22)">Respuesta de {tienda.nombre}</b
+													><br />{r.respuesta}
 												</div>{/if}
 										</div>
 									</div>
@@ -1076,20 +1093,22 @@
 						style="width:240px;flex:none;position:sticky;top:120px;display:flex;flex-direction:column;gap:18px;font-size:13.5px"
 					>
 						<div
-							style="padding:12px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:2px"
+							style="padding:12px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:2px"
 						>
 							{#each [{ t: 'Todo', c: null, n: tienda.productos.length }, ...tienda.categorias.map( (c) => ({ t: c.nombre, c: c.nombre, n: c.cantidad }) )] as c (c.t)}{@const on =
 									c.c === categoria}<a
 									href={enlaceCat(c.c, orden, soloOferta)}
 									style="display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;background:{on
 										? 'var(--acento, #2F5D50)'
-										: 'transparent'};color:{on ? '#fff' : '#1E2B22'};font-weight:{on
+										: 'transparent'};color:{on
+										? 'var(--tc-ffffff, #fff)'
+										: 'var(--tc-1e2b22, #1E2B22)'};font-weight:{on
 										? 700
 										: 500};text-decoration:none">{c.t}<span style="opacity:.6">{c.n}</span></a
 								>{/each}
 						</div>
 						<div
-							style="padding:14px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:10px"
+							style="padding:14px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:10px"
 						>
 							<b style="font-size:12px;letter-spacing:.08em">FILTRAR</b>
 							{#each filtros as f (f.t)}<button
@@ -1097,21 +1116,23 @@
 									role="checkbox"
 									aria-checked={f.on}
 									onclick={f.cambiar}
-									style="display:flex;align-items:center;gap:9px;padding:0;border:0;background:transparent;font:400 13.5px 'Schibsted Grotesk';color:#1E2B22;cursor:pointer;text-align:left"
+									style="display:flex;align-items:center;gap:9px;padding:0;border:0;background:transparent;font:400 13.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);cursor:pointer;text-align:left"
 									><span
 										style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--acento, #2F5D50);background:{f.on
 											? 'var(--acento, #2F5D50)'
-											: 'transparent'};display:grid;place-items:center;color:#fff;flex:none"
+											: 'transparent'};display:grid;place-items:center;color:var(--tc-ffffff, #fff);flex:none"
 										>{#if f.on}<Icon icon={I.phCheckBold} size={11} />{/if}</span
-									><span style="flex:1">{f.t}</span><span style="color:#8A968C">{f.n}</span></button
+									><span style="flex:1">{f.t}</span><span style="color:var(--tc-8a968c, #8A968C)"
+										>{f.n}</span
+									></button
 								>{/each}
 						</div>
 					</aside>
 				{/if}
 				<div style="flex:1;min-width:0">
-					<div style="font-size:12.5px;color:#6B7A6E">
+					<div style="font-size:12.5px;color:var(--tc-6b7a6e, #6B7A6E)">
 						<a href={base || '/'} style="color:inherit;text-decoration:none">Inicio</a> /
-						<span style="color:#1E2B22">{categoria ?? 'Todo'}</span>
+						<span style="color:var(--tc-1e2b22, #1E2B22)">{categoria ?? 'Todo'}</span>
 					</div>
 					<div
 						style="margin-top:6px;display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap"
@@ -1120,18 +1141,20 @@
 							style="margin:0;font-weight:800;font-size:clamp(32px,4.4cqw,52px);letter-spacing:-.045em;overflow-wrap:break-word;min-width:0"
 						>
 							{categoria ?? 'Todo'}
-							<span style="font-size:.5em;color:#6B7A6E;font-weight:600">{listado.length}</span>
+							<span style="font-size:.5em;color:var(--tc-6b7a6e, #6B7A6E);font-weight:600"
+								>{listado.length}</span
+							>
 						</h1>
 						<div style="display:flex;gap:6px;flex-wrap:wrap">
 							{#if nar}<button
 									type="button"
 									aria-expanded={filtrosAbiertos}
 									onclick={() => (filtrosAbiertos = !filtrosAbiertos)}
-									style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:0;border-radius:10px;background:#fff;font:700 13.5px 'Schibsted Grotesk';color:#1E2B22;cursor:pointer"
+									style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:0;border-radius:10px;background:var(--tc-ffffff, #fff);font:700 13.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 									><Icon icon={I.phFunnelBold} size={15} />Filtros{#if soloOferta || soloStock}
 										· {Number(soloOferta) + Number(soloStock)}{/if}</button
 								>{/if}<label
-								style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:10px;background:#fff;font-size:13.5px;font-weight:700"
+								style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:10px;background:var(--tc-ffffff, #fff);font-size:13.5px;font-weight:700"
 								><span
 									style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"
 									>Ordenar</span
@@ -1141,11 +1164,11 @@
 										goto(enlaceCat(categoria, e.currentTarget.value, soloOferta), {
 											replace: true
 										})}
-									style="border:0;padding:0;background:transparent;font:700 13.5px 'Schibsted Grotesk';color:#1E2B22;cursor:pointer"
+									style="border:0;padding:0;background:transparent;font:700 13.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 									>{#each ORDENES as [k, t] (k)}<option value={k}>{t}</option>{/each}</select
 								></label
 							><span
-								style="display:flex;padding:3px;border-radius:10px;background:#fff"
+								style="display:flex;padding:3px;border-radius:10px;background:var(--tc-ffffff, #fff)"
 								role="radiogroup"
 								aria-label="Vista"
 								><button
@@ -1156,8 +1179,8 @@
 									onclick={() => (vista = 'grilla')}
 									style="width:32px;height:32px;border:0;padding:0;border-radius:8px;background:{vista ===
 									'grilla'
-										? '#DDE8DF'
-										: 'transparent'};display:grid;place-items:center;color:#1E2B22;cursor:pointer"
+										? 'var(--tc-dde8df, #DDE8DF)'
+										: 'transparent'};display:grid;place-items:center;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 									><Icon icon={I.phSquaresFourBold} size={16} /></button
 								><button
 									type="button"
@@ -1167,8 +1190,8 @@
 									onclick={() => (vista = 'lista')}
 									style="width:32px;height:32px;border:0;padding:0;border-radius:8px;background:{vista ===
 									'lista'
-										? '#DDE8DF'
-										: 'transparent'};display:grid;place-items:center;color:#1E2B22;cursor:pointer"
+										? 'var(--tc-dde8df, #DDE8DF)'
+										: 'transparent'};display:grid;place-items:center;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 									><Icon icon={I.phListBulletsBold} size={16} /></button
 								></span
 							>
@@ -1176,20 +1199,22 @@
 					</div>
 					{#if nar && filtrosAbiertos}
 						<div
-							style="margin-top:12px;padding:14px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:10px;font-size:13.5px"
+							style="margin-top:12px;padding:14px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:10px;font-size:13.5px"
 						>
 							{#each filtros as f (f.t)}<button
 									type="button"
 									role="checkbox"
 									aria-checked={f.on}
 									onclick={f.cambiar}
-									style="display:flex;align-items:center;gap:9px;padding:0;border:0;background:transparent;font:400 13.5px 'Schibsted Grotesk';color:#1E2B22;cursor:pointer;text-align:left"
+									style="display:flex;align-items:center;gap:9px;padding:0;border:0;background:transparent;font:400 13.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);cursor:pointer;text-align:left"
 									><span
 										style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--acento, #2F5D50);background:{f.on
 											? 'var(--acento, #2F5D50)'
-											: 'transparent'};display:grid;place-items:center;color:#fff;flex:none"
+											: 'transparent'};display:grid;place-items:center;color:var(--tc-ffffff, #fff);flex:none"
 										>{#if f.on}<Icon icon={I.phCheckBold} size={11} />{/if}</span
-									><span style="flex:1">{f.t}</span><span style="color:#8A968C">{f.n}</span></button
+									><span style="flex:1">{f.t}</span><span style="color:var(--tc-8a968c, #8A968C)"
+										>{f.n}</span
+									></button
 								>{/each}
 						</div>
 					{/if}
@@ -1198,15 +1223,15 @@
 								c === categoria}<a
 								href={enlaceCat(c, orden, soloOferta)}
 								style="flex:none;padding:8px 13px;border-radius:999px;background:{on
-									? '#1E2B22'
-									: '#fff'};color:{on
-									? '#EEF1E8'
-									: '#1E2B22'};font-size:13px;font-weight:700;white-space:nowrap;text-decoration:none"
+									? 'var(--tc-1e2b22, #1E2B22)'
+									: 'var(--tc-ffffff, #fff)'};color:{on
+									? 'var(--tc-eef1e8, #EEF1E8)'
+									: 'var(--tc-1e2b22, #1E2B22)'};font-size:13px;font-weight:700;white-space:nowrap;text-decoration:none"
 								>{c ?? 'Todos'}</a
 							>{/each}
 					</div>
 					{#if !catalog.length}
-						<p style="margin:28px 0;font-size:15px;color:#6B7A6E">
+						<p style="margin:28px 0;font-size:15px;color:var(--tc-6b7a6e, #6B7A6E)">
 							No hay productos con estos&nbsp;filtros.
 						</p>
 					{:else if vista === 'grilla'}
@@ -1220,18 +1245,18 @@
 							{#each catalog as p (p.id)}
 								{@const q = enCarrito(p.id)}
 								<div
-									style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;background:#fff;min-width:0"
+									style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;background:var(--tc-ffffff, #fff);min-width:0"
 								>
 									<a
 										href={p.href}
 										aria-label={p.n}
-										style="position:relative;display:block;width:64px;height:64px;flex:none;border-radius:9px;overflow:hidden;background:#F2F4EE"
+										style="position:relative;display:block;width:64px;height:64px;flex:none;border-radius:9px;overflow:hidden;background:var(--tc-f2f4ee, #F2F4EE)"
 										>{#if p.img}<img
 												src={p.img}
 												alt=""
 												style="width:100%;height:100%;object-fit:cover"
 											/>{/if}{#if p.off}<span
-												style="position:absolute;left:3px;top:3px;padding:1px 5px;border-radius:4px;background:#C2412D;color:#fff;font-size:10.5px;font-weight:800"
+												style="position:absolute;left:3px;top:3px;padding:1px 5px;border-radius:4px;background:#C2412D;color:var(--tc-ffffff, #fff);font-size:10.5px;font-weight:800"
 												>{p.off}</span
 											>{/if}</a
 									>
@@ -1244,16 +1269,16 @@
 											<a
 												href={p.href}
 												class:dos={nar}
-												style="font-size:14.5px;font-weight:600;line-height:1.25;overflow:hidden;color:#1E2B22;text-decoration:none;{nar
+												style="font-size:14.5px;font-weight:600;line-height:1.25;overflow:hidden;color:var(--tc-1e2b22, #1E2B22);text-decoration:none;{nar
 													? ''
 													: 'white-space:nowrap;text-overflow:ellipsis'}">{p.n}</a
 											>{#if p.tag}<span
-													style="flex:none;padding:1px 5px;border-radius:4px;background:#E7EDF5;color:#2E4C7A;font-size:10px;font-weight:800;text-transform:uppercase"
+													style="flex:none;padding:1px 5px;border-radius:4px;background:var(--tc-e7edf5, #E7EDF5);color:#2E4C7A;font-size:10px;font-weight:800;text-transform:uppercase"
 													>{p.tag}</span
 												>{/if}
 										</div>
 										<div
-											style="font-size:12px;color:#6B7A6E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+											style="font-size:12px;color:var(--tc-6b7a6e, #6B7A6E);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
 										>
 											{#if tienda.cobros.transferencia > 0}<b style="color:var(--acento, #2F5D50)"
 													>{p.transf} por transferencia</b
@@ -1262,22 +1287,24 @@
 									</div>
 									<div style="text-align:right;flex:none;min-width:{nar ? 0 : 74}px">
 										<b style="display:block;font-size:16px;letter-spacing:-.02em">{p.price}</b
-										>{#if p.old}<s style="font-size:11.5px;color:#8A968C">{p.old}</s>{/if}
+										>{#if p.old}<s style="font-size:11.5px;color:var(--tc-8a968c, #8A968C)"
+												>{p.old}</s
+											>{/if}
 									</div>
 									{#if q}<span
-											style="flex:none;display:flex;align-items:center;gap:2px;padding:3px;border-radius:9px;background:var(--acento, #2F5D50);color:#fff"
+											style="flex:none;display:flex;align-items:center;gap:2px;padding:3px;border-radius:9px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff)"
 											><button
 												type="button"
 												aria-label="Uno menos"
 												onclick={() => carrito.fijar(p.id, q - 1)}
-												style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#fff;cursor:pointer"
+												style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-ffffff, #fff);cursor:pointer"
 												><Icon icon={I.phMinusBold} size={12} /></button
 											><b style="min-width:16px;text-align:center;font-size:13.5px">{q}</b><button
 												type="button"
 												aria-label="Uno más"
 												disabled={q >= p.stock}
 												onclick={() => sumar(p.id)}
-												style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#fff;cursor:pointer"
+												style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-ffffff, #fff);cursor:pointer"
 												><Icon icon={I.phPlusBold} size={12} /></button
 											></span
 										>{:else}<button
@@ -1296,7 +1323,7 @@
 						<button
 							type="button"
 							onclick={() => (mostrar += 24)}
-							style="margin-top:16px;width:100%;padding:12px;border:0;text-align:center;border-radius:12px;background:#fff;font:700 14px 'Schibsted Grotesk';color:var(--acento, #2F5D50);cursor:pointer"
+							style="margin-top:16px;width:100%;padding:12px;border:0;text-align:center;border-radius:12px;background:var(--tc-ffffff, #fff);font:700 14px var(--tf-texto,'Schibsted Grotesk');color:var(--acento, #2F5D50);cursor:pointer"
 							>Ver más · ves {catalog.length} de {listado.length}</button
 						>
 					{/if}
@@ -1307,26 +1334,26 @@
 		<!-- ============ PRODUCTO ============ -->
 		{#if pagina === 'producto' && producto && sel}
 			<section style="padding:16px clamp(12px,3cqw,32px) 0">
-				<div style="font-size:12.5px;color:#6B7A6E">
+				<div style="font-size:12.5px;color:var(--tc-6b7a6e, #6B7A6E)">
 					<a href={base || '/'} style="color:inherit;text-decoration:none">Inicio</a> / {#if producto.categoria}<a
 							href={enlaceCat(producto.categoria)}
 							style="color:inherit;text-decoration:none">{producto.categoria}</a
 						> /
-					{/if}<span style="color:#1E2B22">&#32;{producto.nombre}</span>
+					{/if}<span style="color:var(--tc-1e2b22, #1E2B22)">&#32;{producto.nombre}</span>
 				</div>
 				<div
 					style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(16px,3cqw,40px);align-items:start"
 				>
 					<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
 						<div
-							style="position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#fff"
+							style="position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--tc-ffffff, #fff)"
 						>
 							{#if sel.foto}<img
 									src={img(sel.foto, 1000, 1000)}
 									alt={producto.nombre}
 									style="width:100%;height:100%;object-fit:cover"
 								/>{/if}{#if tachado}<span
-									style="position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:6px;background:#C2412D;color:#fff;font-size:13px;font-weight:800"
+									style="position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:6px;background:#C2412D;color:var(--tc-ffffff, #fff);font-size:13px;font-weight:800"
 									>−{Math.round((1 - sel.precio / tachado) * 100)}%</span
 								>{/if}
 						</div>
@@ -1338,7 +1365,7 @@
 										aria-label="Ver la foto {i + 1}"
 										aria-pressed={i === sel.fotoIdx}
 										onclick={() => sel.verFoto(i)}
-										style="aspect-ratio:1;padding:0;border:0;border-radius:10px;overflow:hidden;background:#fff;cursor:pointer;box-shadow:0 0 0 {i ===
+										style="aspect-ratio:1;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--tc-ffffff, #fff);cursor:pointer;box-shadow:0 0 0 {i ===
 										sel.fotoIdx
 											? '2px'
 											: '0px'} var(--acento, #2F5D50)"
@@ -1359,10 +1386,10 @@
 								>
 									{#if producto.categoria}<a
 											href={enlaceCat(producto.categoria)}
-											style="display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;background:#DDE8DF;color:var(--acento, #2F5D50);font-size:12px;font-weight:800;text-transform:uppercase;text-decoration:none"
+											style="display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;background:var(--tc-dde8df, #DDE8DF);color:var(--acento, #2F5D50);font-size:12px;font-weight:800;text-transform:uppercase;text-decoration:none"
 											>{producto.categoria}</a
 										>{/if}{#if producto.etiqueta}<span
-											style="padding:4px 9px;border-radius:6px;background:#F2F4EE;font-size:12px;font-weight:700"
+											style="padding:4px 9px;border-radius:6px;background:var(--tc-f2f4ee, #F2F4EE);font-size:12px;font-weight:700"
 											>{producto.etiqueta}</span
 										>{/if}
 								</div>{/if}
@@ -1379,7 +1406,8 @@
 												icon={e}
 												size={14}
 											/>{/each}</span
-									><b>{promedioProd.toLocaleString('es-AR')}</b><span style="color:#6B7A6E"
+									><b>{promedioProd.toLocaleString('es-AR')}</b><span
+										style="color:var(--tc-6b7a6e, #6B7A6E)"
 										>{resenasProd.length}
 										{resenasProd.length === 1 ? 'reseña' : 'reseñas'}</span
 									>
@@ -1390,7 +1418,9 @@
 							)}
 							<div>
 								<div
-									style="font-size:13.5px;color:{sel.aviso && !o.elegido ? '#C2412D' : '#1E2B22'}"
+									style="font-size:13.5px;color:{sel.aviso && !o.elegido
+										? '#C2412D'
+										: 'var(--tc-1e2b22, #1E2B22)'}"
 								>
 									<b>{o.nombre}</b>{#if o.elegido}: {o.elegido}{/if}
 								</div>
@@ -1401,11 +1431,13 @@
 												aria-pressed={x.elegido}
 												disabled={!x.disponible && !x.elegido}
 												onclick={() => sel.elegir(o.nombre, x.valor)}
-												style="width:40px;height:40px;padding:0;border:0;border-radius:50%;overflow:hidden;background:#fff;cursor:pointer;opacity:{x.disponible
+												style="width:40px;height:40px;padding:0;border:0;border-radius:50%;overflow:hidden;background:var(--tc-ffffff, #fff);cursor:pointer;opacity:{x.disponible
 													? 1
-													: 0.4};box-shadow:inset 0 0 0 1px rgba(30,43,34,.12),0 0 0 {x.elegido
+													: 0.4};box-shadow:inset 0 0 0 1px var(--tc-1e2b22-120, rgba(30,43,34,.12)),0 0 0 {x.elegido
 													? '2px'
-													: '0px'} #EEF1E8,0 0 0 {x.elegido ? '4px' : '0px'} var(--acento, #2F5D50)"
+													: '0px'} var(--tc-eef1e8, #EEF1E8),0 0 0 {x.elegido
+													? '4px'
+													: '0px'} var(--acento, #2F5D50)"
 												>{#if x.color}<span
 														style="display:block;width:100%;height:100%;background:{x.color}"
 													></span>{:else}<img
@@ -1431,25 +1463,25 @@
 												onclick={() => sel.elegir(o.nombre, x.valor)}
 												style="min-height:48px;padding:10px 6px;border-radius:10px;border:1.5px solid {x.elegido
 													? 'var(--acento, #2F5D50)'
-													: 'rgba(30,43,34,.12)'};background:{x.elegido
-													? '#DDE8DF'
-													: '#fff'};text-align:center;font:400 13.5px 'Schibsted Grotesk';color:{x.disponible
-													? '#1E2B22'
-													: '#8A968C'};text-decoration:{x.disponible
+													: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{x.elegido
+													? 'var(--tc-dde8df, #DDE8DF)'
+													: 'var(--tc-ffffff, #fff)'};text-align:center;font:400 13.5px var(--tf-texto,'Schibsted Grotesk');color:{x.disponible
+													? 'var(--tc-1e2b22, #1E2B22)'
+													: 'var(--tc-8a968c, #8A968C)'};text-decoration:{x.disponible
 													? 'none'
 													: 'line-through'};cursor:{x.disponible ? 'pointer' : 'default'}"
 												><b style="display:block;font-size:14.5px">{x.valor}</b>{#if pv}<span
-														style="font-size:11.5px;color:#56645A"
+														style="font-size:11.5px;color:var(--tc-56645a, #56645A)"
 														>{fmt(pv.precio ?? producto.precio)}</span
 													>{/if}</button
 											>{/each}
 									</div>{/if}
 							</div>{/each}
-						<div style="padding:16px;border-radius:14px;background:#fff">
+						<div style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff)">
 							<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
 								<b style="font-size:34px;letter-spacing:-.03em"
 									>{sel.desde ? 'Desde ' : ''}{fmt(sel.precio)}</b
-								>{#if tachado}<s style="color:#8A968C">{fmt(tachado)}</s>{/if}
+								>{#if tachado}<s style="color:var(--tc-8a968c, #8A968C)">{fmt(tachado)}</s>{/if}
 							</div>
 							{#if tienda.cobros.cuotas > 1 || tienda.cobros.transferencia > 0}<div
 									style="margin-top:4px;font-size:13.5px"
@@ -1463,16 +1495,16 @@
 										>{/if}
 								</div>{/if}
 							{#if escalas.length}<div
-									style="margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(30,43,34,.1)"
+									style="margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid var(--tc-1e2b22-100, rgba(30,43,34,.1))"
 								>
 									<div
-										style="padding:8px 12px;background:#F2F4EE;font-size:12px;font-weight:800;letter-spacing:.04em"
+										style="padding:8px 12px;background:var(--tc-f2f4ee, #F2F4EE);font-size:12px;font-weight:800;letter-spacing:.04em"
 									>
 										PRECIO POR MAYOR
 									</div>
 									{#each escalas as t (t.q)}<div
-											style="display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border-top:1px solid rgba(30,43,34,.08);font-size:13.5px;background:{t.on
-												? '#F7F9F4'
+											style="display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border-top:1px solid var(--tc-1e2b22-80, rgba(30,43,34,.08));font-size:13.5px;background:{t.on
+												? 'var(--tc-f7f9f4, #F7F9F4)'
 												: 'transparent'}"
 										>
 											<span>{t.q}</span><b>{t.p}</b><span
@@ -1488,27 +1520,27 @@
 								</div>{/if}
 							<div style="margin-top:12px;display:flex;gap:8px">
 								{#if sel.stock > 0}<span
-										style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:10px;border:1.5px solid rgba(30,43,34,.15);flex:none"
+										style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:10px;border:1.5px solid var(--tc-1e2b22-150, rgba(30,43,34,.15));flex:none"
 										><button
 											type="button"
 											aria-label="Uno menos"
 											disabled={cantidad <= 1}
 											onclick={() => (cantidad = Math.max(1, cantidad - 1))}
-											style="width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#1E2B22;cursor:pointer"
+											style="width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 											><Icon icon={I.phMinusBold} size={14} /></button
 										><b style="width:22px;text-align:center">{cantidad}</b><button
 											type="button"
 											aria-label="Uno más"
 											disabled={cantidad >= sel.stock}
 											onclick={() => (cantidad = Math.min(sel.stock, cantidad + 1))}
-											style="width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#1E2B22;cursor:pointer"
+											style="width:38px;height:38px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 											><Icon icon={I.phPlusBold} size={14} /></button
 										></span
 									>{/if}<button
 									type="button"
 									onclick={agregar}
 									disabled={sel.stock === 0 || tienda.vitrina}
-									style="flex:1;padding:14px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';cursor:pointer"
+									style="flex:1;padding:14px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 									>{sel.boton(`Agregar · ${fmt(sel.precio * cantidad)}`)}</button
 								>
 							</div>
@@ -1518,14 +1550,14 @@
 									)}
 									target="_blank"
 									rel="noopener"
-									style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:12px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
+									style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:12px;border-radius:10px;background:var(--tc-e6f5ea, #E6F5EA);color:var(--tc-1f6f3a, #1F6F3A);font-size:14px;font-weight:700;text-decoration:none"
 									><Icon icon={I.phWhatsappLogoFill} size={18} />Pedir por WhatsApp</a
 								>{/if}
 							<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 							<CompartirProducto {tienda} {producto} {tema} />
 						</div>
 						{#if envia(tienda.envios)}<div
-								style="padding:14px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:6px;font-size:13.5px"
+								style="padding:14px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:6px;font-size:13.5px"
 							>
 								<label
 									for="cp-ficha"
@@ -1540,11 +1572,11 @@
 										maxlength="4"
 										placeholder="Código postal"
 										onkeydown={(e) => e.key === 'Enter' && calcular()}
-										style="flex:1;min-width:0;padding:10px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14);background:transparent;font:400 14px 'Schibsted Grotesk';color:#1E2B22"
+										style="flex:1;min-width:0;padding:10px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14));background:transparent;font:400 14px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22)"
 									/><button
 										type="button"
 										onclick={calcular}
-										style="padding:10px 14px;border:0;border-radius:9px;background:#1E2B22;color:#EEF1E8;font:700 13.5px 'Schibsted Grotesk';cursor:pointer"
+										style="padding:10px 14px;border:0;border-radius:9px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:700 13.5px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 										>Calcular</button
 									>
 								</div>
@@ -1552,23 +1584,23 @@
 											style="display:flex;justify-content:space-between;gap:10px;padding:8px 0 0"
 											><span>{o.nombre} · {o.detalle}</span><b
 												style="white-space:nowrap;color:{o.precio
-													? '#1E2B22'
+													? 'var(--tc-1e2b22, #1E2B22)'
 													: 'var(--acento, #2F5D50)'}">{o.precio ? fmt(o.precio) : 'Gratis'}</b
 											></span
 										>{/each}{/if}
 							</div>{/if}
 						<div style="display:flex;flex-direction:column;gap:6px">
 							{#each acc as a (a.t)}<div
-									style="padding:12px 14px;border-radius:14px;background:#fff;font-size:14px"
+									style="padding:12px 14px;border-radius:14px;background:var(--tc-ffffff, #fff);font-size:14px"
 								>
 									<button
 										type="button"
 										onclick={() => (abierto = a.open ? '' : a.t)}
 										aria-expanded={a.open}
-										style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0;border:0;background:transparent;font:700 14px 'Schibsted Grotesk';color:#1E2B22;cursor:pointer;text-align:left"
+										style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0;border:0;background:transparent;font:700 14px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);cursor:pointer;text-align:left"
 										>{a.t}<Icon icon={a.i} size={14} /></button
 									>{#if a.open}<p
-											style="margin:8px 0 0;font-size:13.5px;line-height:1.55;color:#56645A;text-wrap:pretty"
+											style="margin:8px 0 0;font-size:13.5px;line-height:1.55;color:var(--tc-56645a, #56645A);text-wrap:pretty"
 										>
 											{a.d}
 										</p>{/if}
@@ -1579,7 +1611,7 @@
 			</section>
 			<section style="padding:clamp(24px,4cqw,40px) clamp(12px,3cqw,32px) 0">
 				<div
-					style="max-width:820px;padding:clamp(16px,2.6cqw,24px);border-radius:16px;background:#fff"
+					style="max-width:820px;padding:clamp(16px,2.6cqw,24px);border-radius:16px;background:var(--tc-ffffff, #fff)"
 				>
 					<PreguntasProducto
 						slug={tienda.slug}
@@ -1598,11 +1630,11 @@
 						Combinalo con
 					</h2>
 					<div
-						style="margin-top:14px;padding:14px;border-radius:14px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap"
+						style="margin-top:14px;padding:14px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;align-items:center;gap:10px;flex-wrap:wrap"
 					>
 						{#each juntos as t, i (t.id)}<a
 								href="{base}/producto/{t.slug ?? t.id}"
-								style="display:flex;align-items:center;gap:10px;min-width:0;color:#1E2B22;text-decoration:none"
+								style="display:flex;align-items:center;gap:10px;min-width:0;color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 								>{#if t.foto}<img
 										src={img(t.foto, 140, 140)}
 										alt=""
@@ -1616,11 +1648,13 @@
 								>{#if i < juntos.length - 1}<Icon
 										icon={I.phPlusBold}
 										size={16}
-										style="color:#8A968C;margin:0 4px;flex:none"
+										style="color:var(--tc-8a968c, #8A968C);margin:0 4px;flex:none"
 									/>{/if}</a
 							>{/each}<span style="flex:1"></span>
 						<div style="text-align:right">
-							<div style="font-size:12.5px;color:#56645A">Los {juntos.length} juntos</div>
+							<div style="font-size:12.5px;color:var(--tc-56645a, #56645A)">
+								Los {juntos.length} juntos
+							</div>
 							<b style="font-size:20px"
 								>{fmt(juntos.reduce((s, p, i) => s + (i === 0 ? sel.precio : p.precio), 0))}</b
 							>
@@ -1629,7 +1663,7 @@
 							type="button"
 							onclick={sumarJuntos}
 							disabled={tienda.vitrina}
-							style="padding:12px 16px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:700 14px 'Schibsted Grotesk';cursor:pointer"
+							style="padding:12px 16px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:700 14px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 							>Sumar los {juntos.length}</button
 						>
 					</div>
@@ -1655,28 +1689,30 @@
 					<h1
 						style="margin:0;font-weight:800;font-size:clamp(32px,4.4cqw,52px);letter-spacing:-.045em"
 					>
-						Tu carrito <span style="font-size:.5em;color:#6B7A6E;font-weight:600"
+						Tu carrito <span style="font-size:.5em;color:var(--tc-6b7a6e, #6B7A6E);font-weight:600"
 							>{carrito.unidades} {carrito.unidades === 1 ? 'producto' : 'productos'}</span
 						>
 					</h1>
 					{#if !lineas.length}
-						<p style="margin:6px 0 0;font-size:15px;color:#56645A">Todavía no sumaste nada.</p>
+						<p style="margin:6px 0 0;font-size:15px;color:var(--tc-56645a, #56645A)">
+							Todavía no sumaste nada.
+						</p>
 						<a
 							href="{base}/catalogo"
-							style="align-self:flex-start;padding:14px 22px;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-decoration:none"
+							style="align-self:flex-start;padding:14px 22px;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-decoration:none"
 							>Ver productos</a
 						>
 					{:else}
 						{#if tienda.envios.gratisDesde}
 							<div
-								style="padding:12px 14px;border-radius:12px;background:#fff;display:flex;flex-direction:column;gap:8px"
+								style="padding:12px 14px;border-radius:12px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 							>
 								<span style="font-size:13.5px"
 									>{#if falta}Sumá <b>{fmt(falta)}</b> y el envío es gratis{:else}<b
 											>Tenés envío gratis</b
 										>{/if}</span
 								><span
-									style="display:block;height:6px;border-radius:3px;background:#DDE3D7;overflow:hidden"
+									style="display:block;height:6px;border-radius:3px;background:var(--tc-dde3d7, #DDE3D7);overflow:hidden"
 									><span
 										style="display:block;width:{Math.min(
 											100,
@@ -1686,10 +1722,10 @@
 								>
 							</div>
 						{/if}
-						<div style="border-radius:14px;background:#fff;overflow:hidden">
+						<div style="border-radius:14px;background:var(--tc-ffffff, #fff);overflow:hidden">
 							{#each lineas as c, i (c.clave)}<div
 									style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:{i
-										? '1px solid rgba(30,43,34,.07)'
+										? '1px solid var(--tc-1e2b22-70, rgba(30,43,34,.07))'
 										: '0'}"
 								>
 									{#if c.producto.foto}<img
@@ -1700,26 +1736,26 @@
 									<div style="flex:1;min-width:0">
 										<a
 											href="{base}/producto/{c.producto.slug ?? c.id}"
-											style="display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1E2B22;text-decoration:none"
+											style="display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 											>{c.producto.nombre}</a
 										>
-										<div style="font-size:12px;color:#6B7A6E">
+										<div style="font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)">
 											{c.variante ? `${c.variante} · ` : ''}{fmt(c.producto.precio)} c/u ·
 											<button
 												type="button"
 												onclick={() => carrito.fijar(c.clave, 0)}
-												style="border:0;padding:0;background:transparent;font:600 12px 'Schibsted Grotesk';color:#6B7A6E;text-decoration:underline;cursor:pointer"
+												style="border:0;padding:0;background:transparent;font:600 12px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-6b7a6e, #6B7A6E);text-decoration:underline;cursor:pointer"
 												>Quitar</button
 											>
 										</div>
 									</div>
 									<span
-										style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;border:1.5px solid rgba(30,43,34,.14);flex:none"
+										style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14));flex:none"
 										><button
 											type="button"
 											aria-label="Uno menos"
 											onclick={() => carrito.fijar(c.clave, c.cantidad - 1)}
-											style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#1E2B22;cursor:pointer"
+											style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 											><Icon icon={I.phMinusBold} size={12} /></button
 										><b style="min-width:16px;text-align:center;font-size:13.5px">{c.cantidad}</b
 										><button
@@ -1727,7 +1763,7 @@
 											aria-label="Uno más"
 											disabled={c.cantidad >= c.producto.stock}
 											onclick={() => carrito.fijar(c.clave, c.cantidad + 1)}
-											style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:#1E2B22;cursor:pointer"
+											style="width:28px;height:28px;display:grid;place-items:center;border:0;padding:0;background:transparent;color:var(--tc-1e2b22, #1E2B22);cursor:pointer"
 											><Icon icon={I.phPlusBold} size={12} /></button
 										></span
 									>{#if wide}<b style="min-width:70px;text-align:right;font-size:14.5px"
@@ -1754,7 +1790,7 @@
 									type="button"
 									disabled={tienda.vitrina}
 									onclick={() => sumar(u.id)}
-									style="border:0;padding:0;background:transparent;font:700 13.5px 'Schibsted Grotesk';color:#1E2B22;white-space:nowrap;cursor:pointer"
+									style="border:0;padding:0;background:transparent;font:700 13.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);white-space:nowrap;cursor:pointer"
 									>Sumar</button
 								>
 							</div>{/each}
@@ -1762,7 +1798,7 @@
 				</div>
 				{#if lineas.length}
 					<div
-						style="position:sticky;top:120px;padding:18px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:10px;font-size:14px"
+						style="position:sticky;top:120px;padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:10px;font-size:14px"
 					>
 						<b style="font-size:18px">Resumen</b>
 						<span style="display:flex;justify-content:space-between;gap:10px"
@@ -1774,13 +1810,16 @@
 								><span>Ofertas</span><span>− {fmt(ahorro)}</span></span
 							>{/if}
 						<span style="display:flex;justify-content:space-between;gap:10px"
-							><span>Envío</span><span style="color:#56645A">Se calcula al pagar</span></span
+							><span>Envío</span><span style="color:var(--tc-56645a, #56645A)"
+								>Se calcula al pagar</span
+							></span
 						>
-						<div style="height:1px;background:rgba(30,43,34,.1)"></div>
+						<div style="height:1px;background:var(--tc-1e2b22-100, rgba(30,43,34,.1))"></div>
 						<span style="display:flex;justify-content:space-between;align-items:baseline"
 							><b>Total</b><b style="font-size:26px;letter-spacing:-.02em">{fmt(subtotal)}</b></span
 						>
-						{#if tienda.cobros.cuotas > 1}<span style="font-size:13px;color:#56645A"
+						{#if tienda.cobros.cuotas > 1}<span
+								style="font-size:13px;color:var(--tc-56645a, #56645A)"
 								>{tienda.cobros.cuotas} cuotas sin interés de {fmt(
 									subtotal / tienda.cobros.cuotas
 								)}</span
@@ -1791,13 +1830,13 @@
 							>{/if}
 						<a
 							href="{base}/checkout"
-							style="padding:15px;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none"
+							style="padding:15px;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none"
 							>Ir a pagar</a
 						>{#if whatsapp}<a
 								href={wa(textoPedido)}
 								target="_blank"
 								rel="noopener"
-								style="display:flex;justify-content:center;align-items:center;gap:8px;padding:12px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
+								style="display:flex;justify-content:center;align-items:center;gap:8px;padding:12px;border-radius:10px;background:var(--tc-e6f5ea, #E6F5EA);color:var(--tc-1f6f3a, #1F6F3A);font-size:14px;font-weight:700;text-decoration:none"
 								><Icon icon={I.phWhatsappLogoFill} size={18} />Mandar el pedido por WhatsApp</a
 							>{/if}
 					</div>
@@ -1809,7 +1848,7 @@
 		{#if pagina === 'checkout'}
 			{#if !lineas.length}
 				<section style="padding:16px clamp(12px,3cqw,32px) clamp(40px,6cqw,72px)">
-					<p style="font-size:15px;color:#56645A">Tu carrito está vacío.</p>
+					<p style="font-size:15px;color:var(--tc-56645a, #56645A)">Tu carrito está vacío.</p>
 					<a href="{base}/catalogo" style="color:var(--acento, #2F5D50);font-weight:700"
 						>Ver productos</a
 					>
@@ -1838,54 +1877,58 @@
 							{#each ['1 · Datos', '2 · Entrega', '3 · Pago'] as t, i (t)}<span
 									style="flex:1;padding:9px;border-radius:9px;background:{i === 0
 										? 'var(--acento, #2F5D50)'
-										: '#fff'};color:{i === 0
-										? '#fff'
-										: '#6B7A6E'};font-size:13px;font-weight:700;text-align:center">{t}</span
+										: 'var(--tc-ffffff, #fff)'};color:{i === 0
+										? 'var(--tc-ffffff, #fff)'
+										: 'var(--tc-6b7a6e, #6B7A6E)'};font-size:13px;font-weight:700;text-align:center"
+									>{t}</span
 								>{/each}
 						</div>
 						<div
-							style="padding:16px;border-radius:14px;background:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"
+							style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"
 						>
 							<b style="grid-column:1/-1;font-size:16px">Tus datos</b>
 							{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI (opcional)', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
 								<label
-									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14)"
-									><span style="display:block;font-size:11.5px;color:#6B7A6E">{l}</span><input
+									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14))"
+									><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
+										>{l}</span
+									><input
 										name={n}
 										type={tipo}
 										autocomplete={ac as 'email'}
 										required={!OPCIONALES.has(n)}
 										maxlength="120"
-										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 									/></label
 								>
 							{/each}
 						</div>
 						<div
-							style="padding:16px;border-radius:14px;background:#fff;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:8px"
+							style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:8px"
 						>
 							<b style="grid-column:1/-1;font-size:16px">¿Dónde lo recibís?</b>
 							<label
-								style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14)"
-								><span style="display:block;font-size:11.5px;color:#6B7A6E">Código postal</span
+								style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14))"
+								><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
+									>Código postal</span
 								><input
 									name="cp"
 									bind:value={cp}
 									inputmode="numeric"
 									maxlength="4"
-									style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+									style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 								/></label
 							>
 							<label
-								style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14)"
-								><span style="display:block;font-size:11.5px;color:#6B7A6E"
+								style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14))"
+								><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
 									>Calle, número y piso</span
 								><input
 									name="direccion"
 									maxlength="160"
 									autocomplete="street-address"
 									required={envio !== 'retiro'}
-									style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+									style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 								/></label
 							>
 							<div
@@ -1900,9 +1943,9 @@
 										onclick={() => (envio = s.id)}
 										style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1.5px solid {on
 											? 'var(--acento, #2F5D50)'
-											: 'rgba(30,43,34,.12)'};background:{on
-											? '#F7F9F4'
-											: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#1E2B22"
+											: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+											? 'var(--tc-f7f9f4, #F7F9F4)'
+											: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 										><span
 											style="width:18px;height:18px;border-radius:50%;border:2px solid var(--acento, #2F5D50);display:grid;place-items:center;flex:none"
 											>{#if on}<span
@@ -1914,21 +1957,22 @@
 											style="color:var(--acento, #2F5D50);flex:none"
 										/><span style="flex:1;min-width:0"
 											><b style="font-size:14px">{s.nombre}</b><span
-												style="display:block;font-size:12px;color:#6B7A6E">{s.detalle}</span
+												style="display:block;font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)"
+												>{s.detalle}</span
 											></span
 										><b
 											style="font-size:14px;white-space:nowrap;color:{s.precio
-												? '#1E2B22'
+												? 'var(--tc-1e2b22, #1E2B22)'
 												: 'var(--acento, #2F5D50)'}">{s.precio ? fmt(s.precio) : 'Gratis'}</b
 										></button
-									>{:else}<span style="font-size:13.5px;color:#6B7A6E"
+									>{:else}<span style="font-size:13.5px;color:var(--tc-6b7a6e, #6B7A6E)"
 										>Poné tu código postal para ver cómo te&nbsp;llega.</span
 									>{/each}
 							</div>
 							<EnvioCorreo {tienda} {cp} {envio} {opciones} />
 						</div>
 						<div
-							style="padding:16px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:6px"
+							style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:6px"
 							role="radiogroup"
 							aria-label="Forma de pago"
 						>
@@ -1940,9 +1984,9 @@
 									onclick={() => (pago = p.id)}
 									style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1.5px solid {on
 										? 'var(--acento, #2F5D50)'
-										: 'rgba(30,43,34,.12)'};background:{on
-										? '#F7F9F4'
-										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#1E2B22"
+										: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+										? 'var(--tc-f7f9f4, #F7F9F4)'
+										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 									><span
 										style="width:18px;height:18px;border-radius:50%;border:2px solid var(--acento, #2F5D50);display:grid;place-items:center;flex:none"
 										>{#if on}<span
@@ -1951,14 +1995,15 @@
 									><Icon icon={p.i} size={20} style="color:{p.c};flex:none" /><span
 										style="flex:1;min-width:0"
 										><b style="font-size:14px">{p.t}</b><span
-											style="display:block;font-size:12px;color:#6B7A6E">{p.d}</span
+											style="display:block;font-size:12px;color:var(--tc-6b7a6e, #6B7A6E)"
+											>{p.d}</span
 										></span
 									></button
 								>{/each}
 						</div>
 					</div>
 					<div
-						style="position:sticky;top:120px;padding:18px;border-radius:14px;background:#1E2B22;color:#EEF1E8;display:flex;flex-direction:column;gap:10px;font-size:14px"
+						style="position:sticky;top:120px;padding:18px;border-radius:14px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);display:flex;flex-direction:column;gap:10px;font-size:14px"
 					>
 						<b style="font-size:18px">Tu pedido</b>
 						<div style="display:flex;flex-wrap:wrap;row-gap:6px">
@@ -1966,18 +2011,17 @@
 										src={img(c.producto.foto, 120, 120)}
 										alt={c.producto.nombre}
 										title="{c.cantidad} × {c.producto.nombre}{c.variante ? ` (${c.variante})` : ''}"
-										style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:-8px;box-shadow:0 0 0 2px #1E2B22"
+										style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:-8px;box-shadow:0 0 0 2px var(--tc-1e2b22, #1E2B22)"
 									/>{/if}{/each}
 						</div>
 						<span style="display:flex;justify-content:space-between;gap:10px"
-							><span style="color:#B9C6BB">Productos ({carrito.unidades})</span><span
-								>{fmt(subtotal)}</span
-							></span
+							><span style="color:var(--tc-b9c6bb, #B9C6BB)">Productos ({carrito.unidades})</span
+							><span>{fmt(subtotal)}</span></span
 						>
 						<span style="display:flex;justify-content:space-between;gap:10px"
-							><span style="color:#B9C6BB">Envío{elegida ? ` · ${elegida.nombre}` : ''}</span><span
-								>{elegida ? (cuenta.envio ? fmt(cuenta.envio) : 'Gratis') : '—'}</span
-							></span
+							><span style="color:var(--tc-b9c6bb, #B9C6BB)"
+								>Envío{elegida ? ` · ${elegida.nombre}` : ''}</span
+							><span>{elegida ? (cuenta.envio ? fmt(cuenta.envio) : 'Gratis') : '—'}</span></span
 						>
 						{#if cuenta.descCupon}<span
 								style="display:flex;justify-content:space-between;gap:10px;color:#E8C547;font-weight:700"
@@ -1992,19 +2036,19 @@
 							<CampoCupon
 								{cupon}
 								lineas={carrito.lineas}
-								tinta="#EEF1E8"
-								suave="#B9C6BB"
-								borde="rgba(238,241,232,.25)"
-								fondo="rgba(238,241,232,.06)"
+								tinta="var(--tc-eef1e8, #EEF1E8)"
+								suave="var(--tc-b9c6bb, #B9C6BB)"
+								borde="var(--tc-eef1e8-250, rgba(238,241,232,.25))"
+								fondo="var(--tc-eef1e8-60, rgba(238,241,232,.06))"
 								acento="#E8C547"
-								sobreAcento="#1E2B22"
+								sobreAcento="var(--tc-1e2b22, #1E2B22)"
 								radio="9px"
-								fuente="'Schibsted Grotesk',sans-serif"
+								fuente="var(--tf-texto,'Schibsted Grotesk'),sans-serif"
 								error="#FFD7CF"
 							/>
 						</div>
 						<span
-							style="display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px solid rgba(238,241,232,.14)"
+							style="display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px solid var(--tc-eef1e8-140, rgba(238,241,232,.14))"
 							><b>Total</b><b style="font-size:26px">{fmt(total)}</b></span
 						>
 						{#if error}<div
@@ -2015,7 +2059,7 @@
 							</div>{/if}
 						<button
 							disabled={!envio || !pagos.length || enviando || tienda.vitrina}
-							style="padding:15px;border:0;border-radius:10px;background:#E8C547;color:#1E2B22;font:800 15px 'Schibsted Grotesk';cursor:pointer"
+							style="padding:15px;border:0;border-radius:10px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font:800 15px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 							>{tienda.vitrina
 								? 'Es una tienda de ejemplo'
 								: !pagos.length
@@ -2024,7 +2068,8 @@
 										? `Confirmar pedido · ${fmt(total)}`
 										: 'Elegí cómo te llega'}</button
 						>
-						<span style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#B9C6BB"
+						<span
+							style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tc-b9c6bb, #B9C6BB)"
 							><Icon icon={I.phShieldCheckFill} size={15} style="flex:none" />Compra protegida · 10
 							días para&nbsp;arrepentirte</span
 						>
@@ -2039,10 +2084,10 @@
 				style="padding:clamp(24px,4cqw,48px) clamp(12px,3cqw,32px) clamp(40px,6cqw,72px);max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:10px"
 			>
 				<div
-					style="padding:clamp(20px,3cqw,32px);border-radius:16px;background:var(--acento, #2F5D50);color:#EEF1E8;display:flex;flex-direction:column;gap:12px"
+					style="padding:clamp(20px,3cqw,32px);border-radius:16px;background:var(--acento, #2F5D50);color:var(--tc-eef1e8, #EEF1E8);display:flex;flex-direction:column;gap:12px"
 				>
 					<span
-						style="width:52px;height:52px;border-radius:50%;background:#E8C547;color:#1E2B22;display:grid;place-items:center"
+						style="width:52px;height:52px;border-radius:50%;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);display:grid;place-items:center"
 						><Icon icon={I.phCheckBold} size={24} /></span
 					>
 					<h1
@@ -2050,16 +2095,16 @@
 					>
 						¡Gracias, {pedido.nombre}!
 					</h1>
-					<p style="margin:0;font-size:15.5px;line-height:1.55;color:#D6E0D4">
-						Recibimos tu pedido <b style="color:#fff">#{pedido.numero}</b> por
-						<b style="color:#fff">{fmt(pedido.total)}</b>. Te escribimos por mail con
-						cada&nbsp;novedad.
+					<p style="margin:0;font-size:15.5px;line-height:1.55;color:var(--tc-d6e0d4, #D6E0D4)">
+						Recibimos tu pedido <b style="color:var(--tc-ffffff, #fff)">#{pedido.numero}</b> por
+						<b style="color:var(--tc-ffffff, #fff)">{fmt(pedido.total)}</b>. Te escribimos por mail
+						con cada&nbsp;novedad.
 					</p>
 				</div>
 				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
-						style="padding:16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.6"
+						style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);font-size:14.5px;line-height:1.6"
 					>
 						<b>Transferí {fmt(pedido.total)}</b>
 						{#if pedido.alias}al {pedido.esCbu ? 'CBU/CVU' : 'alias'}
@@ -2074,7 +2119,7 @@
 				{/if}
 				<a
 					href={base || '/'}
-					style="padding:15px;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none"
+					style="padding:15px;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none"
 					>Volver a la tienda</a
 				>
 				{#if pedido.estado === 'Entregado'}
@@ -2117,9 +2162,9 @@
 								style="flex:1;min-width:0;padding:9px 4px;border-radius:9px;background:{i <=
 								reserva.paso
 									? 'var(--acento, #2F5D50)'
-									: '#fff'};color:{i <= reserva.paso
-									? '#fff'
-									: '#6B7A6E'};font-size:12px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+									: 'var(--tc-ffffff, #fff)'};color:{i <= reserva.paso
+									? 'var(--tc-ffffff, #fff)'
+									: 'var(--tc-6b7a6e, #6B7A6E)'};font-size:12px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 								>{t}</span
 							>{/each}
 					</div>
@@ -2128,7 +2173,9 @@
 					>
 						Reservá tu turno
 					</h1>
-					<div style="padding:16px;border-radius:14px;background:#fff;min-width:0">
+					<div
+						style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);min-width:0"
+					>
 						<b style="font-size:16px">1 · Servicio</b>
 						<div
 							style="margin-top:10px;display:flex;flex-direction:column;gap:6px"
@@ -2143,9 +2190,9 @@
 									onclick={() => reserva.elegirServicio(s.id)}
 									style="display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:10px;border:1.5px solid {on
 										? 'var(--acento, #2F5D50)'
-										: 'rgba(30,43,34,.12)'};background:{on
-										? '#F7F9F4'
-										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#1E2B22"
+										: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+										? 'var(--tc-f7f9f4, #F7F9F4)'
+										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 									><span
 										style="width:18px;height:18px;border-radius:50%;border:2px solid var(--acento, #2F5D50);display:grid;place-items:center;flex:none"
 										>{#if on}<span
@@ -2153,14 +2200,16 @@
 											></span>{/if}</span
 									><span style="flex:1;min-width:0"
 										><span style="display:block;font-size:14.5px;font-weight:700">{s.nombre}</span
-										><span style="display:block;font-size:12.5px;color:#6B7A6E;"
+										><span style="display:block;font-size:12.5px;color:var(--tc-6b7a6e, #6B7A6E);"
 											>{duracion(s.duracion)}</span
 										></span
 									><b style="white-space:nowrap">{fmt(s.precio)}</b></button
 								>{/each}
 						</div>
 					</div>
-					<div style="padding:16px;border-radius:14px;background:#fff;min-width:0">
+					<div
+						style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);min-width:0"
+					>
 						<b style="font-size:16px">2 · Profesional</b>
 						<div
 							style="margin-top:12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px"
@@ -2175,27 +2224,29 @@
 									onclick={() => reserva.elegirProfesional(p?.id ?? null)}
 									style="flex:none;width:110px;padding:10px;border-radius:10px;border:1.5px solid {on
 										? 'var(--acento, #2F5D50)'
-										: 'rgba(30,43,34,.12)'};background:{on
-										? '#F7F9F4'
-										: 'transparent'};text-align:center;cursor:pointer;font-family:inherit;color:#1E2B22"
+										: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+										? 'var(--tc-f7f9f4, #F7F9F4)'
+										: 'transparent'};text-align:center;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 									>{#if p?.foto}<img
 											src={img(p.foto, 120, 120)}
 											alt=""
 											style="width:56px;height:56px;border-radius:50%;object-fit:cover;display:block;margin:0 auto"
 										/>{:else}<span
-											style="width:56px;height:56px;border-radius:50%;background:#DDE8DF;color:var(--acento, #2F5D50);display:grid;place-items:center;margin:0 auto"
+											style="width:56px;height:56px;border-radius:50%;background:var(--tc-dde8df, #DDE8DF);color:var(--acento, #2F5D50);display:grid;place-items:center;margin:0 auto"
 											><Icon icon={p ? I.phUserFill : I.phShuffleBold} size={22} /></span
 										>{/if}<span
 										style="display:block;margin-top:8px;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 										>{p?.nombre ?? 'Cualquiera'}</span
 									><span
-										style="display:block;font-size:11.5px;color:#6B7A6E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+										style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 										>{p ? p.rol.split(' · ')[0] : 'El primero libre'}</span
 									></button
 								>{/each}
 						</div>
 					</div>
-					<div style="padding:16px;border-radius:14px;background:#fff;min-width:0">
+					<div
+						style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);min-width:0"
+					>
 						<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
 							<b style="font-size:16px">3 · Día y horario</b>
 							<span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600"
@@ -2230,9 +2281,11 @@
 									onclick={() => reserva.elegirDia(d.dia)}
 									style="padding:9px 0;text-align:center;cursor:pointer;font-family:inherit;min-width:0;border-radius:9px;border:1.5px solid {on
 										? 'var(--acento, #2F5D50)'
-										: 'rgba(30,43,34,.12)'};background:{on
+										: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
 										? 'var(--acento, #2F5D50)'
-										: '#fff'};color:{on ? '#fff' : '#1E2B22'}"
+										: 'var(--tc-ffffff, #fff)'};color:{on
+										? 'var(--tc-ffffff, #fff)'
+										: 'var(--tc-1e2b22, #1E2B22)'}"
 									><span
 										style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase"
 										>{d.w}</span
@@ -2243,17 +2296,17 @@
 						</div>
 						<div style="margin-top:14px;display:flex;flex-direction:column;gap:12px">
 							{#if !reserva.servicioId}
-								<p style="margin:0;font-size:14px;color:#6B7A6E;">
+								<p style="margin:0;font-size:14px;color:var(--tc-6b7a6e, #6B7A6E);">
 									Elegí un servicio para ver los horarios.
 								</p>
 							{:else if reserva.horarios && !reserva.grupos.length}
-								<p style="margin:0;font-size:14px;color:#6B7A6E;">
+								<p style="margin:0;font-size:14px;color:var(--tc-6b7a6e, #6B7A6E);">
 									No quedan horarios este día. Probá con otro día u otro&nbsp;profesional.
 								</p>
 							{/if}
 							{#each reserva.grupos as g (g.k)}<div>
 									<div
-										style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;color:#6B7A6E;"
+										style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;color:var(--tc-6b7a6e, #6B7A6E);"
 									>
 										{g.t}
 									</div>
@@ -2273,40 +2326,48 @@
 													? 'none'
 													: 'line-through'};border-radius:9px;border:1.5px solid {on
 													? 'var(--acento, #2F5D50)'
-													: 'rgba(30,43,34,.12)'};background:{on
+													: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
 													? 'var(--acento, #2F5D50)'
-													: '#fff'};color:{on ? '#fff' : '#1E2B22'}">{h.hora}</button
+													: 'var(--tc-ffffff, #fff)'};color:{on
+													? 'var(--tc-ffffff, #fff)'
+													: 'var(--tc-1e2b22, #1E2B22)'}">{h.hora}</button
 											>{/each}
 									</div>
 								</div>{/each}
 						</div>
 					</div>
 					{#if reserva.listo}
-						<div style="padding:16px;border-radius:14px;background:#fff;min-width:0">
+						<div
+							style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);min-width:0"
+						>
 							<b style="font-size:16px">4 · Tus datos</b>
 							<div
 								style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"
 							>
 								{#each [['nombre', 'Nombre', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel'], ['email', 'Email', 'email', 'email']] as [n, l, tipo, ac] (n)}
 									<label
-										style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14)"
-										><span style="display:block;font-size:11.5px;color:#6B7A6E">{l}</span><input
+										style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14))"
+										><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
+											>{l}</span
+										><input
 											name={n}
 											type={tipo}
 											autocomplete={ac as 'email'}
 											required
 											maxlength="120"
-											style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+											style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 										/></label
 									>
 								{/each}
 							</div>
 						</div>
-						<div style="padding:16px;border-radius:14px;background:#fff;min-width:0">
+						<div
+							style="padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);min-width:0"
+						>
 							<b style="font-size:16px">Pago</b>
 							<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
 								<div
-									style="display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--acento, #2F5D50);background:#F7F9F4;text-align:left;cursor:pointer;font-family:inherit;color:#1E2B22"
+									style="display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--acento, #2F5D50);background:var(--tc-f7f9f4, #F7F9F4);text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 								>
 									<span
 										style="width:18px;height:18px;border-radius:50%;border:2px solid var(--acento, #2F5D50);display:grid;place-items:center;flex:none"
@@ -2320,14 +2381,14 @@
 										/><span style="flex:1;min-width:0"
 											><span style="display:block;font-size:14.5px;font-weight:700"
 												>Mercado Pago</span
-											><span style="display:block;font-size:12.5px;color:#6B7A6E;"
+											><span style="display:block;font-size:12.5px;color:var(--tc-6b7a6e, #6B7A6E);"
 												>Seña de {fmt(reserva.sena)} para confirmar · el resto, en el local</span
 											></span
 										>{:else}<Icon icon={I.phStorefrontFill} size={22} style="flex:none" /><span
 											style="flex:1;min-width:0"
 											><span style="display:block;font-size:14.5px;font-weight:700"
 												>Pagás en el local</span
-											><span style="display:block;font-size:12.5px;color:#6B7A6E;"
+											><span style="display:block;font-size:12.5px;color:var(--tc-6b7a6e, #6B7A6E);"
 												>No hace falta seña: el turno queda confirmado</span
 											></span
 										>{/if}
@@ -2337,7 +2398,7 @@
 					{/if}
 				</div>
 				<div
-					style="position:sticky;top:120px;padding:18px;border-radius:14px;background:#1E2B22;color:#EEF1E8;font-size:14px;min-width:0"
+					style="position:sticky;top:120px;padding:18px;border-radius:14px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font-size:14px;min-width:0"
 				>
 					<b style="font-size:18px">Tu reserva</b>
 					<div style="margin-top:14px;display:flex;align-items:center;gap:12px">
@@ -2350,20 +2411,21 @@
 							<div style="font-size:15px;font-weight:700">
 								{reserva.conQuien ? `Con ${reserva.conQuien}` : 'Con el primero libre'}
 							</div>
-							<div style="font-size:13px;color:#B9C6BB;">
+							<div style="font-size:13px;color:var(--tc-b9c6bb, #B9C6BB);">
 								{reserva.cuando ?? 'Elegí el día y el horario'}
 							</div>
 						</div>
 					</div>
 					{#if reserva.servicio}
 						<div
-							style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(238,241,232,.14);display:flex;flex-direction:column;gap:8px;font-size:14px"
+							style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tc-eef1e8-140, rgba(238,241,232,.14));display:flex;flex-direction:column;gap:8px;font-size:14px"
 						>
 							<span style="display:flex;justify-content:space-between;gap:10px"
 								><span>{reserva.servicio.nombre}</span><span style="white-space:nowrap"
 									>{fmt(reserva.servicio.precio)}</span
 								></span
-							><span style="display:flex;justify-content:space-between;color:#B9C6BB;"
+							><span
+								style="display:flex;justify-content:space-between;color:var(--tc-b9c6bb, #B9C6BB);"
 								><span>Duración total</span><span>{reserva.duracion}</span></span
 							><span
 								style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"
@@ -2371,7 +2433,9 @@
 							>
 						</div>
 					{/if}
-					<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#B9C6BB;">
+					<p
+						style="margin:14px 0 0;font-size:13px;line-height:1.5;color:var(--tc-b9c6bb, #B9C6BB);"
+					>
 						{#if reserva.sena}Seña de {fmt(reserva.sena)} para confirmar. Podés cancelar desde el link
 							del turno hasta {anticipacion} antes; la seña te la devuelve la&nbsp;tienda.{:else}No
 							pagás nada ahora. Podés cancelar desde el link del turno hasta {anticipacion}&nbsp;antes.{/if}
@@ -2384,7 +2448,7 @@
 						</div>{/if}
 					<button
 						disabled={!reserva.listo || reservando || tienda.vitrina}
-						style="margin-top:16px;width:100%;padding:15px;border:0;border-radius:10px;background:#E8C547;color:#1E2B22;font:800 15px 'Schibsted Grotesk';cursor:pointer"
+						style="margin-top:16px;width:100%;padding:15px;border:0;border-radius:10px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font:800 15px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: !reserva.listo
@@ -2405,9 +2469,9 @@
 			>
 				<span
 					style="width:52px;height:52px;border-radius:50%;background:{cancelado
-						? '#1E2B22'
+						? 'var(--tc-1e2b22, #1E2B22)'
 						: 'var(--acento, #2F5D50)'};color:{cancelado
-						? '#EEF1E8'
+						? 'var(--tc-eef1e8, #EEF1E8)'
 						: '#E8C547'};display:grid;place-items:center"
 					><Icon icon={cancelado ? I.phCalendarX : I.phCheckBold} size={24} /></span
 				>
@@ -2420,7 +2484,9 @@
 							? `Falta la seña, ${turno.nombre}`
 							: `¡Listo, ${turno.nombre}!`}
 				</h1>
-				<p style="margin:12px 0 0;font-size:15.5px;line-height:1.55;color:#56645A">
+				<p
+					style="margin:12px 0 0;font-size:15.5px;line-height:1.55;color:var(--tc-56645a, #56645A)"
+				>
 					{#if cancelado}Liberamos el horario{turno.senaPagada
 							? '. La seña te la devuelve la tienda por Mercado Pago'
 							: ''}. Si querés, reservá&nbsp;otro.{:else if turno.estado === 'reservado'}Te
@@ -2436,7 +2502,7 @@
 							: 'El pago de la seña no salió. Podés reservar de nuevo.'}
 					</div>{/if}
 				<div
-					style="margin-top:16px;padding:16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.6"
+					style="margin-top:16px;padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);font-size:14.5px;line-height:1.6"
 				>
 					<div
 						style="font-size:16px;font-weight:700;text-decoration:{cancelado
@@ -2445,7 +2511,7 @@
 					>
 						{cuandoLargo(turno.inicio)} con {turno.profesional}
 					</div>
-					<div style="margin-top:4px;font-size:14px;color:#6B7A6E;">
+					<div style="margin-top:4px;font-size:14px;color:var(--tc-6b7a6e, #6B7A6E);">
 						{turno.servicio} · {fmt(turno.precio)}{turno.sena
 							? ` · seña ${fmt(turno.sena)}${turno.senaPagada ? ' pagada' : ''}`
 							: ' · pagás en el local'}
@@ -2465,7 +2531,7 @@
 							href="{base}/turno/{turno.codigo}/turno.ics"
 							download="turno.ics"
 							data-sveltekit-reload
-							style="display:flex;align-items:center;gap:8px;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none;cursor:pointer"
+							style="display:flex;align-items:center;gap:8px;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none;cursor:pointer"
 							><Icon icon={I.phCalendarPlusBold} size={17} />Agregar al calendario</a
 						>{/if}
 					{#if turno.cancelable}
@@ -2483,28 +2549,28 @@
 						>
 							{#if seguro}<button
 									disabled={cancelando}
-									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none;cursor:pointer"
+									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none;cursor:pointer"
 									>Sí, cancelar el turno</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguro = true)}
-									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none;cursor:pointer"
+									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none;cursor:pointer"
 									>Cancelar turno</button
 								>{/if}
 						</form>
 					{:else if cancelado}<a
 							href="{base}/turnos"
-							style="padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none;cursor:pointer"
+							style="padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none;cursor:pointer"
 							>Reservar otro</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none;cursor:pointer"
+						style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none;cursor:pointer"
 						>Volver a la tienda</a
 					>
 				</div>
 				{#if !cancelado && !turno.cancelable}<p
-						style="margin:14px 0 0;font-size:13.5px;color:#6B7A6E;"
+						style="margin:14px 0 0;font-size:13.5px;color:var(--tc-6b7a6e, #6B7A6E);"
 					>
 						Para cambiarlo o cancelarlo, escribile a la&nbsp;tienda{#if whatsapp}&nbsp;<a
 								href={wa(`¡Hola! Tengo un turno el ${cuandoLargo(turno.inicio)}.`)}
@@ -2534,7 +2600,7 @@
 							{plan.nombre}
 						</h1>
 						{#if plan.descripcion}<p
-								style="margin:10px 0 0;font-size:15.5px;line-height:1.55;color:#56645A;text-wrap:pretty"
+								style="margin:10px 0 0;font-size:15.5px;line-height:1.55;color:var(--tc-56645a, #56645A);text-wrap:pretty"
 							>
 								{plan.descripcion}
 							</p>{/if}
@@ -2550,11 +2616,11 @@
 										aria-current={on ? 'page' : undefined}
 										style="display:block;padding:12px;border-radius:10px;border:1.5px solid {on
 											? 'var(--acento, #2F5D50)'
-											: 'rgba(30,43,34,.12)'};background:{on
-											? '#F7F9F4'
-											: '#fff'};text-decoration:none;color:#1E2B22"
+											: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+											? 'var(--tc-f7f9f4, #F7F9F4)'
+											: 'var(--tc-ffffff, #fff)'};text-decoration:none;color:var(--tc-1e2b22, #1E2B22)"
 										><span style="display:block;font-size:14.5px;font-weight:700">{p.nombre}</span
-										><span style="display:block;font-size:12.5px;color:#56645A"
+										><span style="display:block;font-size:12.5px;color:var(--tc-56645a, #56645A)"
 											>{fmt(p.precio)} {CADA[p.frecuencia]}</span
 										></a
 									>{/each}
@@ -2568,14 +2634,16 @@
 						>
 							{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel']] as [n, l, tipo, ac] (n)}
 								<label
-									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14);background:#fff"
-									><span style="display:block;font-size:11.5px;color:#6B7A6E">{l}</span><input
+									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14));background:var(--tc-ffffff, #fff)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
+										>{l}</span
+									><input
 										name={n}
 										type={tipo}
 										autocomplete={ac as 'email'}
 										required
 										maxlength="120"
-										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 									/></label
 								>
 							{/each}
@@ -2596,11 +2664,12 @@
 										onclick={() => (alta.entrega = id)}
 										style="display:block;padding:12px;border-radius:10px;border:1.5px solid {on
 											? 'var(--acento, #2F5D50)'
-											: 'rgba(30,43,34,.12)'};background:{on
-											? '#F7F9F4'
-											: '#fff'};text-align:left;cursor:pointer;font-family:inherit;color:#1E2B22"
+											: 'var(--tc-1e2b22-120, rgba(30,43,34,.12))'};background:{on
+											? 'var(--tc-f7f9f4, #F7F9F4)'
+											: 'var(--tc-ffffff, #fff)'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-1e2b22, #1E2B22)"
 										><span style="display:block;font-size:14.5px;font-weight:700">{t}</span><span
-											style="display:block;font-size:12.5px;color:#56645A">{d}</span
+											style="display:block;font-size:12.5px;color:var(--tc-56645a, #56645A)"
+											>{d}</span
 										></button
 									>{/if}{/each}
 						</div>
@@ -2609,26 +2678,27 @@
 								style="margin-top:8px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:8px"
 							>
 								<label
-									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14);background:#fff"
-									><span style="display:block;font-size:11.5px;color:#6B7A6E">Código postal</span
+									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14));background:var(--tc-ffffff, #fff)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
+										>Código postal</span
 									><input
 										name="cp"
 										inputmode="numeric"
 										maxlength="8"
 										autocomplete="postal-code"
-										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 									/></label
 								>
 								<label
-									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(30,43,34,.14);background:#fff"
-									><span style="display:block;font-size:11.5px;color:#6B7A6E"
+									style="display:block;padding:9px 12px;border-radius:9px;border:1.5px solid var(--tc-1e2b22-140, rgba(30,43,34,.14));background:var(--tc-ffffff, #fff)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-6b7a6e, #6B7A6E)"
 										>Dirección (calle, número, piso)</span
 									><input
 										name="direccion"
 										maxlength="160"
 										autocomplete="street-address"
 										required
-										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px 'Schibsted Grotesk';color:#1E2B22;outline:none"
+										style="width:100%;margin-top:1px;padding:0;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Schibsted Grotesk');color:var(--tc-1e2b22, #1E2B22);outline:none"
 									/></label
 								>
 							</div>
@@ -2642,7 +2712,7 @@
 						</div>{/if}
 				</div>
 				<div
-					style="position:sticky;top:120px;padding:18px;border-radius:14px;background:#1E2B22;color:#EEF1E8;font-size:14px;min-width:0"
+					style="position:sticky;top:120px;padding:18px;border-radius:14px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font-size:14px;min-width:0"
 				>
 					<div style="font-size:18px;font-weight:700">Tu suscripción</div>
 					{#if caja.fotos.length}<div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
@@ -2653,14 +2723,18 @@
 								/>{/each}
 						</div>{/if}
 					<div style="margin-top:12px;font-size:16px;font-weight:700">{plan.nombre}</div>
-					{#if queIncluye(plan)}<div style="margin-top:2px;font-size:13.5px;color:#B9C6BB">
+					{#if queIncluye(plan)}<div
+							style="margin-top:2px;font-size:13.5px;color:var(--tc-b9c6bb, #B9C6BB)"
+						>
 							{queIncluye(plan)}
 						</div>{/if}
 					<div
-						style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(238,241,232,.14);display:flex;flex-direction:column;gap:8px;font-size:14px"
+						style="margin-top:14px;padding-top:12px;border-top:1px solid var(--tc-eef1e8-140, rgba(238,241,232,.14));display:flex;flex-direction:column;gap:8px;font-size:14px"
 					>
 						{#if caja.ahorro}<span style="display:flex;justify-content:space-between;gap:8px"
-								><span>Sueltos</span><s style="color:#B9C6BB">{fmt(caja.sueltos)}</s></span
+								><span>Sueltos</span><s style="color:var(--tc-b9c6bb, #B9C6BB)"
+									>{fmt(caja.sueltos)}</s
+								></span
 							><span
 								style="display:flex;justify-content:space-between;gap:8px;color:#E8C547;font-weight:700"
 								><span>Ahorrás {caja.pct}%</span><span>− {fmt(caja.ahorro)}</span></span
@@ -2677,7 +2751,7 @@
 					</div>
 					<button
 						disabled={alta.enviando || tienda.vitrina || plan.agotado}
-						style="margin-top:16px;width:100%;padding:15px;border:0;border-radius:10px;background:#E8C547;color:#1E2B22;font:800 15px 'Schibsted Grotesk';cursor:pointer"
+						style="margin-top:16px;width:100%;padding:15px;border:0;border-radius:10px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font:800 15px var(--tf-texto,'Schibsted Grotesk');cursor:pointer"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: plan.agotado
@@ -2685,7 +2759,7 @@
 								: 'Suscribirme'}</button
 					>
 					<div
-						style="margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:#B9C6BB"
+						style="margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--tc-b9c6bb, #B9C6BB)"
 					>
 						{#if demo}<span style="display:flex;gap:8px"
 								><Icon icon={I.phCheck} size={15} style="flex:none" />Es la demo: no se cobra nada</span
@@ -2724,20 +2798,22 @@
 				>
 					{tx.titulo}
 				</h1>
-				<p style="margin:12px 0 0;font-size:15.5px;line-height:1.55;color:#56645A;text-wrap:pretty">
+				<p
+					style="margin:12px 0 0;font-size:15.5px;line-height:1.55;color:var(--tc-56645a, #56645A);text-wrap:pretty"
+				>
 					{tx.texto}
 				</p>
 				<div
-					style="margin-top:16px;padding:16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.6"
+					style="margin-top:16px;padding:16px;border-radius:14px;background:var(--tc-ffffff, #fff);font-size:14.5px;line-height:1.6"
 				>
 					<div style="font-size:16px;font-weight:700">{suscripcion.plan}</div>
-					<div style="margin-top:4px;font-size:14px;color:#6B7A6E">
+					<div style="margin-top:4px;font-size:14px;color:var(--tc-6b7a6e, #6B7A6E)">
 						{fmt(suscripcion.precio)}
 						{CADA[suscripcion.frecuencia]}{suscripcion.cobros
 							? ` · ${suscripcion.cobros} ${suscripcion.cobros === 1 ? 'cobro' : 'cobros'}`
 							: ''}
 					</div>
-					{#if suscripcion.incluye}<div style="font-size:14px;color:#6B7A6E">
+					{#if suscripcion.incluye}<div style="font-size:14px;color:var(--tc-6b7a6e, #6B7A6E)">
 							{suscripcion.incluye}
 						</div>{/if}
 					{#if suscripcion.estado === 'activa' && suscripcion.proximoCobro}<div
@@ -2774,7 +2850,7 @@
 						>
 							<button
 								disabled={cambiando}
-								style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;cursor:pointer"
+								style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;cursor:pointer"
 								>{puede.pausar ? 'Pausar' : 'Reanudar'}</button
 							>
 						</form>{/if}
@@ -2792,26 +2868,26 @@
 						>
 							{#if seguroBaja}<button
 									disabled={cambiando}
-									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;cursor:pointer"
+									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;cursor:pointer"
 									>Sí, darla de baja</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguroBaja = true)}
-									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;cursor:pointer"
+									style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;cursor:pointer"
 									>Dar de baja</button
 								>{/if}
 						</form>{:else}<a
 							href="{base}/suscripciones/{suscripcion.planId}"
-							style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:#fff;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none"
+							style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--acento, #2F5D50);color:var(--tc-ffffff, #fff);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none"
 							>Volver a sumarme</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:#1E2B22;color:#EEF1E8;font:800 15px 'Schibsted Grotesk';text-align:center;text-decoration:none"
+						style="display:inline-block;padding:15px 20px;border:0;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font:800 15px var(--tf-texto,'Schibsted Grotesk');text-align:center;text-decoration:none"
 						>Volver a la tienda</a
 					>
 				</div>
-				{#if whatsapp}<p style="margin:14px 0 0;font-size:13.5px;color:#56645A">
+				{#if whatsapp}<p style="margin:14px 0 0;font-size:13.5px;color:var(--tc-56645a, #56645A)">
 						¿Dudas? Escribinos&nbsp;<a
 							href={wa(`¡Hola! Tengo una consulta sobre mi suscripción a ${suscripcion.plan}.`)}
 							target="_blank"
@@ -2833,7 +2909,7 @@
 				style="padding:clamp(14px,2.4cqw,28px) clamp(12px,3cqw,32px) 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:10px"
 			>
 				<div
-					style="padding:clamp(22px,4cqw,48px);border-radius:16px;background:var(--acento, #2F5D50);color:#EEF1E8;display:flex;flex-direction:column;justify-content:flex-end;min-height:min(440px,100cqw);min-width:0"
+					style="padding:clamp(22px,4cqw,48px);border-radius:16px;background:var(--acento, #2F5D50);color:var(--tc-eef1e8, #EEF1E8);display:flex;flex-direction:column;justify-content:flex-end;min-height:min(440px,100cqw);min-width:0"
 				>
 					{#if tienda.ciudad}<span
 							style="font-size:13px;font-weight:700;letter-spacing:.06em;color:#E8C547;text-transform:uppercase"
@@ -2845,7 +2921,7 @@
 						{tienda.portada.titulo}
 					</h1>
 					<p
-						style="margin:14px 0 0;font-size:15.5px;line-height:1.55;color:#D6E0D4;max-width:480px"
+						style="margin:14px 0 0;font-size:15.5px;line-height:1.55;color:var(--tc-d6e0d4, #D6E0D4);max-width:480px"
 					>
 						{tienda.nombre}{tienda.ciudad ? `, desde ${tienda.ciudad}` : ''}. {comoLlega(
 							tienda.envios
@@ -2854,7 +2930,7 @@
 				</div>
 				{#if tienda.portada.foto || tienda.fotos[0]}
 					<div
-						style="border-radius:16px;overflow:hidden;background:#C9D2C2;min-height:min(440px,100cqw);position:relative"
+						style="border-radius:16px;overflow:hidden;background:var(--tc-c9d2c2, #C9D2C2);min-height:min(440px,100cqw);position:relative"
 					>
 						<img
 							src={img(tienda.portada.foto ?? tienda.fotos[0], 1000)}
@@ -2867,26 +2943,37 @@
 			<section
 				style="padding:10px clamp(12px,3cqw,32px) 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(46%,180px),1fr));gap:10px"
 			>
-				{#if tienda.productos.length}<div style="padding:18px;border-radius:14px;background:#fff">
+				{#if tienda.productos.length}<div
+						style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff)"
+					>
 						<b style="display:block;font-size:34px;letter-spacing:-.04em"
 							>{tienda.productos.length}</b
-						><span style="font-size:13.5px;color:#56645A">productos</span>
+						><span style="font-size:13.5px;color:var(--tc-56645a, #56645A)">productos</span>
 					</div>{/if}
-				{#if tienda.categorias.length}<div style="padding:18px;border-radius:14px;background:#fff">
+				{#if tienda.categorias.length}<div
+						style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff)"
+					>
 						<b style="display:block;font-size:34px;letter-spacing:-.04em"
 							>{tienda.categorias.length}</b
-						><span style="font-size:13.5px;color:#56645A"
+						><span style="font-size:13.5px;color:var(--tc-56645a, #56645A)"
 							>{tienda.categorias.length === 1 ? 'categoría' : 'categorías'}</span
 						>
 					</div>{/if}
-				{#if tienda.cobros.cuotas > 1}<div style="padding:18px;border-radius:14px;background:#fff">
+				{#if tienda.cobros.cuotas > 1}<div
+						style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff)"
+					>
 						<b style="display:block;font-size:34px;letter-spacing:-.04em">{tienda.cobros.cuotas}</b
-						><span style="font-size:13.5px;color:#56645A">cuotas sin interés</span>
+						><span style="font-size:13.5px;color:var(--tc-56645a, #56645A)">cuotas sin interés</span
+						>
 					</div>{/if}
-				{#if tienda.promedio}<div style="padding:18px;border-radius:14px;background:#fff">
+				{#if tienda.promedio}<div
+						style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff)"
+					>
 						<b style="display:block;font-size:34px;letter-spacing:-.04em"
 							>{tienda.promedio.toLocaleString('es-AR')}</b
-						><span style="font-size:13.5px;color:#56645A">de promedio en reseñas</span>
+						><span style="font-size:13.5px;color:var(--tc-56645a, #56645A)"
+							>de promedio en reseñas</span
+						>
 					</div>{/if}
 			</section>
 			{#if tienda.direccion || whatsapp || tienda.mayorista}
@@ -2894,7 +2981,7 @@
 					style="padding:clamp(32px,5cqw,56px) clamp(12px,3cqw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px"
 				>
 					{#if tienda.direccion || whatsapp}<div
-							style="padding:18px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:8px"
+							style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 						>
 							<b style="font-size:18px">{tienda.envios.retiro ? 'Vení al local' : 'Hablemos'}</b>
 							{#if tienda.direccion}<a
@@ -2903,7 +2990,7 @@
 									)}"
 									target="_blank"
 									rel="noopener"
-									style="display:flex;gap:8px;font-size:14px;color:#1E2B22;text-decoration:none"
+									style="display:flex;gap:8px;font-size:14px;color:var(--tc-1e2b22, #1E2B22);text-decoration:none"
 									><Icon
 										icon={I.phMapPinBold}
 										size={17}
@@ -2914,7 +3001,7 @@
 									href={wa('¡Hola!')}
 									target="_blank"
 									rel="noopener"
-									style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:8px;padding:11px;border-radius:10px;background:#E6F5EA;color:#1F6F3A;font-size:14px;font-weight:700;text-decoration:none"
+									style="margin-top:4px;display:flex;justify-content:center;align-items:center;gap:8px;padding:11px;border-radius:10px;background:var(--tc-e6f5ea, #E6F5EA);color:var(--tc-1f6f3a, #1F6F3A);font-size:14px;font-weight:700;text-decoration:none"
 									><Icon icon={I.phWhatsappLogoFill} size={17} />{tienda.whatsapp}</a
 								>{/if}
 						</div>{/if}
@@ -2928,7 +3015,7 @@
 								href={whatsapp ? wa('¡Hola! Quiero comprar por mayor.') : `${base}/catalogo`}
 								target={whatsapp ? '_blank' : undefined}
 								rel={whatsapp ? 'noopener' : undefined}
-								style="margin-top:auto;padding:11px;border-radius:10px;background:#1E2B22;color:#EEF1E8;font-size:14px;font-weight:700;text-align:center;text-decoration:none"
+								style="margin-top:auto;padding:11px;border-radius:10px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8);font-size:14px;font-weight:700;text-align:center;text-decoration:none"
 								>{whatsapp ? 'Pedir lista mayorista' : 'Ver productos'}</a
 							>
 						</div>{/if}
@@ -2940,14 +3027,17 @@
 
 		<!-- footer -->
 		<footer
-			style="padding:clamp(28px,4cqw,48px) clamp(12px,3cqw,32px) 22px;background:#1E2B22;color:#EEF1E8"
+			data-t-pie
+			style="padding:clamp(28px,4cqw,48px) clamp(12px,3cqw,32px) 22px;background:var(--tc-1e2b22, #1E2B22);color:var(--tc-eef1e8, #EEF1E8)"
 		>
 			<div
 				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:24px"
 			>
 				<div style="min-width:0">
 					<div style="font-weight:800;font-size:24px;letter-spacing:-.03em">{tienda.nombre}</div>
-					<p style="margin:8px 0 0;font-size:13.5px;color:#B9C6BB;line-height:1.5">
+					<p
+						style="margin:8px 0 0;font-size:13.5px;color:var(--tc-b9c6bb, #B9C6BB);line-height:1.5"
+					>
 						{#if tienda.cobros.cuotas > 1}{tienda.cobros.cuotas} cuotas sin interés{#if tienda.cobros.transferencia > 0}&nbsp;y
 								{tienda.cobros.transferencia}% off por transferencia{/if}, en toda la&nbsp;tienda.{:else if tienda.cobros.transferencia > 0}{tienda
 								.cobros.transferencia}% off por transferencia, en toda la&nbsp;tienda.{:else}Compra
@@ -2965,19 +3055,19 @@
 							placeholder="Tu email"
 							aria-label="Tu correo para las novedades"
 							bind:value={nl.email}
-							style="--ph:#8FA093;flex:1;min-width:0;padding:11px 12px;border:0;border-radius:9px;background:rgba(238,241,232,.08);font:inherit;font-size:13.5px;color:#EEF1E8;outline:none"
+							style="--ph:var(--tc-8fa093, #8FA093);flex:1;min-width:0;padding:11px 12px;border:0;border-radius:9px;background:var(--tc-eef1e8-80, rgba(238,241,232,.08));font:inherit;font-size:13.5px;color:var(--tc-eef1e8, #EEF1E8);outline:none"
 						/>
 						<button
 							type="submit"
 							disabled={nl.enviando}
-							style="flex:none;padding:11px 14px;border:0;border-radius:9px;background:#E8C547;color:#1E2B22;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer"
+							style="flex:none;padding:11px 14px;border:0;border-radius:9px;background:#E8C547;color:var(--tc-1e2b22, #1E2B22);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer"
 							>OK</button
 						>
 					</form>
 					{#if nl.aviso}<p
 							role="status"
 							style="margin:8px 0 0;font-size:13px;line-height:1.45;color:{nl.aviso.ok
-								? '#B9C6BB'
+								? 'var(--tc-b9c6bb, #B9C6BB)'
 								: '#F5B0A0'}"
 						>
 							{nl.aviso.texto}{#if nl.aviso.link}&nbsp;<a
@@ -2992,7 +3082,7 @@
 					>
 						<b style="color:#E8C547;margin-bottom:3px">{f.t}</b>{#each f.l as l (l.t)}<a
 								href={l.href}
-								style="color:#C9D4CB;text-decoration:none">{l.t}</a
+								style="color:var(--tc-c9d4cb, #C9D4CB);text-decoration:none">{l.t}</a
 							>{/each}
 					</div>{/each}
 			</div>
@@ -3014,7 +3104,11 @@
 										style="color:#0A2D6E">Mercado Pago</span
 									></span
 								>{/if}{#if tienda.cobros.datosTransferencia}<span
-									><Icon icon={I.phBankFill} size={14} style="color:#2F7A43" />Transferencia</span
+									><Icon
+										icon={I.phBankFill}
+										size={14}
+										style="color:var(--tc-2f7a43, #2F7A43)"
+									/>Transferencia</span
 								>{/if}
 						</div>
 					</div>
@@ -3046,7 +3140,11 @@
 					</div>
 					<div class="sellos">
 						<span
-							><Icon icon={I.phLockSimpleFill} size={14} style="color:#2F7A43" />Sitio seguro SSL</span
+							><Icon
+								icon={I.phLockSimpleFill}
+								size={14}
+								style="color:var(--tc-2f7a43, #2F7A43)"
+							/>Sitio seguro SSL</span
 						><span
 							><Icon icon={I.phShieldCheckFill} size={14} style="color:#1A1A1A" />Compra protegida</span
 						>
@@ -3054,7 +3152,7 @@
 				</div>
 			</div>
 			<div
-				style="margin-top:24px;padding-top:14px;border-top:1px solid rgba(238,241,232,.1);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:#8FA093"
+				style="margin-top:24px;padding-top:14px;border-top:1px solid var(--tc-eef1e8-100, rgba(238,241,232,.1));display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--tc-8fa093, #8FA093)"
 			>
 				<span
 					>© {new Date().getFullYear()}
@@ -3085,13 +3183,14 @@
 				>
 				<a
 					href="/"
-					style="display:inline-flex;align-items:center;gap:8px;padding:5px 13px 5px 5px;border-radius:999px;background:#fff;color:#2A140C;text-decoration:none;font:500 12.5px 'Instrument Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.12);white-space:nowrap"
+					style="display:inline-flex;align-items:center;gap:8px;padding:5px 13px 5px 5px;border-radius:999px;background:var(--tc-ffffff, #fff);color:#2A140C;text-decoration:none;font:500 12.5px 'Instrument Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.12);white-space:nowrap"
 					><span
 						style="width:24px;height:24px;border-radius:50%;background:#FCEDE5;display:grid;place-items:center"
 						><img src="/logo.svg" alt="" style="width:13px;height:auto;display:block" /></span
 					>Tienda creada con <b style="font-weight:800;letter-spacing:-.02em">Tu Local Web</b></a
 				>
 			</div>
+			<PieEstilo {tienda} />
 		</footer>
 
 		{#if whatsapp && pagina !== 'checkout'}<a
@@ -3099,7 +3198,7 @@
 				target="_blank"
 				rel="noopener"
 				aria-label="Escribinos por WhatsApp"
-				style="position:fixed;right:18px;bottom:18px;z-index:30;width:54px;height:54px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(0,0,0,.4)"
+				style="position:fixed;right:18px;bottom:18px;z-index:30;width:54px;height:54px;border-radius:50%;background:#25D366;color:var(--tc-ffffff, #fff);display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(0,0,0,.4)"
 				><Icon icon={I.phWhatsappLogoFill} size={28} /></a
 			>{/if}
 	</div>
@@ -3132,7 +3231,7 @@
 		gap: 5px;
 		padding: 0 9px;
 		border-radius: 6px;
-		background: #fff;
+		background: var(--tc-ffffff, #fff);
 		color: #1a1a1a;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
 		font:

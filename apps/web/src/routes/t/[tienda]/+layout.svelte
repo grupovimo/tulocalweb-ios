@@ -2,6 +2,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import AvisoCookies from '#lib/tienda/AvisoCookies.svelte';
 	import { pagina, preparar } from '#lib/tienda/medicion.ts';
+	import AnuncioTienda from '#lib/tienda/AnuncioTienda.svelte';
 
 	let { data, children } = $props();
 
@@ -89,6 +90,9 @@
 	// Carrito abandonado: en el checkout, cuando quien compra deja su email (y al cambiar el nombre),
 	// se guarda el carrito para poder recordárselo. Escucha los campos `email` y `nombre` del form,
 	// así ninguna plantilla tiene que hacer nada. Se manda sólo si cambió algo.
+	// Mi tienda › Estilo: el ícono de la pestaña.
+	const icono = $derived(data.tienda.estilo?.icono || '');
+
 	let ultimo = '';
 	function alSalir(e: FocusEvent) {
 		const el = e.target;
@@ -113,6 +117,7 @@
 </script>
 
 <svelte:head>
+	{#if icono}<link rel="icon" href={icono} />{/if}
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link
 		href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
@@ -122,6 +127,7 @@
 
 <svelte:document onfocusout={alSalir} />
 
+<AnuncioTienda tienda={data.tienda} />
 {@render children()}
 {#key data.tienda.slug}
 	<AvisoCookies tienda={data.tienda} />

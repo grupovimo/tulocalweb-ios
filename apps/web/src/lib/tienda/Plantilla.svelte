@@ -13,6 +13,7 @@
 	import Tijera from './plantillas/Tijera.svelte';
 	import Yerbal from './plantillas/Yerbal.svelte';
 	import { acentoElegido } from './acentos.ts';
+	import { cssEstilo } from './estilo/css.ts';
 
 	type Props = ComponentProps<typeof Ceibo>;
 
@@ -38,10 +39,22 @@
 	const Vista = $derived(PROPIAS[props.tienda.plantilla] ?? Motor);
 	// El color de acento elegido en Mi tienda: las plantillas lo leen de var(--acento).
 	const acento = $derived(acentoElegido(props.tienda.plantilla, props.tienda.paleta));
+	// Mi tienda › Estilo: los colores por rol y las tipografías elegidas (lib/tienda/estilo). Las del
+	// motor los toman de sus tokens (Motor.svelte); acá van las fuentes y las zonas.
+	const estilo = $derived(cssEstilo(props.tienda.plantilla, props.tienda.estilo));
+	const raiz = $derived(
+		[acento ? `--acento:${acento}` : '', estilo.raiz].filter(Boolean).join(';')
+	);
 </script>
 
-{#if acento}
-	<div style:--acento={acento} style:display="contents"><Vista {...props} /></div>
+<svelte:head>
+	{#if estilo.fuentes}<link rel="stylesheet" href={estilo.fuentes} />{/if}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- colores #RRGGBB validados en estilo/css.ts -->
+	{#if estilo.reglas}{@html `<style>${estilo.reglas}</style>`}{/if}
+</svelte:head>
+
+{#if raiz || estilo.reglas}
+	<div class="t-estilo" style={raiz} style:display="contents"><Vista {...props} /></div>
 {:else}
 	<Vista {...props} />
 {/if}

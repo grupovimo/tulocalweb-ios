@@ -3369,6 +3369,7 @@ export class DatosSandbox implements Datos {
 				descripcion: diseno.compartirDescripcion ?? '',
 				foto: diseno.compartirFoto ?? ''
 			},
+			estilo: diseno.estilo ?? {},
 			ciudad: d.catalogo.ciudad,
 			direccion: conf.negocio.direccion,
 			whatsapp: conf.negocio.whatsapp,

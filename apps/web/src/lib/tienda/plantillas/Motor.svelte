@@ -1,4 +1,7 @@
 <script lang="ts">
+	import PieEstilo from '../PieEstilo.svelte';
+	import { menuPropio } from '../estilo/menu.ts';
+	import MenuTienda from '../MenuTienda.svelte';
 	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { envia } from '../envio.ts';
 	import { enhance } from '$app/forms';
@@ -7,6 +10,10 @@
 	import LogoTienda from '../LogoTienda.svelte';
 	import VacioTienda from '../VacioTienda.svelte';
 	import { enOrden } from '../secciones.ts';
+	import { colorValido } from '#lib/tienda/estilo/css.ts';
+	import type { Zona } from '#lib/tienda/estilo/estilo.ts';
+	import type { Rol } from '#lib/tienda/estilo/tipos.ts';
+	import { FUENTES as FUENTES_ESTILO } from '#lib/tienda/estilo/fuentes.ts';
 	import { acentoElegido } from '../acentos.ts';
 	import * as I from '#lib/icons.ts';
 	import FormResena from '../FormResena.svelte';
@@ -199,32 +206,41 @@
 		// El acento elegido en Mi tienda; como texto sólo si va con texto claro encima (si no, no se lee).
 		const elegido = acentoElegido(tid, tienda.paleta);
 		const dark = tid === 'pampa' || tid === 'malbec';
+		// Mi tienda › Estilo: cada color elegido pisa su token (colorValido descarta lo que no es #RRGGBB).
+		const es = tienda.estilo;
+		const c = (rol: Rol | Zona) => colorValido(es?.colores?.[rol]);
+		const acento = c('acento') ?? elegido ?? acc;
+		const sobre = c('sobreAcento') ?? ai;
+		const fT = FUENTES_ESTILO[es?.fuenteTitulos ?? '']?.css;
+		const fX = FUENTES_ESTILO[es?.fuenteTexto ?? '']?.css;
 		return {
-			f,
+			f: fT ?? f,
 			fw,
 			ls,
 			tt,
 			fi,
-			bg,
-			ink,
-			acc: elegido ?? acc,
-			ai,
-			at: elegido && ai.toUpperCase() === '#FFFFFF' ? elegido : at,
-			sf,
-			sf2,
-			mu,
-			ln,
+			bg: c('fondo') ?? bg,
+			ink: c('texto') ?? ink,
+			acc: acento,
+			ai: sobre,
+			at: c('acento') ?? (elegido && ai.toUpperCase() === '#FFFFFF' ? elegido : at),
+			sf: c('superficie') ?? sf,
+			sf2: c('superficie')
+				? `color-mix(in oklab, ${c('superficie')} 88%, ${c('texto') ?? ink})`
+				: sf2,
+			mu: c('textoSuave') ?? mu,
+			ln: c('borde') ?? ln,
 			ok,
 			r,
 			rL,
 			rb,
-			panel,
-			panelInk,
+			panel: c('pie') ?? panel,
+			panelInk: c('pieTexto') ?? panelInk,
 			panelAcc,
 			star,
-			f2: fam === 'ed' ? f : "'Instrument Sans',sans-serif",
+			f2: fX ?? (fam === 'ed' ? (fT ?? f) : "'Instrument Sans',sans-serif"),
 			logoSz: tt === 'uppercase' ? '22px' : '26px',
-			hb: dark ? 'rgba(20,14,14,.88)' : 'rgba(255,255,255,.72)'
+			hb: c('encabezado') ?? (dark ? 'rgba(20,14,14,.88)' : 'rgba(255,255,255,.72)')
 		};
 	});
 	// Reseñas y preguntas con los tokens del tema elegido.
@@ -564,24 +580,26 @@
 			]
 		}
 	]);
-	const nav = $derived([
-		...(tienda.turnos
-			? [
-					{
-						t: 'Reservar turno',
-						href: `${base}/turnos`,
-						on: pagina === 'turnos' || pagina === 'turno'
-					}
-				]
-			: []),
-		{ t: 'Todo', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
-		...tienda.categorias.slice(0, 3).map((c) => ({
-			t: c.nombre,
-			href: enlaceCat(c.nombre),
-			on: pagina === 'catalogo' && categoria === c.nombre
-		})),
-		{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
-	]);
+	const nav = $derived(
+		menuPropio(tienda, base) ?? [
+			...(tienda.turnos
+				? [
+						{
+							t: 'Reservar turno',
+							href: `${base}/turnos`,
+							on: pagina === 'turnos' || pagina === 'turno'
+						}
+					]
+				: []),
+			{ t: 'Todo', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
+			...tienda.categorias.slice(0, 3).map((c) => ({
+				t: c.nombre,
+				href: enlaceCat(c.nombre),
+				on: pagina === 'catalogo' && categoria === c.nombre
+			})),
+			{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
+		]
+	);
 	const estrellas = (n: number) =>
 		Array.from({ length: 5 }, (_, i) =>
 			n >= i + 1 ? I.phStarFill : n >= i + 0.5 ? I.phStarHalfFill : I.phStar
@@ -701,9 +719,13 @@
 		<header
 			style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:14px clamp(14px,3.5cqw,44px);background:{T.hb};backdrop-filter:blur(10px);border-bottom:1px solid {T.ln}"
 		>
-			{#if nar}<a href="{base}/catalogo" aria-label="Catálogo" style="display:grid;color:{T.ink}"
-					><Icon icon={I.phList} size={22} /></a
-				>{/if}
+			{#if nar}<MenuTienda
+					{tienda}
+					{base}
+					{nav}
+					estilo="display:grid;color:{T.ink}"
+					tam={22}
+				/>{/if}
 			<a
 				href={base || '/'}
 				style="text-decoration:none;color:{T.ink};font-family:{T.f};font-weight:{T.fw};font-size:{T.logoSz};letter-spacing:{T.ls};text-transform:{T.tt};line-height:1;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis"
@@ -1018,7 +1040,9 @@
 								<h2
 									style="margin:0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(34px,4.8cqw,62px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt}"
 								>
-									Lo más elegido
+									{#if tienda.estilo?.textos?.prods?.trim()}{tienda.estilo.textos.prods}{:else}
+										Lo más elegido
+									{/if}
 								</h2>
 								<a
 									href="{base}/catalogo"
@@ -1084,7 +1108,9 @@
 								<h2
 									style="margin:0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(34px,4.8cqw,62px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt}"
 								>
-									Lo que dicen
+									{#if tienda.estilo?.textos?.revs?.trim()}{tienda.estilo.textos.revs}{:else}
+										Lo que dicen
+									{/if}
 								</h2>
 								{#if tienda.promedio}<span
 										style="display:flex;align-items:center;gap:8px;font-size:14px"
@@ -1150,7 +1176,9 @@
 								<h2
 									style="margin:8px 0 0;font-family:{T.f};font-weight:{T.fw};font-size:clamp(34px,4.8cqw,62px);line-height:1;letter-spacing:{T.ls};text-transform:{T.tt}"
 								>
-									En fotos
+									{#if tienda.estilo?.textos?.ig?.trim()}{tienda.estilo.textos.ig}{:else}
+										En fotos
+									{/if}
 								</h2>
 							</div>
 							<div
@@ -3127,6 +3155,7 @@
 					>Tienda creada con <b style="font-weight:800;letter-spacing:-.02em">Tu Local Web</b></a
 				>
 			</div>
+			<PieEstilo {tienda} />
 		</footer>
 
 		{#if whatsapp && pagina !== 'checkout'}<a

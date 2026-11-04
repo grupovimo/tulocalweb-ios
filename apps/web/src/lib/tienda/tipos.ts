@@ -1,3 +1,4 @@
+import type { EstiloTienda } from './estilo/estilo.ts';
 import type { components } from '@mostrador/contrato/esquema';
 import type { MinimoMayorista } from './mayorista.ts';
 
@@ -94,6 +95,8 @@ export type TiendaPublica = {
 	 * sugerido y la imagen dibujada con la plantilla, lib/tienda/compartir.ts).
 	 */
 	compartir: { titulo: string; descripcion: string; foto: string };
+	/** Mi tienda › Estilo: colores, tipografías, logos, anuncio, textos y redes (vacío: la plantilla). */
+	estilo?: EstiloTienda | null;
 	ciudad: string;
 	direccion: string;
 	whatsapp: string;

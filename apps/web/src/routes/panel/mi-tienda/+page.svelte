@@ -4,16 +4,20 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
-	import { unsplash } from '#lib/landing/formato.ts';
 	import { anim } from '#lib/panel/anim.ts';
-	import { pesos } from '#lib/panel/formato.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 	import { escucharTiempoReal } from '#lib/tiempo-real/panel.svelte.ts';
 	import Modal from '#lib/components/Modal.svelte';
 	import Segmentado from '#lib/components/Segmentado.svelte';
 	import { subir as subirArchivo } from '#lib/panel/fotos.ts';
 	import { PLANTILLAS, plantilla } from '#lib/plantillas.ts';
-	import { acentos } from '#lib/tienda/acentos.ts';
+	import { acentos, contraste } from '#lib/tienda/acentos.ts';
+	import { colorValido } from '#lib/tienda/estilo/css.ts';
+	import { FUENTES } from '#lib/tienda/estilo/fuentes.ts';
+	import { COMBINACIONES, rolesDe } from '#lib/tienda/estilo/roles.ts';
+	import { MAX_MENU, NOMBRE_PAGINA, PAGINAS, type ItemMenu } from '#lib/tienda/estilo/menu.ts';
+	import type { EstiloTienda, Redes, SeccionConTitulo, Zona } from '#lib/tienda/estilo/estilo.ts';
+	import type { Rol } from '#lib/tienda/estilo/tipos.ts';
 	import { LARGO_DESCRIPCION, LARGO_TITULO, textosPorDefecto } from '#lib/tienda/compartir.ts';
 
 	/** Mi tienda (design/PanelOperacion.dc.html, sStore): secciones, colores y vista previa en vivo. */
@@ -42,6 +46,8 @@
 	let compartirDescripcion = $derived(data.diseno.compartirDescripcion ?? '');
 	let compartirFoto = $derived(data.diseno.compartirFoto ?? '');
 	let imagenPropia = $derived(!!data.diseno.compartirFoto);
+	// Estilo: colores por rol, tipografías, logos, anuncio, textos y redes (lib/tienda/estilo).
+	let estilo = $derived<EstiloTienda>(structuredClone(data.diseno.estilo ?? {}));
 	// Lo sugerido sigue a lo que se edita (título de la portada y lema) con los datos de la tienda.
 	const sugeridos = $derived(
 		textosPorDefecto({
@@ -83,7 +89,8 @@
 			logo,
 			compartirTitulo,
 			compartirDescripcion,
-			compartirFoto
+			compartirFoto,
+			estilo
 		});
 		fila = fila.then(async () => {
 			const r = await fetch('/panel/mi-tienda', {
@@ -119,8 +126,9 @@
 	}
 
 	// Logo y foto de portada: se suben como las fotos de los productos.
-	let subiendo = $state<'' | 'logo' | 'portada' | 'compartir'>('');
-	async function subirFoto(e: Event, cual: 'logo' | 'portada' | 'compartir') {
+	type Foto = 'logo' | 'portada' | 'compartir' | 'logoOscuro' | 'icono';
+	let subiendo = $state<'' | Foto>('');
+	async function subirFoto(e: Event, cual: Foto) {
 		const input = e.currentTarget as HTMLInputElement;
 		const archivo = input.files?.[0];
 		input.value = '';
@@ -129,6 +137,7 @@
 		try {
 			const url = await subirArchivo(archivo);
 			if (cual === 'logo') logo = url;
+			else if (cual === 'logoOscuro' || cual === 'icono') estilo = { ...estilo, [cual]: url };
 			else if (cual === 'compartir') compartirFoto = url;
 			else portada = url;
 			await guardar();
@@ -142,13 +151,13 @@
 			subiendo = '';
 		}
 	}
-	function quitar(cual: 'logo' | 'portada' | 'compartir') {
+	function quitar(cual: Foto) {
 		if (cual === 'logo') logo = '';
+		else if (cual === 'logoOscuro' || cual === 'icono') estilo = { ...estilo, [cual]: '' };
 		else if (cual === 'compartir') compartirFoto = '';
 		else portada = '';
 		void guardar();
 	}
-	const fotoPortada = $derived(portada || data.vista.portada.foto);
 	function subir(i: number) {
 		if (!i) return;
 		const a = [...secciones];
@@ -185,7 +194,132 @@
 			desc: `${data.direccion} ya muestra la nueva versión`
 		});
 	}
-	const visibles = $derived(secciones.filter((s) => s.visible));
+	// ── Estilo ──
+	const original = $derived(rolesDe(plantillaId));
+	const ROLES_COLOR: [Rol | Zona, string][] = [
+		['fondo', 'Fondo'],
+		['superficie', 'Tarjetas'],
+		['texto', 'Texto'],
+		['textoSuave', 'Texto suave'],
+		['borde', 'Bordes'],
+		['acento', 'Botones y precios'],
+		['sobreAcento', 'Texto de los botones'],
+		['encabezado', 'Fondo del encabezado'],
+		['encabezadoTexto', 'Texto del encabezado'],
+		['pie', 'Fondo del pie'],
+		['pieTexto', 'Texto del pie']
+	];
+	/** El color que se ve: el elegido, o el acento rápido, o el de la plantilla. */
+	function colorVisto(rol: Rol | Zona): string {
+		const c = colorValido(estilo.colores?.[rol]);
+		if (c) return c;
+		if (rol === 'acento') return (opciones[paleta] ?? opciones[0]).color;
+		// Sin color propio, el encabezado y el pie siguen al rol del que salen (fondo o texto).
+		if (rol === 'encabezado') return colorVisto('fondo');
+		if (rol === 'encabezadoTexto') return colorVisto('texto');
+		if (rol === 'pie' || rol === 'pieTexto') {
+			const o = original[rol];
+			if (o === original.texto) return colorVisto('texto');
+			if (o === original.fondo) return colorVisto('fondo');
+		}
+		return original[rol];
+	}
+	function ponerColores(c: Partial<Record<Rol | Zona, string>>, guardarYa = true) {
+		const colores = { ...estilo.colores, ...c };
+		for (const k of Object.keys(colores) as (Rol | Zona)[]) if (!colores[k]) delete colores[k];
+		estilo = { ...estilo, colores };
+		if (guardarYa) void guardar();
+	}
+	const personalizados = $derived(Object.keys(estilo.colores ?? {}).length);
+	// Avisos de contraste (AA: 4,5 para texto; 3 para el suave).
+	const avisos = $derived(
+		[
+			contraste(colorVisto('texto'), colorVisto('fondo')) < 4.5 &&
+				'El texto casi no se lee sobre el fondo.',
+			contraste(colorVisto('textoSuave'), colorVisto('fondo')) < 3 &&
+				'El texto suave casi no se lee sobre el fondo.',
+			contraste(colorVisto('sobreAcento'), colorVisto('acento')) < 4.5 &&
+				'El texto de los botones casi no se lee sobre su color.',
+			contraste(colorVisto('pieTexto'), colorVisto('pie')) < 4.5 &&
+				'El texto del pie casi no se lee.'
+		].filter((x): x is string => !!x)
+	);
+	function combinacion(c: Partial<Record<Rol, string>>) {
+		ponerColores({ ...c, encabezado: '', encabezadoTexto: '', pie: '', pieTexto: '' });
+	}
+	function colorDeLaPlantilla() {
+		estilo = { ...estilo, colores: undefined };
+		paleta = 0;
+		void guardar();
+	}
+	const OPCIONES_FUENTE = Object.entries(FUENTES).sort((a, b) =>
+		a[1].nombre.localeCompare(b[1].nombre)
+	);
+	function ponerEstilo<K extends keyof EstiloTienda>(k: K, v: EstiloTienda[K]) {
+		estilo = { ...estilo, [k]: v };
+		void guardar();
+	}
+	const TITULOS: [SeccionConTitulo, string][] = [
+		['cats', 'Categorías'],
+		['prods', 'Productos destacados'],
+		['revs', 'Reseñas'],
+		['ig', 'Fotos']
+	];
+	function ponerTitulo(id: SeccionConTitulo, v: string) {
+		estilo = { ...estilo, textos: { ...estilo.textos, [id]: v } };
+		void guardar();
+	}
+	const REDES: [keyof Redes, string, string][] = [
+		['instagram', 'Instagram', '@tutienda'],
+		['tiktok', 'TikTok', '@tutienda'],
+		['facebook', 'Facebook', 'facebook.com/tutienda'],
+		['youtube', 'YouTube', '@tucanal'],
+		['email', 'Email', 'hola@tutienda.com'],
+		['telefono', 'Teléfono', '11 5555-5555']
+	];
+	function ponerRed(k: keyof Redes, v: string) {
+		estilo = { ...estilo, redes: { ...estilo.redes, [k]: v } };
+		void guardar();
+	}
+	// Menú: las pestañas propias (vacío: las de la plantilla).
+	const menu = $derived<ItemMenu[]>(estilo.menu ?? []);
+	const DESTINOS = $derived([
+		...PAGINAS.map((p) => [p, NOMBRE_PAGINA[p]] as const),
+		...data.vista.categorias.map((c) => [`cat:${c}`, `Categoría: ${c}`] as const),
+		['link', 'Un link propio…'] as const
+	]);
+	const destinoDe = (a: string) => (a.startsWith('https://') ? 'link' : a);
+	function ponerMenu(m: ItemMenu[], guardarYa = true) {
+		estilo = { ...estilo, menu: m };
+		if (guardarYa) void guardar();
+	}
+	function agregarPestana() {
+		const usadas = new Set(menu.map((i) => i.a));
+		const p = PAGINAS.find((x) => !usadas.has(x)) ?? 'catalogo';
+		ponerMenu([...menu, { t: NOMBRE_PAGINA[p], a: p }]);
+	}
+	function cambiarDestino(i: number, d: string) {
+		const nombreViejo = DESTINOS.find(([k]) => k === menu[i].a)?.[1];
+		const m = menu.map((x) => ({ ...x }));
+		// Si el texto era el nombre del destino, sigue al nuevo.
+		const nuevo = DESTINOS.find(([k]) => k === d)?.[1] ?? '';
+		if (d === 'link') m[i].a = 'https://';
+		else m[i].a = d;
+		if (
+			d !== 'link' &&
+			(!m[i].t || m[i].t === nombreViejo || m[i].t === nombreViejo?.replace('Categoría: ', ''))
+		)
+			m[i].t = nuevo.replace('Categoría: ', '');
+		ponerMenu(m, d !== 'link');
+	}
+	function moverPestana(i: number) {
+		if (!i) return;
+		const m = [...menu];
+		[m[i - 1], m[i]] = [m[i], m[i - 1]];
+		ponerMenu(m);
+	}
+	// La vista previa: la tienda de verdad con el borrador (se recarga en cada guardado).
+	let dispositivo = $state<'celular' | 'compu'>('celular');
 	function elegirImagen(v: 'armada' | 'propia') {
 		imagenPropia = v === 'propia';
 		// Volver a la armada deja de usar la foto propia (si había una).
@@ -229,11 +363,15 @@
 	<div class="editor" use:anim={{ t: 'rise', delay: 60 }}>
 		<div class="panelito">
 			<div class="p-t">Marca y portada</div>
-			{#each [['logo', 'Logo', logo], ['portada', 'Foto de portada', portada]] as const as [cual, t, url] (cual)}
+			{#each [['logo', 'Logo', logo], ['logoOscuro', 'Logo para fondos oscuros', estilo.logoOscuro ?? ''], ['icono', 'Ícono de la pestaña', estilo.icono ?? ''], ['portada', 'Foto de portada', portada]] as const as [cual, t, url] (cual)}
 				<div class="foto-fila">
-					<div class="miniatura" class:logo={cual === 'logo'}>
+					<div
+						class="miniatura"
+						class:logo={cual !== 'portada'}
+						class:oscura={cual === 'logoOscuro'}
+					>
 						{#if url}<img src={url} alt="" />{:else}<Icon
-								icon={cual === 'logo' ? I.phStorefrontFill : I.phImageFill}
+								icon={cual === 'portada' ? I.phImageFill : I.phStorefrontFill}
 								size={18}
 							/>{/if}
 					</div>
@@ -242,9 +380,12 @@
 						<span
 							>{url
 								? 'Subido'
-								: cual === 'logo'
-									? 'Sin logo: va el nombre en letras'
-									: 'Sin foto: va la de un producto'}</span
+								: {
+										logo: 'Sin logo: va el nombre en letras',
+										logoOscuro: 'Para el encabezado o el pie oscuros',
+										icono: 'Cuadrado, se ve en la pestaña',
+										portada: 'Sin foto: va la de un producto'
+									}[cual]}</span
 						>
 					</div>
 					<label class="mini-btn" class:ocupado={subiendo === cual}>
@@ -265,6 +406,23 @@
 						>{/if}
 				</div>
 			{/each}
+			{#if logo}
+				<label class="campo"
+					><span
+						>Tamaño del logo · {estilo.logoAlto || 'el de la plantilla'}{estilo.logoAlto
+							? ' px'
+							: ''}</span
+					><input
+						type="range"
+						min="24"
+						max="72"
+						step="2"
+						value={estilo.logoAlto || 36}
+						oninput={(e) => (estilo = { ...estilo, logoAlto: +e.currentTarget.value })}
+						onchange={guardar}
+					/></label
+				>
+			{/if}
 			<label class="campo"
 				><span>Título de la portada</span><input
 					class="input"
@@ -301,22 +459,220 @@
 					>
 				</div>
 			{/each}
-			<div class="p-t colores">Color de acento</div>
-			<div class="paletas" role="group" aria-label="Color de acento">
-				{#each opciones as o, i (o.color)}
-					<button
+			<details class="grupo" open>
+				<summary class="p-t colores">Colores</summary>
+				<div class="sub">Acento rápido</div>
+				<div class="paletas" role="group" aria-label="Color de acento">
+					{#each opciones as o, i (o.color)}
+						<button
+							type="button"
+							aria-label={i ? 'Color ' + (i + 1) : 'El de la plantilla'}
+							title={i ? undefined : 'El de la plantilla'}
+							aria-pressed={paleta === i && !estilo.colores?.acento}
+							style:background="linear-gradient(135deg,{pal.bg} 50%,{o.color} 50%)"
+							onclick={() => {
+								paleta = i;
+								ponerColores({ acento: '', sobreAcento: '' });
+							}}
+						></button>
+					{/each}
+				</div>
+				<div class="sub">Combinaciones</div>
+				<div class="combos">
+					{#each COMBINACIONES as c (c.id)}
+						<button type="button" class="combo" onclick={() => combinacion(c.colores)}>
+							<span class="muestra" style:background={c.colores.fondo}
+								><i style:background={c.colores.superficie}></i><i
+									style:background={c.colores.texto}
+								></i><i style:background={colorVisto('acento')}></i></span
+							>{c.nombre}
+						</button>
+					{/each}
+				</div>
+				<div class="sub">Todos los colores</div>
+				<div class="lista-colores">
+					{#each ROLES_COLOR as [rol, t] (rol)}
+						<label class="color-fila">
+							<input
+								type="color"
+								value={colorVisto(rol).toLowerCase()}
+								oninput={(e) => ponerColores({ [rol]: e.currentTarget.value.toUpperCase() }, false)}
+								onchange={() => void guardar()}
+							/>
+							<span class="c-n">{t}</span>
+							<span class="c-hex">{colorVisto(rol)}</span>
+							{#if estilo.colores?.[rol]}<button
+									type="button"
+									class="mini-btn icono"
+									aria-label="Volver {t.toLowerCase()} al de la plantilla"
+									onclick={(e) => {
+										e.preventDefault();
+										ponerColores({ [rol]: '' });
+									}}><Icon icon={I.phArrowCounterClockwiseBold} size={14} /></button
+								>{/if}
+						</label>
+					{/each}
+				</div>
+				{#each avisos as a (a)}<p class="aviso">{a}</p>{/each}
+				{#if personalizados || paleta}<button
 						type="button"
-						aria-label={i ? 'Color ' + (i + 1) : 'El de la plantilla'}
-						title={i ? undefined : 'El de la plantilla'}
-						aria-pressed={paleta === i}
-						style:background="linear-gradient(135deg,{pal.bg} 50%,{o.color} 50%)"
-						onclick={() => {
-							paleta = i;
-							void guardar();
-						}}
-					></button>
+						class="enlace"
+						onclick={colorDeLaPlantilla}>Volver a los colores de la plantilla</button
+					>{/if}
+			</details>
+
+			<details class="grupo">
+				<summary class="p-t colores">Tipografías</summary>
+				{#each [['fuenteTitulos', 'Títulos'], ['fuenteTexto', 'Texto']] as const as [k, t] (k)}
+					<label class="campo"
+						><span>{t}</span><select
+							class="input"
+							value={estilo[k] ?? ''}
+							onchange={(e) => ponerEstilo(k, e.currentTarget.value)}
+						>
+							<option value="">La de la plantilla</option>
+							{#each OPCIONES_FUENTE as [id, f] (id)}<option value={id}>{f.nombre}</option>{/each}
+						</select></label
+					>
 				{/each}
-			</div>
+			</details>
+
+			<details class="grupo">
+				<summary class="p-t colores">Menú</summary>
+				<p class="c-nota">
+					{menu.length
+						? 'Así se ve el menú de tu tienda, en la compu y en el celular.'
+						: 'Va el menú de la plantilla. Armá el tuyo para sumar pestañas como Nosotros.'}
+				</p>
+				{#each menu as it, i (i)}
+					<div class="pestana">
+						<div class="p-fila">
+							<input
+								class="input"
+								maxlength="30"
+								aria-label="Texto de la pestaña {i + 1}"
+								value={it.t}
+								onchange={(e) =>
+									ponerMenu(menu.map((x, k) => (k === i ? { ...x, t: e.currentTarget.value } : x)))}
+							/>
+							<button
+								type="button"
+								class="mini-btn icono"
+								aria-label="Subir la pestaña {it.t}"
+								disabled={i === 0}
+								onclick={() => moverPestana(i)}><Icon icon={I.phCaretUpBold} size={12} /></button
+							>
+							<button
+								type="button"
+								class="mini-btn icono"
+								aria-label="Quitar la pestaña {it.t}"
+								onclick={() => ponerMenu(menu.filter((_, k) => k !== i))}
+								><Icon icon={I.phTrash} size={14} /></button
+							>
+						</div>
+						<select
+							class="input"
+							aria-label="Adónde lleva {it.t}"
+							value={destinoDe(it.a)}
+							onchange={(e) => cambiarDestino(i, e.currentTarget.value)}
+						>
+							{#each DESTINOS as [k, t] (k)}<option value={k}>{t}</option>{/each}
+						</select>
+						{#if destinoDe(it.a) === 'link'}
+							<input
+								class="input"
+								type="url"
+								maxlength="300"
+								placeholder="https://"
+								aria-label="Link de {it.t}"
+								value={it.a}
+								onchange={(e) => {
+									const u = e.currentTarget.value.trim();
+									if (/^https:\/\/[^\s"'<>]+$/.test(u))
+										ponerMenu(menu.map((x, k) => (k === i ? { ...x, a: u } : x)));
+									else
+										ui.toast({
+											k: 'err',
+											title: 'Ese link no es válido',
+											desc: 'Tiene que empezar con https://'
+										});
+								}}
+							/>
+						{/if}
+					</div>
+				{/each}
+				{#if menu.length < MAX_MENU}<button
+						type="button"
+						class="combo agregar"
+						onclick={agregarPestana}><Icon icon={I.phPlusBold} size={14} />Agregar pestaña</button
+					>{/if}
+				{#if menu.length}<button type="button" class="enlace" onclick={() => ponerMenu([])}
+						>Volver al menú de la plantilla</button
+					>{/if}
+			</details>
+
+			<details class="grupo">
+				<summary class="p-t colores">Títulos de las secciones</summary>
+				{#each TITULOS as [id, t] (id)}
+					<label class="campo"
+						><span>{t}</span><input
+							class="input"
+							maxlength="60"
+							placeholder="El de la plantilla"
+							value={estilo.textos?.[id] ?? ''}
+							onchange={(e) => ponerTitulo(id, e.currentTarget.value)}
+						/></label
+					>
+				{/each}
+			</details>
+
+			<details class="grupo">
+				<summary class="p-t colores">Anuncio y pie</summary>
+				<label class="campo"
+					><span>Barra de anuncio (arriba de todo)</span><input
+						class="input"
+						maxlength="120"
+						placeholder="Ej.: Envío gratis desde $ 50.000"
+						value={estilo.anuncio ?? ''}
+						onchange={(e) => ponerEstilo('anuncio', e.currentTarget.value)}
+					/></label
+				>
+				<label class="campo"
+					><span>Link del anuncio (opcional)</span><input
+						class="input"
+						type="url"
+						maxlength="300"
+						placeholder="https://"
+						value={estilo.anuncioLink ?? ''}
+						onchange={(e) => ponerEstilo('anuncioLink', e.currentTarget.value.trim())}
+					/></label
+				>
+				<label class="campo"
+					><span>Línea del pie</span><input
+						class="input"
+						maxlength="160"
+						placeholder="Ej.: Atendemos de lunes a sábado de 9 a 19"
+						value={estilo.leyendaPie ?? ''}
+						onchange={(e) => ponerEstilo('leyendaPie', e.currentTarget.value)}
+					/></label
+				>
+			</details>
+
+			<details class="grupo">
+				<summary class="p-t colores">Redes y contacto</summary>
+				{#each REDES as [k, t, ph] (k)}
+					<label class="campo"
+						><span>{t}</span><input
+							class="input"
+							maxlength={k === 'email' ? 120 : k === 'telefono' ? 30 : 100}
+							placeholder={ph}
+							value={estilo.redes?.[k] ?? ''}
+							onchange={(e) => ponerRed(k, e.currentTarget.value)}
+						/></label
+					>
+				{/each}
+				<p class="c-nota">Se muestran en el pie de tu tienda.</p>
+			</details>
 		</div>
 
 		<div class="derecha">
@@ -327,64 +683,24 @@
 					></span>
 					<span class="url">{data.direccion}</span>
 				</div>
-				<div class="sitio" style:background={pal.bg} style:color={pal.ink}>
-					<div class="s-cab">
-						{#if logo}<img class="s-logo" src={logo} alt={data.vista.tienda} />{:else}<b
-								>{data.vista.tienda}</b
-							>{/if}<span class="esp"></span><span class="s-cats"
-							>{data.vista.categorias.slice(0, 3).join(' · ')}</span
-						><Icon icon={I.phHandbag} size={17} />
-					</div>
-					{#each visibles as s (s.id)}
-						{#if s.id === 'hero'}
-							<div class="hero">
-								{#if fotoPortada}<img
-										src={fotoPortada.startsWith('http') ? fotoPortada : unsplash(fotoPortada, 1000)}
-										alt=""
-									/>{/if}
-								<div class="sombra"></div>
-								<div class="lema">
-									{titulo || data.vista.tienda}
-									{#if lema}<small>{lema}</small>{/if}
-								</div>
-							</div>
-						{:else if s.id === 'prods'}
-							<div class="prods">
-								{#each data.vista.productos as p, i (i)}
-									<div>
-										<div class="foto">
-											{#if p.foto}<img src={unsplash(p.foto, 300)} alt="" />{/if}
-										</div>
-										<div class="pn">{p.nombre}</div>
-										<div class="pp" style:color={pal.acc}>{pesos(p.precio)}</div>
-									</div>
-								{/each}
-							</div>
-						{:else if s.id === 'cats'}
-							<div class="cats">
-								{#each data.vista.categorias as c (c)}<span
-										style:background={pal.acc}
-										style:color={opciones[0].sobre}>{c}</span
-									>{/each}
-							</div>
-						{:else if s.id === 'revs'}
-							{#if data.vista.resena}
-								<div class="revs">
-									<span class="estrellas">★★★★★</span>
-									{data.vista.resena.promedio.toLocaleString('es-AR')} · “{data.vista.resena.texto}”
-								</div>
-							{/if}
-						{:else if s.id === 'ig'}
-							<div class="ig">
-								{#each data.vista.fotos as f, i (i)}<img src={unsplash(f, 200)} alt="" />{/each}
-							</div>
-						{:else}
-							<div class="wa">
-								<Icon icon={I.phWhatsappLogoFill} size={16} />¿Dudas? Escribinos por WhatsApp
-							</div>
-						{/if}
-					{/each}
+				<div class="vista" class:compu={dispositivo === 'compu'}>
+					<iframe
+						title="Vista previa de tu tienda"
+						src="/panel/mi-tienda/vista?v={vuelta}"
+						loading="lazy"
+					></iframe>
 				</div>
+			</div>
+			<div class="dispositivo">
+				<Segmentado
+					label="Ver como"
+					opciones={[
+						['celular', 'Celular'],
+						['compu', 'Compu']
+					]}
+					value={dispositivo}
+					onchange={(v) => (dispositivo = v)}
+				/>
 			</div>
 
 			<section class="panelito compartir" aria-labelledby="t-compartir">
@@ -627,19 +943,6 @@
 		font-size: 13px;
 		font-weight: 600;
 	}
-	.s-logo {
-		height: 26px;
-		width: auto;
-		max-width: 140px;
-		object-fit: contain;
-	}
-	.lema small {
-		display: block;
-		margin-top: 6px;
-		font-size: 13px;
-		font-weight: 500;
-		opacity: 0.9;
-	}
 	@media (max-width: 760px) {
 		.sec button,
 		.mini-btn {
@@ -818,134 +1121,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.sitio {
-		transition:
-			background 0.4s,
-			color 0.4s;
-		padding-bottom: 14px;
-	}
-	.s-cab {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 12px 16px;
-	}
-	.s-cab b {
-		font-size: 15px;
-	}
-	.esp {
-		flex: 1;
-	}
-	.s-cats {
-		font-size: 12px;
-		opacity: 0.7;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		min-width: 0;
-	}
-	.hero {
-		position: relative;
-		margin: 0 12px 12px;
-		height: 170px;
-		border-radius: 14px;
-		overflow: hidden;
-	}
-	.hero img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.sombra {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), transparent 70%);
-	}
-	.lema {
-		position: absolute;
-		left: 18px;
-		top: 50%;
-		transform: translateY(-50%);
-		color: #fff;
-		font-size: 22px;
-		font-weight: 700;
-		line-height: 1.05;
-		max-width: 220px;
-	}
-	.prods {
-		padding: 0 12px 12px;
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 8px;
-	}
-	.foto {
-		aspect-ratio: 1;
-		border-radius: 10px;
-		overflow: hidden;
-		background: rgba(0, 0, 0, 0.05);
-	}
-	.foto img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.pn {
-		margin-top: 4px;
-		font-size: 11px;
-		font-weight: 600;
-	}
-	.pp {
-		font-size: 11px;
-		font-weight: 700;
-	}
-	.cats {
-		padding: 0 12px 12px;
-		display: flex;
-		gap: 6px;
-		flex-wrap: wrap;
-	}
-	.cats span {
-		font-size: 12px;
-		font-weight: 600;
-		padding: 7px 12px;
-		border-radius: 999px;
-		color: #fff;
-	}
-	.revs {
-		margin: 0 12px 12px;
-		padding: 12px;
-		border-radius: 12px;
-		background: rgba(0, 0, 0, 0.05);
-		font-size: 12.5px;
-		line-height: 1.4;
-	}
-	.estrellas {
-		color: #e3a93b;
-	}
-	.ig {
-		padding: 0 12px 12px;
-		display: grid;
-		grid-template-columns: repeat(6, 1fr);
-		gap: 4px;
-	}
-	.ig img {
-		width: 100%;
-		aspect-ratio: 1;
-		object-fit: cover;
-		border-radius: 6px;
-	}
-	.wa {
-		margin: 0 12px;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 10px 12px;
-		border-radius: 12px;
-		background: #25d366;
-		color: #fff;
-		font-size: 12.5px;
-		font-weight: 600;
-	}
 	.derecha {
 		display: flex;
 		flex-direction: column;
@@ -1063,11 +1238,187 @@
 		}
 	}
 	@media (max-width: 560px) {
-		.prods {
-			grid-template-columns: repeat(2, 1fr);
-		}
-		.ig {
-			grid-template-columns: repeat(3, 1fr);
-		}
+	}
+	/* Estilo: grupos plegables con los títulos de sección de siempre (.p-t). */
+	.grupo {
+		border-top: 1px solid var(--ln);
+		padding-top: 4px;
+	}
+	.grupo > summary {
+		list-style: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		min-height: 36px;
+	}
+	.grupo > summary::-webkit-details-marker {
+		display: none;
+	}
+	.grupo > summary::after {
+		content: '';
+		width: 7px;
+		height: 7px;
+		border-right: 2px solid var(--mu);
+		border-bottom: 2px solid var(--mu);
+		transform: rotate(45deg);
+		margin-right: 6px;
+		transition: transform 0.15s;
+	}
+	.grupo[open] > summary::after {
+		transform: rotate(-135deg);
+	}
+	.grupo[open] {
+		padding-bottom: 8px;
+	}
+	.sub {
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--mu);
+		padding: 8px 4px 6px;
+	}
+	.combos {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+		gap: 6px;
+	}
+	.combo {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 8px;
+		border: 1px solid var(--ln);
+		border-radius: 10px;
+		background: none;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		color: inherit;
+		cursor: pointer;
+		text-align: left;
+	}
+	.combo:hover {
+		border-color: var(--mu);
+	}
+	.muestra {
+		display: flex;
+		gap: 2px;
+		padding: 4px;
+		border-radius: 7px;
+		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+	}
+	.muestra i {
+		width: 7px;
+		height: 14px;
+		border-radius: 2px;
+	}
+	.lista-colores {
+		display: flex;
+		flex-direction: column;
+	}
+	.color-fila {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 40px;
+		padding: 2px 4px;
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	.color-fila:hover {
+		background: var(--sf2, rgba(0, 0, 0, 0.04));
+	}
+	.color-fila input[type='color'] {
+		width: 30px;
+		height: 30px;
+		flex: none;
+		padding: 0;
+		border: 0;
+		border-radius: 8px;
+		background: none;
+		cursor: pointer;
+	}
+	.color-fila input[type='color']::-webkit-color-swatch-wrapper {
+		padding: 0;
+	}
+	.color-fila input[type='color']::-webkit-color-swatch {
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		border-radius: 8px;
+	}
+	.c-n {
+		flex: 1;
+		font-size: 14px;
+	}
+	.c-hex {
+		font:
+			500 12px ui-monospace,
+			monospace;
+		color: var(--mu);
+	}
+	.aviso {
+		margin: 8px 4px 0;
+		font-size: 13px;
+		color: #9a3412;
+		text-wrap: pretty;
+	}
+	.enlace {
+		margin: 8px 4px 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		color: #b0441d;
+		cursor: pointer;
+	}
+	.miniatura.oscura {
+		background: #1c1a17;
+	}
+	select.input {
+		appearance: auto;
+	}
+	/* La vista previa: la tienda de verdad con el borrador. */
+	.vista {
+		height: min(720px, 72vh);
+		display: flex;
+		justify-content: center;
+		background: var(--sf2, #f4efe9);
+	}
+	.vista iframe {
+		width: 390px;
+		max-width: 100%;
+		height: 100%;
+		border: 0;
+		background: #fff;
+	}
+	.vista.compu iframe {
+		width: 100%;
+	}
+	.dispositivo {
+		display: flex;
+		justify-content: center;
+		margin-top: -4px;
+	}
+	.pestana {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--ln);
+	}
+	.p-fila {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.p-fila .input {
+		flex: 1;
+		min-width: 0;
+	}
+	.agregar {
+		margin-top: 10px;
+		justify-content: center;
+		width: 100%;
 	}
 </style>

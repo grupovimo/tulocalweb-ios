@@ -4351,6 +4351,52 @@ export interface components {
             compartirDescripcion?: string;
             /** @description URL de una foto propia para compartir (vacío: la imagen armada con la plantilla) */
             compartirFoto?: string;
+            estilo?: components["schemas"]["EstiloTienda"];
+        };
+        /** @description Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, anuncio, textos y redes. Todo opcional: vacío es lo de la plantilla (lib/tienda/estilo/estilo.ts) */
+        EstiloTienda: {
+            colores?: {
+                fondo?: string;
+                superficie?: string;
+                texto?: string;
+                textoSuave?: string;
+                borde?: string;
+                acento?: string;
+                sobreAcento?: string;
+                encabezado?: string;
+                encabezadoTexto?: string;
+                pie?: string;
+                pieTexto?: string;
+            };
+            /** @description Id de lib/tienda/estilo/fuentes.ts */
+            fuenteTitulos?: string;
+            fuenteTexto?: string;
+            logoOscuro?: string;
+            icono?: string;
+            logoAlto?: number;
+            anuncio?: string;
+            anuncioLink?: string;
+            leyendaPie?: string;
+            textos?: {
+                cats?: string;
+                prods?: string;
+                revs?: string;
+                ig?: string;
+                wa?: string;
+            };
+            redes?: {
+                instagram?: string;
+                tiktok?: string;
+                facebook?: string;
+                youtube?: string;
+                email?: string;
+                telefono?: string;
+            };
+            /** @description Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría> o https://… */
+            menu?: {
+                t: string;
+                a: string;
+            }[];
         };
         /** @description La tarjeta A6 para los paquetes (pieza 7a de Imprimibles). Los textos aceptan {nombre}, {fecha}, {productos} y {pedido} */
         Tarjeta: {

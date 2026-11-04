@@ -46,6 +46,9 @@ type Diseno struct {
 	CompartirTitulo      string `json:"compartirTitulo,omitempty"`
 	CompartirDescripcion string `json:"compartirDescripcion,omitempty"`
 	CompartirFoto        string `json:"compartirFoto,omitempty"`
+
+	// Estilo: colores, tipografías, logos, anuncio, textos y redes (estilo.go).
+	Estilo *Estilo `json:"estilo,omitempty"`
 }
 
 var ids = []string{"hero", "cats", "prods", "revs", "ig", "wa"}
@@ -73,6 +76,9 @@ func (d Diseno) valido() bool {
 		return false
 	}
 	if utf8.RuneCountInString(d.Titulo) > 80 || utf8.RuneCountInString(d.Lema) > 120 || !foto(d.Portada) || !foto(d.Logo) {
+		return false
+	}
+	if !d.Estilo.valido() {
 		return false
 	}
 	if utf8.RuneCountInString(d.CompartirTitulo) > 70 || utf8.RuneCountInString(d.CompartirDescripcion) > 160 || !foto(d.CompartirFoto) {
@@ -174,6 +180,7 @@ func Guardar(ctx context.Context, pool tx, tiendaID string, d Diseno) error {
 	}
 	d.Titulo, d.Lema = strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Lema)
 	d.CompartirTitulo, d.CompartirDescripcion = strings.TrimSpace(d.CompartirTitulo), strings.TrimSpace(d.CompartirDescripcion)
+	d.Estilo = d.Estilo.limpiar()
 	return pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		// La plantilla va en el borrador sólo si cambia la que tiene la tienda.
 		_, err := t.Exec(ctx, `UPDATE tiendas SET diseno_borrador = CASE WHEN $2::jsonb->>'plantilla' = plantilla

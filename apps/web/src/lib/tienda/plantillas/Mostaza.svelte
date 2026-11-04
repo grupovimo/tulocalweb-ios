@@ -1,4 +1,7 @@
 <script lang="ts">
+	import PieEstilo from '../PieEstilo.svelte';
+	import { menuPropio } from '../estilo/menu.ts';
+	import MenuTienda from '../MenuTienda.svelte';
 	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { envia } from '../envio.ts';
 	import { enhance } from '$app/forms';
@@ -129,10 +132,10 @@
 	// Etiquetas con los colores del diseño ("Más pedido", "Vegano", "Nuevo").
 	const tagColor = (p: ProductoPublico) =>
 		tarjetaDe(p).agotado
-			? ['#3B2416', '#FBF3E4']
+			? ['var(--tc-3b2416, #3B2416)', 'var(--tc-fbf3e4, #FBF3E4)']
 			: p.anterior
-				? ['#F5C26B', '#2A170C']
-				: ['#E8F2E2', '#2F6B3A'];
+				? ['#F5C26B', 'var(--tc-2a170c, #2A170C)']
+				: ['var(--tc-e8f2e2, #E8F2E2)', 'var(--tc-2f6b3a, #2F6B3A)'];
 	// Con variantes de precios distintos, "Desde"; "Sin stock" sólo si no queda ninguna.
 	const tarjeta = (p: ProductoPublico) => {
 		const t = tarjetaDe(p);
@@ -180,7 +183,7 @@
 						t: 'Retirá en el local',
 						d: tienda.envios.retiroDireccion || tienda.ciudad || 'Sin costo',
 						i: I.phStorefrontFill,
-						bg: '#F1E2C8',
+						bg: 'var(--tc-f1e2c8, #F1E2C8)',
 						href: `${base}/catalogo`
 					}
 				]
@@ -191,7 +194,7 @@
 						t: 'Envío en moto',
 						d: [resumenMoto(tienda.envios), tienda.envios.motoDemora].filter(Boolean).join(' · '),
 						i: I.phMopedFill,
-						bg: '#F6E7CC',
+						bg: 'var(--tc-f6e7cc, #F6E7CC)',
 						href: `${base}/catalogo`
 					}
 				]
@@ -204,7 +207,7 @@
 							? `Gratis desde ${fmt(tienda.envios.gratisDesde)}`
 							: 'Por Correo Argentino',
 						i: I.phPackageFill,
-						bg: '#EFDDBF',
+						bg: 'var(--tc-efddbf, #EFDDBF)',
 						href: `${base}/catalogo`
 					}
 				]
@@ -218,7 +221,7 @@
 								? `${tienda.suscripciones[0].nombre}, con suscripción`
 								: `${tienda.suscripciones.length} planes, con suscripción`,
 						i: I.phArrowsClockwiseBold,
-						bg: '#EFDDBF',
+						bg: 'var(--tc-efddbf, #EFDDBF)',
 						href: `${base}/suscripciones/${tienda.suscripciones[0].id}`
 					}
 				]
@@ -401,7 +404,7 @@
 							? `${tienda.cobros.transferencia}% off · te mandamos el alias al confirmar`
 							: 'Te mandamos el alias al confirmar',
 						i: I.phBankFill,
-						c: '#2F6B3A'
+						c: 'var(--tc-2f6b3a, #2F6B3A)'
 					}
 				]
 			: []),
@@ -449,29 +452,31 @@
 			]
 		}
 	]);
-	const nav = $derived([
-		...(tienda.turnos
-			? [
-					{
-						t: 'Reservar turno',
-						href: `${base}/turnos`,
-						on: pagina === 'turnos' || pagina === 'turno'
-					}
-				]
-			: []),
-		{ t: 'Menú', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
-		...tienda.categorias.slice(0, 3).map((c) => ({
-			t: c.nombre,
-			href: enlaceCat(c.nombre),
-			on: pagina === 'catalogo' && categoria === c.nombre
-		})),
-		{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
-	]);
+	const nav = $derived(
+		menuPropio(tienda, base) ?? [
+			...(tienda.turnos
+				? [
+						{
+							t: 'Reservar turno',
+							href: `${base}/turnos`,
+							on: pagina === 'turnos' || pagina === 'turno'
+						}
+					]
+				: []),
+			{ t: 'Menú', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
+			...tienda.categorias.slice(0, 3).map((c) => ({
+				t: c.nombre,
+				href: enlaceCat(c.nombre),
+				on: pagina === 'catalogo' && categoria === c.nombre
+			})),
+			{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
+		]
+	);
 	const estrellas = (n: number) =>
 		Array.from({ length: 5 }, (_, i) =>
 			n >= i + 1 ? I.phStarFill : n >= i + 0.5 ? I.phStarHalfFill : I.phStar
 		);
-	const B = "font-family:'Bricolage Grotesque',sans-serif";
+	const B = "font-family:var(--tf-titulos,'Bricolage Grotesque'),sans-serif";
 	// ---- Turnos (no están en el diseño de esta plantilla: se arman con sus piezas) ----
 	// Se arma una vez al entrar a /turnos (lo que venga en la URL queda elegido).
 	const reserva = untrack(() =>
@@ -501,18 +506,18 @@
 	let seguroBaja = $state(false);
 	// Reseñas y preguntas con las piezas de Mostaza: Bricolage pesada, tarjetas blancas, píldoras.
 	const tema: TemaOpiniones = {
-		texto: '#3B2416',
-		suave: '#7A5A44',
-		campo: '#FBF3E4',
-		tarjeta: '#fff',
-		borde: 'rgba(59,36,22,.14)',
-		acento: '#3B2416',
-		sobreAcento: '#FBF3E4',
-		estrella: '#C9821A',
+		texto: 'var(--tc-3b2416, #3B2416)',
+		suave: 'var(--tc-7a5a44, #7A5A44)',
+		campo: 'var(--tc-fbf3e4, #FBF3E4)',
+		tarjeta: 'var(--tc-ffffff, #fff)',
+		borde: 'var(--tc-3b2416-140, rgba(59,36,22,.14))',
+		acento: 'var(--tc-3b2416, #3B2416)',
+		sobreAcento: 'var(--tc-fbf3e4, #FBF3E4)',
+		estrella: 'var(--tc-c9821a, #C9821A)',
 		radio: '14px',
 		radioBoton: '999px',
-		fuente: "'Instrument Sans', sans-serif",
-		titulos: "'Bricolage Grotesque', sans-serif",
+		fuente: "var(--tf-texto,'Instrument Sans'), sans-serif",
+		titulos: "var(--tf-titulos,'Bricolage Grotesque'), sans-serif",
 		pesoTitulos: 800
 	};
 </script>
@@ -529,19 +534,19 @@
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
 <div
 	class="mostaza"
-	style="min-height:100vh;font-family:'Instrument Sans',system-ui,sans-serif;color:#3B2416;background:#FBF3E4"
+	style="min-height:100vh;font-family:var(--tf-texto,'Instrument Sans'),system-ui,sans-serif;color:var(--tc-3b2416, #3B2416);background:var(--tc-fbf3e4, #FBF3E4)"
 >
 	<div
-		style="container-type:inline-size;width:100%;background:#FBF3E4;position:relative;overflow-x:clip"
+		style="container-type:inline-size;width:100%;background:var(--tc-fbf3e4, #FBF3E4);position:relative;overflow-x:clip"
 	>
 		<!-- barra promo -->
 		<div
-			style="display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;background:var(--acento, #C9821A);color:#2A170C;font-size:13px;font-weight:600;text-align:center"
+			style="display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;background:var(--acento, #C9821A);color:var(--tc-2a170c, #2A170C);font-size:13px;font-weight:600;text-align:center"
 		>
 			{#if conteo.actual}<span>{conteo.texto}</span><span
 					style="display:flex;gap:4px;font-variant-numeric:tabular-nums"
 					>{#each conteo.partes(3) as c (c.u)}<span
-							style="padding:2px 7px;border-radius:6px;background:#2A170C;color:#FBF3E4"
+							style="padding:2px 7px;border-radius:6px;background:var(--tc-2a170c, #2A170C);color:var(--tc-fbf3e4, #FBF3E4)"
 							>{c.v}{c.u}</span
 						>{/each}</span
 				>{:else}<span
@@ -551,20 +556,21 @@
 							? `${tienda.cobros.cuotas} cuotas sin interés`
 							: 'Compra protegida'}</span
 				>{/if}{#if wide && tienda.cobros.transferencia > 0}<span
-					style="padding:2px 7px;border-radius:6px;background:#2A170C;color:#FBF3E4"
+					style="padding:2px 7px;border-radius:6px;background:var(--tc-2a170c, #2A170C);color:var(--tc-fbf3e4, #FBF3E4)"
 					>{tienda.cobros.transferencia}% off por transferencia</span
 				>{/if}
 		</div>
 
 		<!-- header -->
 		<header
-			style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:12px clamp(14px,3.5cqw,40px);background:rgba(251,243,228,.92);backdrop-filter:blur(10px)"
+			data-t-enc
+			style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:12px clamp(14px,3.5cqw,40px);background:var(--tc-fbf3e4-920, rgba(251,243,228,.92));backdrop-filter:blur(10px)"
 		>
 			<a
 				href={base || '/'}
-				style="display:flex;align-items:center;gap:9px;min-width:0;text-decoration:none;color:#3B2416"
+				style="display:flex;align-items:center;gap:9px;min-width:0;text-decoration:none;color:var(--tc-3b2416, #3B2416)"
 				>{#if !tienda.logo}<span
-						style="width:38px;height:38px;border-radius:50%;background:#3B2416;color:#F5C26B;display:grid;place-items:center;flex:none;{B};font-weight:800;font-size:20px;letter-spacing:-.03em"
+						style="width:38px;height:38px;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:#F5C26B;display:grid;place-items:center;flex:none;{B};font-weight:800;font-size:20px;letter-spacing:-.03em"
 						>{inicial}</span
 					>{/if}<span
 					style="{B};font-weight:800;font-size:23px;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
@@ -576,35 +582,38 @@
 				>
 					{#each nav as n (n.t)}<a
 							href={n.href}
-							style="text-decoration:none;font:600 14px 'Instrument Sans';padding:9px 14px;border-radius:999px;background:{n.on
-								? '#F1E2C8'
-								: 'transparent'};color:#3B2416;white-space:nowrap">{n.t}</a
+							style="text-decoration:none;font:600 14px var(--tf-texto,'Instrument Sans');padding:9px 14px;border-radius:999px;background:{n.on
+								? 'var(--tc-f1e2c8, #F1E2C8)'
+								: 'transparent'};color:var(--tc-3b2416, #3B2416);white-space:nowrap">{n.t}</a
 						>{/each}
 				</nav>{/if}
 			<span style="flex:1"></span>
 			<a
 				href="{base}/carrito"
 				aria-label="Carrito"
-				style="display:flex;align-items:center;gap:8px;flex:none;text-decoration:none;padding:10px 16px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 14px 'Instrument Sans';white-space:nowrap"
+				style="display:flex;align-items:center;gap:8px;flex:none;text-decoration:none;padding:10px 16px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 14px var(--tf-texto,'Instrument Sans');white-space:nowrap"
 				><Icon icon={I.phBagSimpleFill} size={17} />{carrito.unidades}{#if wide && subtotal}<span
 						style="opacity:.7;font-weight:500">· {fmt(subtotal)}</span
 					>{/if}</a
 			>
-			{#if nar}<a
-					href="{base}/catalogo"
-					aria-label="Menú"
-					style="display:grid;flex:none;color:#3B2416"><Icon icon={I.phListBold} size={24} /></a
-				>{/if}{#if nar && tienda.turnos}<a
+			{#if nar}<MenuTienda
+					{tienda}
+					{base}
+					{nav}
+					estilo="display:grid;flex:none;color:var(--tc-3b2416, #3B2416)"
+					tam={24}
+					negrita
+				/>{/if}{#if nar && tienda.turnos}<a
 					href="{base}/turnos"
 					aria-label="Reservar turno"
-					style="display:grid;flex:none;color:#3B2416"
+					style="display:grid;flex:none;color:var(--tc-3b2416, #3B2416)"
 					><Icon icon={I.phCalendarPlusBold} size={24} /></a
 				>{/if}
 		</header>
 
 		{#if tienda.vitrina}
 			<div
-				style="padding:10px 16px;background:#F1E2C8;font-size:13px;font-weight:600;text-align:center"
+				style="padding:10px 16px;background:var(--tc-f1e2c8, #F1E2C8);font-size:13px;font-weight:600;text-align:center"
 			>
 				Es una tienda de ejemplo de la plantilla Mostaza: podés recorrerla, pero no se compra
 				de&nbsp;verdad.
@@ -621,7 +630,7 @@
 							style="padding:clamp(16px,3cqw,40px) clamp(14px,3.5cqw,40px) 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:clamp(12px,2cqw,24px)"
 						>
 							<div
-								style="padding:clamp(26px,4.5cqw,60px);border-radius:28px;background:#3B2416;color:#FBF3E4;display:flex;flex-direction:column;justify-content:space-between;gap:30px;min-height:min(560px,120cqw);min-width:0"
+								style="padding:clamp(26px,4.5cqw,60px);border-radius:28px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:flex;flex-direction:column;justify-content:space-between;gap:30px;min-height:min(560px,120cqw);min-width:0"
 							>
 								{#if tienda.ciudad}<span
 										style="align-self:flex-start;display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(245,194,107,.16);color:#F5C26B;font-size:13px;font-weight:700"
@@ -635,7 +644,7 @@
 											>{/if}
 									</h1>
 									{#if tienda.portada.lema}<p
-											style="margin:18px 0 0;font-size:17px;line-height:1.5;color:#E6D3BC;max-width:440px"
+											style="margin:18px 0 0;font-size:17px;line-height:1.5;color:var(--tc-e6d3bc, #E6D3BC);max-width:440px"
 										>
 											{tienda.portada.lema}
 										</p>{/if}
@@ -643,11 +652,11 @@
 								<div style="display:flex;gap:10px;flex-wrap:wrap">
 									<a
 										href="{base}/catalogo"
-										style="display:flex;align-items:center;gap:8px;padding:15px 24px;border-radius:999px;background:#F5C26B;color:#2A170C;font:700 15px 'Instrument Sans';text-decoration:none"
+										style="display:flex;align-items:center;gap:8px;padding:15px 24px;border-radius:999px;background:#F5C26B;color:var(--tc-2a170c, #2A170C);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 										><Icon icon={I.phHandTapFill} size={17} />Pedir ahora</a
 									>{#if tienda.categorias[0]}<a
 											href={enlaceCat(tienda.categorias[0].nombre)}
-											style="padding:15px 22px;border:1.5px solid rgba(251,243,228,.35);border-radius:999px;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none"
+											style="padding:15px 22px;border:1.5px solid var(--tc-fbf3e4-350, rgba(251,243,228,.35));border-radius:999px;color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 											>{tienda.categorias[0].nombre}</a
 										>{/if}
 								</div>
@@ -657,7 +666,7 @@
 									style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:clamp(10px,1.4cqw,16px);min-height:min(560px,110cqw)"
 								>
 									<div
-										style="grid-row:span 2;border-radius:28px;overflow:hidden;background:#D9B98C;position:relative"
+										style="grid-row:span 2;border-radius:28px;overflow:hidden;background:var(--tc-d9b98c, #D9B98C);position:relative"
 									>
 										{#if fotoGrande}<img
 												src={fotoGrande}
@@ -665,12 +674,12 @@
 												style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"
 											/>{/if}{#if !tienda.portada.foto && best[0]}<a
 												href={best[0].href}
-												style="position:absolute;left:14px;bottom:14px;max-width:calc(100% - 28px);padding:8px 12px;border-radius:14px;background:#FBF3E4;font-size:13px;font-weight:700;color:#3B2416;text-decoration:none"
+												style="position:absolute;left:14px;bottom:14px;max-width:calc(100% - 28px);padding:8px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4);font-size:13px;font-weight:700;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 												>{best[0].n} · {best[0].price}</a
 											>{/if}
 									</div>
 									<div
-										style="border-radius:28px;overflow:hidden;background:#D9B98C;position:relative;grid-row:{tienda.promedio
+										style="border-radius:28px;overflow:hidden;background:var(--tc-d9b98c, #D9B98C);position:relative;grid-row:{tienda.promedio
 											? 'auto'
 											: 'span 2'}"
 									>
@@ -682,7 +691,7 @@
 									</div>
 									{#if tienda.promedio}
 										<div
-											style="border-radius:28px;background:var(--acento, #C9821A);color:#2A170C;padding:18px;display:flex;flex-direction:column;justify-content:space-between"
+											style="border-radius:28px;background:var(--acento, #C9821A);color:var(--tc-2a170c, #2A170C);padding:18px;display:flex;flex-direction:column;justify-content:space-between"
 										>
 											<Icon icon={I.phStarFill} size={24} />
 											<div>
@@ -706,15 +715,16 @@
 					>
 						{#each modes as m (m.t)}<a
 								href={m.href}
-								style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:22px;background:{m.bg};color:#3B2416;text-align:left;text-decoration:none;font-family:inherit"
+								style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:22px;background:{m.bg};color:var(--tc-3b2416, #3B2416);text-align:left;text-decoration:none;font-family:inherit"
 								><span
-									style="width:48px;height:48px;border-radius:16px;background:#FBF3E4;display:grid;place-items:center;flex:none"
-									><Icon icon={m.i} size={24} style="color:#C9821A" /></span
+									style="width:48px;height:48px;border-radius:16px;background:var(--tc-fbf3e4, #FBF3E4);display:grid;place-items:center;flex:none"
+									><Icon icon={m.i} size={24} style="color:var(--tc-c9821a, #C9821A)" /></span
 								><span style="flex:1;min-width:0"
 									><span
 										style="display:block;{B};font-size:19px;font-weight:700;letter-spacing:-.02em"
 										>{m.t}</span
-									><span style="display:block;font-size:13px;color:#7A5A44;margin-top:2px"
+									><span
+										style="display:block;font-size:13px;color:var(--tc-7a5a44, #7A5A44);margin-top:2px"
 										>{m.d}</span
 									></span
 								><Icon icon={I.phArrowRightBold} size={17} /></a
@@ -729,11 +739,13 @@
 								<h2
 									style="margin:0;{B};font-weight:800;font-size:clamp(36px,5cqw,64px);line-height:.95;letter-spacing:-.045em"
 								>
-									Lo que más sale
+									{#if tienda.estilo?.textos?.prods?.trim()}{tienda.estilo.textos.prods}{:else}
+										Lo que más sale
+									{/if}
 								</h2>
 								<a
 									href="{base}/catalogo"
-									style="text-decoration:none;padding:11px 18px;border-radius:999px;background:#F1E2C8;color:#3B2416;font:700 14px 'Instrument Sans'"
+									style="text-decoration:none;padding:11px 18px;border-radius:999px;background:var(--tc-f1e2c8, #F1E2C8);color:var(--tc-3b2416, #3B2416);font:700 14px var(--tf-texto,'Instrument Sans')"
 									>Ver menú completo</a
 								>
 							</div>
@@ -741,30 +753,30 @@
 								style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,230px),1fr));gap:clamp(10px,1.4cqw,16px)"
 							>
 								{#each best as p (p.id)}<div
-										style="padding:10px;border-radius:24px;background:#fff;box-shadow:0 1px 2px rgba(59,36,22,.06);min-width:0"
+										style="padding:10px;border-radius:24px;background:var(--tc-ffffff, #fff);box-shadow:0 1px 2px var(--tc-3b2416-60, rgba(59,36,22,.06));min-width:0"
 									>
 										<a
 											href={p.href}
 											class="zoom"
-											style="position:relative;display:block;aspect-ratio:1;border-radius:18px;overflow:hidden;background:#E9D6B8"
+											style="position:relative;display:block;aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 											>{#if p.img}<img
 													src={p.img}
 													alt=""
 													style="width:100%;height:100%;object-fit:cover"
 												/>{/if}{#if p.tag}<span
-													style="position:absolute;top:8px;left:8px;padding:4px 9px;border-radius:999px;background:#FBF3E4;color:#3B2416;font-size:11.5px;font-weight:700"
+													style="position:absolute;top:8px;left:8px;padding:4px 9px;border-radius:999px;background:var(--tc-fbf3e4, #FBF3E4);color:var(--tc-3b2416, #3B2416);font-size:11.5px;font-weight:700"
 													>{p.tag}</span
 												>{/if}</a
 										>
 										<div style="padding:12px 6px 4px">
 											<a
 												href={p.href}
-												style="display:block;{B};font-size:18px;font-weight:700;letter-spacing:-.02em;color:#3B2416;text-decoration:none"
+												style="display:block;{B};font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 												>{p.n}</a
 											>
 											{#if p.d}<div
 													class="dos"
-													style="font-size:12.5px;color:#7A5A44;margin-top:2px;line-height:1.4"
+													style="font-size:12.5px;color:var(--tc-7a5a44, #7A5A44);margin-top:2px;line-height:1.4"
 												>
 													{p.d}
 												</div>{/if}
@@ -773,13 +785,14 @@
 											>
 												<span
 													><b style="font-size:16px">{p.price}</b>{#if p.old}
-														<s style="font-size:13px;color:#9C8270">{p.old}</s>{/if}</span
+														<s style="font-size:13px;color:var(--tc-9c8270, #9C8270)">{p.old}</s
+														>{/if}</span
 												><button
 													type="button"
 													onclick={() => sumar(p.id)}
 													disabled={p.agotado || tienda.vitrina}
 													aria-label="Sumar {p.n}"
-													style="width:36px;height:36px;flex:none;border:0;border-radius:50%;background:#3B2416;color:#FBF3E4;display:grid;place-items:center;cursor:pointer"
+													style="width:36px;height:36px;flex:none;border:0;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:grid;place-items:center;cursor:pointer"
 													><Icon icon={I.phPlusBold} size={15} /></button
 												>
 											</div>
@@ -790,7 +803,7 @@
 
 						{#if oferta}
 							<section
-								style="margin:clamp(48px,7cqw,90px) clamp(14px,3.5cqw,40px) 0;padding:clamp(24px,4cqw,48px);border-radius:28px;background:#F5C26B;color:#2A170C;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:28px;align-items:center"
+								style="margin:clamp(48px,7cqw,90px) clamp(14px,3.5cqw,40px) 0;padding:clamp(24px,4cqw,48px);border-radius:28px;background:#F5C26B;color:var(--tc-2a170c, #2A170C);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:28px;align-items:center"
 							>
 								<div>
 									<div
@@ -814,7 +827,7 @@
 										type="button"
 										onclick={sumarOferta}
 										disabled={tienda.vitrina}
-										style="margin-top:18px;padding:15px 24px;border:0;border-radius:999px;background:#2A170C;color:#FBF3E4;font:700 15px 'Instrument Sans';cursor:pointer"
+										style="margin-top:18px;padding:15px 24px;border:0;border-radius:999px;background:var(--tc-2a170c, #2A170C);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');cursor:pointer"
 										>Sumar al pedido</button
 									>
 								</div>
@@ -842,7 +855,9 @@
 							<h2
 								style="margin:0;{B};font-weight:800;font-size:clamp(36px,5cqw,64px);line-height:.95;letter-spacing:-.045em"
 							>
-								Dicen en el barrio
+								{#if tienda.estilo?.textos?.revs?.trim()}{tienda.estilo.textos.revs}{:else}
+									Dicen en el barrio
+								{/if}
 							</h2>
 							<div
 								style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px"
@@ -850,10 +865,10 @@
 								{#each tienda.resenas.slice(0, 3) as r, i (i)}
 									{@const pr = tienda.productos.find((p) => p.nombre === r.producto)}
 									<div
-										style="padding:14px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:12px"
+										style="padding:14px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:12px"
 									>
 										{#if pr?.foto}<div
-												style="aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#E9D6B8"
+												style="aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 											>
 												<img
 													src={img(pr.foto, 600, 375)}
@@ -861,22 +876,23 @@
 													style="width:100%;height:100%;object-fit:cover"
 												/>
 											</div>{/if}
-										<div style="display:flex;gap:2px;color:#C9821A">
+										<div style="display:flex;gap:2px;color:var(--tc-c9821a, #C9821A)">
 											{#each estrellas(r.estrellas) as e, j (j)}<Icon icon={e} size={15} />{/each}
 										</div>
 										<p style="margin:0;font-size:15px;line-height:1.5">“{r.texto}”</p>
-										<span style="font-size:13px;color:#7A5A44;font-weight:600"
+										<span style="font-size:13px;color:var(--tc-7a5a44, #7A5A44);font-weight:600"
 											>{r.autor}{#if r.producto}
 												· {r.conCompra ? 'compró' : 'sobre'} {r.producto}{/if}</span
 										>
 										{#if r.conCompra}<span
-												style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:#E7F0DF;font-size:12px;font-weight:700;color:#2F6B3A"
+												style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:var(--tc-e7f0df, #E7F0DF);font-size:12px;font-weight:700;color:var(--tc-2f6b3a, #2F6B3A)"
 												><Icon icon={I.phSealCheckFill} size={13} />Compra verificada</span
 											>{/if}
 										{#if r.respuesta}<div
-												style="padding:10px 12px;border-radius:14px;background:#F1E2C8;font-size:13.5px;line-height:1.5;color:#5E4332"
+												style="padding:10px 12px;border-radius:14px;background:var(--tc-f1e2c8, #F1E2C8);font-size:13.5px;line-height:1.5;color:var(--tc-5e4332, #5E4332)"
 											>
-												<b style="color:#3B2416">Respuesta de {tienda.nombre}</b><br />{r.respuesta}
+												<b style="color:var(--tc-3b2416, #3B2416)">Respuesta de {tienda.nombre}</b
+												><br />{r.respuesta}
 											</div>{/if}
 									</div>
 								{/each}
@@ -889,13 +905,15 @@
 							<h2
 								style="margin:0;{B};font-weight:800;font-size:clamp(36px,5cqw,64px);line-height:.95;letter-spacing:-.045em"
 							>
-								De cerca
+								{#if tienda.estilo?.textos?.ig?.trim()}{tienda.estilo.textos.ig}{:else}
+									De cerca
+								{/if}
 							</h2>
 							<div
 								style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(30%,170px),1fr));gap:8px"
 							>
 								{#each tienda.fotos as g (g)}<div
-										style="aspect-ratio:1;border-radius:18px;overflow:hidden;background:#E9D6B8"
+										style="aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 									>
 										<img
 											src={img(g, 400, 400)}
@@ -920,9 +938,9 @@
 			</section>
 		{:else if pagina === 'catalogo'}
 			<section style="padding:clamp(18px,3cqw,32px) clamp(14px,3.5cqw,40px) clamp(48px,7cqw,90px)">
-				<div style="font-size:13px;color:#7A5A44">
+				<div style="font-size:13px;color:var(--tc-7a5a44, #7A5A44)">
 					<a href={base || '/'} style="color:inherit;text-decoration:none">Inicio</a> /
-					<span style="color:#3B2416">{categoria ?? 'Menú'}</span>
+					<span style="color:var(--tc-3b2416, #3B2416)">{categoria ?? 'Menú'}</span>
 				</div>
 				<div
 					style="margin-top:10px;display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"
@@ -933,19 +951,19 @@
 						{categoria ?? 'Menú'}
 					</h1>
 					<label
-						style="display:flex;align-items:center;gap:6px;padding:10px 15px;border-radius:999px;border:1.5px solid rgba(59,36,22,.12);background:#fff;color:#3B2416;font-size:13.5px;font-weight:700;white-space:nowrap"
+						style="display:flex;align-items:center;gap:6px;padding:10px 15px;border-radius:999px;border:1.5px solid var(--tc-3b2416-120, rgba(59,36,22,.12));background:var(--tc-ffffff, #fff);color:var(--tc-3b2416, #3B2416);font-size:13.5px;font-weight:700;white-space:nowrap"
 						>Ordenar<select
 							value={orden}
 							onchange={(e) => goto(enlaceCat(categoria, e.currentTarget.value), { replace: true })}
-							style="border:0;background:transparent;font:700 13.5px 'Instrument Sans';color:#3B2416;cursor:pointer;padding:0"
+							style="border:0;background:transparent;font:700 13.5px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);cursor:pointer;padding:0"
 							>{#each ORDENES as [k, t] (k)}<option value={k}>{t}</option>{/each}</select
 						></label
 					>
 				</div>
 				<div
-					style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13.5px;color:#7A5A44;flex-wrap:wrap"
+					style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tc-7a5a44, #7A5A44);flex-wrap:wrap"
 				>
-					<Icon icon={I.phStorefrontFill} size={15} /><b style="color:#3B2416"
+					<Icon icon={I.phStorefrontFill} size={15} /><b style="color:var(--tc-3b2416, #3B2416)"
 						>{listado.length} {listado.length === 1 ? 'producto' : 'productos'}</b
 					>{#if tienda.envios.retiro && tienda.direccion}<span>· Retirás en {tienda.direccion}</span
 						>{/if}{#if tienda.envios.gratisDesde}<span
@@ -953,16 +971,17 @@
 						>{/if}
 				</div>
 				<div
-					style="position:sticky;top:62px;z-index:10;margin:18px calc(-1 * clamp(14px,3.5cqw,40px)) 0;padding:10px clamp(14px,3.5cqw,40px);background:rgba(251,243,228,.95);backdrop-filter:blur(8px);display:flex;gap:6px;overflow-x:auto;scrollbar-width:none"
+					style="position:sticky;top:62px;z-index:10;margin:18px calc(-1 * clamp(14px,3.5cqw,40px)) 0;padding:10px clamp(14px,3.5cqw,40px);background:var(--tc-fbf3e4-950, rgba(251,243,228,.95));backdrop-filter:blur(8px);display:flex;gap:6px;overflow-x:auto;scrollbar-width:none"
 				>
 					{#each [null, ...tienda.categorias.map((c) => c.nombre)] as c (c ?? '')}{@const on =
 							c === categoria}<a
 							href={enlaceCat(c)}
 							style="flex:none;text-decoration:none;padding:9px 15px;border-radius:999px;background:{on
-								? '#3B2416'
-								: '#F1E2C8'};color:{on
-								? '#FBF3E4'
-								: '#3B2416'};font-size:14px;font-weight:700;white-space:nowrap">{c ?? 'Todo'}</a
+								? 'var(--tc-3b2416, #3B2416)'
+								: 'var(--tc-f1e2c8, #F1E2C8)'};color:{on
+								? 'var(--tc-fbf3e4, #FBF3E4)'
+								: 'var(--tc-3b2416, #3B2416)'};font-size:14px;font-weight:700;white-space:nowrap"
+							>{c ?? 'Todo'}</a
 						>{/each}
 				</div>
 				<div style="margin-top:14px;display:flex;gap:clamp(20px,3cqw,36px);align-items:flex-start">
@@ -979,8 +998,8 @@
 								>
 									{#each s.items as p (p.id)}{@const q = enCarrito(p.id)}
 										<div
-											style="display:flex;gap:12px;padding:10px;border-radius:22px;background:#fff;border:1.5px solid {q
-												? '#C9821A'
+											style="display:flex;gap:12px;padding:10px;border-radius:22px;background:var(--tc-ffffff, #fff);border:1.5px solid {q
+												? 'var(--tc-c9821a, #C9821A)'
 												: 'transparent'};min-width:0"
 										>
 											<div
@@ -989,7 +1008,7 @@
 												<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
 													<a
 														href={p.href}
-														style="font-size:16px;font-weight:700;color:#3B2416;text-decoration:none"
+														style="font-size:16px;font-weight:700;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 														>{p.n}</a
 													>{#if p.tag}<span
 															style="padding:2px 8px;border-radius:999px;background:{p.tagBg};color:{p.tagFg};font-size:11px;font-weight:700"
@@ -998,17 +1017,18 @@
 												</div>
 												{#if p.d}<span
 														class="dos"
-														style="font-size:13px;color:#7A5A44;line-height:1.4;margin-top:3px"
+														style="font-size:13px;color:var(--tc-7a5a44, #7A5A44);line-height:1.4;margin-top:3px"
 														>{p.d}</span
 													>{/if}
 												<span style="flex:1"></span>
 												<span style="margin-top:8px"
 													><b style="font-size:15.5px">{p.price}</b>{#if p.old}
-														<s style="font-size:13px;color:#9C8270">{p.old}</s>{/if}</span
+														<s style="font-size:13px;color:var(--tc-9c8270, #9C8270)">{p.old}</s
+														>{/if}</span
 												>
 											</div>
 											<div
-												style="position:relative;width:110px;height:110px;flex:none;border-radius:16px;overflow:hidden;background:#E9D6B8"
+												style="position:relative;width:110px;height:110px;flex:none;border-radius:16px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 											>
 												<a
 													href={p.href}
@@ -1021,12 +1041,12 @@
 														/>{/if}</a
 												>
 												<span
-													style="position:absolute;right:6px;bottom:6px;display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:#fff;box-shadow:0 4px 10px rgba(59,36,22,.2)"
+													style="position:absolute;right:6px;bottom:6px;display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--tc-ffffff, #fff);box-shadow:0 4px 10px var(--tc-3b2416-200, rgba(59,36,22,.2))"
 													>{#if q}<button
 															type="button"
 															aria-label="Uno menos"
 															onclick={() => carrito.fijar(p.id, q - 1)}
-															style="width:26px;height:26px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:#3B2416"
+															style="width:26px;height:26px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:var(--tc-3b2416, #3B2416)"
 															><Icon icon={I.phMinusBold} size={12} /></button
 														><b style="min-width:16px;text-align:center;font-size:13px">{q}</b
 														>{/if}<button
@@ -1034,7 +1054,7 @@
 														aria-label="Sumar {p.n}"
 														onclick={() => sumar(p.id)}
 														disabled={p.agotado || tienda.vitrina || (q > 0 && q >= p.stock)}
-														style="width:26px;height:26px;border:0;padding:0;border-radius:50%;background:#3B2416;color:#FBF3E4;display:grid;place-items:center;cursor:pointer"
+														style="width:26px;height:26px;border:0;padding:0;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:grid;place-items:center;cursor:pointer"
 														><Icon icon={I.phPlusBold} size={12} /></button
 													></span
 												>
@@ -1043,7 +1063,7 @@
 								</div>
 							</div>
 						{:else}
-							<p style="margin:20px 0;font-size:15px;color:#7A5A44">
+							<p style="margin:20px 0;font-size:15px;color:var(--tc-7a5a44, #7A5A44)">
 								Todavía no hay productos en esta&nbsp;categoría.
 							</p>
 						{/each}
@@ -1052,7 +1072,7 @@
 								<button
 									type="button"
 									onclick={() => (mostrar += 24)}
-									style="border:0;cursor:pointer;padding:11px 22px;border-radius:999px;background:#F1E2C8;color:#3B2416;font:700 14px 'Instrument Sans'"
+									style="border:0;cursor:pointer;padding:11px 22px;border-radius:999px;background:var(--tc-f1e2c8, #F1E2C8);color:var(--tc-3b2416, #3B2416);font:700 14px var(--tf-texto,'Instrument Sans')"
 									>Ver más</button
 								>
 							</div>
@@ -1060,41 +1080,42 @@
 					</div>
 					{#if wide}
 						<aside
-							style="width:330px;flex:none;position:sticky;top:130px;padding:20px;border-radius:26px;background:#fff;box-shadow:0 24px 50px -30px rgba(59,36,22,.4);display:flex;flex-direction:column;gap:12px"
+							style="width:330px;flex:none;position:sticky;top:130px;padding:20px;border-radius:26px;background:var(--tc-ffffff, #fff);box-shadow:0 24px 50px -30px var(--tc-3b2416-400, rgba(59,36,22,.4));display:flex;flex-direction:column;gap:12px"
 						>
 							<div style="{B};font-weight:800;font-size:24px;letter-spacing:-.03em">Tu pedido</div>
 							{#each lineas as o (o.clave)}<div
 									style="display:flex;align-items:center;gap:10px;font-size:14px"
 								>
 									<b
-										style="width:26px;height:26px;border-radius:8px;background:#F1E2C8;display:grid;place-items:center;font-size:12.5px;flex:none"
+										style="width:26px;height:26px;border-radius:8px;background:var(--tc-f1e2c8, #F1E2C8);display:grid;place-items:center;font-size:12.5px;flex:none"
 										>{o.cantidad}</b
 									><span style="flex:1;min-width:0"
 										>{o.producto.nombre}{#if o.variante}<span
-												style="display:block;font-size:12.5px;color:#7A5A44">{o.variante}</span
+												style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
+												>{o.variante}</span
 											>{/if}</span
 									><b>{fmt(o.subtotal)}</b>
-								</div>{:else}<span style="font-size:13.5px;color:#7A5A44"
+								</div>{:else}<span style="font-size:13.5px;color:var(--tc-7a5a44, #7A5A44)"
 									>Sumá productos del menú con el&nbsp;+.</span
 								>{/each}
 							{#if lineas.length}
-								<div style="height:1px;background:rgba(59,36,22,.1)"></div>
+								<div style="height:1px;background:var(--tc-3b2416-100, rgba(59,36,22,.1))"></div>
 								<div style="display:flex;justify-content:space-between;align-items:baseline">
 									<b>Total</b><b style="{B};font-size:28px;font-weight:800">{fmt(subtotal)}</b>
 								</div>
 								{#if tienda.cobros.transferencia > 0}<span
-										style="font-size:13px;color:#2F6B3A;font-weight:600"
+										style="font-size:13px;color:var(--tc-2f6b3a, #2F6B3A);font-weight:600"
 										>{fmt(subtotal * (1 - tienda.cobros.transferencia / 100))} pagando por transferencia</span
 									>{/if}
 								<a
 									href="{base}/checkout"
-									style="padding:16px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-align:center;text-decoration:none"
+									style="padding:16px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-align:center;text-decoration:none"
 									>Finalizar pedido</a
 								>{#if whatsapp}<a
 										href={wa(textoPedido)}
 										target="_blank"
 										rel="noopener"
-										style="display:flex;justify-content:center;align-items:center;gap:8px;padding:14px;border-radius:999px;background:#E8F7EC;color:#1F6F3A;font-size:14.5px;font-weight:700;text-decoration:none"
+										style="display:flex;justify-content:center;align-items:center;gap:8px;padding:14px;border-radius:999px;background:#E8F7EC;color:var(--tc-1f6f3a, #1F6F3A);font-size:14.5px;font-weight:700;text-decoration:none"
 										><Icon icon={I.phWhatsappLogoFill} size={18} />Mandar por WhatsApp</a
 									>{/if}
 							{/if}
@@ -1103,9 +1124,9 @@
 				</div>
 				{#if nar && carrito.unidades}<a
 						href="{base}/carrito"
-						style="position:sticky;bottom:14px;margin-top:20px;width:100%;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none;box-shadow:0 16px 30px -12px rgba(59,36,22,.6)"
+						style="position:sticky;bottom:14px;margin-top:20px;width:100%;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none;box-shadow:0 16px 30px -12px var(--tc-3b2416-600, rgba(59,36,22,.6))"
 						><span
-							style="width:26px;height:26px;border-radius:50%;background:#F5C26B;color:#2A170C;display:grid;place-items:center;font-size:13px"
+							style="width:26px;height:26px;border-radius:50%;background:#F5C26B;color:var(--tc-2a170c, #2A170C);display:grid;place-items:center;font-size:13px"
 							>{carrito.unidades}</span
 						><span style="flex:1;text-align:left">Ver pedido</span>{fmt(subtotal)}</a
 					>{/if}
@@ -1126,7 +1147,7 @@
 								alt={producto.nombre}
 								style="width:100%;height:100%;object-fit:cover"
 							/>{/if}{#if tachado || producto.etiqueta}<span
-								style="position:absolute;top:14px;left:14px;padding:4px 10px;border-radius:999px;background:#FBF3E4;font-size:11.5px;font-weight:700"
+								style="position:absolute;top:14px;left:14px;padding:4px 10px;border-radius:999px;background:var(--tc-fbf3e4, #FBF3E4);font-size:11.5px;font-weight:700"
 								>{tachado
 									? `−${Math.round((1 - sel.precio / tachado) * 100)}%`
 									: producto.etiqueta}</span
@@ -1140,10 +1161,10 @@
 									aria-label="Ver la foto {i + 1}"
 									aria-pressed={i === sel.fotoIdx}
 									onclick={() => sel.verFoto(i)}
-									style="aspect-ratio:1;padding:0;border:0;border-radius:18px;overflow:hidden;background:#E9D6B8;cursor:pointer;box-shadow:0 0 0 {i ===
+									style="aspect-ratio:1;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8);cursor:pointer;box-shadow:0 0 0 {i ===
 									sel.fotoIdx
 										? '2.5px'
-										: '0px'} #3B2416"
+										: '0px'} var(--tc-3b2416, #3B2416)"
 									><img
 										src={img(f, 200, 200)}
 										alt=""
@@ -1153,13 +1174,13 @@
 						</div>{/if}
 				</div>
 				<div style="position:sticky;top:80px;min-width:0">
-					<div style="font-size:13px;color:#7A5A44">
+					<div style="font-size:13px;color:var(--tc-7a5a44, #7A5A44)">
 						<a href={base || '/'} style="color:inherit;text-decoration:none">Inicio</a> /
 						<a href="{base}/catalogo" style="color:inherit;text-decoration:none">Menú</a>
 					</div>
 					{#if producto.categoria}<a
 							href={enlaceCat(producto.categoria)}
-							style="display:inline-flex;margin-top:12px;padding:5px 11px;border-radius:999px;background:#F1E2C8;font-size:12.5px;font-weight:700;color:#3B2416;text-decoration:none"
+							style="display:inline-flex;margin-top:12px;padding:5px 11px;border-radius:999px;background:var(--tc-f1e2c8, #F1E2C8);font-size:12.5px;font-weight:700;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 							>{producto.categoria}</a
 						>{/if}
 					<h1
@@ -1170,33 +1191,35 @@
 					{#if resenasDe}<div
 							style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600"
 						>
-							<span style="display:flex;color:#C9821A"
+							<span style="display:flex;color:var(--tc-c9821a, #C9821A)"
 								>{#each estrellas(5) as e, i (i)}<Icon icon={e} size={13} />{/each}</span
 							><span>{resenasDe} {resenasDe === 1 ? 'reseña' : 'reseñas'}</span>
 						</div>{/if}
 					{#if producto.descripcion}<p
-							style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#5E4332"
+							style="margin:12px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)"
 						>
 							{producto.descripcion}
 						</p>{/if}
 					<div style="margin-top:18px;display:flex;align-items:baseline;gap:10px">
 						<b style="{B};font-size:36px;font-weight:800;letter-spacing:-.03em"
 							>{sel.desde ? 'Desde ' : ''}{fmt(sel.precio)}</b
-						>{#if tachado}<s style="color:#9C8270">{fmt(tachado)}</s>{/if}
+						>{#if tachado}<s style="color:var(--tc-9c8270, #9C8270)">{fmt(tachado)}</s>{/if}
 					</div>
 					{#if tienda.cobros.cuotas > 1 || tienda.cobros.transferencia > 0}<div
-							style="font-size:13.5px;color:#5E4332"
+							style="font-size:13.5px;color:var(--tc-5e4332, #5E4332)"
 						>
 							{#if tienda.cobros.cuotas > 1}{tienda.cobros.cuotas} cuotas sin interés de {fmt(
 									sel.precio / tienda.cobros.cuotas
 								)}{/if}{#if tienda.cobros.transferencia > 0}
 								{#if tienda.cobros.cuotas > 1}·{/if}
-								<b style="color:#2F6B3A"
+								<b style="color:var(--tc-2f6b3a, #2F6B3A)"
 									>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por transferencia</b
 								>{/if}
 						</div>{/if}
 					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
-					{#if porMayorFicha}<div style="font-size:13.5px;color:#5E4332">{porMayorFicha}</div>{/if}
+					{#if porMayorFicha}<div style="font-size:13.5px;color:var(--tc-5e4332, #5E4332)">
+							{porMayorFicha}
+						</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
 							(x) => x.color || x.foto
 						)}
@@ -1204,11 +1227,11 @@
 							<div
 								style="font-size:13.5px;font-weight:700;margin-bottom:8px;color:{sel.aviso &&
 								!o.elegido
-									? '#C9821A'
-									: '#3B2416'}"
+									? 'var(--tc-c9821a, #C9821A)'
+									: 'var(--tc-3b2416, #3B2416)'}"
 							>
-								{o.nombre}{#if o.elegido}<span style="font-weight:400;color:#7A5A44"
-										>: {o.elegido}</span
+								{o.nombre}{#if o.elegido}<span
+										style="font-weight:400;color:var(--tc-7a5a44, #7A5A44)">: {o.elegido}</span
 									>{/if}
 							</div>
 							{#if swatch}<div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1218,11 +1241,13 @@
 											aria-pressed={x.elegido}
 											disabled={!x.disponible && !x.elegido}
 											onclick={() => sel.elegir(o.nombre, x.valor)}
-											style="width:42px;height:42px;padding:0;border:0;border-radius:50%;overflow:hidden;background:#E9D6B8;cursor:pointer;opacity:{x.disponible
+											style="width:42px;height:42px;padding:0;border:0;border-radius:50%;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8);cursor:pointer;opacity:{x.disponible
 												? 1
-												: 0.4};box-shadow:inset 0 0 0 1px rgba(59,36,22,.14),0 0 0 {x.elegido
+												: 0.4};box-shadow:inset 0 0 0 1px var(--tc-3b2416-140, rgba(59,36,22,.14)),0 0 0 {x.elegido
 												? '2.5px'
-												: '0px'} #FBF3E4,0 0 0 {x.elegido ? '5px' : '0px'} #3B2416"
+												: '0px'} var(--tc-fbf3e4, #FBF3E4),0 0 0 {x.elegido
+												? '5px'
+												: '0px'} var(--tc-3b2416, #3B2416)"
 											>{#if x.color}<span
 													style="display:block;width:100%;height:100%;background:{x.color}"
 												></span>{:else}<img
@@ -1238,12 +1263,12 @@
 											disabled={!x.disponible && !x.elegido}
 											onclick={() => sel.elegir(o.nombre, x.valor)}
 											style="min-height:44px;padding:10px 16px;border-radius:999px;border:0;background:{x.elegido
-												? '#3B2416'
-												: '#fff'};color:{x.elegido
-												? '#FBF3E4'
+												? 'var(--tc-3b2416, #3B2416)'
+												: 'var(--tc-ffffff, #fff)'};color:{x.elegido
+												? 'var(--tc-fbf3e4, #FBF3E4)'
 												: x.disponible
-													? '#3B2416'
-													: '#9C8270'};font:700 14px 'Instrument Sans';text-decoration:{x.disponible
+													? 'var(--tc-3b2416, #3B2416)'
+													: 'var(--tc-9c8270, #9C8270)'};font:700 14px var(--tf-texto,'Instrument Sans');text-decoration:{x.disponible
 												? 'none'
 												: 'line-through'};opacity:{x.disponible ? 1 : 0.6};cursor:{x.disponible
 												? 'pointer'
@@ -1252,34 +1277,34 @@
 								</div>{/if}
 						</div>{/each}
 					{#if sel.stock > 0 && sel.stock <= 3 && (!sel.conOpciones || sel.variante)}<div
-							style="margin-top:12px;font-size:13px;font-weight:700;color:#C9821A"
+							style="margin-top:12px;font-size:13px;font-weight:700;color:var(--tc-c9821a, #C9821A)"
 						>
 							{sel.stock === 1 ? 'Queda 1' : `Quedan ${sel.stock}`}{#if sel.variante}
 								en {sel.texto.toLowerCase()}{/if}
 						</div>{/if}
 					<div style="margin-top:14px;display:flex;gap:8px">
 						{#if sel.stock > 0}<span
-								style="display:flex;align-items:center;gap:4px;padding:4px;border-radius:999px;background:#fff;flex:none"
+								style="display:flex;align-items:center;gap:4px;padding:4px;border-radius:999px;background:var(--tc-ffffff, #fff);flex:none"
 								><button
 									type="button"
 									aria-label="Uno menos"
 									disabled={cantidad <= 1}
 									onclick={() => (cantidad = Math.max(1, cantidad - 1))}
-									style="width:40px;height:40px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:#3B2416"
+									style="width:40px;height:40px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:var(--tc-3b2416, #3B2416)"
 									><Icon icon={I.phMinusBold} size={14} /></button
 								><b style="width:24px;text-align:center">{cantidad}</b><button
 									type="button"
 									aria-label="Uno más"
 									disabled={cantidad >= sel.stock}
 									onclick={() => (cantidad = Math.min(sel.stock, cantidad + 1))}
-									style="width:40px;height:40px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:#3B2416"
+									style="width:40px;height:40px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:var(--tc-3b2416, #3B2416)"
 									><Icon icon={I.phPlusBold} size={14} /></button
 								></span
 							>{/if}<button
 							type="button"
 							onclick={agregar}
 							disabled={sel.stock === 0 || tienda.vitrina}
-							style="flex:1;padding:15px;border:0;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';cursor:pointer"
+							style="flex:1;padding:15px;border:0;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');cursor:pointer"
 							>{sel.boton(`Agregar · ${fmt(sel.precio * cantidad)}`)}</button
 						>
 					</div>
@@ -1289,13 +1314,13 @@
 							)}
 							target="_blank"
 							rel="noopener"
-							style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:14px;border-radius:999px;background:#E8F7EC;color:#1F6F3A;font-size:14.5px;font-weight:700;text-decoration:none"
+							style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:14px;border-radius:999px;background:#E8F7EC;color:var(--tc-1f6f3a, #1F6F3A);font-size:14.5px;font-weight:700;text-decoration:none"
 							><Icon icon={I.phWhatsappLogoFill} size={18} />Consultar por WhatsApp</a
 						>{/if}
 					<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 					<CompartirProducto {tienda} {producto} {tema} />
 					{#if envia(tienda.envios)}<div
-							style="margin-top:14px;padding:14px;border-radius:18px;background:#fff;display:flex;flex-direction:column;gap:8px;font-size:13.5px"
+							style="margin-top:14px;padding:14px;border-radius:18px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px;font-size:13.5px"
 						>
 							<label for="cp-ficha" style="font-weight:700">Calculá el envío</label>
 							<div style="display:flex;gap:6px">
@@ -1306,36 +1331,37 @@
 									maxlength="4"
 									placeholder="Código postal"
 									onkeydown={(e) => e.key === 'Enter' && calcular()}
-									style="flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;background:#FBF3E4;font:400 13.5px 'Instrument Sans';color:#3B2416"
+									style="flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:0;background:var(--tc-fbf3e4, #FBF3E4);font:400 13.5px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416)"
 								/><button
 									type="button"
 									onclick={calcular}
-									style="padding:10px 14px;border:0;border-radius:12px;background:#3B2416;color:#FBF3E4;font:700 13.5px 'Instrument Sans';cursor:pointer"
+									style="padding:10px 14px;border:0;border-radius:12px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 13.5px var(--tf-texto,'Instrument Sans');cursor:pointer"
 									>Calcular</button
 								>
 							</div>
 							{#if cotizado}{#each cotizado as o (o.id)}<span
 										style="display:flex;justify-content:space-between;gap:10px"
 										><span>{o.nombre} · {o.detalle}</span><b
-											style="white-space:nowrap;color:{o.precio ? '#3B2416' : '#2F6B3A'}"
-											>{o.precio ? fmt(o.precio) : 'Gratis'}</b
+											style="white-space:nowrap;color:{o.precio
+												? 'var(--tc-3b2416, #3B2416)'
+												: 'var(--tc-2f6b3a, #2F6B3A)'}">{o.precio ? fmt(o.precio) : 'Gratis'}</b
 										></span
 									>{/each}{/if}
 						</div>{/if}
 					<div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
 						{#each acc as a (a.t)}<div
 								style="padding:12px 16px;border-radius:14px;background:{a.open
-									? '#F1E2C8'
-									: '#fff'};font-size:14.5px"
+									? 'var(--tc-f1e2c8, #F1E2C8)'
+									: 'var(--tc-ffffff, #fff)'};font-size:14.5px"
 							>
 								<button
 									type="button"
 									onclick={() => (abierto = a.open ? '' : a.t)}
 									aria-expanded={a.open}
-									style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0;border:0;background:transparent;font:600 14.5px 'Instrument Sans';color:#3B2416;cursor:pointer;text-align:left"
+									style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0;border:0;background:transparent;font:600 14.5px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);cursor:pointer;text-align:left"
 									>{a.t}<Icon icon={a.i} size={14} /></button
 								>{#if a.open}<p
-										style="margin:8px 0 0;font-size:14px;line-height:1.55;color:#5E4332;text-wrap:pretty"
+										style="margin:8px 0 0;font-size:14px;line-height:1.55;color:var(--tc-5e4332, #5E4332);text-wrap:pretty"
 									>
 										{a.d}
 									</p>{/if}
@@ -1345,7 +1371,7 @@
 			</section>
 			<section style="padding:clamp(40px,6cqw,72px) clamp(14px,3.5cqw,40px) 0">
 				<div
-					style="max-width:820px;padding:clamp(18px,3cqw,28px);border-radius:24px;background:#fff"
+					style="max-width:820px;padding:clamp(18px,3cqw,28px);border-radius:24px;background:var(--tc-ffffff, #fff)"
 				>
 					<PreguntasProducto
 						slug={tienda.slug}
@@ -1369,9 +1395,9 @@
 						{#each related as p (p.id)}<a
 								href={p.href}
 								class="zoom"
-								style="display:block;padding:10px;border-radius:22px;background:#fff;color:#3B2416;text-decoration:none;min-width:0"
+								style="display:block;padding:10px;border-radius:22px;background:var(--tc-ffffff, #fff);color:var(--tc-3b2416, #3B2416);text-decoration:none;min-width:0"
 								><span
-									style="display:block;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#E9D6B8"
+									style="display:block;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 									>{#if p.img}<img
 											src={p.img}
 											alt=""
@@ -1403,26 +1429,31 @@
 						Tu pedido
 					</h1>
 					{#if !lineas.length}
-						<p style="margin:18px 0 0;font-size:15px;color:#7A5A44">Todavía no sumaste nada.</p>
+						<p style="margin:18px 0 0;font-size:15px;color:var(--tc-7a5a44, #7A5A44)">
+							Todavía no sumaste nada.
+						</p>
 						<a
 							href="{base}/catalogo"
-							style="display:inline-block;margin-top:16px;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none"
+							style="display:inline-block;margin-top:16px;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 							>Ver el menú</a
 						>
 					{:else}
 						{#if tienda.envios.gratisDesde}
 							<div
-								style="margin-top:14px;padding:12px 14px;border-radius:16px;background:#F1E2C8;font-size:13.5px;display:flex;flex-direction:column;gap:10px"
+								style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--tc-f1e2c8, #F1E2C8);font-size:13.5px;display:flex;flex-direction:column;gap:10px"
 							>
 								<span style="display:flex;align-items:center;gap:10px"
-									><Icon icon={I.phPackageFill} size={20} style="color:#C9821A" /><span
-										style="flex:1"
+									><Icon
+										icon={I.phPackageFill}
+										size={20}
+										style="color:var(--tc-c9821a, #C9821A)"
+									/><span style="flex:1"
 										>{#if falta}Sumá <b>{fmt(falta)}</b> y el envío es gratis{:else}<b
 												>Tenés envío gratis</b
 											>{/if}</span
 									></span
 								><span
-									style="height:5px;border-radius:3px;background:#EADBC2;overflow:hidden;display:block"
+									style="height:5px;border-radius:3px;background:var(--tc-eadbc2, #EADBC2);overflow:hidden;display:block"
 									><span
 										style="display:block;height:100%;width:{Math.min(
 											100,
@@ -1434,14 +1465,18 @@
 						{/if}
 						{#if avisoMayor && porMayor}
 							<div
-								style="margin-top:14px;padding:12px 14px;border-radius:16px;background:#F1E2C8;font-size:13.5px;display:flex;flex-direction:column;gap:10px"
+								style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--tc-f1e2c8, #F1E2C8);font-size:13.5px;display:flex;flex-direction:column;gap:10px"
 							>
 								<span style="display:flex;align-items:center;gap:10px"
-									><Icon icon={I.phPackageFill} size={20} style="color:#C9821A" /><span
-										style="flex:1">{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
+									><Icon
+										icon={I.phPackageFill}
+										size={20}
+										style="color:var(--tc-c9821a, #C9821A)"
+									/><span style="flex:1"
+										>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span
 									></span
 								><span
-									style="height:5px;border-radius:3px;background:#EADBC2;overflow:hidden;display:block"
+									style="height:5px;border-radius:3px;background:var(--tc-eadbc2, #EADBC2);overflow:hidden;display:block"
 									><span
 										style="display:block;height:100%;width:{porMayor.progreso}%;background:var(--acento, #C9821A)"
 									></span></span
@@ -1450,45 +1485,45 @@
 						{/if}
 						<div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
 							{#each lineas as o (o.clave)}<div
-									style="display:flex;gap:12px;align-items:center;padding:10px;border-radius:20px;background:#fff"
+									style="display:flex;gap:12px;align-items:center;padding:10px;border-radius:20px;background:var(--tc-ffffff, #fff)"
 								>
 									{#if o.producto.foto}<img
 											src={img(o.producto.foto, 160, 160)}
 											alt=""
-											style="width:72px;height:72px;border-radius:14px;object-fit:cover;flex:none;background:#E9D6B8"
+											style="width:72px;height:72px;border-radius:14px;object-fit:cover;flex:none;background:var(--tc-e9d6b8, #E9D6B8)"
 										/>{/if}
 									<div style="flex:1;min-width:0">
 										<a
 											href="{base}/producto/{o.producto.slug ?? o.id}"
-											style="font-size:15px;font-weight:700;color:#3B2416;text-decoration:none"
+											style="font-size:15px;font-weight:700;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 											>{o.producto.nombre}</a
 										>
-										<div style="font-size:12.5px;color:#7A5A44">
+										<div style="font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)">
 											{o.variante ? `${o.variante} · ` : ''}{fmt(o.producto.precio)} c/u
 										</div>
 										<div style="margin-top:4px;display:flex;align-items:center;gap:10px">
 											<b style="font-size:14.5px">{fmt(o.subtotal)}</b><button
 												type="button"
 												onclick={() => carrito.fijar(o.clave, 0)}
-												style="border:0;background:transparent;padding:0;font:600 12.5px 'Instrument Sans';text-decoration:underline;color:#7A5A44;cursor:pointer"
+												style="border:0;background:transparent;padding:0;font:600 12.5px var(--tf-texto,'Instrument Sans');text-decoration:underline;color:var(--tc-7a5a44, #7A5A44);cursor:pointer"
 												>Quitar</button
 											>
 										</div>
 									</div>
 									<span
-										style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:#FBF3E4;flex:none"
+										style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--tc-fbf3e4, #FBF3E4);flex:none"
 										><button
 											type="button"
 											aria-label="Uno menos"
 											onclick={() => carrito.fijar(o.clave, o.cantidad - 1)}
-											style="width:30px;height:30px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:#3B2416"
+											style="width:30px;height:30px;display:grid;place-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:var(--tc-3b2416, #3B2416)"
 											><Icon icon={I.phMinusBold} size={12} /></button
 										><b style="min-width:18px;text-align:center">{o.cantidad}</b><button
 											type="button"
 											aria-label="Uno más"
 											disabled={o.cantidad >= o.producto.stock}
 											onclick={() => carrito.fijar(o.clave, o.cantidad + 1)}
-											style="width:30px;height:30px;border:0;padding:0;border-radius:50%;background:#3B2416;color:#FBF3E4;display:grid;place-items:center;cursor:pointer"
+											style="width:30px;height:30px;border:0;padding:0;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:grid;place-items:center;cursor:pointer"
 											><Icon icon={I.phPlusBold} size={12} /></button
 										></span
 									>
@@ -1501,7 +1536,7 @@
 									style="margin-top:10px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none"
 								>
 									{#each upsell as u (u.id)}<div
-											style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:18px;background:#fff"
+											style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:18px;background:var(--tc-ffffff, #fff)"
 										>
 											{#if u.foto}<img
 													src={img(u.foto, 120, 120)}
@@ -1511,7 +1546,7 @@
 											<div>
 												<a
 													href="{base}/producto/{u.slug ?? u.id}"
-													style="display:block;font-size:13.5px;font-weight:700;white-space:nowrap;color:#3B2416;text-decoration:none"
+													style="display:block;font-size:13.5px;font-weight:700;white-space:nowrap;color:var(--tc-3b2416, #3B2416);text-decoration:none"
 													>{u.nombre}</a
 												>
 												<div style="font-size:13px">
@@ -1523,7 +1558,7 @@
 												aria-label="Sumar {u.nombre}"
 												disabled={tienda.vitrina}
 												onclick={() => sumar(u.id)}
-												style="width:30px;height:30px;border:0;padding:0;border-radius:50%;background:#F5C26B;color:#2A170C;display:grid;place-items:center;cursor:pointer"
+												style="width:30px;height:30px;border:0;padding:0;border-radius:50%;background:#F5C26B;color:var(--tc-2a170c, #2A170C);display:grid;place-items:center;cursor:pointer"
 												><Icon icon={I.phPlusBold} size={13} /></button
 											>
 										</div>{/each}
@@ -1534,21 +1569,24 @@
 				</div>
 				{#if lineas.length}
 					<div
-						style="position:sticky;top:80px;padding:22px;border-radius:26px;background:#3B2416;color:#FBF3E4;display:flex;flex-direction:column;gap:12px;font-size:14.5px"
+						style="position:sticky;top:80px;padding:22px;border-radius:26px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:flex;flex-direction:column;gap:12px;font-size:14.5px"
 					>
 						<span style="display:flex;justify-content:space-between;gap:10px"
-							><span style="color:#E6D3BC">Subtotal</span><span>{fmt(subtotal)}</span></span
-						>
-						<span style="display:flex;justify-content:space-between;gap:10px"
-							><span style="color:#E6D3BC">Envío</span><span style="text-align:right"
-								>Se calcula en el próximo paso</span
+							><span style="color:var(--tc-e6d3bc, #E6D3BC)">Subtotal</span><span
+								>{fmt(subtotal)}</span
 							></span
 						>
-						<div style="height:1px;background:rgba(251,243,228,.14)"></div>
+						<span style="display:flex;justify-content:space-between;gap:10px"
+							><span style="color:var(--tc-e6d3bc, #E6D3BC)">Envío</span><span
+								style="text-align:right">Se calcula en el próximo paso</span
+							></span
+						>
+						<div style="height:1px;background:var(--tc-fbf3e4-140, rgba(251,243,228,.14))"></div>
 						<span style="display:flex;justify-content:space-between;align-items:baseline"
 							><b>Total</b><b style="{B};font-size:32px;font-weight:800">{fmt(subtotal)}</b></span
 						>
-						{#if tienda.cobros.cuotas > 1}<span style="font-size:13px;color:#E6D3BC"
+						{#if tienda.cobros.cuotas > 1}<span
+								style="font-size:13px;color:var(--tc-e6d3bc, #E6D3BC)"
 								>{tienda.cobros.cuotas} cuotas sin interés de {fmt(
 									subtotal / tienda.cobros.cuotas
 								)}</span
@@ -1559,7 +1597,7 @@
 							>{/if}
 						<a
 							href="{base}/checkout"
-							style="padding:16px;border-radius:999px;background:#F5C26B;color:#2A170C;font:700 15px 'Instrument Sans';text-align:center;text-decoration:none"
+							style="padding:16px;border-radius:999px;background:#F5C26B;color:var(--tc-2a170c, #2A170C);font:700 15px var(--tf-texto,'Instrument Sans');text-align:center;text-decoration:none"
 							>Continuar</a
 						>
 					</div>
@@ -1573,8 +1611,10 @@
 				<section
 					style="padding:clamp(18px,3cqw,32px) clamp(14px,3.5cqw,40px) clamp(48px,7cqw,90px);max-width:760px;margin:0 auto"
 				>
-					<p style="font-size:15px;color:#7A5A44">Tu pedido está vacío.</p>
-					<a href="{base}/catalogo" style="color:#3B2416;font-weight:700">Ver el menú</a>
+					<p style="font-size:15px;color:var(--tc-7a5a44, #7A5A44)">Tu pedido está vacío.</p>
+					<a href="{base}/catalogo" style="color:var(--tc-3b2416, #3B2416);font-weight:700"
+						>Ver el menú</a
+					>
 				</section>
 			{:else}
 				<form
@@ -1601,46 +1641,52 @@
 						Casi listo
 					</h1>
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"
 					>
 						<b style="grid-column:1/-1;font-size:16px">Tus datos</b>
 						{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel'], ['dni', 'DNI (opcional)', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
-							<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-								><span style="display:block;font-size:11.5px;color:#7A5A44">{l}</span><input
+							<label
+								style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+								><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
+									>{l}</span
+								><input
 									name={n}
 									type={tipo}
 									autocomplete={ac as 'email'}
 									required={!OPCIONALES.has(n)}
 									maxlength="120"
-									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 								/></label
 							>
 						{/each}
 					</div>
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 					>
 						<b style="font-size:16px">¿Cómo te llega?</b>
 						<div style="display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:10px">
-							<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-								><span style="display:block;font-size:11.5px;color:#7A5A44">Código postal</span
+							<label
+								style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+								><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
+									>Código postal</span
 								><input
 									name="cp"
 									bind:value={cp}
 									inputmode="numeric"
 									maxlength="4"
-									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 								/></label
 							>
-							<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-								><span style="display:block;font-size:11.5px;color:#7A5A44"
+							<label
+								style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+								><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
 									>Dirección (calle, número, piso)</span
 								><input
 									name="direccion"
 									maxlength="160"
 									autocomplete="street-address"
 									required={envio !== 'retiro'}
-									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 								/></label
 							>
 						</div>
@@ -1655,10 +1701,10 @@
 									aria-checked={on}
 									onclick={() => (envio = s.id)}
 									style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1.5px solid {on
-										? '#3B2416'
-										: 'rgba(59,36,22,.12)'};background:{on
-										? '#FBF3E4'
-										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#3B2416"
+										? 'var(--tc-3b2416, #3B2416)'
+										: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+										? 'var(--tc-fbf3e4, #FBF3E4)'
+										: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 									><Icon
 										icon={s.id === 'retiro'
 											? I.phStorefrontFill
@@ -1666,29 +1712,30 @@
 												? I.phMopedFill
 												: I.phPackageFill}
 										size={22}
-										style="color:#C9821A"
+										style="color:var(--tc-c9821a, #C9821A)"
 									/><span style="flex:1;min-width:0"
 										><b style="display:block;font-size:14.5px">{s.nombre}</b><span
-											style="display:block;font-size:12.5px;color:#7A5A44">{s.detalle}</span
+											style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
+											>{s.detalle}</span
 										></span
 									><b
 										style="font-size:14px;white-space:nowrap;color:{s.precio
-											? '#3B2416'
-											: '#2F6B3A'}">{s.precio ? fmt(s.precio) : 'Gratis'}</b
+											? 'var(--tc-3b2416, #3B2416)'
+											: 'var(--tc-2f6b3a, #2F6B3A)'}">{s.precio ? fmt(s.precio) : 'Gratis'}</b
 									><span
-										style="width:20px;height:20px;border-radius:50%;border:2px solid #3B2416;display:grid;place-items:center;flex:none"
+										style="width:20px;height:20px;border-radius:50%;border:2px solid var(--tc-3b2416, #3B2416);display:grid;place-items:center;flex:none"
 										>{#if on}<span
-												style="width:10px;height:10px;border-radius:50%;background:#3B2416"
+												style="width:10px;height:10px;border-radius:50%;background:var(--tc-3b2416, #3B2416)"
 											></span>{/if}</span
 									></button
-								>{:else}<span style="font-size:13.5px;color:#7A5A44"
+								>{:else}<span style="font-size:13.5px;color:var(--tc-7a5a44, #7A5A44)"
 									>Poné tu código postal para ver cómo te&nbsp;llega.</span
 								>{/each}
 						</div>
 						<EnvioCorreo {tienda} {cp} {envio} {opciones} />
 					</div>
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 						role="radiogroup"
 						aria-label="Forma de pago"
 					>
@@ -1699,38 +1746,41 @@
 								aria-checked={on}
 								onclick={() => (pago = p.id)}
 								style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1.5px solid {on
-									? '#3B2416'
-									: 'rgba(59,36,22,.12)'};background:{on
-									? '#FBF3E4'
-									: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#3B2416"
+									? 'var(--tc-3b2416, #3B2416)'
+									: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+									? 'var(--tc-fbf3e4, #FBF3E4)'
+									: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 								><Icon icon={p.i} size={22} style="color:{p.c}" /><span style="flex:1;min-width:0"
 									><b style="display:block;font-size:14.5px">{p.t}</b><span
-										style="display:block;font-size:12.5px;color:#7A5A44">{p.d}</span
+										style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
+										>{p.d}</span
 									></span
 								><span
-									style="width:20px;height:20px;border-radius:50%;border:2px solid #3B2416;display:grid;place-items:center;flex:none"
-									>{#if on}<span style="width:10px;height:10px;border-radius:50%;background:#3B2416"
+									style="width:20px;height:20px;border-radius:50%;border:2px solid var(--tc-3b2416, #3B2416);display:grid;place-items:center;flex:none"
+									>{#if on}<span
+											style="width:10px;height:10px;border-radius:50%;background:var(--tc-3b2416, #3B2416)"
 										></span>{/if}</span
 								></button
 							>{/each}
 					</div>
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:12px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:12px"
 					>
 						<b style="font-size:16px">Tu pedido</b>
 						{#each lineas as o (o.clave)}<div
 								style="display:flex;align-items:center;gap:10px;font-size:14px"
 							>
 								<b
-									style="width:26px;height:26px;border-radius:8px;background:#F1E2C8;display:grid;place-items:center;font-size:12.5px;flex:none"
+									style="width:26px;height:26px;border-radius:8px;background:var(--tc-f1e2c8, #F1E2C8);display:grid;place-items:center;font-size:12.5px;flex:none"
 									>{o.cantidad}</b
 								><span style="flex:1;min-width:0"
 									>{o.producto.nombre}{#if o.variante}<span
-											style="display:block;font-size:12.5px;color:#7A5A44">{o.variante}</span
+											style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
+											>{o.variante}</span
 										>{/if}</span
 								><b>{fmt(o.subtotal)}</b>
 							</div>{/each}
-						<div style="height:1px;background:rgba(59,36,22,.1)"></div>
+						<div style="height:1px;background:var(--tc-3b2416-100, rgba(59,36,22,.1))"></div>
 						<span style="display:flex;justify-content:space-between;font-size:14px"
 							><span>Subtotal</span><span>{fmt(subtotal)}</span></span
 						><span style="display:flex;justify-content:space-between;font-size:14px"
@@ -1738,10 +1788,10 @@
 								>{elegida ? (cuenta.envio ? fmt(cuenta.envio) : 'Gratis') : '—'}</span
 							></span
 						>{#if cuenta.descCupon}<span
-								style="display:flex;justify-content:space-between;font-size:14px;color:#2F6B3A;font-weight:600"
+								style="display:flex;justify-content:space-between;font-size:14px;color:var(--tc-2f6b3a, #2F6B3A);font-weight:600"
 								><span>Cupón {cupon.aplicado}</span><span>− {fmt(cuenta.descCupon)}</span></span
 							>{/if}{#if descuento}<span
-								style="display:flex;justify-content:space-between;font-size:14px;color:#2F6B3A;font-weight:600"
+								style="display:flex;justify-content:space-between;font-size:14px;color:var(--tc-2f6b3a, #2F6B3A);font-weight:600"
 								><span>Transferencia −{tienda.cobros.transferencia}%</span><span
 									>− {fmt(descuento)}</span
 								></span
@@ -1750,14 +1800,14 @@
 							<CampoCupon
 								{cupon}
 								lineas={carrito.lineas}
-								tinta="#3B2416"
-								suave="#7A5A44"
-								borde="rgba(59,36,22,.14)"
-								fondo="#FBF3E4"
-								acento="#3B2416"
-								sobreAcento="#FBF3E4"
+								tinta="var(--tc-3b2416, #3B2416)"
+								suave="var(--tc-7a5a44, #7A5A44)"
+								borde="var(--tc-3b2416-140, rgba(59,36,22,.14))"
+								fondo="var(--tc-fbf3e4, #FBF3E4)"
+								acento="var(--tc-3b2416, #3B2416)"
+								sobreAcento="var(--tc-fbf3e4, #FBF3E4)"
 								radio="14px"
-								fuente="'Instrument Sans',sans-serif"
+								fuente="var(--tf-texto,'Instrument Sans'),sans-serif"
 							/>
 						</div>
 						<div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -1766,13 +1816,13 @@
 					</div>
 					{#if error}<div
 							role="alert"
-							style="padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+							style="padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 						>
 							{error}
 						</div>{/if}
 					<button
 						disabled={!envio || !pagos.length || enviando || tienda.vitrina}
-						style="padding:18px;border:0;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 16px 'Instrument Sans';cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px"
+						style="padding:18px;border:0;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 16px var(--tf-texto,'Instrument Sans');cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: !pagos.length
@@ -1782,7 +1832,7 @@
 									: 'Elegí cómo te llega'}<Icon icon={I.phArrowRightBold} size={16} /></button
 					>
 					<span
-						style="display:flex;justify-content:center;align-items:center;gap:8px;text-align:center;font-size:13px;color:#7A5A44"
+						style="display:flex;justify-content:center;align-items:center;gap:8px;text-align:center;font-size:13px;color:var(--tc-7a5a44, #7A5A44)"
 						><Icon icon={I.phShieldCheckFill} size={16} />Compra protegida · 10 días
 						para&nbsp;arrepentirte</span
 					>
@@ -1796,7 +1846,7 @@
 				style="padding:clamp(32px,5cqw,64px) clamp(14px,3.5cqw,40px) clamp(48px,7cqw,90px);max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px;text-align:center;align-items:center"
 			>
 				<span
-					style="width:64px;height:64px;border-radius:50%;background:#3B2416;color:#F5C26B;display:grid;place-items:center"
+					style="width:64px;height:64px;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:#F5C26B;display:grid;place-items:center"
 					><Icon icon={I.phCheckBold} size={28} /></span
 				>
 				<h1
@@ -1804,14 +1854,14 @@
 				>
 					¡Gracias, {pedido.nombre}!
 				</h1>
-				<p style="margin:0;font-size:16px;line-height:1.55;color:#5E4332">
+				<p style="margin:0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)">
 					Recibimos tu pedido <b>#{pedido.numero}</b> por <b>{fmt(pedido.total)}</b>. Te escribimos
 					por mail con cada&nbsp;novedad.
 				</p>
 				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;text-align:left;font-size:14.5px;line-height:1.6;align-self:stretch"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);text-align:left;font-size:14.5px;line-height:1.6;align-self:stretch"
 					>
 						<b>Transferí {fmt(pedido.total)}</b>
 						{#if pedido.alias}al {pedido.esCbu ? 'CBU/CVU' : 'alias'}
@@ -1819,14 +1869,14 @@
 								href={wa(`¡Hola! Te mando el comprobante del pedido #${pedido.numero}.`)}
 								target="_blank"
 								rel="noopener"
-								style="color:#3B2416;font-weight:700">por WhatsApp</a
+								style="color:var(--tc-3b2416, #3B2416);font-weight:700">por WhatsApp</a
 							>{:else}&nbsp;respondiendo el mail del pedido{/if}. Lo preparamos apenas
 						se&nbsp;acredite.
 					</div>
 				{/if}
 				<a
 					href={base || '/'}
-					style="margin-top:6px;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none"
+					style="margin-top:6px;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 					>Volver a la tienda</a
 				>
 				{#if pedido.estado === 'Entregado'}
@@ -1869,7 +1919,7 @@
 					Reservá tu turno
 				</h1>
 				<div
-					style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+					style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 				>
 					<b style="font-size:16px">1 · Servicio</b>
 					<div
@@ -1884,17 +1934,18 @@
 								aria-checked={on}
 								onclick={() => reserva.elegirServicio(s.id)}
 								style="display:flex;align-items:center;gap:12px;padding:15px;text-align:left;border-radius:16px;border:1.5px solid {on
-									? '#3B2416'
-									: 'rgba(59,36,22,.12)'};background:{on
-									? '#FBF3E4'
-									: 'transparent'};cursor:pointer;font-family:inherit;color:#3B2416"
+									? 'var(--tc-3b2416, #3B2416)'
+									: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+									? 'var(--tc-fbf3e4, #FBF3E4)'
+									: 'transparent'};cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 								><span
-									style="width:20px;height:20px;border-radius:50%;border:2px solid #3B2416;display:grid;place-items:center;flex:none"
-									>{#if on}<span style="width:10px;height:10px;border-radius:50%;background:#3B2416"
+									style="width:20px;height:20px;border-radius:50%;border:2px solid var(--tc-3b2416, #3B2416);display:grid;place-items:center;flex:none"
+									>{#if on}<span
+											style="width:10px;height:10px;border-radius:50%;background:var(--tc-3b2416, #3B2416)"
 										></span>{/if}</span
 								><span style="flex:1;min-width:0"
 									><span style="display:block;font-size:14.5px;font-weight:600">{s.nombre}</span
-									><span style="display:block;font-size:12.5px;color:#7A5A44"
+									><span style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
 										>{duracion(s.duracion)}</span
 									></span
 								><b style="font-size:14.5px;white-space:nowrap">{fmt(s.precio)}</b></button
@@ -1902,7 +1953,7 @@
 					</div>
 				</div>
 				<div
-					style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+					style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 				>
 					<b style="font-size:16px">2 · Profesional</b>
 					<div
@@ -1917,29 +1968,29 @@
 								aria-checked={on}
 								onclick={() => reserva.elegirProfesional(p?.id ?? null)}
 								style="flex:none;width:112px;padding:10px;text-align:center;border-radius:16px;border:1.5px solid {on
-									? '#3B2416'
-									: 'rgba(59,36,22,.12)'};background:{on
-									? '#FBF3E4'
-									: 'transparent'};cursor:pointer;font-family:inherit;color:#3B2416"
+									? 'var(--tc-3b2416, #3B2416)'
+									: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+									? 'var(--tc-fbf3e4, #FBF3E4)'
+									: 'transparent'};cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 								>{#if p?.foto}<img
 										src={img(p.foto, 112, 112)}
 										alt=""
 										style="width:52px;height:52px;border-radius:50%;object-fit:cover;display:block;margin:0 auto"
 									/>{:else}<span
-										style="width:52px;height:52px;border-radius:50%;background:#F1E2C8;color:#3B2416;display:grid;place-items:center;margin:0 auto"
+										style="width:52px;height:52px;border-radius:50%;background:var(--tc-f1e2c8, #F1E2C8);color:var(--tc-3b2416, #3B2416);display:grid;place-items:center;margin:0 auto"
 										><Icon icon={p ? I.phUserFill : I.phShuffleBold} size={22} /></span
 									>{/if}<span
 									style="display:block;margin-top:8px;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 									>{p?.nombre ?? 'Cualquiera'}</span
 								><span
-									style="display:block;font-size:11.5px;color:#7A5A44;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+									style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 									>{p ? p.rol.split(' · ')[0] : 'El primero libre'}</span
 								></button
 							>{/each}
 					</div>
 				</div>
 				<div
-					style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+					style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 				>
 					<b style="font-size:16px">3 · Día y horario</b>
 					<div
@@ -1976,10 +2027,10 @@
 								style="padding:9px 0;text-align:center;min-width:0;opacity:{d.abierto
 									? 1
 									: 0.35};border-radius:16px;border:1.5px solid {sel
-									? '#3B2416'
-									: 'rgba(59,36,22,.12)'};background:{sel
-									? '#FBF3E4'
-									: 'transparent'};cursor:pointer;font-family:inherit;color:#3B2416"
+									? 'var(--tc-3b2416, #3B2416)'
+									: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{sel
+									? 'var(--tc-fbf3e4, #FBF3E4)'
+									: 'transparent'};cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 								><span style="display:block;font-size:11px;font-weight:600;text-transform:uppercase"
 									>{d.w}</span
 								><span style="display:block;font-size:17px;font-weight:700;margin-top:1px"
@@ -1988,16 +2039,18 @@
 							>{/each}
 					</div>
 					<div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
-						{#if !reserva.servicioId}<p style="margin:0;font-size:14px;color:#7A5A44">
+						{#if !reserva.servicioId}<p
+								style="margin:0;font-size:14px;color:var(--tc-7a5a44, #7A5A44)"
+							>
 								Elegí un servicio para ver los horarios.
 							</p>{:else if reserva.horarios && !reserva.grupos.length}<p
-								style="margin:0;font-size:14px;color:#7A5A44"
+								style="margin:0;font-size:14px;color:var(--tc-7a5a44, #7A5A44)"
 							>
 								No quedan horarios este día. Probá con otro día u otro&nbsp;profesional.
 							</p>{/if}
 						{#each reserva.grupos as g (g.k)}<div>
 								<div
-									style="font-size:12.5px;font-weight:700;color:#7A5A44;margin-bottom:7px;display:flex;align-items:center;gap:6px"
+									style="font-size:12.5px;font-weight:700;color:var(--tc-7a5a44, #7A5A44);margin-bottom:7px;display:flex;align-items:center;gap:6px"
 								>
 									<Icon icon={FRANJA[g.k]} size={14} />{g.t}
 								</div>
@@ -2018,10 +2071,10 @@
 												: 'line-through'};opacity:{h.libre
 												? 1
 												: 0.4};border-radius:16px;border:1.5px solid {on
-												? '#3B2416'
-												: 'rgba(59,36,22,.12)'};background:{on
-												? '#FBF3E4'
-												: 'transparent'};cursor:pointer;font-family:inherit;color:#3B2416"
+												? 'var(--tc-3b2416, #3B2416)'
+												: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+												? 'var(--tc-fbf3e4, #FBF3E4)'
+												: 'transparent'};cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 											>{h.hora}</button
 										>{/each}
 								</div>
@@ -2029,36 +2082,40 @@
 					</div>
 				</div>
 				{#if reserva.listo}<div
-						style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 					>
 						<b style="font-size:16px">4 · Tus datos</b>
 						<div
 							style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px"
 						>
 							{#each [['nombre', 'Nombre', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel'], ['email', 'Email', 'email', 'email']] as [n, l, tipo, ac] (n)}
-								<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-									><span style="display:block;font-size:11.5px;color:#7A5A44">{l}</span><input
+								<label
+									style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
+										>{l}</span
+									><input
 										name={n}
 										type={tipo}
 										autocomplete={ac as 'email'}
 										required
 										maxlength="120"
-										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 									/></label
 								>
 							{/each}
 						</div>
 					</div>
 					<div
-						style="padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 					>
 						<b style="font-size:16px">Pago</b>
 						<div
-							style="display:flex;align-items:center;gap:12px;padding:15px;text-align:left;border-radius:16px;border:1.5px solid #3B2416;background:#FBF3E4;cursor:pointer;font-family:inherit;color:#3B2416"
+							style="display:flex;align-items:center;gap:12px;padding:15px;text-align:left;border-radius:16px;border:1.5px solid var(--tc-3b2416, #3B2416);background:var(--tc-fbf3e4, #FBF3E4);cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
 						>
 							<span
-								style="width:20px;height:20px;border-radius:50%;border:2px solid #3B2416;display:grid;place-items:center;flex:none"
-								><span style="width:10px;height:10px;border-radius:50%;background:#3B2416"
+								style="width:20px;height:20px;border-radius:50%;border:2px solid var(--tc-3b2416, #3B2416);display:grid;place-items:center;flex:none"
+								><span
+									style="width:10px;height:10px;border-radius:50%;background:var(--tc-3b2416, #3B2416)"
 								></span></span
 							>{#if reserva.sena}<Icon
 									icon={I.siMercadopago}
@@ -2066,23 +2123,23 @@
 									style="color:#00B1EA;flex:none"
 								/><span style="flex:1;min-width:0"
 									><span style="display:block;font-size:14.5px;font-weight:600">Mercado Pago</span
-									><span style="display:block;font-size:12.5px;color:#7A5A44"
+									><span style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
 										>Seña de {fmt(reserva.sena)} para confirmar · el resto, en el local</span
 									></span
 								>{:else}<Icon
 									icon={I.phStorefrontFill}
 									size={22}
-									style="color:#3B2416;flex:none"
+									style="color:var(--tc-3b2416, #3B2416);flex:none"
 								/><span style="flex:1;min-width:0"
 									><span style="display:block;font-size:14.5px;font-weight:600"
 										>Pagás en el local</span
-									><span style="display:block;font-size:12.5px;color:#7A5A44"
+									><span style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
 										>No hace falta seña: el turno queda confirmado</span
 									></span
 								>{/if}
 						</div>
 					</div>{/if}
-				<div style="padding:18px;border-radius:24px;background:#fff">
+				<div style="padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff)">
 					<b style="font-size:16px">Tu reserva</b>
 					<div style="margin-top:14px;display:flex;align-items:center;gap:12px">
 						{#if reserva.profesional?.foto}<img
@@ -2094,19 +2151,20 @@
 							<div style="font-size:15px;font-weight:700">
 								{reserva.conQuien ? `Con ${reserva.conQuien}` : 'Con el primero libre'}
 							</div>
-							<div style="font-size:13px;color:#7A5A44">
+							<div style="font-size:13px;color:var(--tc-7a5a44, #7A5A44)">
 								{reserva.cuando ?? 'Elegí el día y el horario'}
 							</div>
 						</div>
 					</div>
 					{#if reserva.servicio}<div
-							style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(59,36,22,.1);display:flex;flex-direction:column;gap:8px;font-size:14px"
+							style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tc-3b2416-100, rgba(59,36,22,.1));display:flex;flex-direction:column;gap:8px;font-size:14px"
 						>
 							<span style="display:flex;justify-content:space-between;gap:10px"
 								><span>{reserva.servicio.nombre}</span><span style="white-space:nowrap"
 									>{fmt(reserva.servicio.precio)}</span
 								></span
-							><span style="display:flex;justify-content:space-between;color:#7A5A44"
+							><span
+								style="display:flex;justify-content:space-between;color:var(--tc-7a5a44, #7A5A44)"
 								><span>Duración total</span><span>{reserva.duracion}</span></span
 							><span
 								style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"
@@ -2116,7 +2174,7 @@
 							>
 						</div>{/if}
 					<div
-						style="margin-top:14px;display:flex;gap:8px;font-size:13px;line-height:1.45;color:#7A5A44"
+						style="margin-top:14px;display:flex;gap:8px;font-size:13px;line-height:1.45;color:var(--tc-7a5a44, #7A5A44)"
 					>
 						<Icon icon={I.phShieldCheckFill} size={16} style="flex:none;margin-top:1px" /><span
 							>{#if reserva.sena}Seña de {fmt(reserva.sena)} para confirmar. Podés cancelar desde el link
@@ -2127,13 +2185,13 @@
 				</div>
 				{#if error}<div
 						role="alert"
-						style="padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+						style="padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 					>
 						{error}
 					</div>{/if}
 				<button
 					disabled={!reserva.listo || reservando || tienda.vitrina}
-					style="padding:18px;border:0;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 16px 'Instrument Sans';cursor:pointer"
+					style="padding:18px;border:0;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 16px var(--tf-texto,'Instrument Sans');cursor:pointer"
 					>{tienda.vitrina
 						? 'Es una tienda de ejemplo'
 						: !reserva.listo
@@ -2152,7 +2210,7 @@
 				style="padding:clamp(32px,5cqw,64px) clamp(14px,3.5cqw,40px) clamp(48px,7cqw,90px);max-width:760px;margin:0 auto;text-align:center"
 			>
 				<span
-					style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#3B2416;color:#F5C26B"
+					style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:#F5C26B"
 					><Icon icon={cancelado ? I.phCalendarX : I.phCheckBold} size={28} /></span
 				>
 				<h1
@@ -2164,7 +2222,7 @@
 							? `Falta la seña, ${turno.nombre}`
 							: `¡Listo, ${turno.nombre}!`}
 				</h1>
-				<p style="margin:16px 0 0;font-size:16px;line-height:1.55;color:#5E4332">
+				<p style="margin:16px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)">
 					{#if cancelado}Liberamos el horario{turno.senaPagada
 							? '. La seña te la devuelve la tienda por Mercado Pago'
 							: ''}. Si querés, reservá&nbsp;otro.{:else if turno.estado === 'reservado'}Te
@@ -2173,14 +2231,14 @@
 				</p>
 				{#if aviso === 'pendiente' || aviso === 'error'}<div
 						role="status"
-						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 					>
 						{aviso === 'pendiente'
 							? 'Mercado Pago todavía no acreditó la seña: te avisamos cuando entre.'
 							: 'El pago de la seña no salió. Podés reservar de nuevo.'}
 					</div>{/if}
 				<div
-					style="margin-top:16px;padding:18px;border-radius:24px;background:#fff;text-align:left;font-size:14.5px;line-height:1.6"
+					style="margin-top:16px;padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);text-align:left;font-size:14.5px;line-height:1.6"
 				>
 					<b style="text-decoration:{cancelado ? 'line-through' : 'none'}"
 						>{cuandoLargo(turno.inicio)} con {turno.profesional}</b
@@ -2194,13 +2252,13 @@
 							<Icon
 								icon={I.phMapPinFill}
 								size={16}
-								style="color:#3B2416;flex:none"
+								style="color:var(--tc-3b2416, #3B2416);flex:none"
 							/>{turno.direccion}
 						</div>{/if}
 				</div>
 				{#if error}<div
 						role="alert"
-						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 					>
 						{error}
 					</div>{/if}
@@ -2209,7 +2267,7 @@
 							href="{base}/turno/{turno.codigo}/turno.ics"
 							download="turno.ics"
 							data-sveltekit-reload
-							style="display:flex;align-items:center;gap:8px;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none;border:0"
+							style="display:flex;align-items:center;gap:8px;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none;border:0"
 							><Icon icon={I.phCalendarPlusBold} size={17} />Agregar al calendario</a
 						>{/if}
 					{#if turno.cancelable}<form
@@ -2226,33 +2284,33 @@
 						>
 							{#if seguro}<button
 									disabled={cancelando}
-									style="cursor:pointer;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none;border:0"
+									style="cursor:pointer;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none;border:0"
 									>Sí, cancelar el turno</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguro = true)}
-									style="cursor:pointer;padding:15px 24px;border-radius:999px;border:1.5px solid rgba(59,36,22,.12);background:transparent;color:#3B2416;font:700 15px 'Instrument Sans';text-decoration:none"
+									style="cursor:pointer;padding:15px 24px;border-radius:999px;border:1.5px solid var(--tc-3b2416-120, rgba(59,36,22,.12));background:transparent;color:var(--tc-3b2416, #3B2416);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 									>Cancelar turno</button
 								>{/if}
 						</form>{:else if cancelado}<a
 							href="{base}/turnos"
-							style="padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none;border:0"
+							style="padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none;border:0"
 							>Reservar otro</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="padding:15px 24px;border-radius:999px;border:1.5px solid rgba(59,36,22,.12);background:transparent;color:#3B2416;font:700 15px 'Instrument Sans';text-decoration:none"
+						style="padding:15px 24px;border-radius:999px;border:1.5px solid var(--tc-3b2416-120, rgba(59,36,22,.12));background:transparent;color:var(--tc-3b2416, #3B2416);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 						>Volver a la tienda</a
 					>
 				</div>
 				{#if !cancelado && !turno.cancelable}<p
-						style="margin:16px 0 0;font-size:16px;line-height:1.55;color:#5E4332"
+						style="margin:16px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)"
 					>
 						Para cambiarlo o cancelarlo, escribile a la&nbsp;tienda{#if whatsapp}&nbsp;<a
 								href={wa(`¡Hola! Tengo un turno el ${cuandoLargo(turno.inicio)}.`)}
 								target="_blank"
 								rel="noopener"
-								style="color:#3B2416">por WhatsApp</a
+								style="color:var(--tc-3b2416, #3B2416)">por WhatsApp</a
 							>{/if}.
 					</p>{/if}
 			</section>
@@ -2275,7 +2333,7 @@
 								alt={plan.nombre}
 								style="width:100%;height:100%;object-fit:cover"
 							/>{/if}{#if caja.pct}<span
-								style="position:absolute;top:14px;left:14px;padding:4px 10px;border-radius:999px;background:#FBF3E4;font-size:11.5px;font-weight:700"
+								style="position:absolute;top:14px;left:14px;padding:4px 10px;border-radius:999px;background:var(--tc-fbf3e4, #FBF3E4);font-size:11.5px;font-weight:700"
 								>−{caja.pct}%</span
 							>{/if}
 					</div>
@@ -2283,7 +2341,7 @@
 							style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px"
 						>
 							{#each caja.fotos.slice(0, 4) as f, i (i)}<div
-									style="aspect-ratio:1;border-radius:18px;overflow:hidden;background:#E9D6B8"
+									style="aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--tc-e9d6b8, #E9D6B8)"
 								>
 									<img
 										src={img(f, 200, 200)}
@@ -2294,11 +2352,11 @@
 						</div>{/if}
 				</div>
 				<div style="position:sticky;top:80px;min-width:0;display:flex;flex-direction:column">
-					<div style="font-size:13px;color:#7A5A44">
+					<div style="font-size:13px;color:var(--tc-7a5a44, #7A5A44)">
 						<a href={base || '/'} style="color:inherit;text-decoration:none">Inicio</a> / Suscripción
 					</div>
 					<span
-						style="align-self:flex-start;display:inline-flex;margin-top:12px;padding:5px 11px;border-radius:999px;background:#F1E2C8;font-size:12.5px;font-weight:700"
+						style="align-self:flex-start;display:inline-flex;margin-top:12px;padding:5px 11px;border-radius:999px;background:var(--tc-f1e2c8, #F1E2C8);font-size:12.5px;font-weight:700"
 						>{entregasDe(plan)}</span
 					>
 					<h1
@@ -2307,7 +2365,7 @@
 						{plan.nombre}
 					</h1>
 					{#if plan.descripcion}<p
-							style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#5E4332;text-wrap:pretty"
+							style="margin:12px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332);text-wrap:pretty"
 						>
 							{plan.descripcion}
 						</p>{/if}
@@ -2318,10 +2376,10 @@
 										href="{base}/suscripciones/{p.id}"
 										aria-current={on ? 'page' : undefined}
 										style="display:inline-flex;align-items:center;min-height:44px;padding:10px 16px;border-radius:999px;background:{on
-											? '#3B2416'
-											: '#fff'};color:{on
-											? '#FBF3E4'
-											: '#3B2416'};font:700 14px 'Instrument Sans';text-decoration:none"
+											? 'var(--tc-3b2416, #3B2416)'
+											: 'var(--tc-ffffff, #fff)'};color:{on
+											? 'var(--tc-fbf3e4, #FBF3E4)'
+											: 'var(--tc-3b2416, #3B2416)'};font:700 14px var(--tf-texto,'Instrument Sans');text-decoration:none"
 										>{p.nombre}</a
 									>{/each}
 							</div>
@@ -2330,26 +2388,28 @@
 						style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:8px"
 					>
 						{#each [['Te llega', CADA[plan.frecuencia]], ['Incluye', caja.unidades ? `${caja.unidades} ${caja.unidades === 1 ? 'producto' : 'productos'}` : 'Lo de abajo'], ['Entrega', plan.envio ? 'Envío incluido' : 'Retiro en el local']] as [l, v] (l)}<div
-								style="padding:12px;border-radius:16px;background:#fff"
+								style="padding:12px;border-radius:16px;background:var(--tc-ffffff, #fff)"
 							>
-								<div style="font-size:11.5px;color:#7A5A44;font-weight:600">{l}</div>
+								<div style="font-size:11.5px;color:var(--tc-7a5a44, #7A5A44);font-weight:600">
+									{l}
+								</div>
 								<div style="font-size:14.5px;font-weight:700;margin-top:2px">{v}</div>
 							</div>{/each}
 					</div>
 					{#if queIncluye(plan)}<div
-							style="margin-top:10px;font-size:14px;line-height:1.5;color:#5E4332;text-wrap:pretty"
+							style="margin-top:10px;font-size:14px;line-height:1.5;color:var(--tc-5e4332, #5E4332);text-wrap:pretty"
 						>
 							{queIncluye(plan)}
 						</div>{/if}
 					<div
-						style="margin-top:16px;padding:14px;border-radius:18px;background:#3B2416;color:#FBF3E4;display:flex;align-items:center;gap:12px"
+						style="margin-top:16px;padding:14px;border-radius:18px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);display:flex;align-items:center;gap:12px"
 					>
 						<Icon icon={I.phArrowsClockwiseBold} size={22} style="color:#F5C26B;flex:none" />
 						<div style="flex:1;min-width:0">
 							<b style="font-size:14.5px"
 								>{caja.pct ? `Suscribite y ahorrá ${caja.pct}%` : 'Suscribite y olvidate'}</b
 							>
-							<div style="font-size:12.5px;color:#E6D3BC">
+							<div style="font-size:12.5px;color:var(--tc-e6d3bc, #E6D3BC)">
 								Te llega {CADA[plan.frecuencia]} · pausás cuando&nbsp;quieras
 							</div>
 						</div>
@@ -2357,30 +2417,34 @@
 					<div style="margin-top:18px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
 						<b style="{B};font-size:36px;font-weight:800;letter-spacing:-.03em"
 							>{fmt(plan.precio)}</b
-						>{#if caja.sueltos}<s style="color:#9C8270">{fmt(caja.sueltos)}</s>{/if}
+						>{#if caja.sueltos}<s style="color:var(--tc-9c8270, #9C8270)">{fmt(caja.sueltos)}</s
+							>{/if}
 					</div>
-					<div style="font-size:13.5px;color:#5E4332">
+					<div style="font-size:13.5px;color:var(--tc-5e4332, #5E4332)">
 						{porPeriodo(plan.frecuencia)}, con débito automático de Mercado&nbsp;Pago
 					</div>
 					<div
-						style="margin-top:16px;padding:18px;border-radius:24px;background:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px"
+						style="margin-top:16px;padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px"
 					>
 						<b style="grid-column:1/-1;font-size:16px">Tus datos</b>
 						{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel']] as [n, l, tipo, ac] (n)}
-							<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-								><span style="display:block;font-size:11.5px;color:#7A5A44">{l}</span><input
+							<label
+								style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+								><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
+									>{l}</span
+								><input
 									name={n}
 									type={tipo}
 									autocomplete={ac as 'email'}
 									required
 									maxlength="120"
-									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+									style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 								/></label
 							>
 						{/each}
 					</div>
 					<div
-						style="margin-top:10px;padding:18px;border-radius:24px;background:#fff;display:flex;flex-direction:column;gap:8px"
+						style="margin-top:10px;padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);display:flex;flex-direction:column;gap:8px"
 					>
 						<b style="font-size:16px">¿Cómo te llega?</b>
 						<div
@@ -2395,19 +2459,20 @@
 										aria-checked={on}
 										onclick={() => (alta.entrega = id)}
 										style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1.5px solid {on
-											? '#3B2416'
-											: 'rgba(59,36,22,.12)'};background:{on
-											? '#FBF3E4'
-											: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:#3B2416"
-										><Icon icon={ic} size={22} style="color:#C9821A" /><span
+											? 'var(--tc-3b2416, #3B2416)'
+											: 'var(--tc-3b2416-120, rgba(59,36,22,.12))'};background:{on
+											? 'var(--tc-fbf3e4, #FBF3E4)'
+											: 'transparent'};text-align:left;cursor:pointer;font-family:inherit;color:var(--tc-3b2416, #3B2416)"
+										><Icon icon={ic} size={22} style="color:var(--tc-c9821a, #C9821A)" /><span
 											style="flex:1;min-width:0"
 											><b style="display:block;font-size:14.5px">{t}</b><span
-												style="display:block;font-size:12.5px;color:#7A5A44">{d}</span
+												style="display:block;font-size:12.5px;color:var(--tc-7a5a44, #7A5A44)"
+												>{d}</span
 											></span
 										><span
-											style="width:20px;height:20px;border-radius:50%;border:2px solid #3B2416;display:grid;place-items:center;flex:none"
+											style="width:20px;height:20px;border-radius:50%;border:2px solid var(--tc-3b2416, #3B2416);display:grid;place-items:center;flex:none"
 											>{#if on}<span
-													style="width:10px;height:10px;border-radius:50%;background:#3B2416"
+													style="width:10px;height:10px;border-radius:50%;background:var(--tc-3b2416, #3B2416)"
 												></span>{/if}</span
 										></button
 									>{/if}{/each}
@@ -2415,38 +2480,41 @@
 						{#if alta.entrega === 'envio'}<div
 								style="display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:10px"
 							>
-								<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-									><span style="display:block;font-size:11.5px;color:#7A5A44">Código postal</span
+								<label
+									style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
+										>Código postal</span
 									><input
 										name="cp"
 										inputmode="numeric"
 										maxlength="8"
 										autocomplete="postal-code"
-										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 									/></label
 								>
-								<label style="display:block;padding:10px 12px;border-radius:14px;background:#FBF3E4"
-									><span style="display:block;font-size:11.5px;color:#7A5A44"
+								<label
+									style="display:block;padding:10px 12px;border-radius:14px;background:var(--tc-fbf3e4, #FBF3E4)"
+									><span style="display:block;font-size:11.5px;color:var(--tc-7a5a44, #7A5A44)"
 										>Dirección (calle, número, piso)</span
 									><input
 										name="direccion"
 										maxlength="160"
 										autocomplete="street-address"
 										required
-										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px 'Instrument Sans';color:#3B2416;outline:none"
+										style="width:100%;margin-top:2px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Instrument Sans');color:var(--tc-3b2416, #3B2416);outline:none"
 									/></label
 								>
 							</div>{/if}
 					</div>
 					{#if error}<div
 							role="alert"
-							style="margin-top:10px;padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+							style="margin-top:10px;padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 						>
 							{error}
 						</div>{/if}
 					<button
 						disabled={alta.enviando || tienda.vitrina || plan.agotado}
-						style="margin-top:14px;padding:15px;border:0;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px"
+						style="margin-top:14px;padding:15px;border:0;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: plan.agotado
@@ -2457,7 +2525,7 @@
 						/></button
 					>
 					<span
-						style="margin-top:10px;display:flex;justify-content:center;align-items:center;gap:8px;text-align:center;font-size:13px;color:#7A5A44"
+						style="margin-top:10px;display:flex;justify-content:center;align-items:center;gap:8px;text-align:center;font-size:13px;color:var(--tc-7a5a44, #7A5A44)"
 						><Icon icon={I.phShieldCheckFill} size={16} />{demo
 							? 'Es la demo: no se cobra nada'
 							: 'Débito automático con Mercado Pago · pausás o cancelás cuando quieras'}</span
@@ -2474,7 +2542,7 @@
 				style="padding:clamp(32px,5cqw,64px) clamp(14px,3.5cqw,40px) clamp(48px,7cqw,90px);max-width:760px;margin:0 auto;text-align:center"
 			>
 				<span
-					style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#3B2416;color:#F5C26B"
+					style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--tc-3b2416, #3B2416);color:#F5C26B"
 					><Icon
 						icon={suscripcion.estado === 'cancelada'
 							? I.phXBold
@@ -2489,11 +2557,13 @@
 				>
 					{tx.titulo}
 				</h1>
-				<p style="margin:16px 0 0;font-size:16px;line-height:1.55;color:#5E4332;text-wrap:pretty">
+				<p
+					style="margin:16px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332);text-wrap:pretty"
+				>
 					{tx.texto}
 				</p>
 				<div
-					style="margin-top:16px;padding:18px;border-radius:24px;background:#fff;text-align:left;font-size:14.5px;line-height:1.6"
+					style="margin-top:16px;padding:18px;border-radius:24px;background:var(--tc-ffffff, #fff);text-align:left;font-size:14.5px;line-height:1.6"
 				>
 					<b>{suscripcion.plan}</b>
 					<div style="margin-top:4px">
@@ -2502,18 +2572,23 @@
 							? ` · ${suscripcion.cobros} ${suscripcion.cobros === 1 ? 'cobro' : 'cobros'}`
 							: ''}
 					</div>
-					{#if suscripcion.incluye}<div style="color:#7A5A44">{suscripcion.incluye}</div>{/if}
+					{#if suscripcion.incluye}<div style="color:var(--tc-7a5a44, #7A5A44)">
+							{suscripcion.incluye}
+						</div>{/if}
 					{#if suscripcion.estado === 'activa' && suscripcion.proximoCobro}<div
 							style="margin-top:8px;display:flex;gap:8px;align-items:center"
 						>
-							<Icon icon={I.phCalendarPlusBold} size={16} style="color:#3B2416;flex:none" />Próximo
-							cobro: {diaCobro(suscripcion.proximoCobro)}
+							<Icon
+								icon={I.phCalendarPlusBold}
+								size={16}
+								style="color:var(--tc-3b2416, #3B2416);flex:none"
+							/>Próximo cobro: {diaCobro(suscripcion.proximoCobro)}
 						</div>{/if}
 					<div style="margin-top:8px;display:flex;gap:8px;align-items:center">
 						<Icon
 							icon={I.phMapPinFill}
 							size={16}
-							style="color:#3B2416;flex:none"
+							style="color:var(--tc-3b2416, #3B2416);flex:none"
 						/>{suscripcion.entrega === 'envio'
 							? `Te llega a ${suscripcion.direccion}`
 							: `Retirás en ${suscripcion.tienda}`}
@@ -2521,7 +2596,7 @@
 				</div>
 				{#if error}<div
 						role="alert"
-						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:#F6E2D2;color:#9C3B1F;font-size:14px;font-weight:600"
+						style="margin-top:16px;padding:12px 14px;border-radius:16px;background:var(--tc-f6e2d2, #F6E2D2);color:#9C3B1F;font-size:14px;font-weight:600"
 					>
 						{error}
 					</div>{/if}
@@ -2539,7 +2614,7 @@
 						>
 							<button
 								disabled={cambiando}
-								style="cursor:pointer;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';border:0"
+								style="cursor:pointer;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');border:0"
 								>{puede.pausar ? 'Pausar' : 'Reanudar'}</button
 							>
 						</form>{/if}
@@ -2557,31 +2632,33 @@
 						>
 							{#if seguroBaja}<button
 									disabled={cambiando}
-									style="cursor:pointer;padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';border:0"
+									style="cursor:pointer;padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');border:0"
 									>Sí, darla de baja</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguroBaja = true)}
-									style="cursor:pointer;padding:15px 24px;border-radius:999px;border:1.5px solid rgba(59,36,22,.12);background:transparent;color:#3B2416;font:700 15px 'Instrument Sans'"
+									style="cursor:pointer;padding:15px 24px;border-radius:999px;border:1.5px solid var(--tc-3b2416-120, rgba(59,36,22,.12));background:transparent;color:var(--tc-3b2416, #3B2416);font:700 15px var(--tf-texto,'Instrument Sans')"
 									>Dar de baja</button
 								>{/if}
 						</form>{:else}<a
 							href="{base}/suscripciones/{suscripcion.planId}"
-							style="padding:15px 24px;border-radius:999px;background:#3B2416;color:#FBF3E4;font:700 15px 'Instrument Sans';text-decoration:none;border:0"
+							style="padding:15px 24px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none;border:0"
 							>Volver a suscribirme</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="padding:15px 24px;border-radius:999px;border:1.5px solid rgba(59,36,22,.12);background:transparent;color:#3B2416;font:700 15px 'Instrument Sans';text-decoration:none"
+						style="padding:15px 24px;border-radius:999px;border:1.5px solid var(--tc-3b2416-120, rgba(59,36,22,.12));background:transparent;color:var(--tc-3b2416, #3B2416);font:700 15px var(--tf-texto,'Instrument Sans');text-decoration:none"
 						>Volver a la tienda</a
 					>
 				</div>
-				{#if whatsapp}<p style="margin:16px 0 0;font-size:16px;line-height:1.55;color:#5E4332">
+				{#if whatsapp}<p
+						style="margin:16px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)"
+					>
 						¿Dudas? Escribinos&nbsp;<a
 							href={wa(`¡Hola! Tengo una consulta sobre mi suscripción a ${suscripcion.plan}.`)}
 							target="_blank"
 							rel="noopener"
-							style="color:#3B2416">por WhatsApp</a
+							style="color:var(--tc-3b2416, #3B2416)">por WhatsApp</a
 						>.
 					</p>{/if}
 			</section>
@@ -2600,7 +2677,7 @@
 				style="padding:clamp(18px,3cqw,32px) clamp(14px,3.5cqw,40px) 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(14px,2cqw,24px)"
 			>
 				<div
-					style="padding:clamp(26px,4.5cqw,56px);border-radius:28px;background:var(--acento, #C9821A);color:#2A170C;display:flex;flex-direction:column;justify-content:flex-end;min-height:min(520px,110cqw);min-width:0"
+					style="padding:clamp(26px,4.5cqw,56px);border-radius:28px;background:var(--acento, #C9821A);color:var(--tc-2a170c, #2A170C);display:flex;flex-direction:column;justify-content:flex-end;min-height:min(520px,110cqw);min-width:0"
 				>
 					{#if tienda.ciudad}<div
 							style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase"
@@ -2615,7 +2692,7 @@
 				</div>
 				{#if tienda.portada.foto || tienda.fotos[0]}
 					<div
-						style="border-radius:28px;overflow:hidden;background:#D9B98C;min-height:min(520px,110cqw);position:relative"
+						style="border-radius:28px;overflow:hidden;background:var(--tc-d9b98c, #D9B98C);min-height:min(520px,110cqw);position:relative"
 					>
 						<img
 							src={img(tienda.portada.foto ?? tienda.fotos[0], 1000)}
@@ -2628,23 +2705,35 @@
 			<section
 				style="padding:clamp(14px,2cqw,24px) clamp(14px,3.5cqw,40px) 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(10px,1.4cqw,16px)"
 			>
-				{#if tienda.productos.length}<div style="padding:22px;border-radius:24px;background:#fff">
+				{#if tienda.productos.length}<div
+						style="padding:22px;border-radius:24px;background:var(--tc-ffffff, #fff)"
+					>
 						<div style="{B};font-weight:800;font-size:48px;line-height:1;letter-spacing:-.04em">
 							{tienda.productos.length}
 						</div>
-						<div style="font-size:14px;color:#7A5A44;margin-top:6px">productos en el menú</div>
+						<div style="font-size:14px;color:var(--tc-7a5a44, #7A5A44);margin-top:6px">
+							productos en el menú
+						</div>
 					</div>{/if}
-				{#if tienda.cobros.cuotas > 1}<div style="padding:22px;border-radius:24px;background:#fff">
+				{#if tienda.cobros.cuotas > 1}<div
+						style="padding:22px;border-radius:24px;background:var(--tc-ffffff, #fff)"
+					>
 						<div style="{B};font-weight:800;font-size:48px;line-height:1;letter-spacing:-.04em">
 							{tienda.cobros.cuotas}
 						</div>
-						<div style="font-size:14px;color:#7A5A44;margin-top:6px">cuotas sin interés</div>
+						<div style="font-size:14px;color:var(--tc-7a5a44, #7A5A44);margin-top:6px">
+							cuotas sin interés
+						</div>
 					</div>{/if}
-				{#if tienda.promedio}<div style="padding:22px;border-radius:24px;background:#fff">
+				{#if tienda.promedio}<div
+						style="padding:22px;border-radius:24px;background:var(--tc-ffffff, #fff)"
+					>
 						<div style="{B};font-weight:800;font-size:48px;line-height:1;letter-spacing:-.04em">
 							{tienda.promedio.toLocaleString('es-AR')}
 						</div>
-						<div style="font-size:14px;color:#7A5A44;margin-top:6px">de promedio en reseñas</div>
+						<div style="font-size:14px;color:var(--tc-7a5a44, #7A5A44);margin-top:6px">
+							de promedio en reseñas
+						</div>
 					</div>{/if}
 			</section>
 			<section
@@ -2656,7 +2745,9 @@
 					>
 						{tienda.envios.retiro ? 'Vení a vernos' : 'Hablemos'}
 					</h2>
-					<p style="margin:14px 0 0;font-size:16px;line-height:1.55;color:#5E4332">
+					<p
+						style="margin:14px 0 0;font-size:16px;line-height:1.55;color:var(--tc-5e4332, #5E4332)"
+					>
 						{tienda.nombre}{tienda.ciudad ? `, desde ${tienda.ciudad}` : ''}. {comoLlega(
 							tienda.envios
 						).replace('Comprás', 'Pedís')}
@@ -2666,7 +2757,7 @@
 								><Icon
 									icon={I.phMapPinFill}
 									size={19}
-									style="color:#C9821A"
+									style="color:var(--tc-c9821a, #C9821A)"
 								/>{tienda.direccion}</span
 							>{/if}{#if tienda.whatsapp}<span style="display:flex;gap:10px"
 								><Icon
@@ -2680,7 +2771,7 @@
 							href={wa('¡Hola!')}
 							target="_blank"
 							rel="noopener"
-							style="margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;background:#E8F7EC;color:#1F6F3A;font-size:14.5px;font-weight:700;text-decoration:none"
+							style="margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;background:#E8F7EC;color:var(--tc-1f6f3a, #1F6F3A);font-size:14.5px;font-weight:700;text-decoration:none"
 							><Icon icon={I.phWhatsappLogoFill} size={18} />Escribinos por WhatsApp</a
 						>{/if}
 				</div>
@@ -2691,23 +2782,23 @@
 						)}"
 						target="_blank"
 						rel="noopener"
-						style="position:relative;display:block;min-height:340px;border-radius:28px;overflow:hidden;background:#EADBC2;text-decoration:none"
+						style="position:relative;display:block;min-height:340px;border-radius:28px;overflow:hidden;background:var(--tc-eadbc2, #EADBC2);text-decoration:none"
 						><span
-							style="position:absolute;inset:0;background-image:linear-gradient(rgba(59,36,22,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(59,36,22,.07) 1px,transparent 1px);background-size:32px 32px"
+							style="position:absolute;inset:0;background-image:linear-gradient(var(--tc-3b2416-70, rgba(59,36,22,.07)) 1px,transparent 1px),linear-gradient(90deg,var(--tc-3b2416-70, rgba(59,36,22,.07)) 1px,transparent 1px);background-size:32px 32px"
 						></span><span
-							style="position:absolute;left:-10%;right:-10%;top:52%;height:16px;background:#fff;transform:rotate(-12deg)"
+							style="position:absolute;left:-10%;right:-10%;top:52%;height:16px;background:var(--tc-ffffff, #fff);transform:rotate(-12deg)"
 						></span><span
-							style="position:absolute;top:-10%;bottom:-10%;left:40%;width:14px;background:#fff;transform:rotate(8deg)"
+							style="position:absolute;top:-10%;bottom:-10%;left:40%;width:14px;background:var(--tc-ffffff, #fff);transform:rotate(8deg)"
 						></span><span
-							style="position:absolute;left:44%;top:40%;max-width:52%;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:999px;background:#3B2416;color:#FBF3E4;font-size:13px;font-weight:700;box-shadow:0 10px 20px -6px rgba(59,36,22,.6)"
+							style="position:absolute;left:44%;top:40%;max-width:52%;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:999px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4);font-size:13px;font-weight:700;box-shadow:0 10px 20px -6px var(--tc-3b2416-600, rgba(59,36,22,.6))"
 							><span
-								style="width:26px;height:26px;border-radius:50%;background:#F5C26B;color:#2A170C;display:grid;place-items:center;flex:none"
+								style="width:26px;height:26px;border-radius:50%;background:#F5C26B;color:var(--tc-2a170c, #2A170C);display:grid;place-items:center;flex:none"
 								>{inicial}</span
 							><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
 								>{tienda.nombre}</span
 							></span
 						><span
-							style="position:absolute;left:16px;bottom:14px;font-size:12px;font-weight:600;color:#7A5A44"
+							style="position:absolute;left:16px;bottom:14px;font-size:12px;font-weight:600;color:var(--tc-7a5a44, #7A5A44)"
 							>Ver en Google Maps</span
 						></a
 					>
@@ -2717,7 +2808,8 @@
 
 		<!-- footer -->
 		<footer
-			style="margin:0 clamp(14px,3.5cqw,40px) clamp(14px,3.5cqw,40px);padding:clamp(26px,4cqw,48px);border-radius:28px;background:#3B2416;color:#FBF3E4"
+			data-t-pie
+			style="margin:0 clamp(14px,3.5cqw,40px) clamp(14px,3.5cqw,40px);padding:clamp(26px,4cqw,48px);border-radius:28px;background:var(--tc-3b2416, #3B2416);color:var(--tc-fbf3e4, #FBF3E4)"
 		>
 			<div
 				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:28px"
@@ -2726,7 +2818,7 @@
 					<div style="{B};font-weight:800;font-size:32px;letter-spacing:-.04em">
 						{tienda.nombre}
 					</div>
-					<p style="margin:10px 0 0;font-size:14px;color:#E6D3BC;line-height:1.5">
+					<p style="margin:10px 0 0;font-size:14px;color:var(--tc-e6d3bc, #E6D3BC);line-height:1.5">
 						{#if tienda.cobros.cuotas > 1}{tienda.cobros.cuotas} cuotas sin interés{#if tienda.cobros.transferencia > 0}&nbsp;y
 								{tienda.cobros.transferencia}% off por transferencia{/if}, en toda la&nbsp;tienda.{:else if tienda.cobros.transferencia > 0}{tienda
 								.cobros.transferencia}% off por transferencia, en toda la&nbsp;tienda.{:else}Compra
@@ -2744,20 +2836,20 @@
 							placeholder="Tu email"
 							aria-label="Tu correo para las novedades"
 							bind:value={nl.email}
-							style="--ph:#C9B29A;flex:1;min-width:0;padding:12px 14px;border:0;border-radius:999px;background:rgba(251,243,228,.1);font:inherit;font-size:14px;color:#FBF3E4;outline:none"
+							style="--ph:var(--tc-c9b29a, #C9B29A);flex:1;min-width:0;padding:12px 14px;border:0;border-radius:999px;background:var(--tc-fbf3e4-100, rgba(251,243,228,.1));font:inherit;font-size:14px;color:var(--tc-fbf3e4, #FBF3E4);outline:none"
 						/>
 						<button
 							type="submit"
 							aria-label="Sumarme"
 							disabled={nl.enviando}
-							style="flex:none;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#F5C26B;color:#2A170C;display:grid;place-items:center;cursor:pointer"
+							style="flex:none;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#F5C26B;color:var(--tc-2a170c, #2A170C);display:grid;place-items:center;cursor:pointer"
 							><Icon icon={I.phArrowRightBold} size={16} /></button
 						>
 					</form>
 					{#if nl.aviso}<p
 							role="status"
 							style="margin:8px 0 0;font-size:13px;line-height:1.45;color:{nl.aviso.ok
-								? '#E6D3BC'
+								? 'var(--tc-e6d3bc, #E6D3BC)'
 								: '#F5B0A0'}"
 						>
 							{nl.aviso.texto}{#if nl.aviso.link}&nbsp;<a
@@ -2772,7 +2864,7 @@
 					>
 						<b style="color:#F5C26B;margin-bottom:4px">{f.t}</b>{#each f.l as l (l.t)}<a
 								href={l.href}
-								style="color:#E6D3BC;text-decoration:none">{l.t}</a
+								style="color:var(--tc-e6d3bc, #E6D3BC);text-decoration:none">{l.t}</a
 							>{/each}
 					</div>{/each}
 			</div>
@@ -2794,7 +2886,11 @@
 										style="color:#0A2D6E">Mercado Pago</span
 									></span
 								>{/if}{#if tienda.cobros.datosTransferencia}<span
-									><Icon icon={I.phBankFill} size={14} style="color:#2F7A43" />Transferencia</span
+									><Icon
+										icon={I.phBankFill}
+										size={14}
+										style="color:var(--tc-2f7a43, #2F7A43)"
+									/>Transferencia</span
 								>{/if}
 						</div>
 					</div>
@@ -2826,7 +2922,11 @@
 					</div>
 					<div class="sellos">
 						<span
-							><Icon icon={I.phLockSimpleFill} size={14} style="color:#2F7A43" />Sitio seguro SSL</span
+							><Icon
+								icon={I.phLockSimpleFill}
+								size={14}
+								style="color:var(--tc-2f7a43, #2F7A43)"
+							/>Sitio seguro SSL</span
 						><span
 							><Icon icon={I.phShieldCheckFill} size={14} style="color:#1A1A1A" />Compra protegida</span
 						>
@@ -2834,7 +2934,7 @@
 				</div>
 			</div>
 			<div
-				style="margin-top:28px;padding-top:16px;border-top:1px solid rgba(251,243,228,.12);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:#C9B29A"
+				style="margin-top:28px;padding-top:16px;border-top:1px solid var(--tc-fbf3e4-120, rgba(251,243,228,.12));display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--tc-c9b29a, #C9B29A)"
 			>
 				<span
 					>© {new Date().getFullYear()}
@@ -2865,13 +2965,14 @@
 				>
 				<a
 					href="/"
-					style="display:inline-flex;align-items:center;gap:8px;padding:5px 13px 5px 5px;border-radius:999px;background:#fff;color:#2A140C;text-decoration:none;font:500 12.5px 'Instrument Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.12);white-space:nowrap"
+					style="display:inline-flex;align-items:center;gap:8px;padding:5px 13px 5px 5px;border-radius:999px;background:var(--tc-ffffff, #fff);color:#2A140C;text-decoration:none;font:500 12.5px var(--tf-texto,'Instrument Sans'),sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.12);white-space:nowrap"
 					><span
 						style="width:24px;height:24px;border-radius:50%;background:#FCEDE5;display:grid;place-items:center"
 						><img src="/logo.svg" alt="" style="width:13px;height:auto;display:block" /></span
 					>Tienda creada con <b style="font-weight:800;letter-spacing:-.02em">Tu Local Web</b></a
 				>
 			</div>
+			<PieEstilo {tienda} />
 		</footer>
 
 		{#if whatsapp && pagina !== 'checkout'}<a
@@ -2879,7 +2980,7 @@
 				target="_blank"
 				rel="noopener"
 				aria-label="Escribinos por WhatsApp"
-				style="position:fixed;right:18px;bottom:18px;z-index:30;width:54px;height:54px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(0,0,0,.4)"
+				style="position:fixed;right:18px;bottom:18px;z-index:30;width:54px;height:54px;border-radius:50%;background:#25D366;color:var(--tc-ffffff, #fff);display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(0,0,0,.4)"
 				><Icon icon={I.phWhatsappLogoFill} size={28} /></a
 			>{/if}
 	</div>
@@ -2913,11 +3014,11 @@
 		gap: 5px;
 		padding: 0 9px;
 		border-radius: 6px;
-		background: #fff;
+		background: var(--tc-ffffff, #fff);
 		color: #1a1a1a;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
 		font:
-			700 11.5px 'Instrument Sans',
+			700 11.5px var(--tf-texto, 'Instrument Sans'),
 			sans-serif;
 		white-space: nowrap;
 	}

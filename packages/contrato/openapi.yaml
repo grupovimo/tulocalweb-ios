@@ -4527,6 +4527,63 @@ components:
         compartirTitulo: { type: string, maxLength: 70, description: 'Título de la vista previa al compartir la tienda (vacío: el sugerido)' }
         compartirDescripcion: { type: string, maxLength: 160, description: 'Descripción de la vista previa al compartir (vacío: la sugerida)' }
         compartirFoto: { type: string, maxLength: 300, description: 'URL de una foto propia para compartir (vacío: la imagen armada con la plantilla)' }
+        estilo: { $ref: '#/components/schemas/EstiloTienda' }
+    EstiloTienda:
+      type: object
+      description: 'Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, anuncio, textos y redes. Todo opcional: vacío es lo de la plantilla (lib/tienda/estilo/estilo.ts)'
+      properties:
+        colores:
+          type: object
+          additionalProperties: false
+          properties:
+            fondo: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            superficie: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            texto: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            textoSuave: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            borde: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            acento: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            sobreAcento: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            encabezado: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            encabezadoTexto: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            pie: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+            pieTexto: { type: string, pattern: '^(#[0-9A-Fa-f]{6})?$' }
+        fuenteTitulos: { type: string, maxLength: 40, description: 'Id de lib/tienda/estilo/fuentes.ts' }
+        fuenteTexto: { type: string, maxLength: 40 }
+        logoOscuro: { type: string, maxLength: 300 }
+        icono: { type: string, maxLength: 300 }
+        logoAlto: { type: integer, minimum: 0, maximum: 72 }
+        anuncio: { type: string, maxLength: 120 }
+        anuncioLink: { type: string, maxLength: 300 }
+        leyendaPie: { type: string, maxLength: 160 }
+        textos:
+          type: object
+          additionalProperties: false
+          properties:
+            cats: { type: string, maxLength: 60 }
+            prods: { type: string, maxLength: 60 }
+            revs: { type: string, maxLength: 60 }
+            ig: { type: string, maxLength: 60 }
+            wa: { type: string, maxLength: 60 }
+        redes:
+          type: object
+          additionalProperties: false
+          properties:
+            instagram: { type: string, maxLength: 60 }
+            tiktok: { type: string, maxLength: 60 }
+            facebook: { type: string, maxLength: 100 }
+            youtube: { type: string, maxLength: 100 }
+            email: { type: string, maxLength: 120 }
+            telefono: { type: string, maxLength: 30 }
+        menu:
+          type: array
+          maxItems: 8
+          description: 'Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría> o https://…'
+          items:
+            type: object
+            required: [t, a]
+            properties:
+              t: { type: string, minLength: 1, maxLength: 30 }
+              a: { type: string, maxLength: 300 }
     Tarjeta:
       type: object
       description: 'La tarjeta A6 para los paquetes (pieza 7a de Imprimibles). Los textos aceptan {nombre}, {fecha}, {productos} y {pedido}'

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import PieEstilo from '../PieEstilo.svelte';
+	import { menuPropio } from '../estilo/menu.ts';
+	import MenuTienda from '../MenuTienda.svelte';
 	import { camposFactura, OPCIONALES } from '#lib/tienda/factura.ts';
 	import { envia } from '../envio.ts';
 	import { enhance } from '$app/forms';
@@ -168,14 +171,14 @@
 			op: out ? 0.4 : 1,
 			flt: out ? 'grayscale(1)' : 'none',
 			tbg: out
-				? '#2A2A2A'
+				? 'var(--tc-2a2a2a, #2A2A2A)'
 				: sale
 					? '#FF4D2E'
 					: p.etiqueta === 'Últimos'
-						? '#F2F2F2'
+						? 'var(--tc-f2f2f2, #F2F2F2)'
 						: 'var(--acento, #E6FF4D)',
-			tfg: out ? '#8A8A8A' : '#111',
-			pc: sale ? '#FF4D2E' : '#F2F2F2',
+			tfg: out ? 'var(--tc-8a8a8a, #8A8A8A)' : 'var(--tc-111111, #111)',
+			pc: sale ? '#FF4D2E' : 'var(--tc-f2f2f2, #F2F2F2)',
 			sub: out
 				? 'Sin stock por ahora'
 				: sale
@@ -445,36 +448,38 @@
 			]
 		}
 	]);
-	const nav = $derived([
-		...(tienda.turnos
-			? [
-					{
-						t: 'Reservar turno',
-						href: `${base}/turnos`,
-						on: pagina === 'turnos' || pagina === 'turno'
-					}
-				]
-			: []),
-		{ t: 'Todo', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
-		...tienda.categorias.slice(0, 3).map((c) => ({
-			t: c.nombre,
-			href: enlaceCat(c.nombre),
-			on: pagina === 'catalogo' && categoria === c.nombre
-		})),
-		{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
-	]);
+	const nav = $derived(
+		menuPropio(tienda, base) ?? [
+			...(tienda.turnos
+				? [
+						{
+							t: 'Reservar turno',
+							href: `${base}/turnos`,
+							on: pagina === 'turnos' || pagina === 'turno'
+						}
+					]
+				: []),
+			{ t: 'Todo', href: `${base}/catalogo`, on: pagina === 'catalogo' && !categoria },
+			...tienda.categorias.slice(0, 3).map((c) => ({
+				t: c.nombre,
+				href: enlaceCat(c.nombre),
+				on: pagina === 'catalogo' && categoria === c.nombre
+			})),
+			{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
+		]
+	);
 	// Reseñas y preguntas con las piezas de Pampa: afiche oscuro, esquinas rectas, verde lima.
 	const tema: TemaOpiniones = {
-		texto: '#F2F2F2',
-		suave: '#8A8A8A',
-		campo: '#111',
-		tarjeta: '#161616',
-		borde: '#2A2A2A',
+		texto: 'var(--tc-f2f2f2, #F2F2F2)',
+		suave: 'var(--tc-8a8a8a, #8A8A8A)',
+		campo: 'var(--tc-111111, #111)',
+		tarjeta: 'var(--tc-161616, #161616)',
+		borde: 'var(--tc-2a2a2a, #2A2A2A)',
 		acento: 'var(--acento, #E6FF4D)',
-		sobreAcento: '#111',
+		sobreAcento: 'var(--tc-111111, #111)',
 		radio: '0px',
-		fuente: "'Archivo', system-ui, sans-serif",
-		titulos: "'Archivo Black', sans-serif",
+		fuente: "var(--tf-texto,'Archivo'), system-ui, sans-serif",
+		titulos: "var(--tf-titulos,'Archivo Black'), sans-serif",
 		pesoTitulos: 400,
 		mayusculas: true
 	};
@@ -530,24 +535,24 @@
 	<a
 		href={p.href}
 		class="celda"
-		style="position:relative;display:block;border-right:2px solid #2A2A2A;border-bottom:2px solid #2A2A2A;padding:0;text-align:left;color:#F2F2F2;text-decoration:none;min-width:0"
+		style="position:relative;display:block;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);padding:0;text-align:left;color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none;min-width:0"
 	>
 		<span
 			class="zoom"
 			style="position:relative;display:block;aspect-ratio:{cuadrada
 				? '1'
-				: '4/5'};overflow:hidden;background:#1E1E1E"
+				: '4/5'};overflow:hidden;background:var(--tc-1e1e1e, #1E1E1E)"
 			>{#if p.img}<img
 					src={p.img}
 					alt={p.n}
 					style="width:100%;height:100%;object-fit:cover;display:block;opacity:{p.op};filter:{p.flt}"
 				/>{/if}{#if p.tag && !cuadrada}<span
-					style="position:absolute;top:10px;left:10px;padding:5px 8px;background:{p.tbg};color:{p.tfg};font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+					style="position:absolute;top:10px;left:10px;padding:5px 8px;background:{p.tbg};color:{p.tfg};font:800 11px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 					>{p.tag}</span
 				>{/if}{#if p.out && !cuadrada}<span
 					style="position:absolute;inset:0;display:grid;place-items:center"
 					><span
-						style="padding:10px 16px;border:2px solid #F2F2F2;background:rgba(17,17,17,.7);font:800 13px 'Archivo';letter-spacing:.14em;text-transform:uppercase;transform:rotate(-6deg)"
+						style="padding:10px 16px;border:2px solid var(--tc-f2f2f2, #F2F2F2);background:var(--tc-111111-700, rgba(17,17,17,.7));font:800 13px var(--tf-texto,'Archivo');letter-spacing:.14em;text-transform:uppercase;transform:rotate(-6deg)"
 						>Agotado</span
 					></span
 				>{/if}</span
@@ -560,7 +565,8 @@
 						: '13.5px'};font-weight:700;text-transform:uppercase;letter-spacing:.02em;min-width:0"
 					>{p.n}</span
 				><b style="font-size:14.5px;white-space:nowrap;color:{p.pc}">{p.price}</b></span
-			>{#if sub && p.sub}<span style="display:block;margin-top:8px;font-size:12px;color:#8A8A8A"
+			>{#if sub && p.sub}<span
+					style="display:block;margin-top:8px;font-size:12px;color:var(--tc-8a8a8a, #8A8A8A)"
 					>{p.sub}</span
 				>{/if}</span
 		>
@@ -569,19 +575,19 @@
 
 <div
 	class="pampa"
-	style="min-height:100vh;font-family:'Archivo',system-ui,sans-serif;color:#F2F2F2;background:#0B0B0B"
+	style="min-height:100vh;font-family:var(--tf-texto,'Archivo'),system-ui,sans-serif;color:var(--tc-f2f2f2, #F2F2F2);background:var(--tc-0b0b0b, #0B0B0B)"
 >
 	<div
-		style="container-type:inline-size;width:100%;overflow-x:clip;background:#111;position:relative"
+		style="container-type:inline-size;width:100%;overflow-x:clip;background:var(--tc-111111, #111);position:relative"
 	>
 		<!-- cinta -->
 		<div
-			style="overflow:hidden;background:var(--acento, #E6FF4D);color:#111;border-bottom:2px solid #111"
+			style="overflow:hidden;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);border-bottom:2px solid var(--tc-111111, #111)"
 		>
 			<div class="mq" style="display:flex;width:max-content">
 				{#each [0, 1] as k (k)}<span style="display:flex;flex:none" aria-hidden={k === 1}
 						>{#each cinta as t (t)}<span
-								style="padding:9px 22px;font:800 12.5px 'Archivo';letter-spacing:.14em;text-transform:uppercase;white-space:nowrap"
+								style="padding:9px 22px;font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.14em;text-transform:uppercase;white-space:nowrap"
 								>{t}&nbsp;&nbsp;✦</span
 							>{/each}</span
 					>{/each}
@@ -590,11 +596,12 @@
 
 		<!-- header -->
 		<header
-			style="position:sticky;top:0;z-index:20;display:flex;align-items:stretch;background:#111;border-bottom:2px solid #2A2A2A;height:58px"
+			data-t-enc
+			style="position:sticky;top:0;z-index:20;display:flex;align-items:stretch;background:var(--tc-111111, #111);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);height:58px"
 		>
 			<a
 				href={base || '/'}
-				style="display:flex;align-items:center;min-width:0;border-right:2px solid #2A2A2A;padding:0 clamp(14px,2.4cqw,28px);color:#F2F2F2;text-decoration:none;font-family:'Archivo Black',sans-serif;font-size:{nar
+				style="display:flex;align-items:center;min-width:0;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);padding:0 clamp(14px,2.4cqw,28px);color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:{nar
 					? 19
 					: 24}px;letter-spacing:-.02em;text-transform:uppercase"
 				><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
@@ -604,43 +611,46 @@
 			{#if wide}<nav style="display:flex">
 					{#each nav as n (n.t)}<a
 							href={n.href}
-							style="display:flex;align-items:center;border-right:2px solid #2A2A2A;padding:0 20px;background:{n.on
-								? '#F2F2F2'
+							style="display:flex;align-items:center;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);padding:0 20px;background:{n.on
+								? 'var(--tc-f2f2f2, #F2F2F2)'
 								: 'transparent'};color:{n.on
-								? '#111'
-								: '#F2F2F2'};text-decoration:none;font:800 12.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
+								? 'var(--tc-111111, #111)'
+								: 'var(--tc-f2f2f2, #F2F2F2)'};text-decoration:none;font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
 							>{n.t}</a
 						>{/each}
 				</nav>{/if}
 			<span style="flex:1"></span>
 			<a
 				href="{base}/carrito"
-				style="display:flex;align-items:center;gap:10px;flex:none;border-left:2px solid #2A2A2A;background:var(--acento, #E6FF4D);color:#111;padding:0 clamp(14px,2cqw,22px);text-decoration:none;font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase;white-space:nowrap"
+				style="display:flex;align-items:center;gap:10px;flex:none;border-left:2px solid var(--tc-2a2a2a, #2A2A2A);background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);padding:0 clamp(14px,2cqw,22px);text-decoration:none;font:800 13px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;white-space:nowrap"
 				><Icon
 					icon={I.phBagSimpleFill}
 					size={18}
 				/>Bolsa{#if carrito.unidades}&nbsp;({carrito.unidades}){/if}</a
 			>
-			{#if nar}<a
-					href="{base}/catalogo"
-					aria-label="Catálogo"
-					style="display:grid;place-items:center;flex:none;width:58px;border-left:2px solid #2A2A2A;color:#F2F2F2"
-					><Icon icon={I.phListBold} size={22} /></a
-				>{/if}
+			{#if nar}<MenuTienda
+					{tienda}
+					{base}
+					{nav}
+					estilo="display:grid;place-items:center;flex:none;width:58px;border-left:2px solid var(--tc-2a2a2a, #2A2A2A);color:var(--tc-f2f2f2, #F2F2F2)"
+					tam={22}
+					negrita
+				/>{/if}
 			{#if nar && tienda.turnos}<a
 					href="{base}/turnos"
 					aria-label="Reservar turno"
-					style="display:grid;place-items:center;flex:none;width:58px;border-left:2px solid #2A2A2A;background:{pagina ===
+					style="display:grid;place-items:center;flex:none;width:58px;border-left:2px solid var(--tc-2a2a2a, #2A2A2A);background:{pagina ===
 					'turnos'
-						? '#F2F2F2'
-						: 'transparent'};color:{pagina === 'turnos' ? '#111' : '#F2F2F2'}"
-					><Icon icon={I.phCalendarPlusBold} size={22} /></a
+						? 'var(--tc-f2f2f2, #F2F2F2)'
+						: 'transparent'};color:{pagina === 'turnos'
+						? 'var(--tc-111111, #111)'
+						: 'var(--tc-f2f2f2, #F2F2F2)'}"><Icon icon={I.phCalendarPlusBold} size={22} /></a
 				>{/if}
 		</header>
 
 		{#if tienda.vitrina}
 			<div
-				style="padding:10px 16px;background:#1A1A1A;border-bottom:2px solid #2A2A2A;color:var(--acento, #E6FF4D);font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase;text-align:center"
+				style="padding:10px 16px;background:var(--tc-1a1a1a, #1A1A1A);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);color:var(--acento, #E6FF4D);font:800 12px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;text-align:center"
 			>
 				Es una tienda de ejemplo de la plantilla Pampa: podés recorrerla, pero no se compra
 				de&nbsp;verdad.
@@ -654,10 +664,10 @@
 				{#if seccion === 'hero'}
 					{#if ver('hero')}
 						<section
-							style="position:relative;border-bottom:2px solid #2A2A2A;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))"
+							style="position:relative;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))"
 						>
 							<div
-								style="padding:clamp(22px,4cqw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:28px;min-width:0;border-right:2px solid #2A2A2A"
+								style="padding:clamp(22px,4cqw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:28px;min-width:0;border-right:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#if (drop && drop.producto.stock > 0) || tienda.portada.lema}<div
 										style="display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase"
@@ -672,7 +682,7 @@
 												.lema}{/if}
 									</div>{/if}
 								<h1
-									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(68px,13cqw,190px),{cabe(
+									style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(68px,13cqw,190px),{cabe(
 										tienda.portada.titulo,
 										wide ? 42 : 88
 									)});line-height:.82;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
@@ -683,7 +693,7 @@
 								</h1>
 								<div>
 									{#if tienda.ciudad || tienda.cobros.cuotas > 1 || tienda.cobros.transferencia > 0}<p
-											style="margin:0 0 22px;font-size:17px;line-height:1.5;color:#BDBDBD;max-width:420px"
+											style="margin:0 0 22px;font-size:17px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD);max-width:420px"
 										>
 											{tienda.nombre}{tienda.ciudad
 												? `, desde ${tienda.ciudad}`
@@ -693,24 +703,24 @@
 										</p>{/if}
 									{#if drop}
 										<div
-											style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2px solid #2A2A2A;max-width:440px"
+											style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2px solid var(--tc-2a2a2a, #2A2A2A);max-width:440px"
 										>
 											{#each conteo.partes(4, ['DÍAS', 'HS', 'MIN', 'SEG']) as c (c.u)}<div
-													style="padding:10px 0;text-align:center;border-right:2px solid #2A2A2A"
+													style="padding:10px 0;text-align:center;border-right:2px solid var(--tc-2a2a2a, #2A2A2A)"
 												>
 													<div
-														style="font-family:'Archivo Black',sans-serif;font-size:clamp(26px,3.4cqw,38px);line-height:1;font-variant-numeric:tabular-nums"
+														style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:clamp(26px,3.4cqw,38px);line-height:1;font-variant-numeric:tabular-nums"
 													>
 														{c.v}
 													</div>
 													<div
-														style="margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.14em;color:#8A8A8A"
+														style="margin-top:4px;font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--tc-8a8a8a, #8A8A8A)"
 													>
 														{c.u}
 													</div>
 												</div>{/each}
 										</div>
-										<div style="margin-top:12px;font-size:12.5px;color:#8A8A8A">
+										<div style="margin-top:12px;font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A)">
 											{#if drop.tipo === 'lanzamiento'}{drop.producto.nombre} sale el {cuando(
 													drop.hasta
 												)}{#if drop.producto.reserva}&nbsp;· reservalo con {drop.producto.reserva}%
@@ -724,7 +734,7 @@
 											href={drop
 												? `${base}/producto/${drop.producto.slug ?? drop.producto.id}`
 												: `${base}/catalogo`}
-											style="padding:18px 28px;border:2px solid var(--acento, #E6FF4D);background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+											style="padding:18px 28px;border:2px solid var(--acento, #E6FF4D);background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 											>{drop?.tipo === 'lanzamiento'
 												? 'Ver el drop →'
 												: drop
@@ -732,14 +742,14 @@
 													: 'Ver todo →'}</a
 										><a
 											href="{base}/nosotros"
-											style="padding:18px 24px;border:2px solid #F2F2F2;border-left-width:0;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+											style="padding:18px 24px;border:2px solid var(--tc-f2f2f2, #F2F2F2);border-left-width:0;background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 											>Nosotros</a
 										>
 									</div>
 								</div>
 							</div>
 							{#if tienda.portada.foto || destacado || maxOff}<div
-									style="position:relative;min-height:min(640px,120cqw);background:#1E1E1E"
+									style="position:relative;min-height:min(640px,120cqw);background:var(--tc-1e1e1e, #1E1E1E)"
 								>
 									{#if tienda.portada.foto}<img
 											src={img(tienda.portada.foto, 1200)}
@@ -747,11 +757,11 @@
 											style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(.25) contrast(1.05)"
 										/>{/if}
 									{#if maxOff}<span
-											style="position:absolute;top:16px;right:16px;padding:8px 12px;background:#FF4D2E;color:#111;font:800 12px 'Archivo';letter-spacing:.12em;text-transform:uppercase;transform:rotate(3deg)"
+											style="position:absolute;top:16px;right:16px;padding:8px 12px;background:#FF4D2E;color:var(--tc-111111, #111);font:800 12px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;transform:rotate(3deg)"
 											>Hasta −{maxOff}%</span
 										>{/if}
 									{#if destacado}<div
-											style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:#111;border-top:2px solid #2A2A2A"
+											style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--tc-111111, #111);border-top:2px solid var(--tc-2a2a2a, #2A2A2A)"
 										>
 											{#if destacado.foto}<img
 													src={img(destacado.foto, 120, 120)}
@@ -760,7 +770,8 @@
 												/>{/if}<span style="flex:1;min-width:0"
 												><span style="display:block;font-size:14px;font-weight:700"
 													>{destacado.nombre}</span
-												><span style="display:block;font-size:12.5px;color:#8A8A8A"
+												><span
+													style="display:block;font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A)"
 													>{destacado.stock <= 3
 														? destacado.stock === 1
 															? 'Queda 1'
@@ -769,7 +780,7 @@
 												></span
 											><a
 												href="{base}/producto/{destacado.slug ?? destacado.id}"
-												style="padding:10px 14px;border:0;background:#F2F2F2;color:#111;font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase;text-decoration:none;white-space:nowrap"
+												style="padding:10px 14px;border:0;background:var(--tc-f2f2f2, #F2F2F2);color:var(--tc-111111, #111);font:800 12px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;text-decoration:none;white-space:nowrap"
 												>{destacadoPrecio?.desde ? 'Desde ' : ''}{fmt(
 													destacadoPrecio?.precio ?? destacado.precio
 												)}</a
@@ -780,10 +791,10 @@
 					{/if}
 
 					<div
-						style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border-bottom:2px solid #2A2A2A"
+						style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 					>
 						{#each perks as p (p.t)}<div
-								style="display:flex;align-items:center;gap:12px;padding:16px clamp(14px,2.4cqw,28px);border-right:2px solid #2A2A2A"
+								style="display:flex;align-items:center;gap:12px;padding:16px clamp(14px,2.4cqw,28px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								<Icon icon={p.i} size={22} style="color:var(--acento, #E6FF4D);flex:none" />
 								<div>
@@ -792,18 +803,20 @@
 									>
 										{p.t}
 									</div>
-									<div style="font-size:12.5px;color:#8A8A8A;margin-top:2px">{p.d}</div>
+									<div style="font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A);margin-top:2px">
+										{p.d}
+									</div>
 								</div>
 							</div>{/each}
 					</div>
 				{:else if seccion === 'cats'}
 					{#if ver('cats') && tienda.categorias.length}
 						<div
-							style="display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid #2A2A2A"
+							style="display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 						>
 							{#each tabs as t (t.c ?? '')}<a
 									href={enlaceCat(t.c)}
-									style="flex:none;padding:14px 18px;border-right:2px solid #2A2A2A;color:#F2F2F2;text-decoration:none;font:800 12.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
+									style="flex:none;padding:14px 18px;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none;font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
 									>{t.t} <span style="opacity:.55">{t.n}</span></a
 								>{/each}
 						</div>
@@ -815,12 +828,14 @@
 								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;padding:0 clamp(14px,2.4cqw,28px) 18px"
 							>
 								<h2
-									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+									style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 								>
-									El drop
+									{#if tienda.estilo?.textos?.prods?.trim()}{tienda.estilo.textos.prods}{:else}
+										El drop
+									{/if}
 								</h2>
 								<span
-									style="font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+									style="font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 									>{proximos.length}
 									{proximos.length === 1
 										? 'pieza'
@@ -832,20 +847,20 @@
 								>
 							</div>
 							<div
-								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid #2A2A2A"
+								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each proximos as p (p.id)}{@render card(tarjeta(p), false, true)}{/each}
 							</div>
 							<div
-								style="margin:2px clamp(14px,2.4cqw,28px) 0;display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:clamp(20px,3cqw,32px);background:#1A1A1A;border:2px solid #2A2A2A"
+								style="margin:2px clamp(14px,2.4cqw,28px) 0;display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:clamp(20px,3cqw,32px);background:var(--tc-1a1a1a, #1A1A1A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								<div style="flex:1 1 280px">
 									<div
-										style="font-family:'Archivo Black',sans-serif;font-size:clamp(24px,3cqw,34px);text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere"
+										style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:clamp(24px,3cqw,34px);text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere"
 									>
 										Avisame {proximos.length === 1 ? 'del drop' : `de ${proximos[0].nombre}`}
 									</div>
-									<div style="font-size:14px;color:#8A8A8A;margin-top:4px">
+									<div style="font-size:14px;color:var(--tc-8a8a8a, #8A8A8A);margin-top:4px">
 										{#if avisoListo}Listo: te escribimos a {avisoListo} cuando salga.{:else}Te
 											escribimos por mail cuando salga. Nada de spam.{/if}
 									</div>
@@ -859,7 +874,7 @@
 								{#if !avisoListo}<form
 										onsubmit={(e) => avisarDrop(e, proximos[0].id)}
 										novalidate
-										style="flex:1 1 320px;display:flex;border:2px solid #F2F2F2;min-width:0"
+										style="flex:1 1 320px;display:flex;border:2px solid var(--tc-f2f2f2, #F2F2F2);min-width:0"
 									>
 										<label for="aviso-drop" class="oculto">Tu email para el aviso</label><input
 											id="aviso-drop"
@@ -869,11 +884,11 @@
 											placeholder="Tu email"
 											bind:value={avisoEmail}
 											disabled={tienda.vitrina}
-											style="flex:1;min-width:0;padding:14px;border:0;background:transparent;font:400 14.5px 'Archivo';color:#F2F2F2;outline:none"
+											style="flex:1;min-width:0;padding:14px;border:0;background:transparent;font:400 14.5px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 										/><button
 											type="submit"
 											disabled={tienda.vitrina}
-											style="display:flex;align-items:center;padding:0 18px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 12.5px 'Archivo';letter-spacing:.1em;text-transform:uppercase;gap:7px;cursor:pointer;min-height:48px"
+											style="display:flex;align-items:center;padding:0 18px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;gap:7px;cursor:pointer;min-height:48px"
 											><Icon icon={I.phBellRingingBold} size={17} />Avisame</button
 										>
 									</form>{/if}
@@ -886,19 +901,19 @@
 								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;padding:0 clamp(14px,2.4cqw,28px) 18px"
 							>
 								<h2
-									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+									style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 								>
 									Lo más pedido
 								</h2>
 								<a
 									href="{base}/catalogo"
-									style="font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A;text-decoration:none"
+									style="font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A);text-decoration:none"
 									>{tienda.productos.length}
 									{tienda.productos.length === 1 ? 'producto' : 'productos'} →</a
 								>
 							</div>
 							<div
-								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid #2A2A2A"
+								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each best as p (p.id)}{@render card(p, false, true)}{/each}
 							</div>
@@ -911,22 +926,22 @@
 								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;padding:0 clamp(14px,2.4cqw,28px) 18px"
 							>
 								<h2
-									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+									style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 								>
 									Suscripciones
 								</h2>
 							</div>
 							<div
-								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid #2A2A2A"
+								style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,260px),1fr));border-top:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each tienda.suscripciones as p (p.id)}{@const f =
 										p.foto ?? p.productos.find((x) => x.foto)?.foto ?? null}<a
 										href="{base}/suscripciones/{p.id}"
 										class="celda"
-										style="position:relative;display:block;border-right:2px solid #2A2A2A;border-bottom:2px solid #2A2A2A;padding:0;text-align:left;color:#F2F2F2;text-decoration:none;min-width:0"
+										style="position:relative;display:block;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);padding:0;text-align:left;color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none;min-width:0"
 										><span
 											class="zoom"
-											style="position:relative;display:block;aspect-ratio:4/5;overflow:hidden;background:#1E1E1E"
+											style="position:relative;display:block;aspect-ratio:4/5;overflow:hidden;background:var(--tc-1e1e1e, #1E1E1E)"
 											>{#if f}<img
 													src={img(f, 600, 750)}
 													alt={p.nombre}
@@ -934,7 +949,7 @@
 												/>{/if}{#if p.agotado}<span
 													style="position:absolute;inset:0;display:grid;place-items:center"
 													><span
-														style="padding:10px 16px;border:2px solid #F2F2F2;background:rgba(17,17,17,.7);font:800 13px 'Archivo';letter-spacing:.14em;text-transform:uppercase;transform:rotate(-6deg)"
+														style="padding:10px 16px;border:2px solid var(--tc-f2f2f2, #F2F2F2);background:var(--tc-111111-700, rgba(17,17,17,.7));font:800 13px var(--tf-texto,'Archivo');letter-spacing:.14em;text-transform:uppercase;transform:rotate(-6deg)"
 														>Sin lugar</span
 													></span
 												>{/if}</span
@@ -945,7 +960,8 @@
 													style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;min-width:0"
 													>{p.nombre}</span
 												><b style="font-size:14.5px;white-space:nowrap">{fmt(p.precio)}</b></span
-											><span style="display:block;margin-top:8px;font-size:12px;color:#8A8A8A"
+											><span
+												style="display:block;margin-top:8px;font-size:12px;color:var(--tc-8a8a8a, #8A8A8A)"
 												>{CADA[p.frecuencia]}{queIncluye(p) ? ` · ${queIncluye(p)}` : ''}</span
 											></span
 										></a
@@ -960,9 +976,11 @@
 								style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"
 							>
 								<h2
-									style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+									style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 								>
-									Lo que dicen
+									{#if tienda.estilo?.textos?.revs?.trim()}{tienda.estilo.textos.revs}{:else}
+										Lo que dicen
+									{/if}
 								</h2>
 								{#if tienda.promedio}<span
 										style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700"
@@ -976,15 +994,17 @@
 									>{/if}
 							</div>
 							<div
-								style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));border:2px solid #2A2A2A"
+								style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each tienda.resenas.slice(0, 3) as r, i (i)}
 									{@const pr = tienda.productos.find((p) => p.nombre === r.producto)}
-									<div style="display:flex;gap:14px;padding:16px;border-right:2px solid #2A2A2A">
+									<div
+										style="display:flex;gap:14px;padding:16px;border-right:2px solid var(--tc-2a2a2a, #2A2A2A)"
+									>
 										{#if pr?.foto}<img
 												src={img(pr.foto, 200, 250)}
 												alt=""
-												style="width:92px;height:116px;object-fit:cover;flex:none;background:#1E1E1E"
+												style="width:92px;height:116px;object-fit:cover;flex:none;background:var(--tc-1e1e1e, #1E1E1E)"
 											/>{/if}
 										<div style="min-width:0">
 											{#if r.producto}<div
@@ -995,17 +1015,19 @@
 											<p style="margin:0;font-size:15px;line-height:1.4;font-weight:500">
 												“{r.texto}”
 											</p>
-											<div style="margin-top:8px;font-size:12.5px;color:#8A8A8A">{r.autor}</div>
+											<div style="margin-top:8px;font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A)">
+												{r.autor}
+											</div>
 											{#if r.conCompra}<div
-													style="margin-top:8px;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#B9F27C"
+													style="margin-top:8px;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-b9f27c, #B9F27C)"
 												>
 													<Icon icon={I.phSealCheckFill} size={13} />Compra verificada
 												</div>{/if}
 											{#if r.respuesta}<div
-													style="margin-top:10px;padding:10px 12px;border-left:2px solid var(--acento, #E6FF4D);background:#1E1E1E;font-size:13px;line-height:1.5;color:#BDBDBD"
+													style="margin-top:10px;padding:10px 12px;border-left:2px solid var(--acento, #E6FF4D);background:var(--tc-1e1e1e, #1E1E1E);font-size:13px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD)"
 												>
 													<b
-														style="display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#F2F2F2"
+														style="display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-f2f2f2, #F2F2F2)"
 														>Respuesta de {tienda.nombre}</b
 													>{r.respuesta}
 												</div>{/if}
@@ -1019,15 +1041,17 @@
 					{#if ver('ig') && tienda.fotos.length >= 3}
 						<section style="padding:clamp(40px,6cqw,80px) clamp(14px,2.4cqw,28px)">
 							<h2
-								style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+								style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6.4cqw,88px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 							>
-								En la calle
+								{#if tienda.estilo?.textos?.ig?.trim()}{tienda.estilo.textos.ig}{:else}
+									En la calle
+								{/if}
 							</h2>
 							<div
-								style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(30%,170px),1fr));gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(30%,170px),1fr));gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each tienda.fotos as g (g)}<div
-										style="aspect-ratio:1;overflow:hidden;background:#1E1E1E"
+										style="aspect-ratio:1;overflow:hidden;background:var(--tc-1e1e1e, #1E1E1E)"
 									>
 										<img
 											src={img(g, 400, 400)}
@@ -1052,10 +1076,10 @@
 			</section>
 		{:else if pagina === 'catalogo'}
 			<section
-				style="padding:clamp(26px,4cqw,48px) clamp(14px,2.4cqw,28px) 0;border-bottom:2px solid #2A2A2A"
+				style="padding:clamp(26px,4cqw,48px) clamp(14px,2.4cqw,28px) 0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
 				<h1
-					style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(56px,10cqw,150px),{cabe(
+					style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(56px,10cqw,150px),{cabe(
 						tituloCat.join(' '),
 						92
 					)});line-height:.82;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
@@ -1065,32 +1089,36 @@
 						>{/if}
 				</h1>
 				<div
-					style="margin-top:22px;display:flex;overflow-x:auto;scrollbar-width:none;border-top:2px solid #2A2A2A;margin-left:calc(-1 * clamp(14px,2.4cqw,28px));margin-right:calc(-1 * clamp(14px,2.4cqw,28px))"
+					style="margin-top:22px;display:flex;overflow-x:auto;scrollbar-width:none;border-top:2px solid var(--tc-2a2a2a, #2A2A2A);margin-left:calc(-1 * clamp(14px,2.4cqw,28px));margin-right:calc(-1 * clamp(14px,2.4cqw,28px))"
 				>
 					{#each tabs as t (t.c ?? '')}{@const on = t.c === categoria}<a
 							href={enlaceCat(t.c)}
-							style="flex:none;padding:14px 18px;border-right:2px solid #2A2A2A;background:{on
-								? '#F2F2F2'
+							style="flex:none;padding:14px 18px;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
+								? 'var(--tc-f2f2f2, #F2F2F2)'
 								: 'transparent'};color:{on
-								? '#111'
-								: '#F2F2F2'};text-decoration:none;font:800 12.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
+								? 'var(--tc-111111, #111)'
+								: 'var(--tc-f2f2f2, #F2F2F2)'};text-decoration:none;font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;white-space:nowrap"
 							>{t.t} <span style="opacity:.55">{t.n}</span></a
 						>{/each}
 				</div>
 			</section>
-			<div style="display:flex;flex-wrap:wrap;align-items:stretch;border-bottom:2px solid #2A2A2A">
+			<div
+				style="display:flex;flex-wrap:wrap;align-items:stretch;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
+			>
 				<span
-					style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-right:2px solid #2A2A2A;font:800 12px 'Archivo';letter-spacing:.12em;text-transform:uppercase"
+					style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-right:2px solid var(--tc-2a2a2a, #2A2A2A);font:800 12px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase"
 					>{listado.length} {listado.length === 1 ? 'producto' : 'productos'}</span
 				>
 				<span style="flex:1"></span>
 				<label
-					style="position:relative;display:flex;align-items:center;gap:6px;padding:12px 16px;border-left:2px solid #2A2A2A;font-size:13px;font-weight:700"
+					style="position:relative;display:flex;align-items:center;gap:6px;padding:12px 16px;border-left:2px solid var(--tc-2a2a2a, #2A2A2A);font-size:13px;font-weight:700"
 					>Ordenar:<select
 						value={orden}
 						onchange={(e) => goto(enlaceCat(categoria, e.currentTarget.value), { replace: true })}
-						style="appearance:none;border:0;background:transparent;padding:0 18px 0 0;font:700 13px 'Archivo';color:#F2F2F2;cursor:pointer"
-						>{#each ORDENES as [k, t] (k)}<option value={k} style="background:#111">{t}</option
+						style="appearance:none;border:0;background:transparent;padding:0 18px 0 0;font:700 13px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer"
+						>{#each ORDENES as [k, t] (k)}<option
+								value={k}
+								style="background:var(--tc-111111, #111)">{t}</option
 							>{/each}</select
 					><Icon
 						icon={I.phCaretDownBold}
@@ -1110,7 +1138,7 @@
 						<button
 							type="button"
 							onclick={() => (mostrar += 24)}
-							style="padding:16px 26px;border:2px solid #F2F2F2;background:transparent;color:#F2F2F2;font:800 13px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+							style="padding:16px 26px;border:2px solid var(--tc-f2f2f2, #F2F2F2);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 13px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 							>Cargar 24 más</button
 						>
 					</div>
@@ -1118,7 +1146,9 @@
 					<div style="height:28px"></div>
 				{/if}
 			{:else}
-				<p style="margin:0;padding:40px clamp(14px,2.4cqw,28px);font-size:15px;color:#8A8A8A">
+				<p
+					style="margin:0;padding:40px clamp(14px,2.4cqw,28px);font-size:15px;color:var(--tc-8a8a8a, #8A8A8A)"
+				>
 					Todavía no hay productos en esta categoría.
 				</p>
 			{/if}
@@ -1127,12 +1157,12 @@
 		<!-- ============ PRODUCTO ============ -->
 		{#if pagina === 'producto' && producto && sel}
 			<section
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
 				<div
-					style="background:#2A2A2A;border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:2px"
+					style="background:var(--tc-2a2a2a, #2A2A2A);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:2px"
 				>
-					<div style="aspect-ratio:4/5;background:#1E1E1E;overflow:hidden">
+					<div style="aspect-ratio:4/5;background:var(--tc-1e1e1e, #1E1E1E);overflow:hidden">
 						{#if sel.foto}<img
 								src={img(sel.foto, 1100)}
 								alt={producto.nombre}
@@ -1147,7 +1177,7 @@
 									aria-label="Ver la foto {i + 1}"
 									aria-pressed={i === sel.fotoIdx}
 									onclick={() => sel.verFoto(i)}
-									style="position:relative;aspect-ratio:1;padding:0;border:0;background:#1E1E1E;overflow:hidden;cursor:pointer"
+									style="position:relative;aspect-ratio:1;padding:0;border:0;background:var(--tc-1e1e1e, #1E1E1E);overflow:hidden;cursor:pointer"
 									><img
 										src={img(f, 200, 200)}
 										alt=""
@@ -1167,21 +1197,21 @@
 					<div style="display:flex;gap:6px;flex-wrap:wrap">
 						{#if producto.categoria}<a
 								href={enlaceCat(producto.categoria)}
-								style="padding:5px 8px;background:var(--acento, #E6FF4D);color:#111;font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase;text-decoration:none"
+								style="padding:5px 8px;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 11px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;text-decoration:none"
 								>{producto.categoria}</a
 							>{/if}{#if tachado}<span
-								style="padding:5px 8px;background:#FF4D2E;color:#111;font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+								style="padding:5px 8px;background:#FF4D2E;color:var(--tc-111111, #111);font:800 11px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 								>−{Math.round((1 - sel.precio / tachado) * 100)}%</span
 							>{:else if producto.etiqueta}<span
-								style="padding:5px 8px;background:#F2F2F2;color:#111;font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+								style="padding:5px 8px;background:var(--tc-f2f2f2, #F2F2F2);color:var(--tc-111111, #111);font:800 11px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 								>{producto.etiqueta}</span
 							>{/if}{#if sel.stock > 0 && sel.stock <= 3 && (!sel.conOpciones || sel.variante)}<span
-								style="padding:5px 8px;border:1.5px solid #FF4D2E;color:#FF4D2E;font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+								style="padding:5px 8px;border:1.5px solid #FF4D2E;color:#FF4D2E;font:800 11px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 								>{sel.stock === 1 ? 'Queda 1' : `Quedan ${sel.stock}`}{#if sel.variante}&nbsp;en {sel.texto.toLowerCase()}{/if}</span
 							>{/if}
 					</div>
 					<h1
-						style="margin:14px 0 0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(40px,5.4cqw,72px),{cabe(
+						style="margin:14px 0 0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(40px,5.4cqw,72px),{cabe(
 							producto.nombre,
 							wide ? 40 : 86
 						)});line-height:.86;letter-spacing:-.04em;text-transform:uppercase;overflow-wrap:anywhere"
@@ -1189,23 +1219,28 @@
 						{producto.nombre}
 					</h1>
 					<div style="margin-top:16px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-						<b style="font-family:'Archivo Black',sans-serif;font-size:32px;font-weight:400"
+						<b
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:32px;font-weight:400"
 							>{sel.desde ? 'Desde ' : ''}{fmt(sel.precio)}</b
-						>{#if tachado}<s style="font-size:17px;color:#8A8A8A">{fmt(tachado)}</s>{/if}
+						>{#if tachado}<s style="font-size:17px;color:var(--tc-8a8a8a, #8A8A8A)"
+								>{fmt(tachado)}</s
+							>{/if}
 					</div>
 					{#if tienda.cobros.cuotas > 1 || tienda.cobros.transferencia > 0}<div
-							style="margin-top:6px;font-size:14px;color:#BDBDBD"
+							style="margin-top:6px;font-size:14px;color:var(--tc-bdbdbd, #BDBDBD)"
 						>
 							{#if tienda.cobros.cuotas > 1}{tienda.cobros.cuotas} × {fmt(
 									sel.precio / tienda.cobros.cuotas
 								)} sin interés{/if}{#if tienda.cobros.transferencia > 0}
 								{#if tienda.cobros.cuotas > 1}·{/if}
-								<b style="color:#B9F27C"
+								<b style="color:var(--tc-b9f27c, #B9F27C)"
 									>{fmt(sel.precio * (1 - tienda.cobros.transferencia / 100))} por&nbsp;transferencia</b
 								>{/if}
 						</div>{/if}
 					<!-- Venta por mayor (§49): con el estilo del renglón de las cuotas. -->
-					{#if porMayorFicha}<div style="margin-top:6px;font-size:14px;color:#BDBDBD">
+					{#if porMayorFicha}<div
+							style="margin-top:6px;font-size:14px;color:var(--tc-bdbdbd, #BDBDBD)"
+						>
 							{porMayorFicha}
 						</div>{/if}
 					{#each sel.opciones as o (o.nombre)}{@const swatch = o.valores.every(
@@ -1213,12 +1248,14 @@
 						)}
 						<div style="margin-top:20px">
 							<div
-								style="margin-bottom:10px;font:800 12px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:{sel.aviso &&
+								style="margin-bottom:10px;font:800 12px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;color:{sel.aviso &&
 								!o.elegido
 									? '#FF4D2E'
-									: '#8A8A8A'}"
+									: 'var(--tc-8a8a8a, #8A8A8A)'}"
 							>
-								{o.nombre}{#if o.elegido}: <span style="color:#F2F2F2">{o.elegido}</span>{/if}
+								{o.nombre}{#if o.elegido}: <span style="color:var(--tc-f2f2f2, #F2F2F2)"
+										>{o.elegido}</span
+									>{/if}
 							</div>
 							{#if swatch}<div style="display:flex;gap:12px;flex-wrap:wrap">
 									{#each o.valores as x (x.valor)}<button
@@ -1229,9 +1266,11 @@
 											onclick={() => sel.elegir(o.nombre, x.valor)}
 											style="width:36px;height:36px;padding:0;border:0;border-radius:50%;overflow:hidden;cursor:pointer;opacity:{x.disponible
 												? 1
-												: 0.3};box-shadow:inset 0 0 0 1px rgba(242,242,242,.25),0 0 0 {x.elegido
+												: 0.3};box-shadow:inset 0 0 0 1px var(--tc-f2f2f2-250, rgba(242,242,242,.25)),0 0 0 {x.elegido
 												? '3px'
-												: '0px'} #111,0 0 0 {x.elegido ? '5px' : '0px'} var(--acento, #E6FF4D)"
+												: '0px'} var(--tc-111111, #111),0 0 0 {x.elegido
+												? '5px'
+												: '0px'} var(--acento, #E6FF4D)"
 											>{#if x.color}<span
 													style="display:block;width:100%;height:100%;background:{x.color}"
 												></span>{:else}<img
@@ -1250,13 +1289,13 @@
 											onclick={() => sel.elegir(o.nombre, x.valor)}
 											style="padding:13px 4px;text-align:center;border:2px solid {x.elegido
 												? 'var(--acento, #E6FF4D)'
-												: '#2A2A2A'};background:{x.elegido
+												: 'var(--tc-2a2a2a, #2A2A2A)'};background:{x.elegido
 												? 'var(--acento, #E6FF4D)'
 												: 'transparent'};color:{x.elegido
-												? '#111'
+												? 'var(--tc-111111, #111)'
 												: x.disponible
-													? '#F2F2F2'
-													: '#8A8A8A'};font:800 13px 'Archivo';letter-spacing:.08em;text-transform:uppercase;text-decoration:{x.disponible
+													? 'var(--tc-f2f2f2, #F2F2F2)'
+													: 'var(--tc-8a8a8a, #8A8A8A)'};font:800 13px var(--tf-texto,'Archivo');letter-spacing:.08em;text-transform:uppercase;text-decoration:{x.disponible
 												? 'none'
 												: 'line-through'};cursor:{x.disponible ? 'pointer' : 'default'}"
 											>{x.valor}</button
@@ -1267,7 +1306,7 @@
 						type="button"
 						onclick={agregar}
 						disabled={sel.stock === 0 || tienda.vitrina}
-						style="margin-top:20px;width:100%;padding:19px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+						style="margin-top:20px;width:100%;padding:19px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 						>{sel.boton('Sumar a la bolsa', 'Agotado')}</button
 					>
 					{#if whatsapp}<a
@@ -1276,12 +1315,12 @@
 							)}
 							target="_blank"
 							rel="noopener"
-							style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:16px;border:2px solid #F2F2F2;color:#F2F2F2;text-decoration:none;font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+							style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:8px;padding:16px;border:2px solid var(--tc-f2f2f2, #F2F2F2);color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none;font:800 13px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 							><Icon icon={I.phWhatsappLogoBold} size={18} />Comprar por WhatsApp</a
 						>{/if}
 					<LanzamientoFicha {tienda} {producto} {sel} {tema} />
 					<CompartirProducto {tienda} {producto} {tema} />
-					<div style="margin-top:18px;border:2px solid #2A2A2A">
+					<div style="margin-top:18px;border:2px solid var(--tc-2a2a2a, #2A2A2A)">
 						{#if envia(tienda.envios)}<div style="display:flex">
 								<label for="cp-ficha" class="oculto">Código postal</label><input
 									id="cp-ficha"
@@ -1290,44 +1329,47 @@
 									maxlength="4"
 									placeholder="Código postal"
 									onkeydown={(e) => e.key === 'Enter' && calcular()}
-									style="flex:1;min-width:0;padding:13px 14px;border:0;background:transparent;font:400 14px 'Archivo';color:#F2F2F2;outline:none"
+									style="flex:1;min-width:0;padding:13px 14px;border:0;background:transparent;font:400 14px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 								/><button
 									type="button"
 									onclick={calcular}
-									style="padding:13px 16px;border:0;background:#F2F2F2;color:#111;font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase;cursor:pointer"
+									style="padding:13px 16px;border:0;background:var(--tc-f2f2f2, #F2F2F2);color:var(--tc-111111, #111);font:800 12px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;cursor:pointer"
 									>Calcular</button
 								>
 							</div>{/if}
 						{#if cotizado}<div
-								style="border-top:2px solid #2A2A2A;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px"
+								style="border-top:2px solid var(--tc-2a2a2a, #2A2A2A);padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px"
 							>
 								{#each cotizado as o (o.id)}<span
 										style="display:flex;justify-content:space-between;gap:10px"
 										><span>{o.nombre} · {o.detalle}</span><b
-											style="white-space:nowrap;color:{o.precio ? '#F2F2F2' : '#B9F27C'}"
-											>{o.precio ? fmt(o.precio) : 'Gratis'}</b
+											style="white-space:nowrap;color:{o.precio
+												? 'var(--tc-f2f2f2, #F2F2F2)'
+												: 'var(--tc-b9f27c, #B9F27C)'}">{o.precio ? fmt(o.precio) : 'Gratis'}</b
 										></span
 									>{/each}
 							</div>{/if}
 					</div>
-					<div style="margin-top:18px;border:2px solid #2A2A2A">
+					<div style="margin-top:18px;border:2px solid var(--tc-2a2a2a, #2A2A2A)">
 						{#each acc as a, i (a.t)}<div
-								style="padding:13px 14px;{i ? 'border-top:2px solid #2A2A2A' : ''}"
+								style="padding:13px 14px;{i
+									? 'border-top:2px solid var(--tc-2a2a2a, #2A2A2A)'
+									: ''}"
 							>
 								<button
 									type="button"
 									onclick={() => (abierto = a.open ? '' : a.t)}
 									aria-expanded={a.open}
-									style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0;border:0;background:transparent;font:800 12.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:#F2F2F2;cursor:pointer;text-align:left"
+									style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0;border:0;background:transparent;font:800 12.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer;text-align:left"
 									>{a.t}<Icon icon={a.i} size={13} /></button
 								>{#if a.open}<p
-										style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#BDBDBD;text-wrap:pretty"
+										style="margin:10px 0 0;font-size:14px;line-height:1.6;color:var(--tc-bdbdbd, #BDBDBD);text-wrap:pretty"
 									>
 										{a.d}
 									</p>{/if}
 							</div>{/each}
 					</div>
-					<div style="margin-top:18px;padding:16px 14px;border:2px solid #2A2A2A">
+					<div style="margin-top:18px;padding:16px 14px;border:2px solid var(--tc-2a2a2a, #2A2A2A)">
 						<PreguntasProducto
 							slug={tienda.slug}
 							productoId={producto.id}
@@ -1341,12 +1383,12 @@
 			{#if related.length}
 				<section style="padding:clamp(36px,5cqw,64px) 0 0">
 					<h2
-						style="margin:0 clamp(14px,2.4cqw,28px) 18px;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(34px,5cqw,64px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
+						style="margin:0 clamp(14px,2.4cqw,28px) 18px;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(34px,5cqw,64px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase"
 					>
 						Va con
 					</h2>
 					<div
-						style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,240px),1fr));border-top:2px solid #2A2A2A"
+						style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(50%,240px),1fr));border-top:2px solid var(--tc-2a2a2a, #2A2A2A)"
 					>
 						{#each related as p (p.id)}{@render card(p, true, false)}{/each}
 					</div>
@@ -1358,36 +1400,40 @@
 		<!-- ============ CARRITO ============ -->
 		{#if pagina === 'carrito'}
 			<section
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
-				<div style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;min-width:0">
+				<div
+					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);min-width:0"
+				>
 					<h1
-						style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(48px,7cqw,100px);line-height:.85;letter-spacing:-.045em;text-transform:uppercase"
+						style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(48px,7cqw,100px);line-height:.85;letter-spacing:-.045em;text-transform:uppercase"
 					>
 						Bolsa ({carrito.unidades})
 					</h1>
 					{#if !lineas.length}
-						<p style="margin:18px 0 0;font-size:15px;color:#8A8A8A">Todavía no sumaste nada.</p>
+						<p style="margin:18px 0 0;font-size:15px;color:var(--tc-8a8a8a, #8A8A8A)">
+							Todavía no sumaste nada.
+						</p>
 						<a
 							href="{base}/catalogo"
-							style="display:inline-block;margin-top:18px;padding:18px 28px;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+							style="display:inline-block;margin-top:18px;padding:18px 28px;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 							>Ver todo →</a
 						>
 					{:else}
 						{#if tienda.envios.gratisDesde}
 							<div
-								style="margin-top:16px;padding:12px 14px;border:2px solid #2A2A2A;font-size:13.5px"
+								style="margin-top:16px;padding:12px 14px;border:2px solid var(--tc-2a2a2a, #2A2A2A);font-size:13.5px"
 							>
 								<div style="display:flex;justify-content:space-between;gap:10px">
 									<span
 										>{#if falta}Te faltan <b>{fmt(falta)}</b> para envío gratis{:else}<b
 												>Tenés envío gratis</b
 											>{/if}</span
-									><span style="color:#8A8A8A;white-space:nowrap"
+									><span style="color:var(--tc-8a8a8a, #8A8A8A);white-space:nowrap"
 										>{fmt(tienda.envios.gratisDesde)}</span
 									>
 								</div>
-								<div style="margin-top:8px;height:6px;background:#2A2A2A">
+								<div style="margin-top:8px;height:6px;background:var(--tc-2a2a2a, #2A2A2A)">
 									<div
 										style="width:{Math.min(
 											100,
@@ -1399,50 +1445,50 @@
 						{/if}
 						{#if avisoMayor && porMayor}
 							<div
-								style="margin-top:16px;padding:12px 14px;border:2px solid #2A2A2A;font-size:13.5px"
+								style="margin-top:16px;padding:12px 14px;border:2px solid var(--tc-2a2a2a, #2A2A2A);font-size:13.5px"
 							>
 								<div style="display:flex;justify-content:space-between;gap:10px">
 									<span>{avisoMayor.pre}<b>{avisoMayor.b}</b>{avisoMayor.post}</span>
 								</div>
-								<div style="margin-top:8px;height:6px;background:#2A2A2A">
+								<div style="margin-top:8px;height:6px;background:var(--tc-2a2a2a, #2A2A2A)">
 									<div
 										style="width:{porMayor.progreso}%;height:100%;background:var(--acento, #E6FF4D)"
 									></div>
 								</div>
 							</div>
 						{/if}
-						<div style="margin-top:14px;border-top:2px solid #2A2A2A">
+						<div style="margin-top:14px;border-top:2px solid var(--tc-2a2a2a, #2A2A2A)">
 							{#each lineas as c (c.clave)}<div
-									style="display:flex;gap:14px;padding:14px 0;border-bottom:2px solid #2A2A2A"
+									style="display:flex;gap:14px;padding:14px 0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 								>
 									{#if c.producto.foto}<img
 											src={img(c.producto.foto, 200, 240)}
 											alt=""
-											style="width:92px;height:110px;object-fit:cover;flex:none;background:#1E1E1E"
+											style="width:92px;height:110px;object-fit:cover;flex:none;background:var(--tc-1e1e1e, #1E1E1E)"
 										/>{/if}
 									<div style="flex:1;min-width:0;display:flex;flex-direction:column">
 										<div style="display:flex;justify-content:space-between;gap:10px">
 											<a
 												href="{base}/producto/{c.producto.slug ?? c.id}"
-												style="font-size:14px;font-weight:800;text-transform:uppercase;color:#F2F2F2;text-decoration:none"
+												style="font-size:14px;font-weight:800;text-transform:uppercase;color:var(--tc-f2f2f2, #F2F2F2);text-decoration:none"
 												>{c.producto.nombre}</a
 											><b style="white-space:nowrap">{fmt(c.subtotal)}</b>
 										</div>
 										{#if c.variante}<span
-												style="margin-top:4px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F2F2F2"
+												style="margin-top:4px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tc-f2f2f2, #F2F2F2)"
 												>{c.variante}</span
 											>{/if}
-										<span style="font-size:13px;color:#8A8A8A;margin-top:4px"
+										<span style="font-size:13px;color:var(--tc-8a8a8a, #8A8A8A);margin-top:4px"
 											>{fmt(c.producto.precio)} c/u</span
 										>
 										<span style="flex:1;min-height:10px"></span>
 										<div style="display:flex;justify-content:space-between;align-items:center">
-											<span style="display:flex;border:2px solid #2A2A2A"
+											<span style="display:flex;border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 												><button
 													type="button"
 													aria-label="Uno menos"
 													onclick={() => carrito.fijar(c.clave, c.cantidad - 1)}
-													style="width:34px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:#F2F2F2;cursor:pointer"
+													style="width:34px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer"
 													><Icon icon={I.phMinusBold} size={12} /></button
 												><b style="width:26px;display:grid;place-items:center;font-size:14px"
 													>{c.cantidad}</b
@@ -1451,13 +1497,13 @@
 													aria-label="Uno más"
 													disabled={c.cantidad >= c.producto.stock}
 													onclick={() => carrito.fijar(c.clave, c.cantidad + 1)}
-													style="width:34px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:#F2F2F2;cursor:pointer"
+													style="width:34px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer"
 													><Icon icon={I.phPlusBold} size={12} /></button
 												></span
 											><button
 												type="button"
 												onclick={() => carrito.fijar(c.clave, 0)}
-												style="padding:0;border:0;background:transparent;font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase;color:#8A8A8A;cursor:pointer"
+												style="padding:0;border:0;background:transparent;font:800 12px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A);cursor:pointer"
 												>Quitar</button
 											>
 										</div>
@@ -1468,59 +1514,61 @@
 				</div>
 				{#if lineas.length}
 					<div
-						style="padding:clamp(22px,3.4cqw,44px);background:#161616;display:flex;flex-direction:column;gap:12px;font-size:14px;min-width:0"
+						style="padding:clamp(22px,3.4cqw,44px);background:var(--tc-161616, #161616);display:flex;flex-direction:column;gap:12px;font-size:14px;min-width:0"
 					>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 						>
 							Resumen
 						</div>
 						<span style="display:flex;justify-content:space-between"
 							><span>Subtotal</span><span>{fmt(subtotal)}</span></span
 						>
-						<span style="display:flex;justify-content:space-between;gap:10px;color:#8A8A8A"
+						<span
+							style="display:flex;justify-content:space-between;gap:10px;color:var(--tc-8a8a8a, #8A8A8A)"
 							><span>Envío</span><span>Se calcula en el próximo paso</span></span
 						>
-						<div style="height:2px;background:#2A2A2A"></div>
+						<div style="height:2px;background:var(--tc-2a2a2a, #2A2A2A)"></div>
 						<span style="display:flex;justify-content:space-between;align-items:baseline"
 							><b style="text-transform:uppercase;letter-spacing:.08em">Total</b><b
-								style="font-family:'Archivo Black',sans-serif;font-size:30px;font-weight:400"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:30px;font-weight:400"
 								>{fmt(subtotal)}</b
 							></span
 						>
-						{#if tienda.cobros.cuotas > 1}<span style="color:#BDBDBD"
+						{#if tienda.cobros.cuotas > 1}<span style="color:var(--tc-bdbdbd, #BDBDBD)"
 								>{tienda.cobros.cuotas} × {fmt(subtotal / tienda.cobros.cuotas)} sin interés</span
 							>{/if}
-						{#if tienda.cobros.transferencia > 0}<span style="color:#B9F27C;font-weight:700"
+						{#if tienda.cobros.transferencia > 0}<span
+								style="color:var(--tc-b9f27c, #B9F27C);font-weight:700"
 								>{fmt(subtotal * (1 - tienda.cobros.transferencia / 100))} por transferencia</span
 							>{/if}
 						<a
 							href="{base}/checkout"
-							style="margin-top:6px;padding:19px;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-align:center;text-decoration:none"
+							style="margin-top:6px;padding:19px;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-align:center;text-decoration:none"
 							>Pagar →</a
 						>
 						{#if upsell.length}
 							<div
-								style="margin-top:12px;font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+								style="margin-top:12px;font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 							>
 								Sumale
 							</div>
 							<div
-								style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each upsell as p (p.id)}<button
 										type="button"
 										aria-label="Sumar {p.nombre} a la bolsa"
 										onclick={() => sumarRapido(p)}
-										style="display:block;border:0;background:#111;padding:8px;text-align:left;color:#F2F2F2;cursor:pointer;font-family:inherit;min-width:0"
+										style="display:block;border:0;background:var(--tc-111111, #111);padding:8px;text-align:left;color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer;font-family:inherit;min-width:0"
 										><span
-											style="position:relative;display:block;aspect-ratio:1;overflow:hidden;background:#1E1E1E"
+											style="position:relative;display:block;aspect-ratio:1;overflow:hidden;background:var(--tc-1e1e1e, #1E1E1E)"
 											>{#if p.foto}<img
 													src={img(p.foto, 300, 300)}
 													alt=""
 													style="width:100%;height:100%;object-fit:cover"
 												/>{/if}<span
-												style="position:absolute;right:6px;bottom:6px;width:28px;height:28px;display:grid;place-items:center;background:var(--acento, #E6FF4D);color:#111"
+												style="position:absolute;right:6px;bottom:6px;width:28px;height:28px;display:grid;place-items:center;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111)"
 												><Icon icon={I.phPlusBold} size={13} /></span
 											></span
 										><span
@@ -1540,8 +1588,12 @@
 		<!-- ============ CHECKOUT ============ -->
 		{#if pagina === 'checkout'}
 			{#if !lineas.length}
-				<section style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid #2A2A2A">
-					<p style="margin:0;font-size:15px;color:#8A8A8A">Tu bolsa está vacía.</p>
+				<section
+					style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
+				>
+					<p style="margin:0;font-size:15px;color:var(--tc-8a8a8a, #8A8A8A)">
+						Tu bolsa está vacía.
+					</p>
 					<a
 						href="{base}/catalogo"
 						style="display:inline-block;margin-top:16px;color:var(--acento, #E6FF4D);font-weight:700"
@@ -1562,37 +1614,37 @@
 							await update();
 						};
 					}}
-					style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid #2A2A2A"
+					style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 				>
 					<input type="hidden" name="carrito" value={JSON.stringify(carrito.lineas)} />
 					<input type="hidden" name="envio" value={envio ?? ''} />
 					<input type="hidden" name="pago" value={pago} />
 					<div
-						style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:24px;min-width:0"
+						style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:24px;min-width:0"
 					>
-						<div style="display:flex;border:2px solid #2A2A2A">
+						<div style="display:flex;border:2px solid var(--tc-2a2a2a, #2A2A2A)">
 							{#each pasos as s, i (s.t)}<span
 									style="flex:1;padding:11px 8px;text-align:center;{i < pasos.length - 1
-										? 'border-right:2px solid #2A2A2A;'
-										: ''}background:{s.on ? '#F2F2F2' : 'transparent'};color:{s.on
-										? '#111'
-										: '#8A8A8A'};font:800 11.5px 'Archivo';letter-spacing:.12em;text-transform:uppercase"
+										? 'border-right:2px solid var(--tc-2a2a2a, #2A2A2A);'
+										: ''}background:{s.on ? 'var(--tc-f2f2f2, #F2F2F2)' : 'transparent'};color:{s.on
+										? 'var(--tc-111111, #111)'
+										: 'var(--tc-8a8a8a, #8A8A8A)'};font:800 11.5px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase"
 									>{s.t}</span
 								>{/each}
 						</div>
 						<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								Tus datos
 							</div>
 							<div
-								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each [['email', 'Email', 'email', 'email'], ['nombre', 'Nombre y apellido', 'text', 'name'], ['telefono', 'Teléfono', 'tel', 'tel'], ['dni', 'DNI', 'text', 'off'], ...camposFactura(tienda)] as [n, l, tipo, ac] (n)}
-									<label style="display:block;padding:11px 13px;background:#111"
+									<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 										><span
-											style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+											style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 											>{l}</span
 										><input
 											name={n}
@@ -1600,14 +1652,14 @@
 											autocomplete={ac as 'email'}
 											required={!OPCIONALES.has(n)}
 											maxlength="120"
-											style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+											style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 										/></label
 									>
 								{/each}
 							</div>
 							<!-- Sin bloque de newsletter en el diseño de esta plantilla: la casilla del checkout (§50). -->
 							<label
-								style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 15px 'Archivo';color:#F2F2F2;cursor:pointer"
+								style="margin-top:10px;display:flex;align-items:center;gap:10px;min-height:44px;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);cursor:pointer"
 								><input
 									type="checkbox"
 									name="novedades"
@@ -1617,40 +1669,40 @@
 						</div>
 						<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								Entrega
 							</div>
 							<div
-								style="margin-top:12px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="margin-top:12px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
-								<label style="display:block;padding:11px 13px;background:#111"
+								<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 									><span
-										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 										>Código postal</span
 									><input
 										name="cp"
 										bind:value={cp}
 										inputmode="numeric"
 										maxlength="4"
-										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 									/></label
 								>
-								<label style="display:block;padding:11px 13px;background:#111"
+								<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 									><span
-										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 										>Dirección (calle, número, piso)</span
 									><input
 										name="direccion"
 										maxlength="160"
 										autocomplete="street-address"
 										required={envio !== 'retiro'}
-										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 									/></label
 								>
 							</div>
 							<div
-								style="margin-top:8px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+								style="margin-top:8px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 								role="radiogroup"
 								aria-label="Forma de entrega"
 							>
@@ -1659,11 +1711,11 @@
 										role="radio"
 										aria-checked={on}
 										onclick={() => (envio = s.id)}
-										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:{on
+										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
 											? 'var(--acento, #E6FF4D)'
-											: '#111'};color:{on
-											? '#111'
-											: '#F2F2F2'};text-align:left;cursor:pointer;font-family:inherit"
+											: 'var(--tc-111111, #111)'};color:{on
+											? 'var(--tc-111111, #111)'
+											: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:left;cursor:pointer;font-family:inherit"
 										><span
 											style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
 											>{#if on}<span style="width:8px;height:8px;background:currentColor"
@@ -1674,7 +1726,7 @@
 											></span
 										><b style="white-space:nowrap">{s.precio ? fmt(s.precio) : 'Gratis'}</b></button
 									>{:else}<span
-										style="padding:15px;border-bottom:2px solid #2A2A2A;font-size:13.5px;color:#8A8A8A"
+										style="padding:15px;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);font-size:13.5px;color:var(--tc-8a8a8a, #8A8A8A)"
 										>Poné tu código postal para ver cómo te llega.</span
 									>{/each}
 							</div>
@@ -1682,12 +1734,12 @@
 						</div>
 						<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								Pago
 							</div>
 							<div
-								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 								role="radiogroup"
 								aria-label="Forma de pago"
 							>
@@ -1696,11 +1748,11 @@
 										role="radio"
 										aria-checked={on}
 										onclick={() => (pago = s.id)}
-										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:{on
+										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
 											? 'var(--acento, #E6FF4D)'
-											: '#111'};color:{on
-											? '#111'
-											: '#F2F2F2'};text-align:left;cursor:pointer;font-family:inherit"
+											: 'var(--tc-111111, #111)'};color:{on
+											? 'var(--tc-111111, #111)'
+											: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:left;cursor:pointer;font-family:inherit"
 										><span
 											style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
 											>{#if on}<span style="width:8px;height:8px;background:currentColor"
@@ -1720,7 +1772,7 @@
 							</div>{/if}
 						<button
 							disabled={!envio || !pagos.length || enviando || tienda.vitrina}
-							style="padding:20px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 15px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:8px"
+							style="padding:20px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 15px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:8px"
 							><Icon icon={I.phLockSimpleFill} size={16} />{tienda.vitrina
 								? 'Es una tienda de ejemplo'
 								: !pagos.length
@@ -1730,9 +1782,11 @@
 										: 'Elegí cómo te llega'}</button
 						>
 					</div>
-					<div style="padding:clamp(22px,3.4cqw,44px);background:#161616;min-width:0">
+					<div
+						style="padding:clamp(22px,3.4cqw,44px);background:var(--tc-161616, #161616);min-width:0"
+					>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:26px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:26px;text-transform:uppercase"
 						>
 							Tu pedido
 						</div>
@@ -1741,21 +1795,21 @@
 									{#if c.producto.foto}<img
 											src={img(c.producto.foto, 120, 140)}
 											alt=""
-											style="width:56px;height:66px;object-fit:cover;flex:none;background:#1E1E1E"
+											style="width:56px;height:66px;object-fit:cover;flex:none;background:var(--tc-1e1e1e, #1E1E1E)"
 										/>{/if}<span
 										style="flex:1;min-width:0;font-size:13.5px;font-weight:700;text-transform:uppercase"
 										>{c.producto.nombre}{#if c.variante}<span
-												style="display:block;margin-top:2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:#BDBDBD"
+												style="display:block;margin-top:2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--tc-bdbdbd, #BDBDBD)"
 												>{c.variante}</span
 											>{:else}<br />{/if}<span
-											style="font-weight:500;text-transform:none;color:#8A8A8A"
+											style="font-weight:500;text-transform:none;color:var(--tc-8a8a8a, #8A8A8A)"
 											>{c.cantidad} × {fmt(c.producto.precio)}</span
 										></span
 									><b style="font-size:14px;white-space:nowrap">{fmt(c.subtotal)}</b>
 								</div>{/each}
 						</div>
 						<div
-							style="margin-top:16px;padding-top:14px;border-top:2px solid #2A2A2A;display:flex;flex-direction:column;gap:8px;font-size:14px"
+							style="margin-top:16px;padding-top:14px;border-top:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:8px;font-size:14px"
 						>
 							<span style="display:flex;justify-content:space-between"
 								><span>Subtotal</span><span>{fmt(subtotal)}</span></span
@@ -1764,10 +1818,10 @@
 									>{elegida ? (cuenta.envio ? fmt(cuenta.envio) : 'Gratis') : '—'}</span
 								></span
 							>{#if cuenta.descCupon}<span
-									style="display:flex;justify-content:space-between;color:#B9F27C;font-weight:700"
+									style="display:flex;justify-content:space-between;color:var(--tc-b9f27c, #B9F27C);font-weight:700"
 									><span>Cupón {cupon.aplicado}</span><span>− {fmt(cuenta.descCupon)}</span></span
 								>{/if}{#if descuento}<span
-									style="display:flex;justify-content:space-between;color:#B9F27C;font-weight:700"
+									style="display:flex;justify-content:space-between;color:var(--tc-b9f27c, #B9F27C);font-weight:700"
 									><span>Transferencia −{tienda.cobros.transferencia}%</span><span
 										>− {fmt(descuento)}</span
 									></span
@@ -1776,27 +1830,27 @@
 								<CampoCupon
 									{cupon}
 									lineas={carrito.lineas}
-									tinta="#F2F2F2"
-									suave="#8A8A8A"
-									borde="#3A3A3A"
-									fondo="#0B0B0B"
+									tinta="var(--tc-f2f2f2, #F2F2F2)"
+									suave="var(--tc-8a8a8a, #8A8A8A)"
+									borde="var(--tc-3a3a3a, #3A3A3A)"
+									fondo="var(--tc-0b0b0b, #0B0B0B)"
 									acento="var(--acento, #E6FF4D)"
-									sobreAcento="#111"
+									sobreAcento="var(--tc-111111, #111)"
 									radio="0px"
-									fuente="'Archivo',sans-serif"
+									fuente="var(--tf-texto,'Archivo'),sans-serif"
 									error="#FF8A75"
 								/>
 							</div>
 							<span
 								style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"
 								><b style="text-transform:uppercase">Total</b><b
-									style="font-family:'Archivo Black',sans-serif;font-size:28px;font-weight:400"
+									style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;font-weight:400"
 									>{fmt(total)}</b
 								></span
 							>
 						</div>
 						<div
-							style="margin-top:16px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#8A8A8A"
+							style="margin-top:16px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A)"
 						>
 							<Icon icon={I.phShieldCheckBold} size={16} />Compra protegida · 10 días para
 							arrepentirte
@@ -1809,10 +1863,10 @@
 		<!-- ============ LISTO (no está en el diseño: con las piezas del checkout) ============ -->
 		{#if pagina === 'listo' && pedido}
 			<section
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
 				<div
-					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:20px;min-width:0"
+					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:20px;min-width:0"
 				>
 					<div
 						style="display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acento, #E6FF4D)"
@@ -1820,21 +1874,24 @@
 						<Icon icon={I.phCheckBold} size={16} />Pedido #{pedido.numero}
 					</div>
 					<h1
-						style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(48px,7cqw,100px),{cabe(
+						style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(48px,7cqw,100px),{cabe(
 							`Gracias, ${pedido.nombre}!`,
 							wide ? 42 : 86
 						)});line-height:.85;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
 					>
 						¡Gracias,<br /><span style="color:var(--acento, #E6FF4D)">{pedido.nombre}!</span>
 					</h1>
-					<p style="margin:0;font-size:17px;line-height:1.5;color:#BDBDBD;max-width:460px">
-						Recibimos tu pedido por <b style="color:#F2F2F2">{fmt(pedido.total)}</b>. Te escribimos
-						por mail con cada&nbsp;novedad.
+					<p
+						style="margin:0;font-size:17px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD);max-width:460px"
+					>
+						Recibimos tu pedido por <b style="color:var(--tc-f2f2f2, #F2F2F2)"
+							>{fmt(pedido.total)}</b
+						>. Te escribimos por mail con cada&nbsp;novedad.
 					</p>
 					<div>
 						<a
 							href={base || '/'}
-							style="display:inline-block;padding:18px 28px;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+							style="display:inline-block;padding:18px 28px;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 							>Volver a la tienda</a
 						>
 					</div>
@@ -1842,14 +1899,14 @@
 				<SenaPedido {tema} />
 				{#if pedido.pago === 'transferencia'}
 					<div
-						style="padding:clamp(22px,3.4cqw,44px);background:#161616;font-size:15px;line-height:1.6;min-width:0"
+						style="padding:clamp(22px,3.4cqw,44px);background:var(--tc-161616, #161616);font-size:15px;line-height:1.6;min-width:0"
 					>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:26px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:26px;text-transform:uppercase"
 						>
 							Transferí {fmt(pedido.total)}
 						</div>
-						<p style="margin:12px 0 0;color:#BDBDBD">
+						<p style="margin:12px 0 0;color:var(--tc-bdbdbd, #BDBDBD)">
 							{#if pedido.alias}Al {pedido.esCbu ? 'CBU/CVU' : 'alias'}
 								<b style="color:var(--acento, #E6FF4D)">{pedido.alias}</b>{:else}Con los datos que
 								te mandamos por mail{/if} y mandanos el comprobante{#if whatsapp}&nbsp;<a
@@ -1865,7 +1922,7 @@
 			</section>
 			{#if pedido.estado === 'Entregado'}
 				<section
-					style="padding:clamp(28px,4cqw,56px) clamp(14px,2.4cqw,28px);border-bottom:2px solid #2A2A2A"
+					style="padding:clamp(28px,4cqw,56px) clamp(14px,2.4cqw,28px);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 				>
 					<FormResena slug={tienda.slug} {tema} codigo={pedido.codigo} nombre={pedido.nombre} />
 				</section>
@@ -1888,28 +1945,29 @@
 						if (result.type === 'failure') void reserva.cargar();
 					};
 				}}
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
 				<input type="hidden" name="servicioId" value={reserva.servicioId ?? ''} />
 				<input type="hidden" name="profesionalId" value={reserva.profesionalId ?? ''} />
 				<input type="hidden" name="inicio" value={reserva.inicio ?? ''} />
 				<div
-					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:24px;min-width:0"
+					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:24px;min-width:0"
 				>
-					<div style="display:flex;border:2px solid #2A2A2A">
+					<div style="display:flex;border:2px solid var(--tc-2a2a2a, #2A2A2A)">
 						{#each PASOS_TURNO as t, i (t)}<span
 								style="flex:1;min-width:0;padding:11px 4px;text-align:center;{i <
 								PASOS_TURNO.length - 1
-									? 'border-right:2px solid #2A2A2A;'
-									: ''}background:{i <= reserva.paso ? '#F2F2F2' : 'transparent'};color:{i <=
-								reserva.paso
-									? '#111'
-									: '#8A8A8A'};font:800 10.5px 'Archivo';letter-spacing:.08em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis"
+									? 'border-right:2px solid var(--tc-2a2a2a, #2A2A2A);'
+									: ''}background:{i <= reserva.paso
+									? 'var(--tc-f2f2f2, #F2F2F2)'
+									: 'transparent'};color:{i <= reserva.paso
+									? 'var(--tc-111111, #111)'
+									: 'var(--tc-8a8a8a, #8A8A8A)'};font:800 10.5px var(--tf-texto,'Archivo');letter-spacing:.08em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis"
 								>{t}</span
 							>{/each}
 					</div>
 					<h1
-						style="margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(48px,7cqw,100px),{cabe(
+						style="margin:0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(48px,7cqw,100px),{cabe(
 							'Reservá tu turno',
 							wide ? 42 : 86
 						)});line-height:.85;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
@@ -1918,12 +1976,12 @@
 					</h1>
 					<div>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 						>
 							1 · Servicio
 						</div>
 						<div
-							style="margin-top:12px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+							style="margin-top:12px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 							role="radiogroup"
 							aria-label="Servicio"
 						>
@@ -1933,11 +1991,11 @@
 									role="radio"
 									aria-checked={on}
 									onclick={() => reserva.elegirServicio(s.id)}
-									style="display:flex;align-items:center;gap:12px;width:100%;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:{on
+									style="display:flex;align-items:center;gap:12px;width:100%;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
 										? 'var(--acento, #E6FF4D)'
-										: '#111'};color:{on
-										? '#111'
-										: '#F2F2F2'};text-align:left;cursor:pointer;font-family:inherit"
+										: 'var(--tc-111111, #111)'};color:{on
+										? 'var(--tc-111111, #111)'
+										: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:left;cursor:pointer;font-family:inherit"
 									><span
 										style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
 										>{#if on}<span style="width:8px;height:8px;background:currentColor"
@@ -1953,7 +2011,7 @@
 					</div>
 					<div>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 						>
 							2 · Profesional
 						</div>
@@ -1970,15 +2028,17 @@
 									onclick={() => reserva.elegirProfesional(p?.id ?? null)}
 									style="flex:none;width:110px;padding:10px;border:2px solid {on
 										? 'var(--acento, #E6FF4D)'
-										: '#2A2A2A'};background:{on ? 'var(--acento, #E6FF4D)' : '#111'};color:{on
-										? '#111'
-										: '#F2F2F2'};text-align:center;cursor:pointer;font-family:inherit"
+										: 'var(--tc-2a2a2a, #2A2A2A)'};background:{on
+										? 'var(--acento, #E6FF4D)'
+										: 'var(--tc-111111, #111)'};color:{on
+										? 'var(--tc-111111, #111)'
+										: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:center;cursor:pointer;font-family:inherit"
 									>{#if p?.foto}<img
 											src={img(p.foto, 120, 120)}
 											alt=""
 											style="width:56px;height:56px;object-fit:cover;display:block;margin:0 auto"
 										/>{:else}<span
-											style="width:56px;height:56px;background:#1A1A1A;color:var(--acento, #E6FF4D);display:grid;place-items:center;margin:0 auto"
+											style="width:56px;height:56px;background:var(--tc-1a1a1a, #1A1A1A);color:var(--acento, #E6FF4D);display:grid;place-items:center;margin:0 auto"
 											><Icon icon={p ? I.phUserFill : I.phShuffleBold} size={22} /></span
 										>{/if}<span
 										style="display:block;margin-top:8px;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
@@ -1993,7 +2053,7 @@
 					<div>
 						<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								3 · Día y horario
 							</div>
@@ -2029,9 +2089,11 @@
 									onclick={() => reserva.elegirDia(d.dia)}
 									style="padding:9px 0;text-align:center;cursor:pointer;font-family:inherit;min-width:0;border:2px solid {on
 										? 'var(--acento, #E6FF4D)'
-										: '#2A2A2A'};background:{on ? 'var(--acento, #E6FF4D)' : '#111'};color:{on
-										? '#111'
-										: '#F2F2F2'}"
+										: 'var(--tc-2a2a2a, #2A2A2A)'};background:{on
+										? 'var(--acento, #E6FF4D)'
+										: 'var(--tc-111111, #111)'};color:{on
+										? 'var(--tc-111111, #111)'
+										: 'var(--tc-f2f2f2, #F2F2F2)'}"
 									><span
 										style="display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase"
 										>{d.w}</span
@@ -2072,9 +2134,11 @@
 													? 'none'
 													: 'line-through'};border:2px solid {on
 													? 'var(--acento, #E6FF4D)'
-													: '#2A2A2A'};background:{on ? 'var(--acento, #E6FF4D)' : '#111'};color:{on
-													? '#111'
-													: '#F2F2F2'}">{h.hora}</button
+													: 'var(--tc-2a2a2a, #2A2A2A)'};background:{on
+													? 'var(--acento, #E6FF4D)'
+													: 'var(--tc-111111, #111)'};color:{on
+													? 'var(--tc-111111, #111)'
+													: 'var(--tc-f2f2f2, #F2F2F2)'}">{h.hora}</button
 											>{/each}
 									</div>
 								</div>{/each}
@@ -2083,17 +2147,17 @@
 					{#if reserva.listo}
 						<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								4 · Tus datos
 							</div>
 							<div
-								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
 								{#each [['nombre', 'Nombre', 'text', 'name'], ['telefono', 'WhatsApp', 'tel', 'tel'], ['email', 'Email', 'email', 'email']] as [n, l, tipo, ac] (n)}
-									<label style="display:block;padding:11px 13px;background:#111"
+									<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 										><span
-											style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+											style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 											>{l}</span
 										><input
 											name={n}
@@ -2101,7 +2165,7 @@
 											autocomplete={ac as 'email'}
 											required
 											maxlength="120"
-											style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+											style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 										/></label
 									>
 								{/each}
@@ -2109,15 +2173,15 @@
 						</div>
 						<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								Pago
 							</div>
 							<div
-								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 							>
 								<div
-									style="display:flex;align-items:center;gap:12px;width:100%;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:var(--acento, #E6FF4D);color:#111;text-align:left;cursor:pointer;font-family:inherit"
+									style="display:flex;align-items:center;gap:12px;width:100%;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);text-align:left;cursor:pointer;font-family:inherit"
 								>
 									<span
 										style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
@@ -2145,9 +2209,11 @@
 						</div>
 					{/if}
 				</div>
-				<div style="padding:clamp(22px,3.4cqw,44px);background:#161616;min-width:0">
+				<div
+					style="padding:clamp(22px,3.4cqw,44px);background:var(--tc-161616, #161616);min-width:0"
+				>
 					<div
-						style="font-family:'Archivo Black',sans-serif;font-size:26px;text-transform:uppercase"
+						style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:26px;text-transform:uppercase"
 					>
 						Tu reserva
 					</div>
@@ -2161,31 +2227,34 @@
 							<div style="font-size:15px;font-weight:700">
 								{reserva.conQuien ? `Con ${reserva.conQuien}` : 'Con el primero libre'}
 							</div>
-							<div style="font-size:13px;color:#8A8A8A;">
+							<div style="font-size:13px;color:var(--tc-8a8a8a, #8A8A8A);">
 								{reserva.cuando ?? 'Elegí el día y el horario'}
 							</div>
 						</div>
 					</div>
 					{#if reserva.servicio}
 						<div
-							style="margin-top:16px;padding-top:14px;border-top:2px solid #2A2A2A;display:flex;flex-direction:column;gap:8px;font-size:14px"
+							style="margin-top:16px;padding-top:14px;border-top:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:8px;font-size:14px"
 						>
 							<span style="display:flex;justify-content:space-between;gap:10px"
 								><span>{reserva.servicio.nombre}</span><span style="white-space:nowrap"
 									>{fmt(reserva.servicio.precio)}</span
 								></span
-							><span style="display:flex;justify-content:space-between;color:#8A8A8A;"
+							><span
+								style="display:flex;justify-content:space-between;color:var(--tc-8a8a8a, #8A8A8A);"
 								><span>Duración total</span><span>{reserva.duracion}</span></span
 							><span
 								style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"
 								><b>Total</b><b
-									style="font-family:'Archivo Black',sans-serif;font-size:28px;font-weight:400"
+									style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;font-weight:400"
 									>{fmt(reserva.servicio.precio)}</b
 								></span
 							>
 						</div>
 					{/if}
-					<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:#8A8A8A;">
+					<p
+						style="margin:14px 0 0;font-size:13px;line-height:1.5;color:var(--tc-8a8a8a, #8A8A8A);"
+					>
 						{#if reserva.sena}Seña de {fmt(reserva.sena)} para confirmar. Podés cancelar desde el link
 							del turno hasta {anticipacion} antes; la seña te la devuelve la&nbsp;tienda.{:else}No
 							pagás nada ahora. Podés cancelar desde el link del turno hasta {anticipacion}&nbsp;antes.{/if}
@@ -2198,7 +2267,7 @@
 						</div>{/if}
 					<button
 						disabled={!reserva.listo || reservando || tienda.vitrina}
-						style="margin-top:16px;width:100%;padding:20px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 15px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+						style="margin-top:16px;width:100%;padding:20px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 15px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: !reserva.listo
@@ -2214,14 +2283,16 @@
 		<!-- ============ TURNO (no está en el diseño: con las piezas de 'listo') ============ -->
 		{#if pagina === 'turno' && turno}
 			{@const cancelado = turno.estado === 'cancelado'}
-			<section style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid #2A2A2A">
+			<section
+				style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
+			>
 				<div
 					style="display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acento, #E6FF4D)"
 				>
 					<Icon icon={cancelado ? I.phCalendarX : I.phCheckBold} size={16} />Turno
 				</div>
 				<h1
-					style="margin:20px 0 0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
+					style="margin:20px 0 0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
 				>
 					{cancelado
 						? 'Turno cancelado'
@@ -2229,7 +2300,9 @@
 							? `Falta la seña, ${turno.nombre}`
 							: `¡Listo, ${turno.nombre}!`}
 				</h1>
-				<p style="margin:20px 0 0;font-size:17px;line-height:1.5;color:#BDBDBD;max-width:460px">
+				<p
+					style="margin:20px 0 0;font-size:17px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD);max-width:460px"
+				>
 					{#if cancelado}Liberamos el horario{turno.senaPagada
 							? '. La seña te la devuelve la tienda por Mercado Pago'
 							: ''}. Si querés, reservá&nbsp;otro.{:else if turno.estado === 'reservado'}Te
@@ -2245,7 +2318,7 @@
 							: 'El pago de la seña no salió. Podés reservar de nuevo.'}
 					</div>{/if}
 				<div
-					style="margin-top:22px;padding:clamp(18px,3cqw,28px);background:#161616;border:2px solid #2A2A2A;max-width:620px"
+					style="margin-top:22px;padding:clamp(18px,3cqw,28px);background:var(--tc-161616, #161616);border:2px solid var(--tc-2a2a2a, #2A2A2A);max-width:620px"
 				>
 					<div
 						style="font-size:16px;font-weight:700;text-decoration:{cancelado
@@ -2254,7 +2327,7 @@
 					>
 						{cuandoLargo(turno.inicio)} con {turno.profesional}
 					</div>
-					<div style="margin-top:4px;font-size:14px;color:#8A8A8A;">
+					<div style="margin-top:4px;font-size:14px;color:var(--tc-8a8a8a, #8A8A8A);">
 						{turno.servicio} · {fmt(turno.precio)}{turno.sena
 							? ` · seña ${fmt(turno.sena)}${turno.senaPagada ? ' pagada' : ''}`
 							: ' · pagás en el local'}
@@ -2274,7 +2347,7 @@
 							href="{base}/turno/{turno.codigo}/turno.ics"
 							download="turno.ics"
 							data-sveltekit-reload
-							style="display:flex;align-items:center;gap:8px;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
+							style="display:flex;align-items:center;gap:8px;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
 							><Icon icon={I.phCalendarPlusBold} size={17} />Agregar al calendario</a
 						>{/if}
 					{#if turno.cancelable}
@@ -2292,23 +2365,23 @@
 						>
 							{#if seguro}<button
 									disabled={cancelando}
-									style="display:inline-block;padding:16px 26px;border:2px solid #2A2A2A;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
+									style="display:inline-block;padding:16px 26px;border:2px solid var(--tc-2a2a2a, #2A2A2A);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
 									>Sí, cancelar el turno</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguro = true)}
-									style="display:inline-block;padding:16px 26px;border:2px solid #2A2A2A;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
+									style="display:inline-block;padding:16px 26px;border:2px solid var(--tc-2a2a2a, #2A2A2A);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
 									>Cancelar turno</button
 								>{/if}
 						</form>
 					{:else if cancelado}<a
 							href="{base}/turnos"
-							style="padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
+							style="padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
 							>Reservar otro</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="display:inline-block;padding:16px 26px;border:2px solid #2A2A2A;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
+						style="display:inline-block;padding:16px 26px;border:2px solid var(--tc-2a2a2a, #2A2A2A);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer"
 						>Volver a la tienda</a
 					>
 				</div>
@@ -2330,11 +2403,11 @@
 			<form
 				method="POST"
 				use:alta.form
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
 				<input type="hidden" name="entrega" value={alta.entrega} />
 				<div
-					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:24px;min-width:0"
+					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:24px;min-width:0"
 				>
 					<div>
 						<div
@@ -2343,33 +2416,33 @@
 							Suscripción · {CADA[plan.frecuencia]}
 						</div>
 						<h1
-							style="margin:16px 0 0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
+							style="margin:16px 0 0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
 						>
 							{plan.nombre}
 						</h1>
 						{#if plan.descripcion}<p
-								style="margin:16px 0 0;font-size:17px;line-height:1.5;color:#BDBDBD;max-width:460px;text-wrap:pretty"
+								style="margin:16px 0 0;font-size:17px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD);max-width:460px;text-wrap:pretty"
 							>
 								{plan.descripcion}
 							</p>{/if}
 					</div>
 					{#if planes.length > 1}<div>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 							>
 								Elegí tu plan
 							</div>
 							<div
-								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+								style="margin-top:12px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 							>
 								{#each planes as p (p.id)}{@const on = p.id === plan.id}<a
 										href="{base}/suscripciones/{p.id}"
 										aria-current={on ? 'page' : undefined}
-										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:{on
+										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
 											? 'var(--acento, #E6FF4D)'
-											: '#111'};color:{on
-											? '#111'
-											: '#F2F2F2'};text-align:left;cursor:pointer;font-family:inherit;text-decoration:none"
+											: 'var(--tc-111111, #111)'};color:{on
+											? 'var(--tc-111111, #111)'
+											: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:left;cursor:pointer;font-family:inherit;text-decoration:none"
 										><span
 											style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
 											>{#if on}<span style="width:8px;height:8px;background:currentColor"
@@ -2385,16 +2458,16 @@
 						</div>{/if}
 					<div>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 						>
 							Tus datos
 						</div>
 						<div
-							style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+							style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 						>
-							<label style="display:block;padding:11px 13px;background:#111"
+							<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 								><span
-									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 									>Email</span
 								><input
 									name="email"
@@ -2402,11 +2475,11 @@
 									autocomplete="email"
 									required
 									maxlength="120"
-									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 								/></label
-							><label style="display:block;padding:11px 13px;background:#111"
+							><label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 								><span
-									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 									>Nombre y apellido</span
 								><input
 									name="nombre"
@@ -2414,11 +2487,11 @@
 									autocomplete="name"
 									required
 									maxlength="80"
-									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 								/></label
-							><label style="display:block;padding:11px 13px;background:#111"
+							><label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 								><span
-									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+									style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 									>WhatsApp</span
 								><input
 									name="telefono"
@@ -2426,19 +2499,19 @@
 									autocomplete="tel"
 									required
 									maxlength="20"
-									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+									style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 								/></label
 							>
 						</div>
 					</div>
 					<div>
 						<div
-							style="font-family:'Archivo Black',sans-serif;font-size:28px;text-transform:uppercase"
+							style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;text-transform:uppercase"
 						>
 							Cómo te llega
 						</div>
 						<div
-							style="margin-top:12px;display:flex;flex-direction:column;border:2px solid #2A2A2A;border-bottom:0"
+							style="margin-top:12px;display:flex;flex-direction:column;border:2px solid var(--tc-2a2a2a, #2A2A2A);border-bottom:0"
 							role="radiogroup"
 							aria-label="Cómo te llega"
 						>
@@ -2448,11 +2521,11 @@
 										role="radio"
 										aria-checked={on}
 										onclick={() => (alta.entrega = id)}
-										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid #2A2A2A;background:{on
+										style="display:flex;align-items:center;gap:12px;padding:15px;border:0;border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);background:{on
 											? 'var(--acento, #E6FF4D)'
-											: '#111'};color:{on
-											? '#111'
-											: '#F2F2F2'};text-align:left;cursor:pointer;font-family:inherit;text-decoration:none"
+											: 'var(--tc-111111, #111)'};color:{on
+											? 'var(--tc-111111, #111)'
+											: 'var(--tc-f2f2f2, #F2F2F2)'};text-align:left;cursor:pointer;font-family:inherit;text-decoration:none"
 										><span
 											style="width:18px;height:18px;border:2px solid currentColor;display:grid;place-items:center;flex:none"
 											>{#if on}<span style="width:8px;height:8px;background:currentColor"
@@ -2465,11 +2538,11 @@
 									>{/if}{/each}
 						</div>
 						{#if alta.entrega === 'envio'}<div
-								style="margin-top:8px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:2px;background:#2A2A2A;border:2px solid #2A2A2A"
+								style="margin-top:8px;display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:2px;background:var(--tc-2a2a2a, #2A2A2A);border:2px solid var(--tc-2a2a2a, #2A2A2A)"
 							>
-								<label style="display:block;padding:11px 13px;background:#111"
+								<label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 									><span
-										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 										>Código postal</span
 									><input
 										name="cp"
@@ -2477,11 +2550,11 @@
 										autocomplete="postal-code"
 										inputmode="numeric"
 										maxlength="8"
-										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 									/></label
-								><label style="display:block;padding:11px 13px;background:#111"
+								><label style="display:block;padding:11px 13px;background:var(--tc-111111, #111)"
 									><span
-										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8A"
+										style="display:block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 										>Dirección (calle, número, piso)</span
 									><input
 										name="direccion"
@@ -2489,7 +2562,7 @@
 										autocomplete="street-address"
 										required
 										maxlength="160"
-										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px 'Archivo';color:#F2F2F2;outline:none"
+										style="width:100%;margin-top:3px;padding:0;border:0;background:transparent;font:400 15px var(--tf-texto,'Archivo');color:var(--tc-f2f2f2, #F2F2F2);outline:none"
 									/></label
 								>
 							</div>{/if}
@@ -2501,49 +2574,53 @@
 							{error}
 						</div>{/if}
 				</div>
-				<div style="padding:clamp(22px,3.4cqw,44px);background:#161616;min-width:0">
+				<div
+					style="padding:clamp(22px,3.4cqw,44px);background:var(--tc-161616, #161616);min-width:0"
+				>
 					<div
-						style="font-family:'Archivo Black',sans-serif;font-size:26px;text-transform:uppercase"
+						style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:26px;text-transform:uppercase"
 					>
 						{plan.nombre}
 					</div>
-					{#if queIncluye(plan)}<div style="margin-top:6px;font-size:13.5px;color:#8A8A8A">
+					{#if queIncluye(plan)}<div
+							style="margin-top:6px;font-size:13.5px;color:var(--tc-8a8a8a, #8A8A8A)"
+						>
 							{queIncluye(plan)}
 						</div>{/if}
 					{#if caja.fotos.length}<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
 							{#each caja.fotos.slice(0, 6) as f, i (i)}<img
 									src={img(f, 120, 140)}
 									alt=""
-									style="width:56px;height:66px;object-fit:cover;background:#1E1E1E"
+									style="width:56px;height:66px;object-fit:cover;background:var(--tc-1e1e1e, #1E1E1E)"
 								/>{/each}
 						</div>{/if}
 					<div
-						style="margin-top:16px;padding-top:14px;border-top:2px solid #2A2A2A;display:flex;flex-direction:column;gap:8px;font-size:14px"
+						style="margin-top:16px;padding-top:14px;border-top:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:8px;font-size:14px"
 					>
 						{#if caja.ahorro}<span style="display:flex;justify-content:space-between;gap:8px"
 								><span
 									>{caja.unidades} {caja.unidades === 1 ? 'producto' : 'productos'} sueltos</span
-								><s style="color:#8A8A8A">{fmt(caja.sueltos)}</s></span
+								><s style="color:var(--tc-8a8a8a, #8A8A8A)">{fmt(caja.sueltos)}</s></span
 							><span
-								style="display:flex;justify-content:space-between;gap:8px;color:#B9F27C;font-weight:600"
+								style="display:flex;justify-content:space-between;gap:8px;color:var(--tc-b9f27c, #B9F27C);font-weight:600"
 								><span>Suscripto ahorrás {caja.pct}%</span><span>− {fmt(caja.ahorro)}</span></span
 							>{/if}<span style="display:flex;justify-content:space-between;gap:8px"
 							><span>{alta.entrega === 'envio' ? 'Envío' : 'Retiro'}</span><span
-								style="color:#B9F27C;font-weight:600"
+								style="color:var(--tc-b9f27c, #B9F27C);font-weight:600"
 								>{alta.entrega === 'envio' ? 'Incluido' : 'En el local'}</span
 							></span
 						>
 						<span
 							style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:6px"
 							><b style="text-transform:uppercase">{porPeriodo(plan.frecuencia)}</b><b
-								style="font-family:'Archivo Black',sans-serif;font-size:28px;font-weight:400"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:28px;font-weight:400"
 								>{fmt(plan.precio)}</b
 							></span
 						>
 					</div>
 					<button
 						disabled={alta.enviando || tienda.vitrina || plan.agotado}
-						style="margin-top:16px;width:100%;padding:20px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 15px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+						style="margin-top:16px;width:100%;padding:20px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 15px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 						>{tienda.vitrina
 							? 'Es una tienda de ejemplo'
 							: plan.agotado
@@ -2551,7 +2628,7 @@
 								: 'Suscribirme'}</button
 					>
 					<div
-						style="margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:#8A8A8A"
+						style="margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--tc-8a8a8a, #8A8A8A)"
 					>
 						<span style="display:flex;gap:8px"
 							><Icon icon={I.phCheck} size={16} style="flex:none" />{demo
@@ -2580,33 +2657,37 @@
 					: suscripcion.estado === 'pausada'
 						? I.phPauseFill
 						: I.phCheckBold}
-			<section style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid #2A2A2A">
+			<section
+				style="padding:clamp(22px,3.4cqw,44px);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
+			>
 				<div
 					style="display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acento, #E6FF4D)"
 				>
 					<Icon icon={icono} size={16} />Tu suscripción
 				</div>
 				<h1
-					style="margin:20px 0 0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
+					style="margin:20px 0 0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:clamp(40px,6cqw,84px);line-height:.9;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
 				>
 					{tx.titulo}
 				</h1>
 				<p
-					style="margin:20px 0 0;font-size:17px;line-height:1.5;color:#BDBDBD;max-width:460px;text-wrap:pretty"
+					style="margin:20px 0 0;font-size:17px;line-height:1.5;color:var(--tc-bdbdbd, #BDBDBD);max-width:460px;text-wrap:pretty"
 				>
 					{tx.texto}
 				</p>
 				<div
-					style="margin-top:22px;padding:clamp(18px,3cqw,28px);background:#161616;border:2px solid #2A2A2A;max-width:620px"
+					style="margin-top:22px;padding:clamp(18px,3cqw,28px);background:var(--tc-161616, #161616);border:2px solid var(--tc-2a2a2a, #2A2A2A);max-width:620px"
 				>
 					<div style="font-size:16px;font-weight:700">{suscripcion.plan}</div>
-					<div style="margin-top:4px;font-size:14px;color:#8A8A8A">
+					<div style="margin-top:4px;font-size:14px;color:var(--tc-8a8a8a, #8A8A8A)">
 						{fmt(suscripcion.precio)}
 						{CADA[suscripcion.frecuencia]}{suscripcion.cobros
 							? ` · ${suscripcion.cobros} ${suscripcion.cobros === 1 ? 'cobro' : 'cobros'}`
 							: ''}
 					</div>
-					{#if suscripcion.incluye}<div style="margin-top:4px;font-size:14px;color:#8A8A8A">
+					{#if suscripcion.incluye}<div
+							style="margin-top:4px;font-size:14px;color:var(--tc-8a8a8a, #8A8A8A)"
+						>
 							{suscripcion.incluye}
 						</div>{/if}
 					{#if suscripcion.estado === 'activa' && suscripcion.proximoCobro}<div
@@ -2643,7 +2724,7 @@
 						>
 							<button
 								disabled={cambiando}
-								style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+								style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 								>{puede.pausar ? 'Pausar' : 'Reanudar'}</button
 							>
 						</form>{/if}
@@ -2661,22 +2742,22 @@
 						>
 							{#if seguroBaja}<button
 									disabled={cambiando}
-									style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+									style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 									>Sí, darla de baja</button
 								>{:else}<button
 									type="button"
 									onclick={() => (seguroBaja = true)}
-									style="display:inline-block;padding:16px 26px;border:2px solid #2A2A2A;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
+									style="display:inline-block;padding:16px 26px;border:2px solid var(--tc-2a2a2a, #2A2A2A);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;cursor:pointer"
 									>Dar de baja</button
 								>{/if}
 						</form>{:else}<a
 							href="{base}/suscripciones/{suscripcion.planId}"
-							style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:#111;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+							style="display:inline-block;padding:18px 28px;border:0;background:var(--acento, #E6FF4D);color:var(--tc-111111, #111);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 							>Volver a suscribirme</a
 						>{/if}
 					<a
 						href={base || '/'}
-						style="display:inline-block;padding:16px 26px;border:2px solid #2A2A2A;background:transparent;color:#F2F2F2;font:800 14px 'Archivo';letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
+						style="display:inline-block;padding:16px 26px;border:2px solid var(--tc-2a2a2a, #2A2A2A);background:transparent;color:var(--tc-f2f2f2, #F2F2F2);font:800 14px var(--tf-texto,'Archivo');letter-spacing:.12em;text-transform:uppercase;text-decoration:none"
 						>Volver a la tienda</a
 					>
 				</div>
@@ -2703,7 +2784,7 @@
 			<section
 				style="position:relative;min-height:{tienda.portada.foto
 					? 'clamp(420px,56cqw,720px)'
-					: 'clamp(220px,26cqw,340px)'};border-bottom:2px solid #2A2A2A;overflow:hidden;background:#1E1E1E"
+					: 'clamp(220px,26cqw,340px)'};border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);overflow:hidden;background:var(--tc-1e1e1e, #1E1E1E)"
 			>
 				{#if tienda.portada.foto}<img
 						src={img(tienda.portada.foto, 1800)}
@@ -2719,7 +2800,7 @@
 							{tienda.ciudad}
 						</div>{/if}
 					<h1
-						style="margin:10px 0 0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:min(clamp(50px,9cqw,136px),{cabe(
+						style="margin:10px 0 0;font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-weight:400;font-size:min(clamp(50px,9cqw,136px),{cabe(
 							tienda.portada.titulo,
 							92
 						)});line-height:.84;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere"
@@ -2729,9 +2810,11 @@
 				</div>
 			</section>
 			<section
-				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));border-bottom:2px solid #2A2A2A"
+				style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 			>
-				<div style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A">
+				<div
+					style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A)"
+				>
 					<p style="margin:0;font-size:clamp(19px,2.2cqw,26px);line-height:1.4;font-weight:500">
 						{tienda.nombre}{tienda.ciudad ? `, desde ${tienda.ciudad}` : ''}. {comoLlega(
 							tienda.envios
@@ -2742,15 +2825,15 @@
 						style="display:grid;grid-template-columns:repeat({cifras.length},minmax(0,1fr))"
 					>
 						{#each cifras as s (s.t)}<div
-								style="padding:clamp(18px,2.6cqw,32px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;justify-content:flex-end;min-width:0"
+								style="padding:clamp(18px,2.6cqw,32px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;justify-content:flex-end;min-width:0"
 							>
 								<div
-									style="font-family:'Archivo Black',sans-serif;font-size:clamp(34px,4.4cqw,58px);line-height:.9;color:var(--acento, #E6FF4D)"
+									style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:clamp(34px,4.4cqw,58px);line-height:.9;color:var(--acento, #E6FF4D)"
 								>
 									{s.v}
 								</div>
 								<div
-									style="margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8A8A8A"
+									style="margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tc-8a8a8a, #8A8A8A)"
 								>
 									{s.t}
 								</div>
@@ -2759,14 +2842,14 @@
 			</section>
 			{#if tienda.direccion || whatsapp}
 				<section
-					style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));border-bottom:2px solid #2A2A2A"
+					style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A)"
 				>
 					{#if tienda.direccion}
 						<div
-							style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid #2A2A2A;display:flex;flex-direction:column;gap:14px"
+							style="padding:clamp(22px,3.4cqw,44px);border-right:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;flex-direction:column;gap:14px"
 						>
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:32px;text-transform:uppercase"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:32px;text-transform:uppercase"
 							>
 								{tienda.envios.retiro ? 'Showroom' : 'Dónde estamos'}
 							</div>
@@ -2790,7 +2873,7 @@
 					{#if whatsapp}
 						<div style="padding:clamp(22px,3.4cqw,44px);display:flex;flex-direction:column;gap:2px">
 							<div
-								style="font-family:'Archivo Black',sans-serif;font-size:32px;text-transform:uppercase;margin-bottom:12px"
+								style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:32px;text-transform:uppercase;margin-bottom:12px"
 							>
 								Hablemos
 							</div>
@@ -2798,7 +2881,7 @@
 								href={wa('¡Hola!')}
 								target="_blank"
 								rel="noopener"
-								style="display:flex;align-items:center;gap:12px;padding:16px;background:#25D366;color:#111;text-decoration:none;font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase"
+								style="display:flex;align-items:center;gap:12px;padding:16px;background:#25D366;color:var(--tc-111111, #111);text-decoration:none;font:800 13px var(--tf-texto,'Archivo');letter-spacing:.1em;text-transform:uppercase"
 								><Icon icon={I.phWhatsappLogoFill} size={22} />{tienda.whatsapp}</a
 							>
 						</div>
@@ -2808,10 +2891,10 @@
 		{/if}
 
 		<!-- footer -->
-		<footer style="padding:clamp(28px,4cqw,48px) clamp(14px,2.4cqw,28px) 22px">
+		<footer data-t-pie style="padding:clamp(28px,4cqw,48px) clamp(14px,2.4cqw,28px) 22px">
 			<div
 				aria-hidden="true"
-				style="font-family:'Archivo Black',sans-serif;font-size:clamp(36px,{pieNombre}cqw,320px);line-height:.78;letter-spacing:-.06em;color:#1C1C1C;user-select:none;text-transform:uppercase;overflow-wrap:break-word"
+				style="font-family:var(--tf-titulos,'Archivo Black'),sans-serif;font-size:clamp(36px,{pieNombre}cqw,320px);line-height:.78;letter-spacing:-.06em;color:var(--tc-1c1c1c, #1C1C1C);user-select:none;text-transform:uppercase;overflow-wrap:break-word"
 			>
 				{tienda.nombre}
 			</div>
@@ -2824,8 +2907,9 @@
 						<b
 							style="font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acento, #E6FF4D);margin-bottom:4px"
 							>{f.t}</b
-						>{#each f.l as l (l.t)}<a href={l.href} style="color:#BDBDBD;text-decoration:none"
-								>{l.t}</a
+						>{#each f.l as l (l.t)}<a
+								href={l.href}
+								style="color:var(--tc-bdbdbd, #BDBDBD);text-decoration:none">{l.t}</a
 							>{/each}
 					</div>{/each}
 			</div>
@@ -2847,7 +2931,11 @@
 										style="color:#0A2D6E">Mercado Pago</span
 									></span
 								>{/if}{#if tienda.cobros.datosTransferencia}<span
-									><Icon icon={I.phBankFill} size={14} style="color:#2F7A43" />Transferencia</span
+									><Icon
+										icon={I.phBankFill}
+										size={14}
+										style="color:var(--tc-2f7a43, #2F7A43)"
+									/>Transferencia</span
 								>{/if}
 						</div>
 					</div>
@@ -2864,10 +2952,17 @@
 									style="width:14px;height:14px;border-radius:3px;background:#FFD100;display:inline-block"
 								></span><span style="color:#00205B">Correo Argentino</span></span
 							>{/if}{#if tienda.envios.moto}<span
-								><Icon icon={I.phMopedFill} size={15} style="color:#1A1A1A" />Envío en moto</span
+								><Icon
+									icon={I.phMopedFill}
+									size={15}
+									style="color:var(--tc-1a1a1a, #1A1A1A)"
+								/>Envío en moto</span
 							>{/if}{#if tienda.envios.retiro}<span
-								><Icon icon={I.phStorefrontFill} size={14} style="color:#1A1A1A" />Retiro en el
-								local</span
+								><Icon
+									icon={I.phStorefrontFill}
+									size={14}
+									style="color:var(--tc-1a1a1a, #1A1A1A)"
+								/>Retiro en el local</span
 							>{/if}
 					</div>
 				</div>
@@ -2879,15 +2974,23 @@
 					</div>
 					<div class="sellos">
 						<span
-							><Icon icon={I.phLockSimpleFill} size={14} style="color:#2F7A43" />Sitio seguro SSL</span
+							><Icon
+								icon={I.phLockSimpleFill}
+								size={14}
+								style="color:var(--tc-2f7a43, #2F7A43)"
+							/>Sitio seguro SSL</span
 						><span
-							><Icon icon={I.phShieldCheckFill} size={14} style="color:#1A1A1A" />Compra protegida</span
+							><Icon
+								icon={I.phShieldCheckFill}
+								size={14}
+								style="color:var(--tc-1a1a1a, #1A1A1A)"
+							/>Compra protegida</span
 						>
 					</div>
 				</div>
 			</div>
 			<div
-				style="margin-top:30px;padding-top:14px;border-top:2px solid #2A2A2A;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E6E6E"
+				style="margin-top:30px;padding-top:14px;border-top:2px solid var(--tc-2a2a2a, #2A2A2A);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tc-6e6e6e, #6E6E6E)"
 			>
 				<span
 					>© {new Date().getFullYear()}
@@ -2925,6 +3028,7 @@
 					>Tienda creada con <b style="font-weight:800;letter-spacing:-.02em">Tu Local Web</b></a
 				>
 			</div>
+			<PieEstilo {tienda} />
 		</footer>
 
 		{#if whatsapp && pagina !== 'checkout'}<a
@@ -2932,7 +3036,7 @@
 				target="_blank"
 				rel="noopener"
 				aria-label="Escribinos por WhatsApp"
-				style="position:fixed;right:18px;bottom:18px;z-index:30;width:56px;height:56px;background:#25D366;color:#111;display:grid;place-items:center;border:2px solid #111;box-shadow:4px 4px 0 var(--acento, #E6FF4D)"
+				style="position:fixed;right:18px;bottom:18px;z-index:30;width:56px;height:56px;background:#25D366;color:var(--tc-111111, #111);display:grid;place-items:center;border:2px solid var(--tc-111111, #111);box-shadow:4px 4px 0 var(--acento, #E6FF4D)"
 				><Icon icon={I.phWhatsappLogoFill} size={28} /></a
 			>{/if}
 	</div>
@@ -2955,10 +3059,10 @@
 		}
 	}
 	.celda {
-		background: #111;
+		background: var(--tc-111111, #111);
 	}
 	.celda:hover {
-		background: #161616;
+		background: var(--tc-161616, #161616);
 	}
 	.zoom :global(img) {
 		transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.1, 1);
@@ -2987,7 +3091,7 @@
 		padding: 0 9px;
 		border-radius: 6px;
 		background: #fff;
-		color: #1a1a1a;
+		color: var(--tc-1a1a1a, #1a1a1a);
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
 		font:
 			700 11.5px 'Instrument Sans',

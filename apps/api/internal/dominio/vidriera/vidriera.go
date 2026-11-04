@@ -108,9 +108,11 @@ type Tienda struct {
 	Logo string `json:"logo"`
 	// Compartir: título, descripción y foto propia de la vista previa al compartir (vacíos: lo sugerido).
 	Compartir Compartir `json:"compartir"`
-	Ciudad    string    `json:"ciudad"`
-	Direccion string    `json:"direccion"`
-	Whatsapp  string    `json:"whatsapp"`
+	// Estilo: lo de Mi tienda › Estilo, validado al guardar (mitienda.Estilo); {} si no cambió nada.
+	Estilo    json.RawMessage `json:"estilo"`
+	Ciudad    string          `json:"ciudad"`
+	Direccion string          `json:"direccion"`
+	Whatsapp  string          `json:"whatsapp"`
 	// Política de cambios y devoluciones (Configuración › Negocio); vacía: el texto legal base.
 	Politica    string            `json:"politica"`
 	Categorias  []Categoria       `json:"categorias"`
@@ -255,11 +257,16 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			} `json:"secciones"`
 			Paleta                      int `json:"paleta"`
 			Titulo, Lema, Portada, Logo string
-			CompartirTitulo             string `json:"compartirTitulo"`
-			CompartirDescripcion        string `json:"compartirDescripcion"`
-			CompartirFoto               string `json:"compartirFoto"`
+			CompartirTitulo             string          `json:"compartirTitulo"`
+			CompartirDescripcion        string          `json:"compartirDescripcion"`
+			CompartirFoto               string          `json:"compartirFoto"`
+			Estilo                      json.RawMessage `json:"estilo"`
 		}
+		out.Estilo = json.RawMessage(`{}`)
 		if json.Unmarshal(diseno, &d) == nil {
+			if len(d.Estilo) > 0 && string(d.Estilo) != "null" {
+				out.Estilo = d.Estilo
+			}
 			miPortada.Titulo, miPortada.Lema, miPortada.Portada = d.Titulo, d.Lema, d.Portada
 			out.Logo = d.Logo
 			out.Compartir = Compartir{d.CompartirTitulo, d.CompartirDescripcion, d.CompartirFoto}

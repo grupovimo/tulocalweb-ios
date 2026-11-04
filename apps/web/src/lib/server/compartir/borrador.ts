@@ -17,6 +17,8 @@ export function conBorrador(t: TiendaPublica, m: MiTienda): TiendaPublica {
 		...t,
 		plantilla: m.plantillaId,
 		paleta: m.diseno.paleta,
+		secciones: m.diseno.secciones.filter((s) => s.visible).map((s) => s.id),
+		estilo: m.diseno.estilo ?? {},
 		logo: m.diseno.logo ?? '',
 		portada: {
 			titulo: m.vista.portada.titulo,
