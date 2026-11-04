@@ -1,6 +1,7 @@
 # Compila la app de iPhone de Tu Local Web, la firma con la clave de App Store Connect y la sube a
 # TestFlight. Nada se compila en la Mac (decisión del 31/10). Se corre a mano (Actions › testflight ›
-# Run workflow) o con `gh workflow run testflight`. El número de build es el número de corrida.
+# Run workflow) o con `gh workflow run testflight`. El número de build es el número de corrida más
+# BUILD_BASE (variable del repo): grupovimo/tulocalweb-ios, que compila desde el 4/11, arranca en 100.
 name: testflight
 on:
   workflow_dispatch:
@@ -58,7 +59,7 @@ jobs:
           set -o pipefail
           xcodebuild -project TuLocalWeb.xcodeproj -scheme TuLocalWeb -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/TuLocalWeb.xcarchive" \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION=$(( ${{ github.run_number }} + ${{ vars.BUILD_BASE || 0 }} )) \
             DEVELOPMENT_TEAM=M6935MSNQB \
             archive | tee archive.log | xcbeautify --renderer github-actions
       - name: Subir a TestFlight
