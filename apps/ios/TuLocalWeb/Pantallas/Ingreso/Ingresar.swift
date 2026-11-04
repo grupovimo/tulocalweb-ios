@@ -241,12 +241,33 @@ struct Ingresar: View {
             Haptico.exito()
         } catch let e as Clerk.ErrorClerk where e.codigo == "cancelado" {
             return
+        } catch let e as Clerk.ErrorClerk {
+            Haptico.error()
+            error = Ingresar.mensajeClerk(e.codigo, apple: apple)
         } catch let e as ErrorApi {
             Haptico.error()
             error = e.detalle
         } catch {
             Haptico.error()
             self.error = "No pudimos completar el ingreso. Probá de nuevo."
+        }
+    }
+}
+
+extension Ingresar {
+    /// Lo que se le dice a la persona cuando Clerk no deja entrar (antes se veía como si no pasara nada).
+    static func mensajeClerk(_ codigo: String, apple: Bool) -> String {
+        let quien = apple ? "Apple" : "Google"
+        if codigo.hasPrefix("sin_sesion_missing_requirements") {
+            return "Tu cuenta de \(quien) no compartió el email. Probá de nuevo y elegí compartirlo, o entrá con tu email."
+        }
+        switch codigo {
+        case "authorization_invalid", "oauth_token_invalid", "oauth_identification_claim_missing":
+            return "\(quien) no pudo confirmar tu cuenta. Probá de nuevo en un rato o entrá con tu email."
+        case "sin_clave", "clerk_no_responde":
+            return "No pudimos conectar con el ingreso. Revisá tu conexión y probá de nuevo."
+        default:
+            return "No pudimos completar el ingreso con \(quien) (\(codigo)). Probá de nuevo o entrá con tu email."
         }
     }
 }

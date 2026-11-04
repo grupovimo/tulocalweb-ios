@@ -88,6 +88,8 @@ targets:
         NSFaceIDUsageDescription: "Para entrar a tu tienda y confirmar las acciones sensibles, como cancelar un pedido."
         NSCameraUsageDescription: "Para sacarles fotos a tus productos y escanear códigos."
         NSPhotoLibraryAddUsageDescription: "Para guardar en tus fotos la imagen de tu tienda para estados e historias."
+        NSMicrophoneUsageDescription: "Para dictarle a Tincho lo que querés preguntarle."
+        NSSpeechRecognitionUsageDescription: "Para pasar a texto lo que le dictás a Tincho."
         LSApplicationQueriesSchemes: [whatsapp]
         NSAppTransportSecurity:
           # Sólo para probar contra la API local (http://127.0.0.1:4000) en el simulador.

@@ -1,9 +1,9 @@
 import PhotosUI
 import SwiftUI
 
-/// Editar la tienda online desde el celular: plantilla, estilo, portada (título, lema, foto y logo),
-/// secciones (mostrar y ordenar), cómo se ve al compartir y la dirección. Se guarda como borrador y
-/// se publica (como Mi tienda en el panel web).
+/// Editar la tienda online desde el celular, igual que Mi tienda en el panel web: plantilla, colores,
+/// tipografías, logos, portada, secciones, menú, títulos, anuncio, pie, redes, cómo se ve al
+/// compartir y la dirección. Se guarda como borrador, se mira en la vista previa real y se publica.
 struct MiTiendaEditor: View {
     @Environment(Estado.self) private var estado
     @Environment(\.openURL) private var abrir
@@ -24,7 +24,13 @@ struct MiTiendaEditor: View {
     @State private var guardando = false
     @State private var fotoPortada: PhotosPickerItem?
     @State private var fotoLogo: PhotosPickerItem?
+    @State private var fotoLogoOscuro: PhotosPickerItem?
+    @State private var fotoIcono: PhotosPickerItem?
     @State private var subiendo: String?
+    @State private var estilo = EstiloTienda()
+    @State private var categorias: [String] = []
+    @State private var previa = false
+    @State private var vuelta = 0
     private let plantillas = PlantillaTienda.todas()
 
     struct Seccion: Identifiable, Equatable { var id: String; var visible: Bool }
@@ -62,8 +68,6 @@ struct MiTiendaEditor: View {
                                 }
                             }
                         }
-                        Text("Estilo de colores").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
-                        Segmentado(opciones: [(0, "1"), (1, "2"), (2, "3"), (3, "4")], elegido: $paleta)
                     }
                     TarjetaSeccion(titulo: "Portada", simbolo: "photo.on.rectangle") {
                         CampoTexto(titulo: "Título (vacío: el nombre de la tienda)", texto: $titulo)
@@ -71,6 +75,30 @@ struct MiTiendaEditor: View {
                         HStack(spacing: 10) {
                             selectorFoto("Foto de portada", url: portada, item: $fotoPortada)
                             selectorFoto("Logo", url: logo, item: $fotoLogo)
+                        }
+                    }
+                    TarjetaSeccion(titulo: "Logos", simbolo: "seal") {
+                        HStack(spacing: 10) {
+                            selectorFoto("Logo para fondos oscuros", url: estilo.logoOscuro ?? "", item: $fotoLogoOscuro, oscuro: true)
+                            selectorFoto("Ícono de la pestaña", url: estilo.icono ?? "", item: $fotoIcono)
+                        }
+                        if !logo.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Tamaño del logo · \(estilo.logoAlto.map { "\($0) px" } ?? "el de la plantilla")")
+                                    .estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                                Slider(value: Binding(
+                                    get: { Double(estilo.logoAlto ?? 36) },
+                                    set: { estilo.logoAlto = Int($0) }
+                                ), in: 24...72, step: 2).tint(C.acento)
+                            }
+                        }
+                        if !(estilo.logoOscuro ?? "").isEmpty || !(estilo.icono ?? "").isEmpty {
+                            HStack {
+                                if !(estilo.logoOscuro ?? "").isEmpty { Button("Quitar logo oscuro") { estilo.logoOscuro = nil } }
+                                Spacer()
+                                if !(estilo.icono ?? "").isEmpty { Button("Quitar ícono") { estilo.icono = nil } }
+                            }
+                            .buttonStyle(BotonTexto())
                         }
                     }
                     TarjetaSeccion(titulo: "Secciones", simbolo: "list.bullet.rectangle") {
@@ -91,6 +119,7 @@ struct MiTiendaEditor: View {
                             }
                         }
                     }
+                    EditorEstilo(estilo: $estilo, paleta: $paleta, plantilla: plantilla, categorias: categorias)
                     TarjetaSeccion(titulo: "Al compartir el link", simbolo: "square.and.arrow.up") {
                         CampoTexto(titulo: "Título (vacío: el sugerido)", texto: $compartirTitulo)
                         CampoTexto(titulo: "Descripción", texto: $compartirDescripcion)
@@ -121,6 +150,17 @@ struct MiTiendaEditor: View {
         .task { await cargar() }
         .onChange(of: fotoPortada) { _, i in Task { if let u = await subir(i, que: "portada") { portada = u } } }
         .onChange(of: fotoLogo) { _, i in Task { if let u = await subir(i, que: "logo") { logo = u } } }
+        .onChange(of: fotoLogoOscuro) { _, i in Task { if let u = await subir(i, que: "logo para fondos oscuros") { estilo.logoOscuro = u } } }
+        .onChange(of: fotoIcono) { _, i in Task { if let u = await subir(i, que: "ícono de la pestaña") { estilo.icono = u } } }
+        .sheet(isPresented: $previa) {
+            NavigationStack {
+                VistaPreviaTienda(token: estado.api.token, vuelta: vuelta)
+                    .ignoresSafeArea(edges: .bottom)
+                    .navigationTitle("Así se ve")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { previa = false } } }
+            }
+        }
     }
 
     private var vistaPrevia: some View {
@@ -150,6 +190,9 @@ struct MiTiendaEditor: View {
                     ChipSimple(texto: "Publicada", fondo: C.okFondo, tinta: C.okTinta)
                 }
                 Spacer()
+                Button("Vista previa") { Task { await mirar() } }
+                    .estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
+                    .disabled(guardando || subiendo != nil)
                 Button("Ver tienda") { if let u = urlTienda { abrir(u) } }
                     .estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
             }
@@ -174,7 +217,7 @@ struct MiTiendaEditor: View {
         direccion.isEmpty ? estado.tienda?.url : URL(string: direccion.hasPrefix("http") ? direccion : "https://\(direccion)")
     }
 
-    private func selectorFoto(_ titulo: String, url: String, item: Binding<PhotosPickerItem?>) -> some View {
+    private func selectorFoto(_ titulo: String, url: String, item: Binding<PhotosPickerItem?>, oscuro: Bool = false) -> some View {
         PhotosPicker(selection: item, matching: .images) {
             VStack(spacing: 6) {
                 if subiendo == titulo.lowercased() {
@@ -182,11 +225,12 @@ struct MiTiendaEditor: View {
                 } else if !url.isEmpty {
                     AsyncImage(url: URL(string: url)) { i in i.resizable().scaledToFill() } placeholder: { C.pista }
                         .frame(height: 70).frame(maxWidth: .infinity).clipped()
+                        .background(oscuro ? Color(hex: 0x1C1A17) : .clear)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 } else {
                     Image(systemName: "photo.badge.plus").font(.system(size: 22)).foregroundStyle(C.primarioTexto).frame(height: 70)
                 }
-                Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta)
+                Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity).padding(8)
             .background(C.crema2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -201,7 +245,7 @@ struct MiTiendaEditor: View {
 
     private func subir(_ item: PhotosPickerItem?, que: String) async -> String? {
         guard let item, let d = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: d) else { return nil }
-        subiendo = que == "portada" ? "foto de portada" : "logo"
+        subiendo = que == "portada" ? "foto de portada" : que
         defer { subiendo = nil }
         let escala = min(1, 1600 / max(img.size.width, img.size.height))
         let tam = CGSize(width: img.size.width * escala, height: img.size.height * escala)
@@ -230,11 +274,14 @@ struct MiTiendaEditor: View {
         secciones = diseno["secciones"]?.lista?.compactMap { s in
             s["id"]?.texto.map { Seccion(id: $0, visible: s["visible"]?.bool ?? true) }
         } ?? []
+        estilo = EstiloTienda.desde(diseno["estilo"])
+        categorias = v["vista"]?["categorias"]?.lista?.compactMap { $0.texto } ?? []
         slug = estado.tienda?.slug ?? ""
         cargado = true
     }
 
-    private func guardar(publicar: Bool) async {
+    @discardableResult
+    private func guardar(publicar: Bool, avisar: Bool = true) async -> Bool {
         guardando = true
         defer { guardando = false }
         var d = diseno
@@ -247,6 +294,7 @@ struct MiTiendaEditor: View {
         d["compartirTitulo"] = .texto(compartirTitulo)
         d["compartirDescripcion"] = .texto(compartirDescripcion)
         d["secciones"] = .lista(secciones.map { .objeto(["id": .texto($0.id), "visible": .booleano($0.visible)]) })
+        d["estilo"] = estilo.json
         do {
             try await estado.api.hacer("PUT", "/v1/panel/mi-tienda", ValorJSON.objeto(d))
             // El logo nuevo se ve enseguida en Inicio y en Más (en vez de las iniciales).
@@ -259,12 +307,22 @@ struct MiTiendaEditor: View {
                 estado.avisar("¡Publicamos los cambios! Ahora compartí el link")
             } else {
                 sinPublicar = true
-                estado.avisar("Guardamos el borrador")
+                if avisar { estado.avisar("Guardamos el borrador") }
             }
+            return true
         } catch let e as ErrorApi {
             estado.avisar(e.detalle, ok: false)
         } catch {
             estado.avisar("No pudimos guardar", ok: false)
+        }
+        return false
+    }
+
+    /// Guarda el borrador y abre la tienda de verdad con él.
+    private func mirar() async {
+        if await guardar(publicar: false, avisar: false) {
+            vuelta += 1
+            previa = true
         }
     }
 

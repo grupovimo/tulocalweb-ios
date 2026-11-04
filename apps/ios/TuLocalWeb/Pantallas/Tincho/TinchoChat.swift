@@ -12,6 +12,11 @@ struct TinchoChat: View {
     @State private var escribiendo = false
     @State private var sinConexion = false
     @State private var saludado = false
+    @State private var tarea: Task<Void, Never>?
+    @State private var ultimaPregunta: String?
+    /// La respuesta nueva aparece de a poco, con cursor (6a): su id y cuántos caracteres van.
+    @State private var revelando: (id: UUID, n: Int)?
+    @State private var dictado = Dictado()
     @FocusState private var foco: Bool
 
     struct Mensaje: Identifiable, Equatable {
@@ -41,7 +46,7 @@ struct TinchoChat: View {
                             .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                         }
                         if escribiendo { escribiendoAhora.id("escribiendo") }
-                        if !escribiendo { sugerencias.id("sugerencias") }
+                        if sinConexion && !escribiendo { desenchufado.id("desenchufado") }
                     }
                     .padding(16)
                     .animation(.spring(duration: 0.35), value: mensajes)
@@ -54,6 +59,7 @@ struct TinchoChat: View {
                     if e { withAnimation { lector.scrollTo("escribiendo", anchor: .bottom) } }
                 }
             }
+            if !escribiendo && !sinConexion { sugerencias }
             entrada
         }
         .background(C.fondo.ignoresSafeArea())
@@ -69,6 +75,9 @@ struct TinchoChat: View {
                 preguntar("¿Cómo vengo hoy?", oculta: true)
             }
         }
+        .onChange(of: dictado.texto) { _, t in if dictado.escuchando || !t.isEmpty { texto = t } }
+        .onChange(of: dictado.error) { _, e in if let e { estado.avisar(e, ok: false) } }
+        .onDisappear { dictado.parar() }
         .onChange(of: nav.preguntaTincho) { _, p in
             guard let p else { return }
             nav.preguntaTincho = nil
@@ -125,9 +134,10 @@ struct TinchoChat: View {
         HStack(alignment: .bottom, spacing: 8) {
             avatar
             HStack(spacing: 4) {
+                // 6b: tres puntos accent con opacidades 1 / ,6 / ,3 que van rotando.
                 ForEach(0..<3) { i in
-                    Circle().fill(C.texto3).frame(width: 7, height: 7)
-                        .phaseAnimator([0.3, 1]) { c, f in c.opacity(f) } animation: { _ in .easeInOut(duration: 0.5).delay(Double(i) * 0.15) }
+                    Circle().fill(C.acento).frame(width: 7, height: 7)
+                        .phaseAnimator([0, 1, 2]) { c, f in c.opacity([1, 0.6, 0.3][(f + i) % 3]) } animation: { _ in .easeInOut(duration: 0.4) }
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
@@ -143,7 +153,7 @@ struct TinchoChat: View {
             if !texto.isEmpty {
                 HStack(alignment: .bottom, spacing: 8) {
                     avatar
-                    Text(Self.conFormato(texto)).estilo(.body16).foregroundStyle(C.texto)
+                    textoTincho(m, texto).estilo(.body16).foregroundStyle(C.texto)
                         .textSelection(.enabled)
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(C.superficie, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 6, bottomTrailingRadius: 20, topTrailingRadius: 20, style: .continuous))
@@ -151,7 +161,7 @@ struct TinchoChat: View {
                     Spacer(minLength: 24)
                 }
             }
-            if let r = m.respuesta {
+            if let r = m.respuesta, revelando?.id != m.id {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array((r.bloques ?? []).enumerated()), id: \.offset) { _, b in VistaBloque(bloque: b) }
                     if let acciones = r.acciones, !acciones.isEmpty {
@@ -176,11 +186,18 @@ struct TinchoChat: View {
         }
     }
 
+    /// El texto de Tincho; el de la respuesta nueva, hasta donde va, con el cursor accent.
+    private func textoTincho(_ m: Mensaje, _ texto: String) -> Text {
+        guard let r = revelando, r.id == m.id else { return Text(Self.conFormato(texto)) }
+        return Text(String(texto.prefix(r.n))) + Text("▍").foregroundColor(C.acento)
+    }
+
     private func burbujaPersona(_ m: Mensaje) -> some View {
         HStack {
-            Spacer(minLength: 60)
+            Spacer(minLength: 40)
             Text(m.texto).estilo(.body16).foregroundStyle(.white)
                 .padding(.horizontal, 14).padding(.vertical, 10)
+                .frame(maxWidth: 260, alignment: .trailing)
                 .background(C.primario, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 20, bottomTrailingRadius: 6, topTrailingRadius: 20, style: .continuous))
         }
     }
@@ -189,18 +206,39 @@ struct TinchoChat: View {
     private var sugerencias: some View {
         let ultimas = mensajes.last(where: { $0.deTincho })?.respuesta?.sugerencias ?? []
         let lista = ultimas.isEmpty ? iniciales : ultimas
-        return Fluir {
-            ForEach(lista, id: \.self) { s in
-                Button { preguntar(s) } label: {
-                    Text(s).estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(C.crema2, in: Capsule())
-                        .overlay(Capsule().strokeBorder(C.linea2, lineWidth: 1))
+        // 6a: las sugerencias en chips arriba de la entrada, a mano del pulgar.
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(lista, id: \.self) { s in
+                    Button { preguntar(s) } label: {
+                        Text(s).estilo(.footnoteFuerte).foregroundStyle(C.primarioTinta)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
+                            .background(C.crema2, in: Capsule())
+                            .overlay(Capsule().strokeBorder(C.linea2, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+        }
+        .padding(.top, 8)
+        .background(C.elevado)
+        .transition(.opacity)
+    }
+
+    /// 6c: sin conexión, Tincho desenchufado y «Reintentar».
+    private var desenchufado: some View {
+        VStack(spacing: 10) {
+            Image(Tincho.desenchufado.imagen).resizable().scaledToFit().frame(height: 150)
+            Text("Sin conexión").estilo(.headline).foregroundStyle(C.errorTinta)
+            Text("No pude responderte. Revisá la conexión y probá de nuevo.").estilo(.subhead).foregroundStyle(C.texto2)
+                .multilineTextAlignment(.center)
+            if ultimaPregunta != nil {
+                Button("Reintentar") { if let p = ultimaPregunta { reintentar(p) } }
+                    .buttonStyle(BotonTonal(alto: 40))
             }
         }
-        .padding(.leading, 36)
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
     }
 
     private var entrada: some View {
@@ -214,15 +252,38 @@ struct TinchoChat: View {
                 .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(C.linea2, lineWidth: 1))
                 .submitLabel(.send)
                 .onSubmit { preguntar(texto) }
-            Button { preguntar(texto) } label: {
-                Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(C.primario, in: Circle())
+            if escribiendo {
+                // 6b: mientras piensa, el botón pasa a detener.
+                Button { detener() } label: {
+                    Image(systemName: "stop.fill").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(C.primario, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Detener")
+            } else if texto.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dictado.escuchando {
+                Button {
+                    Haptico.seleccion()
+                    Task { await dictado.alternar() }
+                } label: {
+                    Image(systemName: dictado.escuchando ? "waveform" : "mic.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(dictado.escuchando ? .white : C.primarioTexto)
+                        .symbolEffect(.variableColor.iterative, isActive: dictado.escuchando)
+                        .frame(width: 44, height: 44)
+                        .background(dictado.escuchando ? AnyShapeStyle(C.primario) : AnyShapeStyle(C.crema), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(dictado.escuchando ? "Dejar de dictar" : "Dictar")
+            } else {
+                Button { preguntar(texto) } label: {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(C.primario, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Enviar")
             }
-            .buttonStyle(.plain)
-            .disabled(texto.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || escribiendo)
-            .opacity(texto.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || escribiendo ? 0.5 : 1)
-            .accessibilityLabel("Enviar")
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
         .background(C.elevado)
@@ -238,23 +299,59 @@ struct TinchoChat: View {
     private func preguntar(_ t: String, oculta: Bool = false) {
         let pregunta = t.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !pregunta.isEmpty, !escribiendo else { return }
+        dictado.parar()
         if !oculta { texto = ""; Haptico.seleccion() }
         mensajes.append(Mensaje(deTincho: false, texto: pregunta, oculto: oculta))
+        responder(pregunta, oculta: oculta)
+    }
+
+    /// Pide la respuesta con todo el historial (la última pregunta ya está en mensajes).
+    private func responder(_ pregunta: String, oculta: Bool) {
         let historial = mensajes.map { (rol: $0.deTincho ? "hornero" : "persona", texto: $0.respuesta?.texto ?? $0.texto) }
+        ultimaPregunta = pregunta
         escribiendo = true
-        Task {
+        sinConexion = false
+        tarea = Task {
             do {
                 let r = try await Web.tinchoConBloques(historial, token: estado.api.token)
-                mensajes.append(Mensaje(deTincho: true, texto: r.texto, respuesta: r))
-                sinConexion = false
+                guard !Task.isCancelled else { return }
+                let m = Mensaje(deTincho: true, texto: r.texto, respuesta: r)
+                mensajes.append(m)
+                escribiendo = false
+                await revelar(m)
             } catch {
+                guard !Task.isCancelled else { return }
                 sinConexion = true
-                if !oculta {
-                    mensajes.append(Mensaje(deTincho: true, texto: "No pude responderte ahora. Revisá la conexión y probá de nuevo."))
-                }
+                escribiendo = false
             }
-            escribiendo = false
         }
+    }
+
+    /// La respuesta aparece de a poco (de a palabras), y después sus gráficos y botones.
+    private func revelar(_ m: Mensaje) async {
+        let total = (m.respuesta?.texto ?? m.texto).count
+        guard total > 0, !UIAccessibility.isReduceMotionEnabled else { return }
+        revelando = (m.id, 0)
+        var n = 0
+        while n < total, !Task.isCancelled {
+            n = min(total, n + max(3, total / 60))
+            revelando = (m.id, n)
+            try? await Task.sleep(for: .milliseconds(18))
+        }
+        withAnimation(.easeOut(duration: 0.25)) { revelando = nil }
+    }
+
+    private func detener() {
+        tarea?.cancel()
+        tarea = nil
+        escribiendo = false
+        revelando = nil
+        Haptico.seleccion()
+    }
+
+    private func reintentar(_ p: String) {
+        guard !escribiendo else { return }
+        responder(p, oculta: !mensajes.contains { !$0.oculto })
     }
 
     /// Los botones de Tincho llevan a la pantalla de la app.

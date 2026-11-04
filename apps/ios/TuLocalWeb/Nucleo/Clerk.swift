@@ -101,8 +101,10 @@ final class Clerk {
             (resp, cliente) = try await pedir("/client/sign_ups", "POST", cuerpo: ["transfer": "true"], cliente: cliente)
             sesion = resp.response?.created_session_id ?? ""
         }
+        // Sin sesión no es que la persona canceló (eso lo avisa la hoja de Apple o de Google): Clerk
+        // dejó el intento a medias (por ejemplo, el alta pide algún dato más). Se avisa con su estado.
         guard sesion.range(of: "^sess_[A-Za-z0-9]+$", options: .regularExpression) != nil else {
-            throw ErrorClerk(codigo: "cancelado")
+            throw ErrorClerk(codigo: "sin_sesion_" + (resp.response?.status ?? "desconocido"))
         }
         let (t, clienteT) = try await pedir("/client/sessions/\(sesion)/tokens", "POST", cliente: cliente)
         guard let jwt = t.jwt, !jwt.isEmpty else { throw ErrorClerk(codigo: "clerk_no_responde") }

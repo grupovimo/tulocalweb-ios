@@ -2,6 +2,28 @@
 
 Última actualización: 31/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 4/11/2026 · Mi tienda › Estilo (§55)
+
+- **Estilo de la tienda** en web e iPhone, iguales: colores por rol (fondo, tarjetas, texto, texto suave,
+  bordes, acento, texto de botones) y por zona (encabezado y pie), combinaciones listas, tipografías
+  (lista cerrada, `lib/tienda/estilo/fuentes.ts`), logo para fondos oscuros, ícono de la pestaña, alto del
+  logo, barra de anuncio, línea del pie, redes y contacto, títulos de las secciones y **menú propio**
+  (pestañas a páginas, categorías o links). Se guarda en `diseno.estilo` (jsonb, sin migración); Go lo
+  valida (`mitienda/estilo.go`) y la vidriera lo pasa tal cual.
+- **Cómo se pinta:** `scripts/estilo/generar.ts` pasó cada color fijo de las 11 plantillas propias a
+  `var(--tc-<hex>, original)` y calculó de qué dos roles sale cada tono (mezcla OKLab) →
+  `lib/tienda/estilo/mapas.ts`. `estilo/css.ts` arma las variables sólo para lo que cambió: sin estilo,
+  las tiendas se ven idénticas. Motor pisa sus tokens. Se puede volver a correr el generador (no envuelve
+  dos veces). Si se suma una plantilla o colores: correrlo, y `bun scripts/estilo/para-ios.ts` para
+  `Recursos/estilo.json` de la app.
+- **Vista previa real:** `/panel/mi-tienda/vista` (la tienda con el borrador); el editor web la muestra en
+  un iframe y la app en un WKWebView con su token (`RUTAS_APP` en hooks.server.ts).
+- **Menú del celular:** el ícono de menú de todas las plantillas era un link al catálogo; ahora abre
+  `MenuTienda` (panel lateral montado en el body: los headers con backdrop-filter atrapaban el fixed).
+- Trampas: las insignias de pago (fondo blanco + letra `#1a1a1a`) y la pastilla de Tu Local Web quedan
+  fijas a propósito; el verde de stock/transferencia es el rol «ok», que se ajusta solo si el fondo pasa
+  de claro a oscuro.
+
 ## 31/10/2026
 
 **En producción** (migraciones hasta 00070, cada una con pg_dumpall previo en /var/backups/vimo/manual):
