@@ -127,14 +127,20 @@ export function cssEstilo(plantilla: string, estilo: EstiloTienda | null | undef
 		}
 		raiz.push(...tonos(mapa, global, cambiados));
 		if (cambiados.has('acento')) raiz.push(`--acento:${global.acento}`);
+		// Si el encabezado tiene un fondo propio (Pampa: negro), sin elegir uno sigue al fondo y al
+		// texto nuevos de la página: si no, queda negro con la letra nueva encima.
+		const propio = mapa.encabezado;
 		const enc = zona(
 			mapa,
 			global,
 			cambiados,
-			colorValido(c.encabezado),
-			colorValido(c.encabezadoTexto),
+			colorValido(c.encabezado) ?? (propio && cambiados.has('fondo') ? global.fondo : null),
+			colorValido(c.encabezadoTexto) ?? (propio && cambiados.has('texto') ? global.texto : null),
+			null,
 			null
 		);
+		// El fondo propio va en su variable (en Pampa el mismo #111 es la letra de los botones).
+		if (propio && enc.length) enc.push(`--tc-enc:${colorValido(c.encabezado) ?? global.fondo}`);
 		if (enc.length) reglas.push(`.t-estilo [data-t-enc]{${enc.join(';')}}`);
 		const inv =
 			mapa.pie && rolDe(mapa, mapa.pie.fondo) && rolDe(mapa, mapa.pie.texto)

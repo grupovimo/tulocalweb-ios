@@ -10,6 +10,8 @@ export type MapaEstilo = {
 	roles: Record<Rol, string>;
 	/** El verde de «en stock» y del precio con transferencia (rol «ok»: se ajusta solo al fondo). */
 	ok: string | null;
+	/** El fondo del encabezado si no sale del fondo de la página (Pampa); null: sale del fondo. */
+	encabezado: string | null;
 	/** El pie como banda propia (fondo y texto originales); null: va con los colores de la página. */
 	pie: { fondo: string; texto: string } | null;
 	fuentes: { titulos: string | null; texto: string };

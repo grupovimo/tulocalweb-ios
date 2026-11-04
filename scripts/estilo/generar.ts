@@ -34,6 +34,8 @@ type Def = {
 	/** Fondo y texto originales del pie (si es una banda propia). */
 	pie?: { fondo: string; texto: string };
 	fuentes: { titulos: string | null; texto: string };
+	/** El fondo del encabezado cuando no sale del fondo de la página (Pampa: negro). */
+	encabezado?: string;
 	/** Los verdes de «en stock» y del precio con transferencia: rol «ok», que se ajusta solo. */
 	ok?: string[];
 };
@@ -82,6 +84,7 @@ const PLANTILLAS: Record<string, Def> = {
 	},
 	pampa: {
 		archivo: 'Pampa',
+		encabezado: '#111111',
 		ok: ['#B9F27C', '#2F7A43'],
 		roles: { fondo: '#0B0B0B', superficie: '#161616', texto: '#F2F2F2', textoSuave: '#8A8A8A', borde: '#2A2A2A', acento: '#E6FF4D', sobreAcento: '#111111' },
 		fuentes: { titulos: 'Archivo Black', texto: 'Archivo' }
@@ -176,6 +179,7 @@ const ATRIBUTO = /(fill|stroke|stop-color|flood-color|color)="$/;
 type Mapa = {
 	roles: Record<Rol, string>;
 	ok: string | null;
+	encabezado: string | null;
 	pie: { fondo: string; texto: string } | null;
 	fuentes: { titulos: string | null; texto: string };
 	tonos: Record<string, Tono>;
@@ -220,7 +224,7 @@ for (const [id, def] of Object.entries(PLANTILLAS)) {
 	if (!src.includes('data-t-enc')) src = src.replace(/<header(\s)/, '<header data-t-enc$1');
 	if (!src.includes('data-t-pie')) src = src.replace(/<footer(\s)/, '<footer data-t-pie$1');
 	writeFileSync(join(RAIZ, ruta), src);
-	mapas[id] = { roles: def.roles, ok: def.ok?.[0] ?? null, pie: def.pie ?? null, fuentes: def.fuentes, tonos };
+	mapas[id] = { roles: def.roles, ok: def.ok?.[0] ?? null, encabezado: def.encabezado ?? null, pie: def.pie ?? null, fuentes: def.fuentes, tonos };
 	console.log(`${id}: ${cambios} colores con variable, ${Object.keys(tonos).length} tonos`);
 }
 

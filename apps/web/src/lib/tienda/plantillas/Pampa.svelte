@@ -597,7 +597,7 @@
 		<!-- header -->
 		<header
 			data-t-enc
-			style="position:sticky;top:0;z-index:20;display:flex;align-items:stretch;background:var(--tc-111111, #111);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);height:58px"
+			style="position:sticky;top:0;z-index:20;display:flex;align-items:stretch;background:var(--tc-enc, #111);border-bottom:2px solid var(--tc-2a2a2a, #2A2A2A);height:58px"
 		>
 			<a
 				href={base || '/'}

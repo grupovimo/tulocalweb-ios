@@ -13,6 +13,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FFFFFF'
 		},
 		ok: '#14894B',
+		encabezado: null,
 		pie: {
 			fondo: '#0E1116',
 			texto: '#FFFFFF'
@@ -239,6 +240,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#F4EFEA'
 		},
 		ok: '#2F6B47',
+		encabezado: null,
 		pie: null,
 		fuentes: {
 			titulos: 'Instrument Serif',
@@ -444,6 +446,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#1E0E12'
 		},
 		ok: '#9FD3A8',
+		encabezado: null,
 		pie: null,
 		fuentes: {
 			titulos: 'Cormorant Garamond',
@@ -679,6 +682,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#F4EADB'
 		},
 		ok: '#2F7A43',
+		encabezado: null,
 		pie: {
 			fondo: '#2A1C12',
 			texto: '#F4EADB'
@@ -917,6 +921,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FBF1E6'
 		},
 		ok: '#2F7A43',
+		encabezado: null,
 		pie: {
 			fondo: '#3A2414',
 			texto: '#FBF1E6'
@@ -1143,6 +1148,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#2A170C'
 		},
 		ok: '#2F6B3A',
+		encabezado: null,
 		pie: {
 			fondo: '#3B2416',
 			texto: '#FBF3E4'
@@ -1381,6 +1387,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#111111'
 		},
 		ok: '#B9F27C',
+		encabezado: '#111111',
 		pie: null,
 		fuentes: {
 			titulos: 'Archivo Black',
@@ -1496,6 +1503,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FFFFFF'
 		},
 		ok: '#2F7A43',
+		encabezado: null,
 		pie: {
 			fondo: '#2B2520',
 			texto: '#EFE9E1'
@@ -1674,6 +1682,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FFFFFF'
 		},
 		ok: '#2F7D55',
+		encabezado: null,
 		pie: {
 			fondo: '#F3D9DE',
 			texto: '#3A1F25'
@@ -1876,6 +1885,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FFFFFF'
 		},
 		ok: '#2F7D4F',
+		encabezado: null,
 		pie: {
 			fondo: '#1E1B2E',
 			texto: '#F6F4F1'
@@ -2108,6 +2118,7 @@ export const MAPAS: Record<string, MapaEstilo> = {
 			sobreAcento: '#FFFFFF'
 		},
 		ok: '#1F6F3A',
+		encabezado: null,
 		pie: {
 			fondo: '#1E2B22',
 			texto: '#EEF1E8'
