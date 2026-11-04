@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Fila } from '#lib/server/bandeja.ts';
+	import type { Casilla, Fila } from '#lib/server/bandeja.ts';
 	import { grupo, hora, iniciales } from '#lib/formato.ts';
 	import { familia, nombre } from '#lib/etiquetas.ts';
 
@@ -11,22 +11,53 @@
 		href,
 		hrefPestana,
 		onrefrescar,
-		vacio
+		vacio,
+		casillas = [],
+		casilla = null,
+		viendo = '',
+		papelera = false,
+		onvaciar
 	}: {
 		filas: Fila[];
 		pestana: string;
-		contadores: { sinleer: number; esperan: number };
+		contadores: { sinleer: number };
 		activa: string | null;
 		href: (f: Fila) => string;
 		hrefPestana: (p: string) => string;
 		onrefrescar: () => void;
 		vacio: string;
+		casillas?: Casilla[];
+		casilla?: string | null;
+		viendo?: string;
+		papelera?: boolean;
+		onvaciar?: () => void;
 	} = $props();
+
+	// Con varias casillas juntas, cada fila dice de cuál es (las compartidas se mezclaban), con un
+	// color fijo por casilla.
+	const conEtiqueta = $derived(!casilla && casillas.length > 1);
+	const COLORES = [
+		'#2F6BFF',
+		'#C2410C',
+		'#15803D',
+		'#7C3AED',
+		'#B4475B',
+		'#0E7490',
+		'#A16207',
+		'#4D7C0F'
+	];
+	const casillaDe = $derived(
+		new Map(
+			casillas.map((c, i) => [
+				c.cuenta,
+				{ nombre: c.personal ? 'Vos' : c.nombre, color: COLORES[i % COLORES.length] }
+			])
+		)
+	);
 
 	const PEST = $derived([
 		{ id: 'todos', t: 'Todos', n: 0 },
-		{ id: 'sinleer', t: 'Sin leer', n: contadores.sinleer },
-		{ id: 'esperan', t: 'Esperan respuesta', n: contadores.esperan }
+		{ id: 'sinleer', t: 'Sin leer', n: contadores.sinleer }
 	]);
 	const conGrupo = $derived(
 		filas.map((f, i) => {
@@ -37,6 +68,14 @@
 </script>
 
 <section class="lista">
+	{#if viendo || papelera}
+		<div class="viendo">
+			<i class="icon-inbox"></i><span class="v-t">{viendo}</span>
+			{#if papelera && onvaciar}<button class="vaciar" onclick={onvaciar}
+					><i class="icon-trash-2"></i>Vaciar papelera</button
+				>{/if}
+		</div>
+	{/if}
 	<div class="pest" role="tablist">
 		{#each PEST as p (p.id)}
 			<a
@@ -68,6 +107,11 @@
 					<span class="l1">
 						<span class="nom">{f.nombre}</span>
 						{#if f.enHilo > 1}<span class="cant">{f.enHilo}</span>{/if}
+						{#if conEtiqueta && casillaDe.get(f.cuenta)}{@const c = casillaDe.get(f.cuenta)!}<span
+								class="cas"
+								style:--cas={c.color}
+								title={f.casilla}>{c.nombre}</span
+							>{/if}
 						<span class="esp"></span>
 						{#if f.adjuntos}<i class="icon-paperclip clip" aria-label="Con adjuntos"></i>{/if}
 						{#if f.destacado}<i class="icon-star clip" aria-label="Destacado"></i>{/if}
@@ -282,5 +326,50 @@
 	.vacio p {
 		margin: 10px 0 0;
 		font-size: 16px;
+	}
+	.viendo {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 40px;
+		padding: 6px 12px 6px 18px;
+		border-bottom: 1px solid var(--ls);
+		font-size: 13.5px;
+		color: var(--mut);
+	}
+	.v-t {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 600;
+	}
+	.vaciar {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 30px;
+		padding: 0 10px;
+		border: 1px solid var(--ls);
+		border-radius: 999px;
+		background: none;
+		color: inherit;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.cas {
+		flex: none;
+		max-width: 40%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		padding: 1px 7px;
+		border-radius: 999px;
+		font-size: 11.5px;
+		font-weight: 700;
+		color: var(--cas);
+		background: color-mix(in srgb, var(--cas) 12%, transparent);
 	}
 </style>

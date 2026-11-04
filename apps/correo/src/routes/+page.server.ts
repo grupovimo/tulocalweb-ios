@@ -5,14 +5,15 @@ import {
 	CARPETAS,
 	mensaje,
 	type CarpetaId,
-	type Pestana
+	type Pestana,
+	vaciarPapelera
 } from '#lib/server/bandeja.ts';
 import { ErrorJmap, Jmap } from '#lib/server/jmap.ts';
 import { guardarFiltros, leerFiltros } from '#lib/server/ajustes.ts';
 import { marca } from '#lib/server/marca.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-const PESTANAS: Pestana[] = ['todos', 'sinleer', 'esperan'];
+const PESTANAS: Pestana[] = ['todos', 'sinleer'];
 
 export const load: PageServerLoad = async ({ locals, url, depends, cookies }) => {
 	depends('correo:bandeja');
@@ -65,6 +66,16 @@ export const actions: Actions = {
 			return fail(502, { error: e instanceof Error ? e.message : 'No se pudo.' });
 		}
 		return { ok: que };
+	},
+	/** Vaciar la papelera (de la casilla que se está viendo, o de todas). */
+	vaciar: async ({ locals, request }) => {
+		const casilla = String((await request.formData()).get('casilla') ?? '') || null;
+		try {
+			const n = await vaciarPapelera(new Jmap(locals.cred!), casilla);
+			return { ok: 'vaciar', n };
+		} catch (e) {
+			return fail(502, { error: e instanceof Error ? e.message : 'No se pudo.' });
+		}
 	},
 	/** Bloquear a un remitente: una regla más de la casilla propia que lo manda a Spam. */
 	bloquear: async ({ locals, request }) => {

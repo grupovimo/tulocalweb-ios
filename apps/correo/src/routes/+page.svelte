@@ -61,6 +61,13 @@
 	}
 	async function accion(que: string, valor = '') {
 		if (!data.leido) return;
+		// Desde la papelera, borrar es para siempre: se pregunta.
+		if (
+			que === 'borrar' &&
+			data.carpeta === 'papelera' &&
+			!confirm('¿Borrar este correo para siempre?')
+		)
+			return;
 		const fd = new FormData();
 		const bloquear = que === 'bloquear';
 		fd.set('que', que);
@@ -87,7 +94,7 @@
 		avisar(
 			{
 				archivar: 'Archivado',
-				borrar: 'Movido a la papelera',
+				borrar: data.carpeta === 'papelera' ? 'Borrado para siempre' : 'Movido a la papelera',
 				spam: 'Movido a spam',
 				'no-leido': 'Marcado como no leído',
 				destacar: 'Destacado',
@@ -138,11 +145,37 @@
 			? `No encontramos correos con «${data.buscar}».`
 			: data.pestana === 'sinleer'
 				? 'No hay correos sin leer.'
-				: data.pestana === 'esperan'
-					? 'No hay correos esperando respuesta.'
-					: 'No hay correos acá.'
+				: 'No hay correos acá.'
 	);
 	const yo = $derived(iniciales(data.yo.email.split('@')[0]));
+	// Qué se está viendo: una casilla o todas juntas (las compartidas se mezclan si no se dice).
+	const viendo = $derived(
+		data.casilla
+			? (data.casillas.find((c) => c.cuenta === data.casilla)?.email ?? '')
+			: data.casillas.length > 1
+				? `Todas las casillas (${data.casillas.length})`
+				: (data.casillas[0]?.email ?? '')
+	);
+	async function vaciar() {
+		const cual = data.casilla ? 'de esta casilla' : 'de todas las casillas';
+		if (!confirm(`¿Vaciar la papelera ${cual}? Se borra para siempre.`)) return;
+		const fd = new FormData();
+		fd.set('casilla', data.casilla ?? '');
+		const r = await fetch('?/vaciar', {
+			method: 'POST',
+			body: fd,
+			headers: { 'x-sveltekit-action': 'true' }
+		});
+		const res = deserialize(await r.text());
+		if (res.type !== 'success') return avisar('No se pudo vaciar la papelera.');
+		const n = Number(res.data?.n ?? 0);
+		avisar(
+			n
+				? `Papelera vacía: ${n} ${n === 1 ? 'correo borrado' : 'correos borrados'}`
+				: 'La papelera ya estaba vacía'
+		);
+		await invalidate('correo:bandeja');
+	}
 </script>
 
 <svelte:head><title>{data.leido ? data.leido.asunto : titulo} · Correo</title></svelte:head>
@@ -226,6 +259,11 @@
 					filas={data.filas}
 					pestana={data.pestana}
 					contadores={data.contadores}
+					casillas={data.casillas}
+					casilla={data.casilla}
+					{viendo}
+					papelera={data.carpeta === 'papelera'}
+					onvaciar={vaciar}
 					activa={data.leido?.id ?? null}
 					href={hrefFila}
 					hrefPestana={(p) => href({ p })}

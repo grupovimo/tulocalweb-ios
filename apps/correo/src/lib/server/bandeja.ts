@@ -18,7 +18,7 @@ export const CARPETAS = [
 	{ id: 'papelera', l: 'Papelera', rol: 'trash' }
 ] as const;
 export type CarpetaId = (typeof CARPETAS)[number]['id'];
-export type Pestana = 'todos' | 'sinleer' | 'esperan';
+export type Pestana = 'todos' | 'sinleer';
 
 type Buzon = {
 	id: string;
@@ -129,7 +129,6 @@ function filtroDe(carpeta: CarpetaId, bs: Buzon[], pestana: Pestana) {
 		if (fuera.length) conds.push({ inMailboxOtherThan: fuera });
 	} else return null;
 	if (pestana === 'sinleer') conds.push({ notKeyword: '$seen' });
-	if (pestana === 'esperan') conds.push({ hasKeyword: '$seen' }, { notKeyword: '$answered' });
 	return conds.length === 1 ? conds[0] : { operator: 'AND', conditions: conds };
 }
 
@@ -138,7 +137,7 @@ export type Bandeja = {
 	casillas: Casilla[];
 	carpetas: { id: CarpetaId; l: string; n: number }[];
 	filas: Fila[];
-	contadores: { sinleer: number; esperan: number };
+	contadores: { sinleer: number };
 	espacio: { usado: number; total: number } | null;
 };
 
@@ -250,10 +249,7 @@ export async function bandeja(
 					't'
 				]
 			];
-			for (const [k, p] of [
-				['s', 'sinleer'],
-				['e', 'esperan']
-			] as const) {
+			for (const [k, p] of [['s', 'sinleer']] as const) {
 				const fp = filtroDe(o.carpeta, b, p);
 				if (fp)
 					llamadas.push([
@@ -291,7 +287,7 @@ export async function bandeja(
 	);
 
 	const filas: Fila[] = [];
-	const contadores = { sinleer: 0, esperan: 0 };
+	const contadores = { sinleer: 0 };
 	let pendientes = 0;
 	for (const x of porCuenta) {
 		if (!x) continue;
@@ -351,7 +347,6 @@ export async function bandeja(
 			});
 		}
 		contadores.sinleer += Number(r.get('s')?.total ?? 0);
-		contadores.esperan += Number(r.get('e')?.total ?? 0);
 	}
 	// Programados: el próximo en salir arriba; el resto, lo último que llegó arriba.
 	filas.sort((a, b) =>
@@ -612,6 +607,30 @@ export async function accion(
 		} else if (que === 'mover') {
 			if (!b.some((x) => x.id === valor)) throw new Error('Esa carpeta no es de esta casilla.');
 			cambio = { mailboxIds: { [valor]: true } };
+		} else if (que === 'borrar' && deRol(b, 'trash')) {
+			// Lo que ya está en la papelera se elimina de verdad (antes volvía a la papelera y no pasaba nada).
+			const papelera = deRol(b, 'trash')!.id;
+			const g = await j.llamar([
+				['Email/get', { accountId: cuenta, ids: emails, properties: ['mailboxIds'] }, 'g']
+			]);
+			const lista = (g.get('g')?.list ?? []) as {
+				id: string;
+				mailboxIds: Record<string, boolean>;
+			}[];
+			const yaEn = lista.filter((x) => x.mailboxIds[papelera]).map((x) => x.id);
+			const mover = emails.filter((e) => !yaEn.includes(e));
+			await j.llamar([
+				[
+					'Email/set',
+					{
+						accountId: cuenta,
+						destroy: yaEn,
+						update: Object.fromEntries(mover.map((e) => [e, { mailboxIds: { [papelera]: true } }]))
+					},
+					'u'
+				]
+			]);
+			continue;
 		} else if (que === 'destacar' || que === 'quitar-destacado')
 			cambio = { 'keywords/$flagged': que === 'destacar' ? true : null };
 		else if (que === 'leido' || que === 'no-leido')
@@ -640,4 +659,28 @@ export async function accion(
 			]
 		]);
 	}
+}
+
+/**
+ * Vacía la papelera de las casillas (o de una): elimina de verdad, de a 500 por vuelta. Devuelve
+ * cuántos correos se borraron.
+ */
+export async function vaciarPapelera(j: Jmap, casilla: string | null): Promise<number> {
+	const cuentas = (await j.cuentas()).filter((c) => !casilla || c.id === casilla);
+	const bs = await buzones(j, cuentas);
+	let total = 0;
+	for (const c of cuentas) {
+		const papelera = deRol(bs.get(c.id) ?? [], 'trash')?.id;
+		if (!papelera) continue;
+		for (let vuelta = 0; vuelta < 40; vuelta++) {
+			const q = await j.llamar([
+				['Email/query', { accountId: c.id, filter: { inMailbox: papelera }, limit: 500 }, 'q']
+			]);
+			const ids = (q.get('q')?.ids ?? []) as string[];
+			if (!ids.length) break;
+			await j.llamar([['Email/set', { accountId: c.id, destroy: ids }, 'd']]);
+			total += ids.length;
+		}
+	}
+	return total;
 }
