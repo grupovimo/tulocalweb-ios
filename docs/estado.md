@@ -9,6 +9,13 @@
   valor: ventas (Inicio, Estadísticas, Caja), flujo y saldo proyectado (Finanzas), dona de medios y canales,
   mes a mes con series (ventas, clientes, visitas, margen), embudo de visitas, reseñas y anillo de la meta.
   Tarjetas que entran escalonadas, números que cuentan, botones que se hunden; todo respeta «Reducir movimiento».
+- Desplegado (migración 74 con copia previa) y en TestFlight como build 102 (commit 22e5229). Entró al sexto
+  reintento: GitHub no tenía Macs arm64 libres («capacity constraints»), no fue el código.
+- Mercado Pago revisado el 5/11: la app «Tu Local Web» (110994656960205) ya manda en producción todos los
+  avisos, incluidos «Planes y suscripciones», a `https://api.tulocalweb.com.ar/v1/webhooks/mercadopago`.
+  No hubo que cambiar nada.
+- Falta: ver en el primer descuento real que el débito baje en Mercado Pago (sólo se probó contra el simulado),
+  y sumar la build 102 al grupo «Socios» de TestFlight.
 
 ## 5/11/2026 · El abono con prorrateo y el plan como carrito (§56)
 

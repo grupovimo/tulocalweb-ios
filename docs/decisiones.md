@@ -1176,6 +1176,7 @@ avisos que el iPhone de §40.
   eventos «Planes y suscripciones» (`subscription_preapproval` y `subscription_authorized_payment`) a
   la misma URL `https://<api>/v1/webhooks/mercadopago` con la misma clave secreta. Mercado Pago pide
   que el email de quien paga sea el de su cuenta: si autoriza con otra, el débito queda pendiente.
+  Hecho en Tu Local Web: confirmado en el panel de Mercado Pago el 5/11/2026.
 
 ## 52. Lanzamientos con reserva, ofertas con fin y encargo con seña (migración 00069)
 
