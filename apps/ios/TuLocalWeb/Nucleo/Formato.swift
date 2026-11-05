@@ -63,7 +63,7 @@ enum Formato {
 
     /// «14 de noviembre» desde una fecha ISO, sin cortes entre renglones (espacios duros).
     static func diaMes(_ iso: String?) -> String {
-        guard let iso, let f = Formato.iso(iso) else { return "" }
+        guard let iso, let f = Fecha.iso(iso) else { return "" }
         return diaMesF.string(from: f).replacingOccurrences(of: " ", with: "\u{00A0}")
     }
 

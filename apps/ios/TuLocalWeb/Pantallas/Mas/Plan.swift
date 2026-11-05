@@ -407,7 +407,7 @@ private struct ResumenCambio: View {
     }
 
     private var rige: String {
-        guard let f = Formato.iso(c.rige), f > Date().addingTimeInterval(60) else { return "hoy, al confirmar" }
+        guard let f = Fecha.iso(c.rige), f > Date().addingTimeInterval(60) else { return "hoy, al confirmar" }
         return "el \(Formato.diaMes(c.rige))"
     }
 
