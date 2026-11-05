@@ -120,6 +120,14 @@ struct BotonRedondo: View {
 
 // MARK: - Botones
 
+extension View {
+    /// Se hunde apenas mientras se aprieta y vuelve con un resorte.
+    func hundir(_ apretado: Bool) -> some View {
+        scaleEffect(apretado ? 0.97 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: apretado)
+    }
+}
+
 /// Botón principal: gradiente `primary`, 52 de alto (56 en barras de acción), radio 14/15.
 struct BotonPrincipal: ButtonStyle {
     var alto: CGFloat = 52
@@ -133,6 +141,7 @@ struct BotonPrincipal: ButtonStyle {
             .background(C.primario, in: RoundedRectangle(cornerRadius: alto >= 56 ? 15 : 14, style: .continuous))
             .shadow(color: C.sombraPrimario, radius: 8, x: 0, y: 6)
             .opacity(habilitado ? (configuration.isPressed ? 0.85 : 1) : 0.5)
+            .hundir(configuration.isPressed)
     }
 }
 
@@ -148,6 +157,7 @@ struct BotonTexto: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: alto)
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
+            .hundir(configuration.isPressed)
     }
 }
 
@@ -162,6 +172,7 @@ struct BotonTonal: ButtonStyle {
             .frame(minHeight: alto)
             .background(C.crema, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .hundir(configuration.isPressed)
     }
 }
 
@@ -177,6 +188,7 @@ struct BotonSecundario: ButtonStyle {
             .background(C.superficie, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(C.linea2, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .hundir(configuration.isPressed)
     }
 }
 
@@ -189,6 +201,7 @@ struct BotonDestructivo: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: 52)
             .background(C.errorFondo, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .hundir(configuration.isPressed)
     }
 }
 

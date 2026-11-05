@@ -3,6 +3,7 @@
  * misma interfaz con los tipos del contrato (packages/contrato/openapi.yaml), y los casos de
  * packages/contrato/casos corren contra las dos.
  */
+import type { Beneficio } from '#lib/panel/planes.ts';
 import type { components } from '@mostrador/contrato/esquema';
 import type { ConfigLanzamiento, LanzamientoProducto } from '#lib/tienda/lanzamiento.ts';
 import type { RolInvitable } from '#lib/panel/permisos.ts';
@@ -283,7 +284,10 @@ export interface Datos {
 	cerrarCuenta(confirmacion: string): Promise<Resultado>;
 	comprarPack(): Promise<void>;
 	devolverPack(): Promise<Resultado>;
-	cancelarPlan(motivo: number, accion: 'cancelar' | 'oferta'): Promise<{ hasta: string }>;
+	cancelarPlan(
+		motivo: number,
+		accion: 'cancelar' | 'oferta'
+	): Promise<{ hasta?: string | null; beneficio?: Beneficio }>;
 	reactivarPlan(): Promise<void>;
 	/** La tienda que se ve, el rol con sus permisos y las tiendas de la persona. */
 	acceso(): Promise<Acceso>;

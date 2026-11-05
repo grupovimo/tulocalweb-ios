@@ -168,3 +168,48 @@ func TestAbonoConProrrateo(t *testing.T) {
 		t.Fatalf("cobros: %d", cobros())
 	}
 }
+
+// El beneficio para quedarse (§57): baja el débito a la mitad por 3 cobros, una sola vez, y después
+// vuelve solo al precio del plan.
+func TestBeneficioParaQuedarse(t *testing.T) {
+	ctx := context.Background()
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	f := &mpFalso{cuerpos: map[string]map[string]any{}, pagos: map[string]map[string]any{}, susc: map[string]map[string]any{},
+		autoriz: map[string]map[string]any{}, usuario: 777, refreshOK: true}
+	srv := httptest.NewServer(f)
+	defer srv.Close()
+	s := &mercadopago.Servicio{Pool: b.App, Cliente: &mercadopago.Cliente{Base: srv.URL},
+		Config: mercadopago.Config{TokenPlataforma: "APP_USR-plataforma", Sitio: "https://tulocalweb.com.ar"}}
+	_ = b.App.EnTienda(ctx, luna, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE tiendas SET plan = 'pro', plan_ciclo = 'mes', suscripcion_mp = 'sus-9',
+			suscripcion_estado = 'authorized' WHERE id = $1`, luna)
+		return err
+	})
+	f.susc["sus-9"] = map[string]any{"id": "sus-9", "status": "authorized", "external_reference": luna,
+		"reason": "Tu Local Web Pro (mensual)", "transaction_amount": 49900}
+
+	if err := s.AplicarBeneficio(ctx, luna, abono.Ofertas[0]); err != nil {
+		t.Fatal(err)
+	}
+	if f.susc["sus-9"]["transaction_amount"].(float64) != 24950 {
+		t.Fatalf("el débito no bajó: %v", f.susc["sus-9"])
+	}
+	if err := s.AplicarBeneficio(ctx, luna, abono.Ofertas[4]); err != abono.ErrBeneficioUsado {
+		t.Fatalf("dio el beneficio dos veces: %v", err)
+	}
+	// Tres cobros con descuento (el mismo aviso repetido cuenta una vez) y el débito vuelve al precio.
+	for i, id := range []string{"1", "1", "2", "3"} {
+		f.autoriz[id] = map[string]any{"id": id, "preapproval_id": "sus-9", "status": "processed", "transaction_amount": 24950,
+			"payment": map[string]any{"id": i, "status": "approved"}}
+		if err := s.ConciliarCobroAbono(ctx, id); err != nil {
+			t.Fatal(err)
+		}
+		if id != "3" && f.susc["sus-9"]["transaction_amount"].(float64) != 24950 {
+			t.Fatalf("volvió al precio antes del tercer cobro (%s)", id)
+		}
+	}
+	if f.susc["sus-9"]["transaction_amount"].(float64) != 49900 {
+		t.Fatalf("el débito no volvió al precio: %v", f.susc["sus-9"])
+	}
+}

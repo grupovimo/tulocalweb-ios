@@ -8,7 +8,13 @@ struct Estadisticas: View {
     @State private var periodo = "30d"
 
     struct Informes: Decodable {
-        struct Series: Decodable { var ventas: [Int]; var productos: [Int]; var clientes: [Int]; var margen: [Int?] }
+        struct Series: Decodable {
+            var ventas: [Int]
+            var productos: [Int]
+            var clientes: [Int]
+            var margen: [Int?]
+            var visitas: [Int?]?
+        }
         struct Kpis: Decodable {
             var ventas: Int
             var ventasVs: Double?
@@ -24,7 +30,6 @@ struct Estadisticas: View {
         var insights: [String]
     }
     struct Datos { var tablero: Tablero; var informes: Informes? }
-    struct Mes: Identifiable { var nombre: String; var monto: Int; var id: String { nombre } }
 
     var body: some View {
         PantallaSeccion(titulo: "Estadísticas", que: "las estadísticas") { () async throws -> Datos in
@@ -40,7 +45,8 @@ struct Estadisticas: View {
                          detalle: variacion(t.ventas), tincho: .grafico)
             if let s = t.serie, s.actual.contains(where: { $0 > 0 }) {
                 TarjetaSeccion(titulo: "Cómo vienen las ventas", simbolo: "chart.xyaxis.line") {
-                    GraficoVentas(actual: s.actual, anterior: s.anterior, alto: 150)
+                    GraficoVentas(actual: s.actual, anterior: s.anterior, alto: 150,
+                                  etiqueta: GraficoVentas.etiquetas(desde: t.desde, hasta: t.hasta, puntos: s.actual.count, porHora: periodo == "hoy"))
                 }
             }
             GrillaIndicadores(items: [
@@ -83,18 +89,7 @@ struct Estadisticas: View {
             }
             if let i = d.informes, i.meses.count == i.series.ventas.count, i.series.ventas.contains(where: { $0 > 0 }) {
                 TarjetaSeccion(titulo: "Mes a mes", simbolo: "calendar") {
-                    Chart(zip(i.meses, i.series.ventas).map { Mes(nombre: $0, monto: $1) }) { m in
-                        BarMark(x: .value("Mes", m.nombre), y: .value("Ventas", m.monto))
-                            .foregroundStyle(LinearGradient(colors: [C.acento, Color(hex: 0xB0441D)], startPoint: .top, endPoint: .bottom))
-                            .cornerRadius(5)
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { v in
-                            AxisGridLine().foregroundStyle(C.linea)
-                            AxisValueLabel { if let n = v.as(Int.self) { Text(Formato.compacto(n)).font(.caption2).foregroundStyle(C.texto3) } }
-                        }
-                    }
-                    .frame(height: 170)
+                    GraficoMeses(meses: i.meses, series: series(i))
                     if i.kpis.ahorro > 0 {
                         Text("Te ahorraste \(Formato.pesos(i.kpis.ahorro)) en comisiones este mes")
                             .estilo(.footnoteFuerte).foregroundStyle(C.okTinta)
@@ -134,6 +129,13 @@ struct Estadisticas: View {
                     IndicadorIcono(simbolo: "cart.fill", titulo: "Visitas que compran", valor: Formato.porcentaje(((t.kpis.conversion?.actual ?? 0) * 10).rounded() / 10),
                                    detalle: variacion(t.kpis.conversion), tono: (C.okFondo, C.okTinta)),
                 ])
+                if let p = v.paginas, p.contains(where: { $0.vistas > 0 }) {
+                    TarjetaSeccion(titulo: "Cómo recorren tu tienda", simbolo: "line.3.horizontal.decrease") {
+                        EmbudoVisitas(paginas: p)
+                        Text(Formato.sinViudas("Páginas vistas en el período: de las que entran al inicio, cuántas llegan a cada paso."))
+                            .estilo(.footnote).foregroundStyle(C.texto2)
+                    }
+                }
                 if !v.masVistos.isEmpty {
                     TarjetaSeccion(titulo: "Lo más mirado", simbolo: "eye") {
                         let tope = max(1, v.masVistos.map(\.visitantes).max() ?? 1)
@@ -157,6 +159,22 @@ struct Estadisticas: View {
                 }
             }
         }
+    }
+
+    /// Las series de «Mes a mes»: ventas, clientes nuevos, visitas (si se miden) y margen.
+    private func series(_ i: Informes) -> [GraficoMeses.Serie] {
+        let cuenta: (Int) -> String = { Formato.numero($0) }
+        var s: [GraficoMeses.Serie] = [
+            .init(id: "ventas", nombre: "Ventas", valores: i.series.ventas.map { $0 }, formato: { Formato.pesos($0) }, eje: { Formato.compacto($0) }),
+            .init(id: "clientes", nombre: "Clientes", valores: i.series.clientes.map { $0 }, formato: { Formato.cantidad($0, "cliente nuevo", "clientes nuevos") }, eje: cuenta),
+        ]
+        if let v = i.series.visitas, v.contains(where: { ($0 ?? 0) > 0 }) {
+            s.append(.init(id: "visitas", nombre: "Visitas", valores: v, formato: { Formato.cantidad($0, "visita", "visitas") }, eje: cuenta))
+        }
+        if i.series.margen.contains(where: { $0 != nil }) {
+            s.append(.init(id: "margen", nombre: "Margen", valores: i.series.margen, formato: { "\($0) %" }, eje: { "\($0) %" }))
+        }
+        return s.filter { $0.valores.count == i.meses.count }
     }
 
     private var nombrePeriodo: String {

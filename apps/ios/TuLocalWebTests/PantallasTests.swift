@@ -121,6 +121,7 @@ final class PantallasTests: XCTestCase {
     {"actual": "emprende", "ciclo": "mes", "enPrueba": false, "diasPrueba": 0, "finPrueba": "2026-09-01T00:00:00Z",
      "proximoCobro": "2026-11-20T00:00:00Z",
      "abono": {"activo": true, "proximo": "2026-11-20T00:00:00Z", "programado": null},
+     "beneficio": {"pct": 50, "cobros": 3}, "beneficioUsado": true,
      "cotizaciones": {
       "pro/mes": {"plan": "pro", "ciclo": "mes", "tipo": "sube", "hoy": 14516, "rige": "2026-11-05T12:00:00Z", "hasta": null,
        "cobro": {"fecha": "2026-11-20T00:00:00Z", "importe": 49900}, "porCiclo": 49900,
@@ -143,6 +144,23 @@ final class PantallasTests: XCTestCase {
         XCTAssertEqual(Formato.diaMes("2026-11-20T00:00:00Z").isEmpty, false)
         montar(HojaPlan(datos: d, preelegido: "pro") {})
         montar(HojaPlan(datos: d, preelegido: "gratis") {})
+        // El descuento para quedarse (§57): mitad del débito mientras queden cobros.
+        XCTAssertEqual(PlanCuenta.Datos.conDescuento(19900, d.beneficio), 9950)
+        XCTAssertEqual(PlanCuenta.Datos.conDescuento(19900, nil), 19900)
+        montar(HojaCancelar(datos: d) {})
+    }
+    func testGraficos() {
+        let flujo: [GraficoFlujo.Dia] = [.init(dia: 1, entra: 100, sale: 30), .init(dia: 2, entra: 0, sale: 80)]
+        montar(GraficoVentas(actual: [0, 3, 2, 5], anterior: [1, 1, 2, 2]), segundos: 1)
+        montar(GraficoFlujo(dias: flujo), segundos: 1)
+        montar(GraficoSaldo(flujo: flujo), segundos: 1)
+        montar(DonaMedios(partes: [.init(nombre: "Efectivo", monto: 3), .init(nombre: "Mercado Pago", monto: 7)]), segundos: 1)
+        montar(GraficoMeses(meses: ["sep", "oct", "nov"], series: [
+            .init(id: "ventas", nombre: "Ventas", valores: [1, 2, nil], formato: { "\($0)" }, eje: { "\($0)" }),
+        ]), segundos: 1)
+        montar(EmbudoVisitas(paginas: [.init(pagina: "inicio", vistas: 100), .init(pagina: "checkout", vistas: 4)]), segundos: 1)
+        montar(BarrasEstrellas(porEstrellas: [0, 1, 0, 3, 9]), segundos: 1)
+        montar(AnilloAvance(valor: 0.62), segundos: 1)
     }
     func testPantallaUsuariosYPermisos() { montar(UsuariosYPermisos()) }
     func testPantallaEditorProductoExistente() { montar(EditorProducto(id: "p1")) }

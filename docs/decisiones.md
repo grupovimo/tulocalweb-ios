@@ -1351,5 +1351,20 @@ Nahuel: «el link de mi tienda debería ser minombre.tulocalweb.com.ar, no tuloc
   `Mostrador v4.dc.html`) muestra Hoy pagás, Después y desde cuándo, y el botón dice lo que hace («Pagar
   $ X con Mercado Pago», «Confirmar el cambio»). Configuración lleva a esta pantalla (`?plan=`). Cancelar es
   pasar a gratis (programado). Se fue la promesa de «diferencia prorrateada» que no se cumplía.
-- **Pendiente**: las ofertas de retención del modal de cancelación («50 % off por 3 meses», «primer mes
-  gratis») siguen sin aplicarse en ningún cobro.
+- Las ofertas de retención del modal de cancelación se cobran desde §57.
+
+## 57. El descuento para quedarse, cobrado de verdad (migración 00074, 5/11/2026)
+
+- **Qué se ofrece**, por motivo de baja (`abono.Ofertas`, espejo en `BENEFICIOS` de la web y en
+  `HojaCancelar` de la app): «es caro» → 50 % en los próximos 3 cobros del débito; «otro motivo» → 50 % en el
+  próximo. «Me falta una función» y «me voy a otra plataforma» → una persona del equipo escribe (mail a
+  `MOSTRADOR_CORREO_EQUIPO`, uno por día por tienda). «Voy a pausar» → pasar a Gratis. Se fue el «primer mes
+  gratis»: Mercado Pago no debita $ 0 y saltear un cobro no es confiable; y se fue la «comparación» que no existía.
+- **Una vez por tienda** (`tiendas.beneficio_en`); con el beneficio ya usado, esos motivos ofrecen hablar.
+- **Cómo se cobra**: al aceptarlo, el débito autorizado baja al precio con descuento (`PUT /preapproval`); sin
+  débito todavía, el débito lo toma al crearse. Cada cobro aprobado (`subscription_authorized_payment`, una vez
+  por aviso) descuenta uno de `beneficio_cobros`; con el último, el débito vuelve solo al precio del plan (el
+  programado si hay una baja). Las diferencias prorrateadas no llevan descuento. Si Mercado Pago no toma el
+  monto, el beneficio no queda.
+- **Pantalla**: aviso «50 % off en tus próximos N cobros» en Plan y facturación (web y app) y el próximo cobro
+  con el descuento. La app suma «Cancelar plan» con el mismo recorrido que la web.

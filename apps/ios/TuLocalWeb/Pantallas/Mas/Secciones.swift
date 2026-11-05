@@ -641,14 +641,17 @@ struct Finanzas: View {
             ])
             if let c = d.caja, c.metaPct > 0 || !c.meta.isEmpty {
                 TarjetaSeccion(titulo: "Meta del mes", simbolo: "flag.checkered") {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("\(c.metaPct) %").estilo(.indicador).monospacedDigit().foregroundStyle(C.texto)
-                        Text(c.meta).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
-                        Spacer()
-                    }
-                    BarraProgreso(valor: Double(c.metaPct) / 100, alto: 12)
-                    if c.falta > 0 {
-                        Text("Faltan \(Formato.pesos(c.falta))").estilo(.footnote).foregroundStyle(C.texto2)
+                    HStack(spacing: 16) {
+                        AnilloAvance(valor: Double(c.metaPct) / 100)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(c.meta).estilo(.fila).foregroundStyle(C.texto).lineLimit(2)
+                            if c.falta > 0 {
+                                Text("Faltan \(Formato.pesos(c.falta))").estilo(.footnote).monospacedDigit().foregroundStyle(C.texto2)
+                            } else {
+                                Text("¡Llegaste a la meta!").estilo(.footnoteFuerte).foregroundStyle(C.okTinta)
+                            }
+                        }
+                        Spacer(minLength: 0)
                     }
                 }
             }
@@ -660,6 +663,15 @@ struct Finanzas: View {
                         Label("Sale", systemImage: "circle.fill").foregroundStyle(C.error)
                     }
                     .labelStyle(.titleAndIcon).font(.caption2.weight(.semibold))
+                }
+                let flujo = f.map { GraficoFlujo.Dia(dia: $0.dia, entra: $0.entra, sale: $0.sale) }
+                let neto = flujo.reduce(0) { $0 + $1.entra - $1.sale }
+                TarjetaSeccion(titulo: "Cómo queda la caja", simbolo: "chart.line.uptrend.xyaxis") {
+                    GraficoSaldo(flujo: flujo)
+                    Text(Formato.sinViudas(neto >= 0
+                        ? "Si entra y sale lo previsto, en 14 días sumás \(Formato.pesos(neto))."
+                        : "Si entra y sale lo previsto, en 14 días salen \(Formato.pesos(-neto)) más de lo que entra."))
+                        .estilo(.footnote).foregroundStyle(neto >= 0 ? C.okTinta : C.errorTinta)
                 }
             }
             if !d.movimientos.isEmpty {

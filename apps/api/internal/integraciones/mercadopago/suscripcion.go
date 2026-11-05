@@ -52,10 +52,14 @@ func proximoDe(p preapproval) *time.Time { return fechaMP(p.NextPaymentDate) }
 // hay que pasar por ahí (cargar la tarjeta del débito o pagar la diferencia); "" si quedó hecho.
 func (s *Servicio) CambiarAbono(ctx context.Context, tiendaID, usuarioID, plan, ciclo string) (string, error) {
 	var e abono.Estado
+	var b abono.Beneficio
 	var sus *string
 	if err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var err error
 		if e, err = abono.Leer(ctx, t, tiendaID); err != nil {
+			return err
+		}
+		if b, _, err = abono.LeerBeneficio(ctx, t, tiendaID); err != nil {
 			return err
 		}
 		return t.QueryRow(ctx, `SELECT suscripcion_mp FROM tiendas WHERE id = $1`, tiendaID).Scan(&sus)
@@ -84,7 +88,7 @@ func (s *Servicio) CambiarAbono(ctx context.Context, tiendaID, usuarioID, plan, 
 		if sus == nil {
 			return s.suscribir(ctx, tiendaID, usuarioID, plan, ciclo, c.Inicio)
 		}
-		if err := s.cambiarMonto(ctx, *sus, c.PorCiclo, plan, ciclo); err != nil {
+		if err := s.cambiarMonto(ctx, *sus, abono.ConDescuento(c.PorCiclo, b), plan, ciclo); err != nil {
 			return "", err
 		}
 		return "", s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
@@ -144,6 +148,11 @@ func (s *Servicio) suscribir(ctx context.Context, tiendaID, usuarioID, plan, cic
 		if err := t.QueryRow(ctx, `SELECT creada_en FROM tiendas WHERE id = $1`, tiendaID).Scan(&creada); err != nil {
 			return err
 		}
+		b, _, err := abono.LeerBeneficio(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
+		importe = abono.ConDescuento(importe, b)
 		return t.QueryRow(ctx, `SELECT email FROM auth.usuarios WHERE id = $1`, usuarioID).Scan(&email)
 	}); err != nil {
 		return "", err
@@ -366,14 +375,22 @@ func (s *Servicio) ConciliarCobroAbono(ctx context.Context, id string) error {
 	if !esUUID.MatchString(p.ExternalReference) {
 		return nil
 	}
-	return s.Pool.EnTienda(ctx, p.ExternalReference, func(t pgx.Tx) error {
+	// vuelve: era el último cobro con el beneficio (§57); el débito vuelve al precio del plan.
+	var vuelve bool
+	err := s.Pool.EnTienda(ctx, p.ExternalReference, func(t pgx.Tx) error {
 		detalle := p.Reason
 		if detalle == "" {
 			detalle = "Abono de Tu Local Web"
 		}
-		if _, err := t.Exec(ctx, `INSERT INTO abono_cobros (tienda_id, clave, detalle, importe) VALUES ($1, $2, $3, $4)
-			ON CONFLICT DO NOTHING`, p.ExternalReference, "cobro:"+id, recortar(detalle, 200), int64(a.TransactionAmount)); err != nil {
+		tag, err := t.Exec(ctx, `INSERT INTO abono_cobros (tienda_id, clave, detalle, importe) VALUES ($1, $2, $3, $4)
+			ON CONFLICT DO NOTHING`, p.ExternalReference, "cobro:"+id, recortar(detalle, 200), int64(a.TransactionAmount))
+		if err != nil {
 			return err
+		}
+		if tag.RowsAffected() == 1 {
+			if vuelve, err = abono.GastarCobro(ctx, t, p.ExternalReference); err != nil {
+				return err
+			}
 		}
 		if prox := proximoDe(p); prox != nil {
 			_, err := t.Exec(ctx, `UPDATE tiendas SET abono_proximo = $2 WHERE id = $1 AND suscripcion_mp = $3`,
@@ -382,6 +399,51 @@ func (s *Servicio) ConciliarCobroAbono(ctx context.Context, id string) error {
 		}
 		return nil
 	})
+	if err != nil || !vuelve {
+		return err
+	}
+	return s.montoDelDebito(ctx, p.ExternalReference)
+}
+
+// montoDelDebito: el débito vigente al precio que le toca (el del plan, con el beneficio si queda).
+func (s *Servicio) montoDelDebito(ctx context.Context, tiendaID string) error {
+	var sus, estado *string
+	var plan, ciclo string
+	var importe int64
+	if err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
+		if err := t.QueryRow(ctx, `SELECT suscripcion_mp, suscripcion_estado FROM tiendas WHERE id = $1`, tiendaID).
+			Scan(&sus, &estado); err != nil {
+			return err
+		}
+		var err error
+		plan, ciclo, importe, err = abono.Debito(ctx, t, tiendaID)
+		return err
+	}); err != nil {
+		return err
+	}
+	if sus == nil || estado == nil || *estado != "authorized" || importe <= 0 {
+		return nil
+	}
+	return s.cambiarMonto(ctx, *sus, importe, plan, ciclo)
+}
+
+// AplicarBeneficio (§57): la dueña se queda con el descuento. Sin débito todavía, lo toma el débito
+// cuando se cree; con débito, baja el monto desde el próximo cobro. Si Mercado Pago no lo toma, el
+// beneficio no queda.
+func (s *Servicio) AplicarBeneficio(ctx context.Context, tiendaID string, b abono.Beneficio) error {
+	if err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
+		return abono.Otorgar(ctx, t, tiendaID, b)
+	}); err != nil {
+		return err
+	}
+	if s.Config.TokenPlataforma == "" {
+		return nil
+	}
+	if err := s.montoDelDebito(ctx, tiendaID); err != nil {
+		_ = s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error { return abono.Revocar(ctx, t, tiendaID) })
+		return err
+	}
+	return nil
 }
 
 // ConciliarPagoAbono: el pago de una diferencia prorrateada (payment de la cuenta de la plataforma).

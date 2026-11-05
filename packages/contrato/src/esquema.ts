@@ -4633,6 +4633,14 @@ export interface components {
             cotizaciones: {
                 [key: string]: components["schemas"]["Cotizacion"];
             };
+            /** @description El descuento para quedarse (§57) que queda en los próximos cobros del débito */
+            beneficio: {
+                pct: number;
+                /** @description Cobros que quedan con el descuento */
+                cobros: number;
+            } | null;
+            /** @description Ya se aceptó el descuento alguna vez (se ofrece una sola vez) */
+            beneficioUsado: boolean;
             uso: {
                 productos: number;
                 personas: number;
@@ -10524,10 +10532,15 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** Format: date-time */
-                        hasta: string;
+                        hasta?: string | null;
+                        beneficio?: {
+                            pct: number;
+                            cobros: number;
+                        };
                     };
                 };
             };
+            409: components["responses"]["Problema"];
         };
     };
     reactivarPlan: {

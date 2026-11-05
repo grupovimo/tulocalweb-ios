@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"html"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -79,6 +80,8 @@ type Dependencias struct {
 	Facturacion *facturacion.Servicio
 	// Correo para los avisos de la tienda (arrepentimiento). nil: no se manda.
 	Correo correo.Correo
+	// Bandeja del equipo: los pedidos de contacto de quien está por cancelar. Vacía: no se avisa.
+	CorreoEquipo string
 	// Hornero en Telegram: vínculo del chat (panel) y lo que pide el bot por el BFF.
 	Telegram *telegram.Servicio
 	// Backoffice del equipo (/v1/equipo/*) y "ver la tienda" de sólo lectura. nil: no se monta.
@@ -183,7 +186,17 @@ func Nuevo(d Dependencias) http.Handler {
 		if d.Cuentas != nil {
 			geo = d.Cuentas.Geo
 		}
-		configuracion.Rutas(mux, d.App, geo, d.Sitio, d.MercadoPago != nil && d.MercadoPago.Config.TokenPlataforma != "")
+		ganchos := configuracion.Ganchos{}
+		if d.MercadoPago != nil {
+			ganchos.Beneficio = d.MercadoPago.AplicarBeneficio
+		}
+		if d.Correo != nil && d.CorreoEquipo != "" {
+			ganchos.Contacto = func(ctx context.Context, asunto, texto string) error {
+				return d.Correo.Enviar(ctx, correo.Mensaje{Para: d.CorreoEquipo, Asunto: asunto, Texto: texto,
+					HTML: "<pre style=\"font:14px/1.5 sans-serif;white-space:pre-wrap\">" + html.EscapeString(texto) + "</pre>"})
+			}
+		}
+		configuracion.Rutas(mux, d.App, geo, d.Sitio, d.MercadoPago != nil && d.MercadoPago.Config.TokenPlataforma != "", ganchos)
 		if d.MercadoPago != nil {
 			d.MercadoPago.Rutas(mux)
 		}

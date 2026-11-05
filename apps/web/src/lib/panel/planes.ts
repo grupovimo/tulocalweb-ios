@@ -59,3 +59,15 @@ export const precioAnual = (mensual: number) => Math.round(mensual * 0.75);
 /** El plan que rige hoy: durante la prueba gratis, una tienda en Gratis usa Pro. */
 export const planVigente = (actual: string, enPrueba: boolean) =>
 	actual === 'gratis' && enPrueba ? 'pro' : actual;
+
+/**
+ * El descuento para quedarse (§57, abono.Ofertas de la API) por motivo de baja: «es caro» → 50 % por 3
+ * cobros; «otro» → 50 % en el próximo. Se cobra de verdad (baja el débito) y va una vez por tienda.
+ */
+export type Beneficio = { pct: number; cobros: number };
+export const BENEFICIOS: Record<number, Beneficio> = {
+	0: { pct: 50, cobros: 3 },
+	4: { pct: 50, cobros: 1 }
+};
+export const conDescuento = (importe: number, b: Beneficio | null) =>
+	b && b.cobros > 0 && b.pct > 0 ? Math.round((importe * (100 - b.pct)) / 100) : importe;

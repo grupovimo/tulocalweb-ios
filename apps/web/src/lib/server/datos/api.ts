@@ -9,6 +9,7 @@ import {
 	type AjusteIntegracion
 } from '#lib/panel/integraciones.ts';
 import { consultaDe } from '#lib/panel/actividad.ts';
+import type { Beneficio } from '#lib/panel/planes.ts';
 import type {
 	CambioDireccion,
 	DisponibilidadDireccion,
@@ -499,10 +500,14 @@ export class DatosApi implements Datos {
 		return resultado(await this.intentar('/v1/panel/cuenta/pack', 'DELETE'));
 	}
 	cancelarPlan(motivo: number, accion: 'cancelar' | 'oferta') {
-		return this.pedir<{ hasta: string }>('/v1/panel/cuenta/cancelacion', 'POST', {
-			motivo,
-			accion
-		});
+		return this.pedir<{ hasta?: string | null; beneficio?: Beneficio }>(
+			'/v1/panel/cuenta/cancelacion',
+			'POST',
+			{
+				motivo,
+				accion
+			}
+		);
 	}
 	async reactivarPlan() {
 		await this.pedir<void>('/v1/panel/cuenta/cancelacion', 'DELETE');

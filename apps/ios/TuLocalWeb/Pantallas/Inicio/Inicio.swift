@@ -151,6 +151,8 @@ struct Inicio: View {
                 .estilo(se ? Estilo(tamano: 38, peso: .bold, tracking: -0.035, relativo: .largeTitle) : .montoHeroe)
                 .monospacedDigit().foregroundStyle(C.texto)
                 .lineLimit(1).minimumScaleFactor(0.6)
+                .contentTransition(.numericText())
+                .animation(Mov.toque, value: v.actual)
             HStack(spacing: 8) {
                 if let d = v.variacion {
                     Delta(variacion: d)
@@ -162,7 +164,8 @@ struct Inicio: View {
                 Text(textoComparacion).estilo(.texto14).foregroundStyle(C.texto2)
             }
             if !se, let s = t.serie {
-                GraficoVentas(actual: s.actual, anterior: s.anterior)
+                GraficoVentas(actual: s.actual, anterior: s.anterior,
+                              etiqueta: GraficoVentas.etiquetas(desde: t.desde, hasta: t.hasta, puntos: s.actual.count, porHora: periodo == "hoy"))
                     .padding(.top, 12).padding(.horizontal, -2)
                 ejes(t)
                 HStack(spacing: 16) {

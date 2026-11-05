@@ -40,11 +40,25 @@ test('plan: elegir no cobra, el resumen muestra lo que se paga y la baja se prog
 	await page.getByRole('button', { name: /\+2\.000 respuestas/ }).click();
 	await expect(page.getByText('2.000 respuestas más para Tincho')).toBeVisible();
 
+	// El descuento para quedarse (§57): «es caro» → 50 % en los próximos 3 cobros, una sola vez.
+	await page.getByRole('button', { name: 'Cancelar plan' }).click();
+	await page.getByRole('radio', { name: 'Es caro para lo que vendo' }).click();
+	await page.getByRole('button', { name: 'Continuar' }).click();
+	await expect(page.getByText('Te dejamos 3 cobros a mitad de precio')).toBeVisible();
+	await page.getByRole('button', { name: 'Quiero el descuento' }).click();
+	await expect(page.getByText('¡Gracias por quedarte!')).toBeVisible();
+	await expect(page.getByText('50 % off en tus próximos 3 cobros', { exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Cancelar plan' }).click();
+	await page.getByRole('button', { name: 'Continuar' }).click();
+	await expect(page.getByText('Contanos qué te falta')).toBeVisible();
+	await page.getByRole('button', { name: 'Cancelar igual' }).click();
+	await page.getByRole('button', { name: 'Volver' }).click();
+
 	// Cancelar: el motivo, la oferta y la baja, que rige cuando termina lo pagado.
 	await page.getByRole('button', { name: 'Cancelar plan' }).click();
 	await page.getByRole('radio', { name: 'Me voy a otra plataforma' }).click();
 	await page.getByRole('button', { name: 'Continuar' }).click();
-	await expect(page.getByText('Antes de irte, compará')).toBeVisible();
+	await expect(page.getByText('Antes de irte, hablemos')).toBeVisible();
 	await page.getByRole('button', { name: 'Cancelar igual' }).click();
 	await page.getByRole('button', { name: 'Cancelar mi plan' }).click();
 	await expect(page.getByText('Plan cancelado')).toBeVisible();

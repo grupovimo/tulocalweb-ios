@@ -8,10 +8,18 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
+	import type { IconData } from '#lib/icons.ts';
 	import { anim } from '#lib/panel/anim.ts';
 	import { pesos } from '#lib/panel/formato.ts';
 	import { MOTIVOS } from '#lib/panel/permisos.ts';
-	import { PLANES, planVigente, precioAnual, type IdPlan } from '#lib/panel/planes.ts';
+	import {
+		BENEFICIOS,
+		conDescuento,
+		PLANES,
+		planVigente,
+		precioAnual,
+		type IdPlan
+	} from '#lib/panel/planes.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 
 	/**
@@ -271,23 +279,33 @@
 	let cancelando = $state(false);
 	let paso = $state(0);
 	let motivo = $state(0);
-	const OFERTAS = $derived([
-		[
-			'Te dejamos 3 meses a mitad de precio',
-			`Sabemos que no siempre es fácil. Seguí con todo por ${pesos(actual.precio / 2)}/mes durante 3 meses.`,
-			I.phPercentBold,
-			'50 % off por 3 meses',
-			'Se aplica en tu próxima factura',
-			'Quiero el descuento'
-		],
-		[
-			'Contanos qué te falta',
-			'Muchas funciones se pueden activar o están por salir. Una persona del equipo te escribe hoy.',
-			I.phChatsCircleBold,
-			'Llamada de 15 minutos',
-			'Te escribimos por WhatsApp',
-			'Que me contacten'
-		],
+	// La oferta para quedarse por motivo (§57): el descuento se cobra de verdad (baja el débito de Mercado
+	// Pago) y va una vez por tienda; si ya se usó, o el motivo es otro, alguien del equipo le escribe.
+	const debito = $derived(
+		data.cotizaciones[clave(data.actual, data.ciclo)]?.porCiclo ?? actual.precio
+	);
+	const cadaCobro = $derived(data.ciclo === 'anio' ? 'por año' : 'por mes');
+	type Oferta = readonly [string, string, IconData, string, string, string];
+	const CONTACTO: Oferta = [
+		'Contanos qué te falta',
+		'Muchas funciones se pueden activar o están por salir. Una persona del equipo te escribe hoy.',
+		I.phChatsCircleBold,
+		'Una persona del equipo te escribe',
+		'Hoy, por WhatsApp o por correo',
+		'Que me contacten'
+	];
+	const OFERTAS = $derived<Oferta[]>([
+		data.beneficioUsado
+			? CONTACTO
+			: [
+					'Te dejamos 3 cobros a mitad de precio',
+					`Sabemos que no siempre es fácil. Seguí con ${actual.nombre} por ${pesos(conDescuento(debito, BENEFICIOS[0]))} ${cadaCobro} en tus próximos 3 cobros. Después vuelve a ${pesos(debito)}.`,
+					I.phPercentBold,
+					'50 % off en 3 cobros',
+					'Baja el débito desde el próximo cobro',
+					'Quiero el descuento'
+				],
+		CONTACTO,
 		[
 			'Mejor pausala',
 			'Tu tienda queda guardada y la reactivás cuando quieras, sin cargar nada de nuevo.',
@@ -297,22 +315,24 @@
 			'Pausar en vez de cancelar'
 		],
 		[
-			'Antes de irte, compará',
-			'Te mostramos cuánto pagarías en la otra plataforma con tus ventas reales.',
+			'Antes de irte, hablemos',
+			'Contanos qué te ofrecen en la otra plataforma: vemos cómo ayudarte a quedarte o a mudarte sin perder nada.',
 			I.phScalesBold,
-			'Comparación con tus números',
-			'Comisiones, apps y abono',
-			'Ver la comparación'
+			'Una persona del equipo te escribe',
+			'Hoy, por WhatsApp o por correo',
+			'Que me contacten'
 		],
-		[
-			'Te ayudamos igual',
-			'Si algo no anduvo bien, queremos saberlo.',
-			I.phHandHeartBold,
-			'Primer mes gratis si te quedás',
-			'Sin compromiso',
-			'Me quedo un mes más'
-		]
-	] as const);
+		data.beneficioUsado
+			? CONTACTO
+			: [
+					'Tu próximo cobro a mitad de precio',
+					`Si algo no anduvo bien, queremos saberlo. Mientras tanto, tu próximo cobro es de ${pesos(conDescuento(debito, BENEFICIOS[4]))} en vez de ${pesos(debito)}.`,
+					I.phHandHeartBold,
+					'50 % off en el próximo cobro',
+					'Sin compromiso',
+					'Me quedo con el descuento'
+				]
+	]);
 	const oferta = $derived(OFERTAS[motivo]);
 	function abrirCancelar() {
 		paso = 0;
@@ -324,9 +344,20 @@
 			cancelando = false;
 			return aGratis();
 		}
-		if (!(await pedir('/panel/cuenta/cancelacion', 'POST', { motivo, accion: 'oferta' }))) return;
+		const r = await pedir('/panel/cuenta/cancelacion', 'POST', { motivo, accion: 'oferta' });
+		if (!r) return;
 		cancelando = false;
-		ui.toast({ k: 'ok', title: '¡Gracias por quedarte!', desc: `${oferta[3]} · ${oferta[4]}` });
+		const b = (
+			(await r.json().catch(() => ({}))) as { beneficio?: { pct: number; cobros: number } }
+		).beneficio;
+		if (b) await invalidateAll();
+		ui.toast({
+			k: 'ok',
+			title: b ? '¡Gracias por quedarte!' : 'Listo, te escribimos hoy',
+			desc: b
+				? `${b.pct} % off en ${b.cobros === 1 ? 'tu próximo cobro' : `tus próximos ${b.cobros} cobros`}: ${pesos(conDescuento(debito, b))} en vez de ${pesos(debito)}.`
+				: 'Una persona del equipo te contacta por WhatsApp o por correo.'
+		});
 	}
 	async function confirmar() {
 		// El motivo queda registrado; la baja es pasar a Gratis (el débito se cancela, lo pagado sigue).
@@ -410,6 +441,23 @@
 				<span>Hasta ese día seguís con {actual.nombre}, que ya está pago.</span>
 			</div>
 			<button type="button" onclick={reactivar}>Deshacer</button>
+		</div>
+	{/if}
+
+	{#if data.beneficio}
+		<div class="programado beneficio" use:anim={{ t: 'rise' }}>
+			<Icon icon={I.phPercentBold} size={22} style="color:#1f8a5b;flex:none" />
+			<div>
+				<b
+					>{data.beneficio.pct} % off en {data.beneficio.cobros === 1
+						? 'tu próximo cobro'
+						: `tus próximos ${data.beneficio.cobros} cobros`}</b
+				>
+				<span
+					>Pagás {pesos(conDescuento(debito, data.beneficio))} en vez de {pesos(debito)}
+					{cadaCobro}. Después vuelve solo al precio del plan.</span
+				>
+			</div>
 		</div>
 	{/if}
 
@@ -610,9 +658,9 @@
 						<span>Tu próximo cobro</span>
 						<b>{fecha(data.proximoCobro)}</b>
 						<span
-							>{pesos(
-								data.cotizaciones[clave(data.actual, data.ciclo)]?.porCiclo ?? 0
-							)}{data.ciclo === 'anio' ? ' por año' : ' por mes'}</span
+							>{pesos(conDescuento(debito, data.beneficio))}{data.ciclo === 'anio'
+								? ' por año'
+								: ' por mes'}{data.beneficio ? ` (con ${data.beneficio.pct} % off)` : ''}</span
 						>
 					</div>
 				{/if}
@@ -978,6 +1026,10 @@
 		border-radius: 18px;
 		background: linear-gradient(135deg, rgba(210, 88, 47, 0.12), rgba(210, 88, 47, 0.04));
 		border: 1px solid rgba(210, 88, 47, 0.25);
+	}
+	.beneficio {
+		background: linear-gradient(135deg, rgba(31, 138, 91, 0.12), rgba(31, 138, 91, 0.04));
+		border-color: rgba(31, 138, 91, 0.25);
 	}
 	.programado > div {
 		flex: 1;

@@ -2,6 +2,14 @@
 
 Última actualización: 31/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 5/11/2026 · Descuento para quedarse (§57) y gráficos en la app
+
+- El descuento al cancelar se cobra de verdad (migración 00074): ver decisiones §57.
+- App: gráficos con Swift Charts (`Tema/Graficos.swift`) que crecen al aparecer y se tocan para ver cada
+  valor: ventas (Inicio, Estadísticas, Caja), flujo y saldo proyectado (Finanzas), dona de medios y canales,
+  mes a mes con series (ventas, clientes, visitas, margen), embudo de visitas, reseñas y anillo de la meta.
+  Tarjetas que entran escalonadas, números que cuentan, botones que se hunden; todo respeta «Reducir movimiento».
+
 ## 5/11/2026 · El abono con prorrateo y el plan como carrito (§56)
 
 - Migración 00073. Elegir plan en la web (Plan y facturación) y en la app (Más › Plan) es un carrito: el

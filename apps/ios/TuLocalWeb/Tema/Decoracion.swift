@@ -23,6 +23,8 @@ struct TarjetaHeroe<Pie: View>: View {
                 Text(etiqueta).estilo(.footnoteFuerte).foregroundStyle(.white.opacity(0.85))
                 Text(valor).estilo(.montoPantalla).monospacedDigit().foregroundStyle(.white)
                     .lineLimit(1).minimumScaleFactor(0.6)
+                    .contentTransition(.numericText())
+                    .animation(Mov.toque, value: valor)
                 if let detalle {
                     Text(detalle).estilo(.texto14).foregroundStyle(.white.opacity(0.9))
                         .padding(.trailing, tincho == nil ? 0 : 90)
@@ -40,6 +42,7 @@ struct TarjetaHeroe<Pie: View>: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: C.sombraPrimario, radius: 14, y: 8)
+        .aparecer()
     }
 }
 
@@ -56,13 +59,17 @@ struct IndicadorIcono: View {
     var valor: String
     var detalle: String? = nil
     var tono: (Color, Color) = (C.crema, C.primarioTexto)
+    @State private var visto = false
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: simbolo).font(.system(size: 15, weight: .semibold)).foregroundStyle(tono.1)
+                .symbolEffect(.bounce, value: visto)
                 .frame(width: 32, height: 32)
                 .background(tono.0, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             Text(valor).estilo(.indicador).monospacedDigit().foregroundStyle(C.texto)
                 .lineLimit(1).minimumScaleFactor(0.6)
+                .contentTransition(.numericText())
+                .animation(Mov.toque, value: valor)
             Text(titulo).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(2)
             if let detalle, !detalle.isEmpty {
                 Text(detalle).estilo(.chip).foregroundStyle(C.texto3).lineLimit(2)
@@ -71,6 +78,7 @@ struct IndicadorIcono: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .tarjeta(radio: 18)
+        .onAppear { visto = true }
     }
 }
 
@@ -78,7 +86,7 @@ struct GrillaIndicadores: View {
     var items: [IndicadorIcono]
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, i in i }
+            ForEach(Array(items.enumerated()), id: \.offset) { n, i in i.aparecer(0.05 + Double(n) * 0.05) }
         }
     }
 }
@@ -88,15 +96,19 @@ struct BarraProgreso: View {
     var valor: Double
     var alto: CGFloat = 10
     var fondo: Color = C.pistaMeta
+    @State private var lleno = false
+    @Environment(\.accessibilityReduceMotion) private var sinMovimiento
     var body: some View {
         GeometryReader { g in
             ZStack(alignment: .leading) {
                 Capsule().fill(fondo)
                 Capsule().fill(LinearGradient(colors: [C.acento, Color(hex: 0xB0441D)], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: max(alto, g.size.width * min(1, max(0, valor))))
+                    .frame(width: max(alto, g.size.width * min(1, max(0, valor)) * (lleno || sinMovimiento ? 1 : 0)))
             }
         }
         .frame(height: alto)
+        .animation(Mov.crecer, value: valor)
+        .onAppear { withAnimation(Mov.crecer.delay(0.15)) { lleno = true } }
         .accessibilityValue("\(Int((valor * 100).rounded())) %")
     }
 }
@@ -119,86 +131,7 @@ struct TarjetaSeccion<Contenido: View>: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .tarjeta(radio: 20)
-    }
-}
-
-// MARK: - Gráficos
-
-/// Flujo de caja: lo que entra y lo que sale por día (barras enfrentadas).
-struct GraficoFlujo: View {
-    struct Dia: Identifiable { var dia: Int; var entra: Int; var sale: Int; var id: Int { dia } }
-    var dias: [Dia]
-    var body: some View {
-        Chart {
-            ForEach(dias) { d in
-                BarMark(x: .value("Día", d.dia), y: .value("Entra", d.entra))
-                    .foregroundStyle(C.ok).cornerRadius(3)
-                BarMark(x: .value("Día", d.dia), y: .value("Sale", -d.sale))
-                    .foregroundStyle(C.error.opacity(0.8)).cornerRadius(3)
-            }
-            RuleMark(y: .value("Cero", 0)).foregroundStyle(C.linea2)
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading) { v in
-                AxisGridLine().foregroundStyle(C.linea)
-                AxisValueLabel { if let n = v.as(Int.self) { Text(Formato.compacto(n)).font(.caption2).foregroundStyle(C.texto3) } }
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 7)) { v in
-                AxisValueLabel { if let n = v.as(Int.self) { Text("\(n)").font(.caption2).foregroundStyle(C.texto3) } }
-            }
-        }
-        .frame(height: 170)
-    }
-}
-
-/// Dona de medios de pago.
-struct DonaMedios: View {
-    struct Parte: Identifiable { var nombre: String; var monto: Int; var id: String { nombre } }
-    var partes: [Parte]
-    static let colores: [Color] = [Color(hex: 0xD9652F), Color(hex: 0xE3A93B), Color(hex: 0x6B5244), Color(hex: 0x2F8F63), Color(hex: 0x8E3A16), Color(hex: 0xB5A193)]
-
-    var body: some View {
-        let total = max(1, partes.reduce(0) { $0 + $1.monto })
-        HStack(spacing: 18) {
-            Chart(Array(partes.enumerated()), id: \.element.id) { i, p in
-                SectorMark(angle: .value("Monto", p.monto), innerRadius: .ratio(0.62), angularInset: 2)
-                    .foregroundStyle(DonaMedios.colores[i % DonaMedios.colores.count])
-                    .cornerRadius(4)
-            }
-            .frame(width: 120, height: 120)
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(partes.enumerated()), id: \.element.id) { i, p in
-                    HStack(spacing: 8) {
-                        Circle().fill(DonaMedios.colores[i % DonaMedios.colores.count]).frame(width: 9, height: 9)
-                        Text(p.nombre).estilo(.texto14).foregroundStyle(C.texto).lineLimit(1)
-                        Spacer(minLength: 4)
-                        Text("\(Int((Double(p.monto) / Double(total) * 100).rounded())) %").estilo(.footnoteFuerte)
-                            .monospacedDigit().foregroundStyle(C.texto2)
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Barras horizontales por cantidad de estrellas (5 a 1).
-struct BarrasEstrellas: View {
-    var porEstrellas: [Int]
-    var body: some View {
-        let total = max(1, porEstrellas.reduce(0, +))
-        VStack(spacing: 6) {
-            ForEach((1...5).reversed(), id: \.self) { n in
-                let c = porEstrellas.indices.contains(n - 1) ? porEstrellas[n - 1] : 0
-                HStack(spacing: 8) {
-                    Text("\(n)").estilo(.footnoteFuerte).foregroundStyle(C.texto2).frame(width: 12)
-                    Image(systemName: "star.fill").font(.system(size: 10)).foregroundStyle(C.aviso)
-                    BarraProgreso(valor: Double(c) / Double(total), alto: 8)
-                    Text("\(c)").estilo(.footnote).monospacedDigit().foregroundStyle(C.texto3).frame(width: 28, alignment: .trailing)
-                }
-            }
-        }
+        .aparecer(0.12)
     }
 }
 

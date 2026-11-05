@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"net/http"
 	"regexp"
 	"slices"
@@ -501,7 +502,7 @@ func nombrePlan(p string) string {
 
 // Rutas del panel. cobraAbono: con Mercado Pago activo, un plan pago sólo se activa por la
 // suscripción (POST /v1/panel/cuenta/suscripcion); acá sólo se puede bajar al gratis.
-func Rutas(mux *http.ServeMux, pool tx, geo geoip.Ubicador, sitio string, cobraAbono bool) {
+func Rutas(mux *http.ServeMux, pool tx, geo geoip.Ubicador, sitio string, cobraAbono bool, g Ganchos) {
 	con := func(h func(http.ResponseWriter, *http.Request, string, Quien)) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			d, ok := cuentas.SesionDe(r)
@@ -534,6 +535,8 @@ func Rutas(mux *http.ServeMux, pool tx, geo geoip.Ubicador, sitio string, cobraA
 			problema.Escribir(w, problema.Conflicto("actual", "Para cerrar esta, salí de la cuenta."))
 		case errors.Is(err, ErrInvalido):
 			problema.Escribir(w, problema.Invalido("Revisá los datos."))
+		case errors.Is(err, abono.ErrBeneficioUsado):
+			problema.Escribir(w, problema.Conflicto("beneficio_usado", "Ya usaste el descuento para quedarte."))
 		default:
 			problema.Escribir(w, problema.Interno())
 		}
@@ -545,7 +548,7 @@ func Rutas(mux *http.ServeMux, pool tx, geo geoip.Ubicador, sitio string, cobraA
 		}
 		return true
 	}
-	rutasCuenta(mux, pool, con, errorDe, leer)
+	rutasCuenta(mux, pool, g, con, errorDe, leer)
 	rutasDatos(mux, pool, sitio, con, errorDe, leer)
 	rutasMedicion(mux, pool, con, errorDe, leer)
 	rutasEntregas(mux, pool, con, errorDe, leer)

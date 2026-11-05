@@ -54,6 +54,7 @@ struct CotizacionPlan: Decodable {
 struct PlanCuenta: View {
     @Environment(Estado.self) private var estado
     @State private var hoja: String?
+    @State private var cancelar = false
 
     struct Datos: Decodable {
         struct Uso: Decodable { var productos: Int; var personas: Int; var hornero: Int }
@@ -64,6 +65,8 @@ struct PlanCuenta: View {
         }
         struct Programado: Decodable { var plan: String; var ciclo: String; var desde: String }
         struct Abono: Decodable { var activo: Bool; var proximo: String?; var programado: Programado? }
+        /// El descuento para quedarse (§57) que queda en los próximos cobros.
+        struct Beneficio: Decodable { var pct: Int; var cobros: Int }
         var actual: String
         var ciclo: String
         var enPrueba: Bool
@@ -72,12 +75,22 @@ struct PlanCuenta: View {
         var proximoCobro: String?
         var abono: Abono?
         var cotizaciones: [String: CotizacionPlan]?
+        var beneficio: Beneficio?
+        var beneficioUsado: Bool?
         var uso: Uso
         var medio: Medio?
         var facturas: [Factura]
 
         func cotizacion(_ plan: String, _ ciclo: String) -> CotizacionPlan? {
             cotizaciones?["\(plan)/\(plan == "gratis" ? self.ciclo : ciclo)"]
+        }
+
+        /// Lo que se debita por ciclo con el plan vigente, sin descuento.
+        var debito: Int { cotizacion(actual, ciclo)?.porCiclo ?? 0 }
+
+        static func conDescuento(_ importe: Int, _ b: Beneficio?) -> Int {
+            guard let b, b.cobros > 0, b.pct > 0 else { return importe }
+            return Int((Double(importe * (100 - b.pct)) / 100).rounded())
         }
     }
 
@@ -91,6 +104,22 @@ struct PlanCuenta: View {
                          detalle: detalleHeroe(d), tincho: .celebrando)
             if let p = d.abono?.programado {
                 AvisoProgramado(programado: p, actual: nombre) { hoja = d.actual }
+            }
+            if let b = d.beneficio {
+                HStack(spacing: 12) {
+                    Image(systemName: "percent").font(.system(size: 18, weight: .bold)).foregroundStyle(C.okTinta)
+                        .frame(width: 36, height: 36).background(C.okFondo, in: Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(b.pct) % off en \(b.cobros == 1 ? "tu próximo cobro" : "tus próximos \(b.cobros) cobros")")
+                            .estilo(.subheadFuerte).foregroundStyle(C.texto)
+                        Text(Formato.sinViudas("Pagás \(Formato.pesos(Datos.conDescuento(d.debito, b))) en vez de \(Formato.pesos(d.debito)). Después vuelve solo al precio del plan."))
+                            .estilo(.footnote).foregroundStyle(C.texto2)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .background(C.okFondo.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .aparecer(0.05)
             }
             GrillaIndicadores(items: [
                 IndicadorIcono(simbolo: "shippingbox.fill", titulo: "Productos", valor: "\(d.uso.productos)"),
@@ -113,6 +142,13 @@ struct PlanCuenta: View {
                 .sheet(item: Binding(get: { hoja.map { Elegido(id: $0) } }, set: { hoja = $0?.id })) { e in
                     HojaPlan(datos: d, preelegido: e.id) { await actualizar() }.hojaTLW([.large])
                 }
+            if d.actual != "gratis" && d.abono?.programado?.plan != "gratis" {
+                Button("Cancelar plan") { cancelar = true }
+                    .buttonStyle(BotonTexto(alto: 44, color: C.errorTinta))
+                    .sheet(isPresented: $cancelar) {
+                        HojaCancelar(datos: d) { await actualizar() }.hojaTLW([.large])
+                    }
+            }
         }
     }
 
@@ -467,5 +503,183 @@ private struct BarraConfirmar: View {
         .padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 12)
         .background(C.fondo)
         .overlay(alignment: .top) { Rectangle().fill(C.linea).frame(height: 1) }
+    }
+}
+
+// MARK: - Cancelar
+
+/// Cancelar el plan como en el panel web: el motivo, la oferta para quedarse (§57: un descuento que
+/// baja el débito de verdad, una vez por tienda, o que alguien del equipo escriba) y la baja, que
+/// rige cuando termina lo pagado.
+struct HojaCancelar: View {
+    var datos: PlanCuenta.Datos
+    var listo: () async -> Void
+    @Environment(Estado.self) private var estado
+    @Environment(\.dismiss) private var cerrar
+    @State private var paso = 0
+    @State private var motivo = 0
+    @State private var enviando = false
+
+    static let motivos = ["Es caro para lo que vendo", "Me falta una función", "Voy a pausar el negocio",
+                          "Me voy a otra plataforma", "Otro motivo"]
+    /// Los descuentos por motivo (abono.Ofertas de la API).
+    static let beneficios: [Int: PlanCuenta.Datos.Beneficio] = [0: .init(pct: 50, cobros: 3), 4: .init(pct: 50, cobros: 1)]
+
+    private struct Oferta { var titulo: String; var texto: String; var simbolo: String; var boton: String }
+
+    private var oferta: Oferta {
+        let debito = datos.debito
+        if datos.beneficioUsado != true, let b = Self.beneficios[motivo] {
+            let con = Formato.pesos(PlanCuenta.Datos.conDescuento(debito, b))
+            return b.cobros == 1
+                ? Oferta(titulo: "Tu próximo cobro a mitad de precio",
+                         texto: "Si algo no anduvo bien, queremos saberlo. Mientras tanto, tu próximo cobro es de \(con) en vez de \(Formato.pesos(debito)).",
+                         simbolo: "heart.circle.fill", boton: "Me quedo con el descuento")
+                : Oferta(titulo: "Te dejamos 3 cobros a mitad de precio",
+                         texto: "Seguí con todo por \(con) en tus próximos 3 cobros. Después vuelve a \(Formato.pesos(debito)).",
+                         simbolo: "percent", boton: "Quiero el descuento")
+        }
+        switch motivo {
+        case 2: return Oferta(titulo: "Mejor pausala", texto: "Pasás al plan Gratis: tu tienda queda guardada y la reactivás cuando quieras.",
+                              simbolo: "pause.circle.fill", boton: "Pasar a Gratis")
+        case 3: return Oferta(titulo: "Antes de irte, hablemos",
+                              texto: "Contanos qué te ofrecen en la otra plataforma: vemos cómo ayudarte a quedarte o a mudarte sin perder nada.",
+                              simbolo: "bubble.left.and.bubble.right.fill", boton: "Que me contacten")
+        default: return Oferta(titulo: "Contanos qué te falta",
+                               texto: "Muchas funciones se pueden activar o están por salir. Una persona del equipo te escribe hoy.",
+                               simbolo: "bubble.left.and.bubble.right.fill", boton: "Que me contacten")
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 6) {
+                        ForEach(0..<3) { i in
+                            Capsule().fill(i <= paso ? C.acento : C.pistaMeta).frame(height: 4)
+                        }
+                    }
+                    .animation(Mov.toque, value: paso)
+                    Group {
+                        switch paso {
+                        case 0: motivos
+                        case 1: ofrecer
+                        default: confirmar
+                        }
+                    }
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+                }
+                .margenPantalla().padding(.vertical, 16)
+            }
+            .background(C.fondo.ignoresSafeArea())
+            .navigationTitle("Cancelar el plan").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cerrar") { cerrar() } } }
+        }
+    }
+
+    private var motivos: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("¿Por qué te vas?").estilo(.tituloHojaChico).foregroundStyle(C.texto)
+            Text("Nos ayuda a mejorar.").estilo(.footnote).foregroundStyle(C.texto2)
+            VStack(spacing: 0) {
+                ForEach(Array(Self.motivos.enumerated()), id: \.offset) { i, m in
+                    if i > 0 { Separador(inset: 16) }
+                    Button { withAnimation(Mov.toque) { motivo = i } } label: {
+                        HStack {
+                            Text(m).estilo(.body16).foregroundStyle(C.texto)
+                            Spacer()
+                            Image(systemName: motivo == i ? "largecircle.fill.circle" : "circle")
+                                .foregroundStyle(motivo == i ? C.acento : C.texto3)
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 13).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(motivo == i ? .isSelected : [])
+                }
+            }
+            .tarjeta()
+            .sensoryFeedback(.selection, trigger: motivo)
+            Button("Continuar") { withAnimation(Mov.entrada) { paso = 1 } }.buttonStyle(BotonPrincipal())
+            Button("Me quedo") { cerrar() }.buttonStyle(BotonTexto())
+        }
+    }
+
+    private var ofrecer: some View {
+        let o = oferta
+        return VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: o.simbolo).font(.system(size: 30, weight: .bold)).foregroundStyle(C.acento)
+                .frame(width: 64, height: 64).background(C.crema, in: Circle())
+                .symbolEffect(.bounce, value: paso)
+            Text(o.titulo).estilo(.tituloHojaChico).foregroundStyle(C.texto)
+            Text(Formato.sinViudas(o.texto)).estilo(.body16).foregroundStyle(C.texto2)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(o.boton) { Task { await aceptar() } }
+                .buttonStyle(BotonPrincipal()).disabled(enviando)
+            Button("Cancelar igual") { withAnimation(Mov.entrada) { paso = 2 } }.buttonStyle(BotonTexto())
+        }
+    }
+
+    private var confirmar: some View {
+        let hasta = datos.cotizacion("gratis", datos.ciclo)?.hasta
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Confirmá la cancelación").estilo(.tituloHojaChico).foregroundStyle(C.texto)
+            VStack(alignment: .leading, spacing: 10) {
+                Label(hasta.map { "Seguís con todo hasta el \(Formato.diaMes($0))" } ?? "Pasás al plan Gratis ahora",
+                      systemImage: "calendar")
+                Label("No te cobramos más", systemImage: "creditcard")
+                Label("Tus productos y pedidos quedan guardados", systemImage: "checkmark.shield")
+            }
+            .estilo(.texto14).foregroundStyle(C.texto)
+            Button("Cancelar mi plan") { Task { await darDeBaja() } }
+                .buttonStyle(BotonDestructivo()).disabled(enviando)
+            Button("Volver") { cerrar() }.buttonStyle(BotonTexto())
+        }
+    }
+
+    private struct Cuerpo: Encodable { var motivo: Int; var accion: String }
+    private struct Respuesta: Decodable { var beneficio: PlanCuenta.Datos.Beneficio? }
+
+    private func aceptar() async {
+        // Pausar es pasar a Gratis: la misma confirmación de la baja.
+        if motivo == 2 {
+            withAnimation(Mov.entrada) { paso = 2 }
+            return
+        }
+        enviando = true
+        defer { enviando = false }
+        do {
+            let r: Respuesta = try await estado.api.enviar("POST", "/v1/panel/cuenta/cancelacion", Cuerpo(motivo: motivo, accion: "oferta"))
+            await listo()
+            Haptico.exito()
+            if let b = r.beneficio {
+                estado.avisar("¡Gracias por quedarte! \(b.pct) % off en \(b.cobros == 1 ? "tu próximo cobro" : "tus próximos \(b.cobros) cobros").")
+            } else {
+                estado.avisar("Listo, una persona del equipo te escribe hoy.")
+            }
+            cerrar()
+        } catch {
+            estado.avisar("No se pudo. Probá de nuevo.", ok: false)
+        }
+    }
+
+    private func darDeBaja() async {
+        struct S: Encodable { var plan: String; var ciclo: String }
+        struct U: Decodable { var url: String }
+        enviando = true
+        defer { enviando = false }
+        do {
+            try await estado.api.hacer("POST", "/v1/panel/cuenta/cancelacion", Cuerpo(motivo: motivo, accion: "cancelar"))
+            let _: U = try await estado.api.enviar("POST", "/v1/panel/cuenta/abono", S(plan: "gratis", ciclo: datos.ciclo))
+            await listo()
+            Haptico.exito()
+            let hasta = datos.cotizacion("gratis", datos.ciclo)?.hasta
+            estado.avisar(hasta.map { "Plan cancelado. Seguís con todo hasta el \(Formato.diaMes($0))." } ?? "Pasaste al plan Gratis.")
+            cerrar()
+        } catch {
+            estado.avisar("No se pudo. Probá de nuevo.", ok: false)
+        }
     }
 }

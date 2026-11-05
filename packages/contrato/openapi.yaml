@@ -2513,9 +2513,16 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [hasta]
+                description: 'Al cancelar, hasta cuándo sigue lo pagado; al aceptar el descuento para quedarse (§57), el beneficio.'
                 properties:
-                  hasta: { type: string, format: date-time }
+                  hasta: { type: [string, 'null'], format: date-time }
+                  beneficio:
+                    type: object
+                    required: [pct, cobros]
+                    properties:
+                      pct: { type: integer }
+                      cobros: { type: integer }
+        '409': { $ref: '#/components/responses/Problema' }
     delete:
       operationId: reactivarPlan
       summary: Deshace la cancelación.
@@ -4792,7 +4799,7 @@ components:
             diasPrueba: { type: integer }
     PlanCuenta:
       type: object
-      required: [actual, ciclo, enPrueba, diasPrueba, finPrueba, proximoCobro, abono, cotizaciones, uso, medio, facturacion, facturas, cancelado]
+      required: [actual, ciclo, enPrueba, diasPrueba, finPrueba, proximoCobro, abono, cotizaciones, beneficio, beneficioUsado, uso, medio, facturacion, facturas, cancelado]
       properties:
         actual: { type: string, enum: [gratis, emprende, pro, negocio] }
         ciclo: { type: string, enum: [mes, anio] }
@@ -4817,6 +4824,14 @@ components:
           type: object
           description: 'Lo que cuesta pasar a cada plan, por "plan/ciclo" (abono.Cotizar). Falta la de un cambio no permitido.'
           additionalProperties: { $ref: '#/components/schemas/Cotizacion' }
+        beneficio:
+          type: [object, 'null']
+          description: 'El descuento para quedarse (§57) que queda en los próximos cobros del débito'
+          required: [pct, cobros]
+          properties:
+            pct: { type: integer }
+            cobros: { type: integer, description: 'Cobros que quedan con el descuento' }
+        beneficioUsado: { type: boolean, description: 'Ya se aceptó el descuento alguna vez (se ofrece una sola vez)' }
         uso:
           type: object
           required: [productos, personas, hornero, packs, sinIa]

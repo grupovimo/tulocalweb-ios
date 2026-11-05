@@ -42,6 +42,7 @@ import {
 	type EstadoRelampago
 } from './cupones.ts';
 import { EsquemaEntregas, problemaEntregas } from '#lib/panel/entregas.ts';
+import { BENEFICIOS } from '#lib/panel/planes.ts';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { aumentar, proximoLunes, type Redondeo } from '#lib/panel/precios.ts';
@@ -2503,6 +2504,8 @@ export class DatosSandbox implements Datos {
 			proximoCobro: new Date(fin).toISOString(),
 			abono: { activo: abono.activo, proximo: abono.proximo, programado: abono.pendiente },
 			cotizaciones: todas(abono, new Date()),
+			beneficio: e.oferta && BENEFICIOS[e.oferta.motivo] ? BENEFICIOS[e.oferta.motivo] : null,
+			beneficioUsado: !!(e.oferta && BENEFICIOS[e.oferta.motivo]),
 			uso: {
 				productos: productos.length,
 				personas: c.equipo.length,
@@ -2541,9 +2544,14 @@ export class DatosSandbox implements Datos {
 
 	async cancelarPlan(motivo: number, accion: 'cancelar' | 'oferta') {
 		const en = Date.now();
-		if (accion === 'oferta')
-			await guardarCambio(this.db, this.sb.id, 'cuenta', 'oferta', { motivo, en });
-		else await guardarCambio(this.db, this.sb.id, 'cuenta', 'cancelado', { motivo, en });
+		if (accion === 'oferta') {
+			// El descuento para quedarse (§57) va una sola vez; pedir que escriban no lo pisa.
+			const e = await this.estadoCuenta();
+			if (!(e.oferta && BENEFICIOS[e.oferta.motivo]))
+				await guardarCambio(this.db, this.sb.id, 'cuenta', 'oferta', { motivo, en });
+			return BENEFICIOS[motivo] ? { beneficio: BENEFICIOS[motivo] } : {};
+		}
+		await guardarCambio(this.db, this.sb.id, 'cuenta', 'cancelado', { motivo, en });
 		return { hasta: new Date(en + DIAS_DE_PRUEBA * 86_400_000).toISOString() };
 	}
 

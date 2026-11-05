@@ -115,6 +115,7 @@ func correr() error {
 			Formularios:     &formularios.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio, Equipo: cfg.CorreoEquipo},
 			ClaveBFF:        cfg.ClaveBFF,
 			Correo:          mails,
+			CorreoEquipo:    cfg.CorreoEquipo,
 			Sitio:           cfg.Sitio,
 			MercadoPago: mercadopago.DesdeConfig(app, cfg.OAuth["mercadopago"][0], cfg.OAuth["mercadopago"][1], cfg.MPToken,
 				cfg.MPSecretoWebhook, cfg.Sitio, cfg.ClaveCifrado, slog.Default()),

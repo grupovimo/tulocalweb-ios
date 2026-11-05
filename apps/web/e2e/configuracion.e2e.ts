@@ -41,7 +41,10 @@ test('configuración: negocio, equipo, seguridad y plan', async ({ page, isMobil
 	// El plan se elige en Plan y facturación, con el resumen de lo que se paga (§56).
 	await nav.getByRole('button', { name: 'Plan' }).click();
 	await page.getByRole('link', { name: 'Elegir Emprende' }).click();
-	await expect(page.getByRole('radio', { name: /Emprende/ })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByRole('radio', { name: /Emprende/ })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
 	await page.locator('#resumen').getByRole('button', { name: 'Seguir a Mercado Pago' }).click();
 	await expect(page.getByText('Ya tenés el plan Emprende')).toBeVisible();
 	if (!isMobile) await expect(page.locator('.prueba')).toContainText('Emprende');
