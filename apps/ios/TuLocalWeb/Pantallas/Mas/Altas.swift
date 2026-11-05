@@ -250,41 +250,6 @@ struct HojaCuponNuevo: View {
     }
 }
 
-// MARK: - Plan
-
-struct HojaPlan: View {
-    var actual: String
-    var listo: () async -> Void
-    @Environment(Estado.self) private var estado
-    @State private var plan = "emprende"
-    @State private var ciclo = "mes"
-
-    static let planes = [("emprende", "Emprende"), ("pro", "Pro"), ("negocio", "Negocio")]
-
-    var body: some View {
-        HojaFormulario(titulo: "Cambiar de plan", boton: plan == actual ? "Es tu plan actual" : "Seguir al pago", habilitado: plan != actual) {
-            struct S: Encodable { var plan: String; var ciclo: String }
-            struct U: Decodable { var url: String }
-            do {
-                let u: U = try await estado.api.enviar("POST", "/v1/panel/cuenta/suscripcion", S(plan: plan, ciclo: ciclo))
-                if let url = URL(string: u.url) { await ConectarCuenta.compartido.abrir(url) }
-                await listo()
-                return true
-            } catch let e as ErrorApi {
-                estado.avisar(e.detalle, ok: false); return false
-            } catch { return false }
-        } contenido: {
-            Text(Formato.sinViudas("El cobro va por Mercado Pago, con débito automático. Podés cambiar o cancelar cuando quieras."))
-                .estilo(.subhead).foregroundStyle(C.texto2)
-            Segmentado(opciones: HojaPlan.planes, elegido: $plan)
-            Segmentado(opciones: [("mes", "Por mes"), ("anio", "Por año")], elegido: $ciclo)
-            Text("Los precios y lo que incluye cada plan están en tulocalweb.com.ar/precios.")
-                .estilo(.footnote).foregroundStyle(C.texto3)
-        }
-        .onAppear { if HojaPlan.planes.contains(where: { $0.0 == actual }) { plan = actual } }
-    }
-}
-
 // MARK: - ARCA
 
 /// Alta de ARCA en el celular: los datos, el pedido de certificado para cargar en ARCA y el

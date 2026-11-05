@@ -1323,3 +1323,33 @@ Nahuel: «el link de mi tienda debería ser minombre.tulocalweb.com.ar, no tuloc
 - **Dirección visible**: `<slug>.tulocalweb.com.ar` en el onboarding, la tarjeta para compartir, Mi tienda
   (`mitienda.go`) y la app. `tulocalweb.com.ar/t/<slug>` sigue andando: los links de mails y de pago todavía lo usan.
 
+
+## 56. El abono con prorrateo y la elección de plan como carrito (migración 00073, 5/11/2026)
+
+- **Una sola cuenta**: `internal/dominio/abono` (`Cotizar`) dice, para cada plan y ciclo, qué se paga hoy (con
+  su detalle, que suma el total), desde cuándo rige, hasta cuándo sigue lo pagado y cuánto se cobra después.
+  Su espejo es `apps/web/src/lib/panel/cotizar.ts` (lo usa el sandbox), con la misma tabla de casos
+  (`abono/testdata/cotizar.json`, la leen el test de Go y el de TypeScript). Precios finales, IVA incluido.
+- **Reglas**: en la prueba no se cobra nada hasta que termina. Sin débito, se paga el primer período. Subir
+  en el mismo ciclo: un pago único (Checkout Pro con la cuenta de la plataforma, referencia
+  `abono:<tienda>:<plan>:<ciclo>:<importe>`) por la diferencia de los días que quedan; el plan rige al
+  aprobarse y el débito sube de monto (PUT del preapproval) desde el próximo cobro. Bajar, pasar a gratis o
+  cambiar de ciclo no cobra nada hoy: lo pagado sigue hasta el próximo cobro y el cambio queda programado
+  (`plan_programado`, `programado_desde`; el worker lo aplica cada 5 minutos). Con un cambio programado sólo
+  se puede deshacerlo (volver al vigente); otro plan da 409.
+- **Dos cosas distintas en `tiendas`**: `plan_pendiente`/`ciclo_pendiente`/`espera_desde` es un débito que la
+  dueña todavía no autorizó; `plan_programado` es lo que rige en una fecha. Abandonar Mercado Pago a mitad
+  de camino nunca deja un plan sin pagar.
+- **El próximo cobro es el de Mercado Pago** (`abono_proximo`, del `next_payment_date`), no una cuenta desde
+  el alta. Cada cobro del débito (`subscription_authorized_payment` de la plataforma) y cada diferencia
+  (`payment` de la plataforma) quedan en `abono_cobros`: es la lista de Facturas.
+- **API**: `POST /v1/panel/cuenta/abono {plan, ciclo}` → `{url}` (vacía si quedó hecho); `POST
+  /v1/panel/cuenta/abono/vuelta {pago | suscripcion}` confirma al volver de Mercado Pago sin esperar el aviso.
+  `POST /v1/panel/cuenta/suscripcion` (la app de antes) pasa por lo mismo. `GET /v1/panel/cuenta/plan` suma
+  `finPrueba`, `abono` y `cotizaciones`.
+- **Pantalla (web y app)**: elegir un plan no cobra; el resumen («Resumen del cambio», del cajón del pedido de
+  `Mostrador v4.dc.html`) muestra Hoy pagás, Después y desde cuándo, y el botón dice lo que hace («Pagar
+  $ X con Mercado Pago», «Confirmar el cambio»). Configuración lleva a esta pantalla (`?plan=`). Cancelar es
+  pasar a gratis (programado). Se fue la promesa de «diferencia prorrateada» que no se cumplía.
+- **Pendiente**: las ofertas de retención del modal de cancelación («50 % off por 3 meses», «primer mes
+  gratis») siguen sin aplicarse en ningún cobro.

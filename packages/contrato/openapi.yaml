@@ -1788,6 +1788,45 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/UrlExterna' }
+  /v1/panel/cuenta/abono:
+    post:
+      operationId: cambiarAbono
+      summary: >-
+        Pasa a un plan y ciclo con su cotización (§56): lo que se paga hoy, desde cuándo rige y cómo. url vacía si
+        quedó hecho (o programado para el próximo cobro); si no, adónde ir en Mercado Pago (cargar la tarjeta del
+        débito o pagar la diferencia prorrateada).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan, ciclo]
+              properties:
+                plan: { type: string, enum: [gratis, emprende, pro, negocio] }
+                ciclo: { type: string, enum: [mes, anio] }
+      responses:
+        '200':
+          description: Hecho (url vacía) o adónde ir
+          content:
+            application/json:
+              schema: { type: object, required: [url], properties: { url: { type: string } } }
+        '409': { $ref: '#/components/responses/Problema' }
+  /v1/panel/cuenta/abono/vuelta:
+    post:
+      operationId: volverAbono
+      summary: La vuelta de Mercado Pago (pago de la diferencia o débito autorizado), sin esperar el aviso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pago: { type: string, maxLength: 64 }
+                suscripcion: { type: string, maxLength: 64 }
+      responses:
+        '204': { description: Conciliado }
   /v1/webhooks/mercadopago:
     post:
       operationId: webhookMercadoPago
@@ -4753,13 +4792,31 @@ components:
             diasPrueba: { type: integer }
     PlanCuenta:
       type: object
-      required: [actual, ciclo, enPrueba, diasPrueba, proximoCobro, uso, medio, facturacion, facturas, cancelado]
+      required: [actual, ciclo, enPrueba, diasPrueba, finPrueba, proximoCobro, abono, cotizaciones, uso, medio, facturacion, facturas, cancelado]
       properties:
         actual: { type: string, enum: [gratis, emprende, pro, negocio] }
         ciclo: { type: string, enum: [mes, anio] }
         enPrueba: { type: boolean }
         diasPrueba: { type: integer }
-        proximoCobro: { type: string, format: date-time }
+        finPrueba: { type: string, format: date-time }
+        proximoCobro: { type: [string, 'null'], format: date-time, description: 'El próximo cobro del débito; en la prueba, cuando termina' }
+        abono:
+          type: object
+          required: [activo, proximo, programado]
+          properties:
+            activo: { type: boolean, description: 'Hay un débito autorizado en Mercado Pago' }
+            proximo: { type: [string, 'null'], format: date-time, description: 'Hasta cuándo está pago el plan vigente' }
+            programado:
+              type: [object, 'null']
+              required: [plan, ciclo, desde]
+              properties:
+                plan: { type: string, enum: [gratis, emprende, pro, negocio] }
+                ciclo: { type: string, enum: [mes, anio] }
+                desde: { type: string, format: date-time }
+        cotizaciones:
+          type: object
+          description: 'Lo que cuesta pasar a cada plan, por "plan/ciclo" (abono.Cotizar). Falta la de un cambio no permitido.'
+          additionalProperties: { $ref: '#/components/schemas/Cotizacion' }
         uso:
           type: object
           required: [productos, personas, hornero, packs, sinIa]
@@ -4792,11 +4849,40 @@ components:
               numero: { type: string }
               detalle: { type: string }
               total: { type: integer }
+              fecha: { type: string, format: date-time }
         cancelado:
           type: [object, 'null']
           required: [hasta]
           properties:
             hasta: { type: string, format: date-time }
+    Cotizacion:
+      type: object
+      description: 'Pasar a plan/ciclo: qué se paga hoy (con su detalle), desde cuándo rige y cuánto se cobra después. Pesos, IVA incluido.'
+      required: [plan, ciclo, tipo, hoy, rige, hasta, cobro, porCiclo, lineas, pago, inicio]
+      properties:
+        plan: { type: string, enum: [gratis, emprende, pro, negocio] }
+        ciclo: { type: string, enum: [mes, anio] }
+        tipo: { type: string, enum: [actual, prueba, alta, sube, baja, ciclo, gratis, programado, mantener] }
+        hoy: { type: integer }
+        rige: { type: string, format: date-time }
+        hasta: { type: [string, 'null'], format: date-time }
+        cobro:
+          type: [object, 'null']
+          required: [fecha, importe]
+          properties:
+            fecha: { type: string, format: date-time }
+            importe: { type: integer }
+        porCiclo: { type: integer }
+        lineas:
+          type: array
+          items:
+            type: object
+            required: [texto, importe]
+            properties:
+              texto: { type: string }
+              importe: { type: integer }
+        pago: { type: string, enum: [ninguno, suscripcion, diferencia, actualizar, cancelar] }
+        inicio: { type: [string, 'null'], format: date-time }
     UrlExterna:
       type: object
       required: [url]

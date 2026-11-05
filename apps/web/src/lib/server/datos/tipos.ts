@@ -302,6 +302,8 @@ export interface Datos {
 	invitar(email: string, rol: RolInvitable): Promise<Miembro | 'repetido'>;
 	/** Con el abono por Mercado Pago, un plan pago devuelve adónde ir a cargar la tarjeta. */
 	cambiarPlan(plan: IdPlan, ciclo?: 'mes' | 'anio'): Promise<void | { url: string }>;
+	/** La vuelta de Mercado Pago: confirma el pago de la diferencia o el débito sin esperar el aviso. */
+	volverAbono(v: { pago?: string; suscripcion?: string }): Promise<void>;
 	guardarMiTienda(d: DisenoTienda): Promise<void>;
 	publicarTienda(): Promise<void>;
 	/** Pasa lo disponible al banco. */

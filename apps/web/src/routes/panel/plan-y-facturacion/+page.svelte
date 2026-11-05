@@ -1,78 +1,225 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import MarcaIcono from '#lib/components/MarcaIcono.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
 	import { anim } from '#lib/panel/anim.ts';
 	import { pesos } from '#lib/panel/formato.ts';
 	import { MOTIVOS } from '#lib/panel/permisos.ts';
-	import { PLANES, planVigente, precioAnual } from '#lib/panel/planes.ts';
+	import { PLANES, planVigente, precioAnual, type IdPlan } from '#lib/panel/planes.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 
-	/** Plan y facturación (design/PanelCuenta.dc.html, sPlan): planes, uso, medio de pago y cancelar. */
+	/**
+	 * Plan y facturación (design/PanelCuenta.dc.html, sPlan) con el abono de §56: elegir un plan no cobra
+	 * nada; el resumen (el «pedido» de design/Mostrador v4.dc.html) muestra qué se paga hoy, línea por
+	 * línea, desde cuándo rige y cuánto se cobra después, y recién «Confirmar» pasa por Mercado Pago.
+	 * Las cuentas vienen hechas de la API (abono.Cotizar), las mismas con las que se cobra.
+	 */
 	let { data } = $props();
 	const ui = getUi();
+	type Ciclo = 'mes' | 'anio';
+	type Plan = (typeof PLANES)[number];
 
+	// Sin cortes raros: «14 de noviembre» va siempre en un renglón.
 	const fecha = (iso: string) =>
-		new Date(iso).toLocaleDateString('es-AR', {
-			day: 'numeric',
-			month: 'long',
-			timeZone: 'America/Argentina/Buenos_Aires'
-		});
-	let ciclo = $derived(data.ciclo);
-	const anual = $derived(ciclo === 'anio');
+		new Date(iso)
+			.toLocaleDateString('es-AR', {
+				day: 'numeric',
+				month: 'long',
+				timeZone: 'America/Argentina/Buenos_Aires'
+			})
+			.replaceAll(' ', '\u00a0');
 	const indice = (id: string) => PLANES.findIndex((p) => p.id === id);
+	const nombre = (id: string) => PLANES[indice(id)]?.nombre ?? id;
 	const actual = $derived(PLANES[indice(data.actual)]);
 	// Durante la prueba gratis, una tienda en Gratis usa Pro: los límites son los de Pro.
 	const probando = $derived(data.enPrueba && data.actual === 'gratis');
 	const vigente = $derived(PLANES[indice(planVigente(data.actual, data.enPrueba))]);
+	const programado = $derived(data.abono.programado);
 
+	// ---- Lo elegido (no cobra nada hasta confirmar) ----
+	// Se reasignan al elegir; con datos nuevos (después de confirmar) vuelven al plan vigente.
+	let ciclo = $derived<Ciclo>(data.ciclo);
+	let elegido = $derived<IdPlan>(data.actual);
+	const anual = $derived(ciclo === 'anio');
+	const clave = (p: string, c: Ciclo) => `${p}/${c}`;
+	const cot = $derived(
+		data.cotizaciones[clave(elegido, elegido === 'gratis' ? data.ciclo : ciclo)]
+	);
+	// Sin cambio: el plan vigente (o el ya programado) con su ciclo.
+	const sinCambio = $derived(!cot || cot.tipo === 'actual' || cot.tipo === 'programado');
+	const permitido = (p: Plan) =>
+		!!data.cotizaciones[clave(p.id, p.id === 'gratis' ? data.ciclo : ciclo)];
+	function elegir(p: Plan) {
+		if (!permitido(p)) {
+			ui.toast({
+				k: 'info',
+				title: 'Tenés un cambio programado',
+				desc: 'Deshacelo para elegir otro plan.'
+			});
+			return;
+		}
+		elegido = p.id;
+		if (innerWidth < 1280)
+			document.getElementById('resumen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	// ---- El resumen ----
+	const porCiclo = (n: number, c: Ciclo) => `${pesos(n)} ${c === 'anio' ? 'por año' : 'por mes'}`;
+	const NADA_HOY = $derived.by(() => {
+		if (!cot) return '';
+		switch (cot.tipo) {
+			case 'prueba':
+				return `Estás en la prueba gratis: no pagás nada hasta el ${fecha(data.finPrueba)}.`;
+			case 'baja':
+			case 'ciclo':
+				return `Ya pagaste hasta el ${fecha(cot.hasta!)}: seguís con ${actual.nombre} hasta ese día.`;
+			case 'gratis':
+				return cot.hasta
+					? `Ya pagaste hasta el ${fecha(cot.hasta)}: seguís con ${actual.nombre} hasta ese día.`
+					: 'El plan Gratis no tiene cobros.';
+			case 'mantener':
+				return `Deshacés el cambio programado y seguís con ${actual.nombre}.`;
+			default:
+				return '';
+		}
+	});
+	const RIGE = $derived(
+		!cot
+			? ''
+			: new Date(cot.rige) <= new Date(Date.now() + 60_000)
+				? 'hoy, al confirmar'
+				: `el ${fecha(cot.rige)}`
+	);
+	const COMO = $derived.by(() => {
+		switch (cot?.pago) {
+			case 'suscripcion':
+				return 'Cargás la tarjeta en Mercado Pago y queda el débito automático. Lo das de baja cuando quieras.';
+			case 'diferencia':
+				return 'Pagás la diferencia en Mercado Pago (tarjeta, dinero en cuenta o efectivo). Tu débito se actualiza solo.';
+			case 'actualizar':
+				return 'Actualizamos el monto de tu débito de Mercado Pago. No tenés que cargar nada.';
+			case 'cancelar':
+				return 'Damos de baja tu débito de Mercado Pago: no te cobramos más.';
+			default:
+				return '';
+		}
+	});
+	const BOTON = $derived.by(() => {
+		if (!cot || sinCambio) return cot?.tipo === 'programado' ? 'Ya está programado' : 'Es tu plan';
+		if (cot.pago === 'diferencia' || (cot.pago === 'suscripcion' && cot.hoy > 0))
+			return `Pagar ${pesos(cot.hoy)} con Mercado Pago`;
+		if (cot.pago === 'suscripcion') return 'Seguir a Mercado Pago';
+		if (cot.tipo === 'mantener') return 'Deshacer el cambio';
+		return elegido === 'gratis' ? 'Pasar a Gratis' : 'Confirmar el cambio';
+	});
+	const NUEVO = $derived(PLANES[indice(elegido)]);
+	const BOTON_CORTO = $derived(
+		BOTON.replace(/^Pagar .* con Mercado Pago$/, 'Pagar con Mercado Pago')
+	);
+
+	// ---- Confirmar ----
+	let enviando = $state(false);
 	async function pedir(url: string, method: string, cuerpo?: unknown) {
 		const r = await fetch(url, {
 			method,
 			headers: cuerpo === undefined ? {} : { 'content-type': 'application/json' },
 			body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo)
 		});
-		if (!r.ok) ui.toast({ k: 'err', title: 'No se pudo', desc: 'Probá de nuevo.' });
+		if (!r.ok) {
+			const p = (await r.json().catch(() => null)) as { message?: string } | null;
+			ui.toast({ k: 'err', title: 'No se pudo', desc: p?.message ?? 'Probá de nuevo.' });
+		}
 		return r.ok ? r : null;
 	}
-	async function cambiar(id: (typeof PLANES)[number]['id'], c = ciclo) {
-		const antes = data.actual;
-		const antesCiclo = data.ciclo;
-		const r0 = await pedir('/panel/plan', 'PUT', { plan: id, ciclo: c });
-		if (!r0) return false;
-		// Plan pago con el abono real: se carga la tarjeta en Mercado Pago.
-		if (r0.status === 200) {
-			location.href = ((await r0.json()) as { url: string }).url;
-			return false;
+	async function confirmarCambio() {
+		if (!cot || sinCambio || enviando) return;
+		const q = cot;
+		const antes = { plan: data.actual, ciclo: data.ciclo };
+		enviando = true;
+		const r = await pedir('/panel/plan', 'PUT', { plan: q.plan, ciclo: q.ciclo });
+		if (!r) return void (enviando = false);
+		// Hay que pasar por Mercado Pago: cargar la tarjeta del débito o pagar la diferencia.
+		if (r.status === 200) {
+			location.href = ((await r.json()) as { url: string }).url;
+			return;
 		}
 		await invalidateAll();
-		return { antes, antesCiclo };
+		enviando = false;
+		const n = nombre(q.plan);
+		if (q.tipo === 'baja')
+			ui.toast({
+				k: 'ok',
+				title: `Pasás a ${n} el ${fecha(q.rige)}`,
+				desc: `Hasta ahí seguís con ${nombre(antes.plan)}. Desde ese día pagás ${porCiclo(q.porCiclo, q.ciclo)}.`,
+				action: 'Deshacer',
+				onAction: async () => {
+					await pedir('/panel/plan', 'PUT', antes);
+					await invalidateAll();
+				}
+			});
+		else if (q.tipo === 'gratis')
+			ui.toast({
+				k: 'info',
+				title: q.hasta ? `Pasás a Gratis el ${fecha(q.hasta)}` : 'Pasaste al plan Gratis',
+				desc: 'Conservás productos, clientes y pedidos. No te cobramos más.'
+			});
+		else if (q.tipo === 'mantener')
+			ui.toast({ k: 'ok', title: `Seguís con ${n}`, desc: 'Deshiciste el cambio programado.' });
+		else
+			ui.toast({
+				k: 'ok',
+				title: `Ya tenés el plan ${n}`,
+				desc: q.cobro
+					? `El próximo cobro es el ${fecha(q.cobro.fecha)}: ${pesos(q.cobro.importe)}.`
+					: ''
+			});
 	}
-	async function elegir(p: (typeof PLANES)[number]) {
-		if (p.id === data.actual) return;
-		const sube = indice(p.id) > indice(data.actual);
-		const r = await cambiar(p.id);
-		if (!r) return;
-		ui.toast({
-			k: 'ok',
-			title: `Cambiaste al plan ${p.nombre}`,
-			desc: data.enPrueba
-				? 'Se cobra cuando termina tu prueba'
-				: sube
-					? 'Ya tenés todo activo. Cobramos la diferencia prorrateada.'
-					: 'Se aplica desde el próximo período.',
-			action: 'Deshacer',
-			onAction: () => void cambiar(r.antes, r.antesCiclo)
-		});
-	}
-	async function cicloA(c: 'mes' | 'anio') {
-		ciclo = c;
-		await cambiar(data.actual, c);
-	}
+
+	// La vuelta de Mercado Pago: el servidor ya confirmó el pago (o queda el aviso del webhook).
+	onMount(() => {
+		const q = page.url.searchParams;
+		// Desde Configuración (o un link) llega el plan ya elegido.
+		const pre = PLANES.find((p) => p.id === q.get('plan'));
+		if (pre && pre.id !== data.actual) {
+			elegir(pre);
+			replaceState(resolve('/panel/plan-y-facturacion'), page.state);
+			return;
+		}
+		const pago = q.get('pago');
+		const vuelta = q.get('suscripcion') === 'vuelta';
+		if (!pago && !vuelta) return;
+		if (pago === 'error')
+			ui.toast({
+				k: 'err',
+				title: 'El pago no se completó',
+				desc: 'No te cobramos nada. Podés probar de nuevo.'
+			});
+		else if (pago === 'pendiente')
+			ui.toast({
+				k: 'info',
+				title: 'Tu pago está pendiente',
+				desc: 'Cuando Mercado Pago lo acredite, tu plan cambia solo.'
+			});
+		else
+			ui.toast({
+				k: 'ok',
+				title:
+					data.actual === 'gratis'
+						? 'Estamos confirmando tu pago'
+						: `¡Listo! Estás en ${actual.nombre}`,
+				desc:
+					data.actual === 'gratis'
+						? 'En unos segundos se activa tu plan.'
+						: 'Gracias por elegir Tu Local Web.'
+			});
+		replaceState(resolve('/panel/plan-y-facturacion'), page.state);
+	});
 
 	// ---- Uso ----
 	const tope = $derived(vigente.hornero + data.uso.packs * 2000);
@@ -110,18 +257,17 @@
 		});
 	}
 
-	// ---- Frenar y cancelar ----
-	async function aGratis() {
-		const r = await cambiar('gratis');
-		if (!r) return;
-		ui.toast({
-			k: 'info',
-			title: `Pasás al plan Gratis el ${fecha(data.proximoCobro)}`,
-			desc: 'Conservás productos, clientes y pedidos',
-			action: 'Deshacer',
-			onAction: () => void cambiar(r.antes, r.antesCiclo)
-		});
+	// ---- Frenar y cancelar: pasan por el mismo resumen (lo pagado no se pierde) ----
+	function aGratis() {
+		elegido = 'gratis';
+		document.getElementById('resumen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
+	function reactivar() {
+		elegido = data.actual;
+		ciclo = data.ciclo;
+		document.getElementById('resumen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+	const hastaGratis = $derived(data.cotizaciones[clave('gratis', data.ciclo)]?.hasta ?? null);
 	let cancelando = $state(false);
 	let paso = $state(0);
 	let motivo = $state(0);
@@ -183,30 +329,30 @@
 		ui.toast({ k: 'ok', title: '¡Gracias por quedarte!', desc: `${oferta[3]} · ${oferta[4]}` });
 	}
 	async function confirmar() {
-		const r = await pedir('/panel/cuenta/cancelacion', 'POST', { motivo, accion: 'cancelar' });
-		if (!r) return;
-		const { hasta } = (await r.json()) as { hasta: string };
+		// El motivo queda registrado; la baja es pasar a Gratis (el débito se cancela, lo pagado sigue).
+		if (!(await pedir('/panel/cuenta/cancelacion', 'POST', { motivo, accion: 'cancelar' }))) return;
+		const r = await pedir('/panel/plan', 'PUT', { plan: 'gratis', ciclo: data.ciclo });
 		cancelando = false;
+		if (!r) return;
 		await invalidateAll();
 		ui.toast({
 			k: 'warn',
 			title: 'Plan cancelado',
-			desc: `Tu tienda sigue online hasta el ${fecha(hasta)}`,
-			action: 'Deshacer',
-			onAction: async () => {
-				await pedir('/panel/cuenta/cancelacion', 'DELETE');
-				await invalidateAll();
-			}
+			desc: hastaGratis
+				? `Tu tienda sigue con todo hasta el ${fecha(hastaGratis)}. No te cobramos más.`
+				: 'Pasaste al plan Gratis. No te cobramos más.'
 		});
 	}
 	const CONSECUENCIAS = $derived([
 		[
 			I.phCalendarCheck,
-			`Seguís usando Tu Local Web hasta el ${fecha(data.proximoCobro)}`,
+			hastaGratis
+				? `Seguís usando ${actual.nombre} hasta el ${fecha(hastaGratis)}`
+				: 'Pasás al plan Gratis ahora',
 			'#2F8F63'
 		],
-		[I.phStorefront, 'Después la tienda queda offline, pero no se borra', 'var(--mu)'],
-		[I.phDatabase, 'Guardamos todo 90 días por si volvés', 'var(--mu)'],
+		[I.phStorefront, 'Tu tienda sigue online con el plan Gratis', 'var(--mu)'],
+		[I.phDatabase, 'Conservás productos, clientes y pedidos', 'var(--mu)'],
 		[I.phXCircle, 'No te volvemos a cobrar', '#2F8F63']
 	] as const);
 </script>
@@ -224,58 +370,271 @@
 			<h1>Plan y facturación</h1>
 			<div class="c-s">
 				{#if probando}
-					Estás probando <b>el plan Pro gratis</b> hasta el {fecha(data.proximoCobro)}. Después
-					seguís en Gratis, salvo que elijas&nbsp;otro.
+					Estás probando <b>el plan Pro gratis</b> hasta el {fecha(data.finPrueba)}. Después seguís
+					en Gratis, salvo que elijas&nbsp;otro.
 				{:else}
-					Estás en <b>plan {actual.nombre} {anual ? 'anual' : 'mensual'}</b>{data.enPrueba
-						? ' (en prueba)'
-						: ''} ·
+					Estás en <b
+						>plan {actual.nombre}{data.actual === 'gratis'
+							? ''
+							: data.ciclo === 'anio'
+								? ' anual'
+								: ' mensual'}</b
+					>{data.enPrueba ? ' (en prueba)' : ''} ·
 					{data.cancelado
 						? `se da de baja el ${fecha(data.cancelado.hasta)}`
 						: data.actual === 'gratis'
 							? 'sin cobros'
-							: `próximo cobro el ${fecha(data.proximoCobro)}`}
+							: data.proximoCobro
+								? `próximo cobro el ${fecha(data.proximoCobro)}`
+								: 'sin débito cargado'}
 				{/if}
 			</div>
 		</div>
 		<div class="ciclos" role="group" aria-label="Ciclo">
-			<button type="button" aria-pressed={!anual} onclick={() => cicloA('mes')}>Mensual</button>
-			<button type="button" aria-pressed={anual} onclick={() => cicloA('anio')}
+			<button type="button" aria-pressed={!anual} onclick={() => (ciclo = 'mes')}>Mensual</button>
+			<button type="button" aria-pressed={anual} onclick={() => (ciclo = 'anio')}
 				>Anual<span>−25 %</span></button
 			>
 		</div>
 	</div>
 
-	<div class="planes" use:anim={{ t: 'rise', delay: 50 }}>
-		{#each PLANES as p (p.id)}
-			{@const cur = p.id === data.actual}
-			{@const oscuro = p.id === 'pro'}
-			{@const precio = anual ? precioAnual(p.precio) : p.precio}
-			<div class="plan" class:oscuro class:cur>
-				{#if cur}<span class="tuyo">Tu plan</span>{/if}
-				<div>
-					<div class="p-n">{p.nombre}</div>
-					<div class="p-d">{p.lema}</div>
-				</div>
-				<div class="p-precio">
-					<b>{p.precio ? pesos(precio) : 'Gratis'}</b>{#if p.precio}<span>/ mes</span>{/if}
-				</div>
-				{#if anual && p.precio}<div class="p-anual">
-						{pesos(precio * 12)} por año · ahorrás {pesos(p.precio * 12 * 0.25)}
-					</div>{/if}
-				<div class="p-incluye">
-					{#each p.incluye as f (f)}<div><Icon icon={I.phCheckBold} size={14} />{f}</div>{/each}
-				</div>
-				<button type="button" class="p-btn" class:actual={cur} onclick={() => elegir(p)}
-					>{cur
-						? 'Tu plan actual'
-						: indice(p.id) > indice(data.actual)
-							? `Pasar a ${p.nombre}`
-							: `Bajar a ${p.nombre}`}</button
+	{#if programado}
+		<div class="programado" use:anim={{ t: 'rise' }}>
+			<Icon icon={I.phCalendarCheckFill} size={22} style="color:#b0441d;flex:none" />
+			<div>
+				<b
+					>{programado.plan === 'gratis'
+						? `Pasás al plan Gratis el ${fecha(programado.desde)}`
+						: `Pasás a ${nombre(programado.plan)} ${programado.ciclo === 'anio' ? 'anual' : 'mensual'} el ${fecha(programado.desde)}`}</b
 				>
+				<span>Hasta ese día seguís con {actual.nombre}, que ya está pago.</span>
 			</div>
-		{/each}
+			<button type="button" onclick={reactivar}>Deshacer</button>
+		</div>
+	{/if}
+
+	<div class="compra">
+		<div class="planes" use:anim={{ t: 'rise', delay: 50 }} role="radiogroup" aria-label="Planes">
+			{#each PLANES as p (p.id)}
+				{@const cur = p.id === data.actual}
+				{@const sel = p.id === elegido}
+				{@const oscuro = p.id === 'pro'}
+				{@const mensual = anual ? precioAnual(p.precio) : p.precio}
+				{@const bloqueado = !permitido(p)}
+				<button
+					type="button"
+					role="radio"
+					aria-checked={sel}
+					class="plan"
+					class:oscuro
+					class:cur
+					class:sel
+					class:bloqueado
+					onclick={() => elegir(p)}
+				>
+					{#if cur}<span class="tuyo">Tu plan</span>{:else if p.id === 'pro'}<span
+							class="tuyo popular">El más elegido</span
+						>{/if}
+					<span class="p-cab">
+						<span>
+							<span class="p-n">{p.nombre}</span>
+							<span class="p-d">{p.lema}</span>
+						</span>
+						<span class="marca" aria-hidden="true"
+							>{#if sel}<Icon icon={I.phCheckBold} size={14} />{/if}</span
+						>
+					</span>
+					<span class="p-precio">
+						<b>{p.precio ? pesos(mensual) : 'Gratis'}</b>{#if p.precio}<span>/ mes</span>{/if}
+					</span>
+					<span class="p-anual"
+						>{#if !p.precio}Para siempre, sin tarjeta{:else if anual}{pesos(mensual * 12)} por año · ahorrás
+							{pesos((p.precio - mensual) * 12)}{:else}IVA incluido · sin permanencia{/if}</span
+					>
+					<span class="p-incluye">
+						{#each p.incluye as f (f)}<span><Icon icon={I.phCheckBold} size={14} />{f}</span>{/each}
+					</span>
+					<span class="p-btn" class:actual={cur && !sel}
+						>{sel
+							? cur
+								? 'Tu plan actual'
+								: 'Elegido'
+							: cur
+								? 'Volver a tu plan'
+								: indice(p.id) > indice(data.actual)
+									? `Elegir ${p.nombre}`
+									: `Bajar a ${p.nombre}`}</span
+					>
+				</button>
+			{/each}
+		</div>
+
+		<aside class="resumen" id="resumen" use:anim={{ t: 'rise', delay: 80 }} aria-live="polite">
+			<div class="r-cab">
+				<Icon icon={I.phShoppingCartSimpleBold} size={18} />
+				<span>Resumen del cambio</span>
+			</div>
+			{#if cot && !sinCambio}
+				<div class="r-de-a">
+					<span class="chip-plan">{actual.nombre}</span>
+					<Icon icon={I.phArrowRightBold} size={14} style="color:var(--fa)" />
+					<span class="chip-plan nuevo"
+						>{NUEVO.nombre}{elegido === 'gratis'
+							? ''
+							: cot.ciclo === 'anio'
+								? ' anual'
+								: ' mensual'}</span
+					>
+				</div>
+
+				<div class="r-bloque">
+					<div class="r-t">Hoy pagás</div>
+					{#each cot.lineas as l (l.texto)}
+						<div class="r-linea" class:credito={l.importe < 0}>
+							<span>{l.texto}</span><span
+								>{l.importe < 0 ? '−' : ''}{pesos(Math.abs(l.importe))}</span
+							>
+						</div>
+					{:else}
+						<p class="r-nada">{NADA_HOY}</p>
+					{/each}
+					<div class="r-total">
+						<span>Total hoy</span>
+						<b>{pesos(cot.hoy)}</b>
+					</div>
+					<div class="r-iva">
+						IVA incluido{cot.tipo === 'sube' ? ' · sólo por los días que quedan' : ''}
+					</div>
+				</div>
+
+				<div class="r-bloque">
+					<div class="r-t">Después</div>
+					{#if cot.cobro}
+						<div class="r-dato">
+							<Icon icon={I.phCalendarCheck} size={17} />
+							<span
+								>{cot.tipo === 'sube' ||
+								cot.tipo === 'baja' ||
+								cot.tipo === 'ciclo' ||
+								cot.tipo === 'mantener'
+									? 'Desde el próximo cobro'
+									: 'Primer cobro'}, el <b>{fecha(cot.cobro.fecha)}</b>:
+								<b>{porCiclo(cot.porCiclo, cot.ciclo)}</b>{#if cot.ciclo === 'anio'}
+									<span class="r-eq"
+										>(equivale a {pesos(Math.round(cot.porCiclo / 12))} por mes)</span
+									>{/if}</span
+							>
+						</div>
+						<div class="r-dato">
+							<Icon icon={I.phArrowsClockwise} size={17} />
+							<span
+								>Débito automático {cot.ciclo === 'anio' ? 'cada año' : 'cada mes'}. Sin
+								permanencia: lo das de baja cuando quieras.</span
+							>
+						</div>
+					{:else}
+						<div class="r-dato">
+							<Icon icon={I.phCalendarCheck} size={17} />
+							<span
+								>{cot.hasta ? `Desde el ${fecha(cot.hasta)}` : 'Desde hoy'}:
+								<b>plan Gratis, {pesos(0)}</b>. Sin cobros.</span
+							>
+						</div>
+					{/if}
+					<div class="r-dato">
+						<Icon icon={I.phClock} size={17} />
+						<span
+							>{elegido === 'gratis' ? 'Pasás a Gratis' : `Tenés ${NUEVO.nombre}`}:
+							<b>{RIGE}</b></span
+						>
+					</div>
+				</div>
+
+				{#if elegido !== 'gratis'}
+					<div class="r-bloque">
+						<div class="r-t">Con {NUEVO.nombre} tenés</div>
+						<ul class="r-incluye">
+							{#each NUEVO.incluye as f (f)}<li>
+									<Icon icon={I.phCheckBold} size={13} />{f}
+								</li>{/each}
+						</ul>
+					</div>
+				{/if}
+
+				{#if COMO}
+					<div class="r-como">
+						{#if cot.pago === 'suscripcion' || cot.pago === 'diferencia'}<MarcaIcono
+								k="mp"
+								size={30}
+								radius={9}
+							/>{:else}<span class="r-ico"><Icon icon={I.phShieldCheckBold} size={16} /></span>{/if}
+						<span>{COMO}</span>
+					</div>
+				{/if}
+
+				<button
+					type="button"
+					class="r-btn"
+					class:roja={elegido === 'gratis'}
+					disabled={enviando}
+					onclick={confirmarCambio}
+				>
+					{#if cot.pago === 'suscripcion' || cot.pago === 'diferencia'}<Icon
+							icon={I.phLockSimpleFill}
+							size={15}
+						/>{/if}
+					{enviando ? 'Un momento…' : BOTON}
+				</button>
+				<button
+					type="button"
+					class="r-volver"
+					onclick={() => ((elegido = data.actual), (ciclo = data.ciclo))}
+					>Seguir con {actual.nombre}</button
+				>
+			{:else}
+				<div class="r-vacio">
+					<img src="/hornero/portapapeles.webp" alt="" width="64" height="64" />
+					<b
+						>{cot?.tipo === 'programado'
+							? 'Ese cambio ya está programado'
+							: 'Elegí un plan para ver el detalle'}</b
+					>
+					<span
+						>{cot?.tipo === 'programado'
+							? `Rige el ${fecha(cot.rige)}.`
+							: 'Te mostramos cuánto pagás hoy, desde cuándo y cuánto después. Nada se cobra hasta que confirmes.'}</span
+					>
+				</div>
+				{#if data.actual !== 'gratis' && data.proximoCobro && !programado}
+					<div class="r-actual">
+						<span>Tu próximo cobro</span>
+						<b>{fecha(data.proximoCobro)}</b>
+						<span
+							>{pesos(
+								data.cotizaciones[clave(data.actual, data.ciclo)]?.porCiclo ?? 0
+							)}{data.ciclo === 'anio' ? ' por año' : ' por mes'}</span
+						>
+					</div>
+				{/if}
+			{/if}
+			<div class="r-pie">
+				<Icon icon={I.phShieldCheck} size={14} />Precios en pesos argentinos, IVA incluido. Tu Local
+				Web nunca ve tu tarjeta.
+			</div>
+		</aside>
 	</div>
+
+	{#if cot && !sinCambio}
+		<div class="barra-movil">
+			<span><small>Hoy pagás</small><b>{pesos(cot.hoy)}</b></span>
+			<button
+				type="button"
+				class:roja={elegido === 'gratis'}
+				disabled={enviando}
+				onclick={confirmarCambio}>{enviando ? 'Un momento…' : BOTON_CORTO}</button
+			>
+		</div>
+	{/if}
 
 	<div class="dos" use:anim={{ t: 'rise', delay: 100 }}>
 		<div class="tarjeta uso">
@@ -349,7 +708,9 @@
 			<div class="factura">
 				<span class="f-ico"><Icon icon={I.phReceipt} size={16} /></span>
 				<span class="f-txt"
-					><span class="f-n">{f.numero}</span><span class="f-d">{f.detalle}</span></span
+					><span class="f-n">{f.detalle}</span><span class="f-d"
+						>{f.fecha ? fecha(f.fecha) : f.numero}</span
+					></span
 				>
 				<span class="pagada">Pagada</span>
 				<b>{pesos(f.total)}</b>
@@ -357,7 +718,7 @@
 		{:else}
 			<div class="vacio">
 				{data.enPrueba
-					? `Estás en la prueba: la primera factura llega el ${fecha(data.proximoCobro)}.`
+					? `Estás en la prueba: si elegís un plan, el primer cobro es el ${fecha(data.finPrueba)}.`
 					: 'Todavía no hay facturas.'}
 			</div>
 		{/each}
@@ -369,25 +730,17 @@
 			<div class="fr-t">{data.cancelado ? 'Tu plan está cancelado' : '¿Necesitás frenar?'}</div>
 			<div class="fr-d">
 				{data.cancelado
-					? `Seguís hasta el ${fecha(data.cancelado.hasta)}. Si cambiás de idea, lo reactivás acá.`
-					: 'Podés pasar al plan Gratis sin perder nada, o cancelar. Tus datos quedan guardados.'}
+					? `Seguís con ${actual.nombre} hasta el ${fecha(data.cancelado.hasta)}. Si cambiás de idea, seguís con un toque.`
+					: 'Podés pasar al plan Gratis sin perder lo que ya pagaste. Tus datos quedan guardados.'}
 			</div>
 		</div>
 		{#if data.cancelado}
-			<button
-				type="button"
-				class="fr-a"
-				onclick={async () => {
-					await pedir('/panel/cuenta/cancelacion', 'DELETE');
-					await invalidateAll();
-					ui.toast({ k: 'ok', title: 'Plan reactivado', desc: 'Seguís como hasta ahora' });
-				}}>Reactivar</button
-			>
+			<button type="button" class="fr-a" onclick={reactivar}>Seguir con {actual.nombre}</button>
 		{:else}
 			{#if data.actual !== 'gratis'}<button type="button" class="fr-a" onclick={aGratis}
 					>Pasar a Gratis</button
-				>{/if}
-			<button type="button" class="fr-c" onclick={abrirCancelar}>Cancelar plan</button>
+				>
+				<button type="button" class="fr-c" onclick={abrirCancelar}>Cancelar plan</button>{/if}
 		{/if}
 	</div>
 </div>
@@ -501,16 +854,24 @@
 		font-weight: 700;
 		color: #237550;
 	}
-	/* Cuatro planes: 4 columnas, 2 × 2 o 1, nunca 3 + 1. */
-	.planes {
+	/* La compra: los planes y, al costado (desde 1280 px), el resumen fijo; si no, abajo. */
+	.compra {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 12px;
+		grid-template-columns: minmax(0, 1fr) 360px;
+		gap: 16px;
+		align-items: start;
 	}
 	@media (max-width: 1279px) {
-		.planes {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+		.compra {
+			grid-template-columns: minmax(0, 1fr);
 		}
+	}
+	/* Cuatro planes: 2 × 2 o 1, nunca 3 + 1. */
+	.planes {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 14px;
+		padding-top: 10px;
 	}
 	@media (max-width: 599px) {
 		.planes {
@@ -528,6 +889,400 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		transition:
+			border-color 0.15s,
+			transform 0.15s,
+			box-shadow 0.15s;
+	}
+	.plan:hover {
+		transform: translateY(-2px);
+	}
+	.plan:focus-visible {
+		outline: 3px solid rgba(210, 88, 47, 0.35);
+		outline-offset: 2px;
+	}
+	.plan.sel {
+		border-color: #d2582f;
+		box-shadow:
+			0 0 0 4px rgba(210, 88, 47, 0.14),
+			var(--shd);
+	}
+	.plan.bloqueado {
+		opacity: 0.5;
+	}
+	.p-cab {
+		display: flex;
+		justify-content: space-between;
+		gap: 10px;
+	}
+	.p-cab > span:first-child {
+		display: flex;
+		flex-direction: column;
+	}
+	.marca {
+		width: 24px;
+		height: 24px;
+		flex: none;
+		border-radius: 50%;
+		border: 2px solid var(--ln2);
+		display: grid;
+		place-items: center;
+		color: #fff;
+	}
+	.oscuro .marca {
+		border-color: rgba(251, 247, 242, 0.35);
+	}
+	.sel .marca {
+		border-color: #d2582f;
+		background: #d2582f;
+	}
+	.tuyo.popular {
+		background: #2a140c;
+		color: #f0a58a;
+		box-shadow: 0 0 0 1px rgba(240, 165, 138, 0.4);
+	}
+	.oscuro .tuyo.popular {
+		background: #d2582f;
+		color: #fff;
+	}
+	.p-incluye span {
+		display: flex;
+		gap: 8px;
+		font-size: 13.5px;
+		line-height: 1.4;
+	}
+	.p-btn {
+		text-align: center;
+	}
+	.plan:not(.sel) .p-btn:not(.actual) {
+		background: var(--chip);
+		color: var(--tx);
+	}
+	.oscuro:not(.sel) .p-btn:not(.actual) {
+		background: rgba(251, 247, 242, 0.12);
+		color: #fbf7f2;
+	}
+	.sel .p-btn:not(.actual) {
+		background: #d2582f;
+		color: #fff;
+	}
+	.programado {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+		padding: 14px 16px;
+		border-radius: 18px;
+		background: linear-gradient(135deg, rgba(210, 88, 47, 0.12), rgba(210, 88, 47, 0.04));
+		border: 1px solid rgba(210, 88, 47, 0.25);
+	}
+	.programado > div {
+		flex: 1;
+		min-width: 200px;
+		display: flex;
+		flex-direction: column;
+		font-size: 14px;
+	}
+	.programado span {
+		color: var(--mu);
+		font-size: 13px;
+	}
+	.programado button {
+		min-height: 44px;
+		padding: 0 16px;
+		border-radius: 999px;
+		border: 1px solid var(--ln2);
+		background: var(--sf);
+		color: var(--tx);
+		font:
+			600 13.5px 'Instrument Sans',
+			sans-serif;
+	}
+	/* El resumen: el «pedido» del handoff (Mostrador v4, cajón del pedido). */
+	.resumen {
+		position: sticky;
+		top: 16px;
+		padding: 18px;
+		border-radius: 24px;
+		background: var(--sf);
+		box-shadow: var(--shd);
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		scroll-margin-top: 16px;
+	}
+	@media (max-width: 1279px) {
+		.resumen {
+			position: static;
+		}
+	}
+	.r-cab {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 16px;
+		font-weight: 600;
+	}
+	.r-de-a {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+	.chip-plan {
+		padding: 5px 11px;
+		border-radius: 999px;
+		background: var(--chip);
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.chip-plan.nuevo {
+		background: rgba(210, 88, 47, 0.12);
+		color: #b0441d;
+	}
+	.r-bloque {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding-top: 14px;
+		border-top: 1px solid var(--ln);
+	}
+	.r-t {
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--fa);
+	}
+	.r-linea {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		font-size: 14px;
+	}
+	.r-linea span:last-child {
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+	.r-linea.credito {
+		color: #237550;
+	}
+	.r-nada {
+		margin: 0;
+		font-size: 13.5px;
+		line-height: 1.45;
+		color: var(--mu);
+		text-wrap: pretty;
+	}
+	.r-total {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 12px;
+		margin-top: 4px;
+		padding-top: 10px;
+		border-top: 1px dashed var(--ln2);
+		font-size: 15px;
+		font-weight: 600;
+	}
+	.r-total b {
+		font-size: 30px;
+		letter-spacing: -0.04em;
+		font-variant-numeric: tabular-nums;
+	}
+	.r-iva {
+		margin-top: -4px;
+		text-align: right;
+		font-size: 12px;
+		color: var(--fa);
+	}
+	.r-dato {
+		display: flex;
+		gap: 10px;
+		font-size: 13.5px;
+		line-height: 1.45;
+		color: var(--mu);
+	}
+	.r-dato :global(svg) {
+		flex: none;
+		margin-top: 1px;
+		color: #b0441d;
+	}
+	.r-dato b {
+		color: var(--tx);
+	}
+	.r-eq {
+		color: var(--fa);
+	}
+	.r-incluye {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		font-size: 13.5px;
+	}
+	.r-incluye li {
+		display: flex;
+		gap: 8px;
+	}
+	.r-incluye :global(svg) {
+		flex: none;
+		margin-top: 3px;
+		color: #237550;
+	}
+	.r-como {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 12px;
+		border-radius: 16px;
+		background: var(--chip);
+		font-size: 13px;
+		line-height: 1.45;
+		color: var(--mu);
+	}
+	.r-ico {
+		width: 30px;
+		height: 30px;
+		flex: none;
+		border-radius: 9px;
+		display: grid;
+		place-items: center;
+		background: rgba(47, 143, 99, 0.14);
+		color: #237550;
+	}
+	.r-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-height: 50px;
+		border: 0;
+		border-radius: 999px;
+		background: linear-gradient(180deg, #c24e25, #b0441d);
+		color: #fff;
+		font:
+			600 15px 'Instrument Sans',
+			sans-serif;
+		cursor: pointer;
+	}
+	.r-btn.roja {
+		background: var(--tx);
+		color: var(--sf);
+	}
+	.r-btn:disabled {
+		opacity: 0.6;
+	}
+	.r-volver {
+		margin-top: -6px;
+		min-height: 44px;
+		border: 0;
+		background: transparent;
+		color: var(--mu);
+		font:
+			600 13.5px 'Instrument Sans',
+			sans-serif;
+		cursor: pointer;
+	}
+	.r-vacio {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 6px 4px;
+		text-align: center;
+	}
+	.r-vacio img {
+		object-fit: contain;
+	}
+	.r-vacio b {
+		font-size: 15px;
+	}
+	.r-vacio span {
+		font-size: 13.5px;
+		line-height: 1.45;
+		color: var(--mu);
+		text-wrap: pretty;
+	}
+	.r-actual {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		padding: 12px;
+		border-radius: 16px;
+		background: var(--chip);
+		font-size: 13px;
+		color: var(--mu);
+	}
+	.r-actual b {
+		font-size: 16px;
+		color: var(--tx);
+	}
+	.r-pie {
+		display: flex;
+		gap: 6px;
+		font-size: 12px;
+		line-height: 1.4;
+		color: var(--fa);
+	}
+	.r-pie :global(svg) {
+		flex: none;
+		margin-top: 1px;
+	}
+	/* En el celular, el total y el botón siempre a mano. */
+	.barra-movil {
+		display: none;
+	}
+	@media (max-width: 759px) {
+		.barra-movil {
+			position: sticky;
+			/* Arriba de la barra de abajo del panel (76 px + el área segura) y del botón de Hornero. */
+			bottom: calc(96px + env(safe-area-inset-bottom));
+			z-index: 5;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 10px 10px 10px 18px;
+			border-radius: 999px;
+			background: #2a140c;
+			color: #fbf7f2;
+			box-shadow: 0 12px 30px -10px rgba(42, 20, 12, 0.6);
+		}
+		.barra-movil span {
+			display: flex;
+			flex-direction: column;
+			line-height: 1.15;
+		}
+		.barra-movil small {
+			font-size: 11.5px;
+			opacity: 0.75;
+		}
+		.barra-movil b {
+			font-size: 19px;
+			letter-spacing: -0.03em;
+		}
+		.barra-movil button {
+			min-height: 44px;
+			padding: 0 22px;
+			border: 0;
+			border-radius: 999px;
+			background: #d2582f;
+			color: #fff;
+			font:
+				600 14.5px 'Instrument Sans',
+				sans-serif;
+		}
+		.barra-movil button.roja {
+			background: #fbf7f2;
+			color: #2a140c;
+		}
 	}
 	.plan.oscuro {
 		background: #2a140c;
@@ -575,16 +1330,23 @@
 		margin-top: -8px;
 		opacity: 0.8;
 	}
+	.p-n,
+	.p-d,
+	.p-precio,
+	.p-anual,
+	.p-incluye {
+		display: block;
+	}
+	.p-precio {
+		display: flex;
+	}
+	.p-incluye {
+		display: flex;
+	}
 	.p-incluye {
 		display: flex;
 		flex-direction: column;
 		gap: 7px;
-	}
-	.p-incluye div {
-		display: flex;
-		gap: 8px;
-		font-size: 13.5px;
-		line-height: 1.4;
 	}
 	.p-incluye :global(svg) {
 		flex: none;

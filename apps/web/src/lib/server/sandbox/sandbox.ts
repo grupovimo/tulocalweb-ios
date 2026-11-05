@@ -214,6 +214,7 @@ import {
 	type FiltrosPedidos
 } from './pedidos.ts';
 import { DIAS_DE_PRUEBA, resumenDemo } from './resumen.ts';
+import { cotizar, todas, type EstadoAbono } from '#lib/panel/cotizar.ts';
 import { COSTO_MENSAJE, contextoDemo, tableroDemo, type CambiosTablero } from './tablero.ts';
 import RUBROS from '@mostrador/contrato/rubros.json';
 import { plantilla as buscarPlantilla } from '#lib/plantillas.ts';
@@ -2445,13 +2446,33 @@ export class DatosSandbox implements Datos {
 		return (await this.configuracion()).equipo.find((m) => m.id === nuevo.id)!;
 	}
 
+	/** El abono de la demo (§56): la misma cotización que la API, sin Mercado Pago (lo que rige después
+	 * queda programado; lo demás se aplica en el momento). */
+	private estadoAbono(e: EstadoCuenta, c: Configuracion): EstadoAbono {
+		const fin = new Date(Date.now() + DIAS_DE_PRUEBA * 86_400_000).toISOString();
+		return {
+			plan: c.plan.actual,
+			ciclo: c.plan.ciclo,
+			finPrueba: fin,
+			activo: !!e.plan.activo,
+			proximo: e.plan.activo ? fin : null,
+			pendiente: e.plan.programado ?? null
+		};
+	}
+
 	async cambiarPlan(plan: Plan, ciclo?: 'mes' | 'anio') {
-		const e = await this.estadoCuenta();
-		await guardarCambio(this.db, this.sb.id, 'cuenta', 'plan', {
-			...e.plan,
-			actual: plan,
-			...(ciclo ? { ciclo } : {})
-		});
+		const [e, c] = await Promise.all([this.estadoCuenta(), this.configuracion()]);
+		const q = cotizar(this.estadoAbono(e, c), plan, ciclo ?? c.plan.ciclo, new Date());
+		const siguiente = { ...e.plan };
+		if (q.tipo === 'mantener') siguiente.programado = null;
+		else if (q.hasta) siguiente.programado = { plan, ciclo: q.ciclo, desde: q.rige };
+		else if (q.tipo !== 'actual' && q.tipo !== 'programado') {
+			siguiente.actual = plan;
+			siguiente.ciclo = q.ciclo;
+			siguiente.activo = plan !== 'gratis';
+			siguiente.programado = null;
+		}
+		await guardarCambio(this.db, this.sb.id, 'cuenta', 'plan', siguiente);
 	}
 
 	// ---------------------------------------------------------------- Cuenta
@@ -2459,6 +2480,9 @@ export class DatosSandbox implements Datos {
 	private mes() {
 		return new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 7);
 	}
+
+	/** En la demo no hay Mercado Pago: la vuelta no tiene nada que confirmar. */
+	async volverAbono() {}
 
 	async planCuenta(): Promise<PlanCuenta> {
 		const [c, e, productos, uso] = await Promise.all([
@@ -2469,12 +2493,16 @@ export class DatosSandbox implements Datos {
 		]);
 		const usado = (uso.get('uso') as { cuantos?: number } | undefined)?.cuantos ?? 0;
 		const fin = Date.now() + DIAS_DE_PRUEBA * 86_400_000;
+		const abono = this.estadoAbono(e, c);
 		return {
 			actual: c.plan.actual,
 			ciclo: c.plan.ciclo,
 			enPrueba: c.plan.enPrueba,
 			diasPrueba: c.plan.diasPrueba,
+			finPrueba: new Date(fin).toISOString(),
 			proximoCobro: new Date(fin).toISOString(),
+			abono: { activo: abono.activo, proximo: abono.proximo, programado: abono.pendiente },
+			cotizaciones: todas(abono, new Date()),
 			uso: {
 				productos: productos.length,
 				personas: c.equipo.length,
@@ -2487,7 +2515,7 @@ export class DatosSandbox implements Datos {
 			facturacion: { razonSocial: c.negocio.razonSocial, cuit: c.negocio.cuit, tipo: 'Factura A' },
 			// Está en prueba: la primera factura de Tu Local Web llega cuando termina.
 			facturas: [],
-			cancelado: e.cancelado ? { hasta: new Date(fin).toISOString() } : null
+			cancelado: abono.pendiente?.plan === 'gratis' ? { hasta: abono.pendiente.desde } : null
 		};
 	}
 

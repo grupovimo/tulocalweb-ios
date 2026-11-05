@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/roles"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/auditoria"
 )
@@ -101,43 +103,73 @@ func Quitar(ctx context.Context, pool tx, tiendaID string, q Quien, id string) e
 	})
 }
 
-// Plan arma la pantalla Plan y facturación.
+// Plan arma la pantalla Plan y facturación: el abono, lo que cuesta cada cambio (las cotizaciones, la
+// misma cuenta con la que se cobra), el uso, los datos de facturación y los cobros.
 func Plan(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (map[string]any, error) {
 	var res map[string]any
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		var plan, ciclo string
-		var creada time.Time
-		var cancelada *time.Time
+		e, err := abono.Leer(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
 		var packs map[string]int
 		var negocio Negocio
 		var productos, personas int
-		if err := t.QueryRow(ctx, `SELECT plan, plan_ciclo, creada_en, cancelada_en, packs, negocio,
+		if err := t.QueryRow(ctx, `SELECT packs, negocio,
 				(SELECT count(*) FROM productos WHERE tienda_id = $1),
 				(SELECT count(*) FROM auth.membresias WHERE tienda_id = $1) + (SELECT count(*) FROM invitaciones WHERE tienda_id = $1)
-			FROM tiendas WHERE id = $1`, tiendaID).Scan(&plan, &ciclo, &creada, &cancelada, &packs, &negocio, &productos, &personas); err != nil {
+			FROM tiendas WHERE id = $1`, tiendaID).Scan(&packs, &negocio, &productos, &personas); err != nil {
 			return err
 		}
-		prueba := creada.Add(14 * 24 * time.Hour)
-		proximo := prueba
-		for !proximo.After(ahora) {
-			proximo = proximo.AddDate(0, 1, 0)
+		enPrueba := ahora.Before(e.FinPrueba)
+		// El próximo cobro: el del débito; en la prueba, cuando termina.
+		var proximo any
+		switch {
+		case e.Activo && e.Proximo != nil:
+			proximo = *e.Proximo
+		case enPrueba:
+			proximo = e.FinPrueba
 		}
+		// Cancelado: la baja (pasar a gratis) programada para cuando termina lo pagado.
 		var canc any
-		if cancelada != nil {
-			canc = map[string]any{"hasta": proximo}
+		if e.Pendiente != nil && e.Pendiente.Plan == "gratis" {
+			canc = map[string]any{"hasta": e.Pendiente.Desde}
 		}
 		tipo := "Factura B"
 		if negocio.Cuit != "" {
 			tipo = "Factura A"
 		}
+		facturas := []map[string]any{}
+		filas, err := t.Query(ctx, `SELECT clave, detalle, importe, creado_en FROM abono_cobros WHERE tienda_id = $1
+			ORDER BY creado_en DESC LIMIT 24`, tiendaID)
+		if err != nil {
+			return err
+		}
+		for filas.Next() {
+			var clave, detalle string
+			var importe int64
+			var cuando time.Time
+			if err := filas.Scan(&clave, &detalle, &importe, &cuando); err != nil {
+				filas.Close()
+				return err
+			}
+			facturas = append(facturas, map[string]any{"numero": clave, "detalle": detalle, "total": importe, "fecha": cuando})
+		}
+		filas.Close()
+		if err := filas.Err(); err != nil {
+			return err
+		}
 		res = map[string]any{
-			"actual": plan, "ciclo": ciclo, "enPrueba": ahora.Before(prueba), "diasPrueba": max(0, int(prueba.Sub(ahora).Hours()/24)),
+			"actual": e.Plan, "ciclo": e.Ciclo, "enPrueba": enPrueba, "diasPrueba": max(0, int(math.Ceil(e.FinPrueba.Sub(ahora).Hours()/24))),
+			"finPrueba":    e.FinPrueba,
 			"proximoCobro": proximo,
+			"abono":        map[string]any{"activo": e.Activo, "proximo": e.Proximo, "programado": e.Pendiente},
+			"cotizaciones": abono.Todas(e, ahora),
 			// Las respuestas de Hornero se cuentan cuando Hornero corra en la API.
 			"uso":         map[string]any{"productos": productos, "personas": personas, "hornero": 0, "packs": packs[mes(ahora)], "sinIa": 0},
 			"medio":       nil,
 			"facturacion": map[string]any{"razonSocial": negocio.RazonSocial, "cuit": negocio.Cuit, "tipo": tipo},
-			"facturas":    []any{},
+			"facturas":    facturas,
 			"cancelado":   canc,
 		}
 		return nil

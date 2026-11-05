@@ -550,20 +550,17 @@ export class DatosApi implements Datos {
 		if (r.status === 409) return 'repetido' as const;
 		return (await r.json()) as Miembro;
 	}
+	/** El abono (§56): la API cotiza y aplica; url vacía si quedó hecho, si no adónde ir en Mercado Pago. */
 	async cambiarPlan(plan: IdPlan, ciclo?: 'mes' | 'anio') {
-		if (plan === 'gratis') {
-			await this.pedir<void>('/v1/panel/plan', 'PUT', { plan, ciclo });
-			// La suscripción de Mercado Pago se cancela (si no había, la API responde 204 igual).
-			await this.intentar('/v1/panel/cuenta/suscripcion', 'DELETE');
-			return;
-		}
-		const res = await this.intentar('/v1/panel/plan', 'PUT', { plan, ciclo });
-		if (res.ok) return;
-		// Con el cobro activo, los planes pagos se activan con la suscripción.
-		return this.pedir<{ url: string }>('/v1/panel/cuenta/suscripcion', 'POST', {
+		const ciclo_ = ciclo ?? (await this.planCuenta()).ciclo;
+		const r = await this.pedir<{ url: string }>('/v1/panel/cuenta/abono', 'POST', {
 			plan,
-			ciclo: ciclo ?? 'mes'
+			ciclo: ciclo_
 		});
+		return r.url ? r : undefined;
+	}
+	async volverAbono(v: { pago?: string; suscripcion?: string }) {
+		await this.pedir<void>('/v1/panel/cuenta/abono/vuelta', 'POST', v);
 	}
 	// Las demás integraciones llegan una por PR: Mercado Pago, Mercado Libre, la medición y ARCA son reales.
 	async integraciones() {

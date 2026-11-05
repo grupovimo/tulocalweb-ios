@@ -2,6 +2,13 @@
 
 Última actualización: 31/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 5/11/2026 · El abono con prorrateo y el plan como carrito (§56)
+
+- Migración 00073. Elegir plan en la web (Plan y facturación) y en la app (Más › Plan) es un carrito: el
+  resumen dice qué se paga hoy, desde cuándo y cuánto después, con IVA incluido; nada se cobra hasta
+  confirmar. Subir de plan cobra la diferencia prorrateada (pago único); bajar, gratis o cambiar de ciclo
+  rige en el próximo cobro (el worker lo aplica). Facturas reales en `abono_cobros`. Detalle en decisiones §56.
+
 ## 4/11/2026 · Mi tienda › Estilo (§55)
 
 - **Estilo de la tienda** en web e iPhone, iguales: colores por rol (fondo, tarjetas, texto, texto suave,

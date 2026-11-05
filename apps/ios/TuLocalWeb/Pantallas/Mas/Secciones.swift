@@ -763,56 +763,7 @@ struct FilaId: Identifiable {
     init(_ e: String, _ v: String) { etiqueta = e; valor = v }
 }
 
-// MARK: - Plan
-
-struct PlanCuenta: View {
-    @Environment(Estado.self) private var estado
-    @State private var cambiar = false
-
-    struct Datos: Decodable {
-        struct Uso: Decodable { var productos: Int; var personas: Int; var hornero: Int }
-        struct Medio: Decodable { var marca: String; var ultimos: String; var vence: String }
-        struct Factura: Decodable, Identifiable { var numero: String; var detalle: String; var total: Int; var id: String { numero } }
-        var actual: String
-        var ciclo: String
-        var enPrueba: Bool
-        var diasPrueba: Int
-        var proximoCobro: String
-        var uso: Uso
-        var medio: Medio?
-        var facturas: [Factura]
-    }
-
-    var body: some View {
-        PantallaSeccion(titulo: "Plan", que: "tu plan") {
-            try await estado.api.get("/v1/panel/cuenta/plan") as Datos
-        } contenido: { d, actualizar in
-            TarjetaHeroe(etiqueta: d.enPrueba ? "Estás probando gratis" : "Tu plan", valor: "Plan \(Formato.mayuscula(d.actual))",
-                         detalle: d.enPrueba ? "Te quedan \(Formato.cantidad(d.diasPrueba, "día", "días")) de prueba"
-                             : (d.proximoCobro.isEmpty ? Formato.mayuscula(d.ciclo) : "Próximo cobro: \(d.proximoCobro)"),
-                         tincho: .celebrando)
-            GrillaIndicadores(items: [
-                IndicadorIcono(simbolo: "shippingbox.fill", titulo: "Productos", valor: "\(d.uso.productos)"),
-                IndicadorIcono(simbolo: "person.2.fill", titulo: "Personas del equipo", valor: "\(d.uso.personas)", tono: (C.okFondo, C.okTinta)),
-                IndicadorIcono(simbolo: "sparkles", titulo: "Respuestas de Tincho este mes", valor: "\(d.uso.hornero)", tono: (C.avisoFondo, C.avisoTinta)),
-            ])
-            if let m = d.medio {
-                GrupoFilas(elementos: [FilaId("Medio de pago", "\(m.marca) ·· \(m.ultimos)"), FilaId("Vence", m.vence)]) {
-                    FilaDato(etiqueta: $0.etiqueta, valor: $0.valor)
-                }
-            }
-            if !d.facturas.isEmpty {
-                EtiquetaSeccion(texto: "Facturas").padding(.horizontal, 4).padding(.top, 8)
-                GrupoFilas(elementos: d.facturas) { f in
-                    FilaDato(etiqueta: "\(f.numero) · \(f.detalle)", valor: Formato.pesos(f.total))
-                }
-            }
-            Button("Cambiar de plan") { cambiar = true }
-                .buttonStyle(BotonPrincipal(alto: 48)).padding(.top, 6)
-                .sheet(isPresented: $cambiar) { HojaPlan(actual: d.actual) { await actualizar() }.hojaTLW([.medium, .large]) }
-        }
-    }
-}
+// El plan (PlanCuenta) está en Plan.swift.
 
 // MARK: - Integraciones
 

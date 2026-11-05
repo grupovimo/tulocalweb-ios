@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/limite"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/problema"
@@ -32,7 +33,9 @@ func (s *Servicio) Problema(w http.ResponseWriter, err error) {
 		problema.Escribir(w, problema.NoEncontrado("No lo encontramos."))
 	case errors.Is(err, ErrEstado):
 		problema.Escribir(w, problema.Invalido("La conexión venció. Probá de nuevo."))
-	case errors.Is(err, ErrInvalido), errors.Is(err, ErrPlanInvalido):
+	case errors.Is(err, abono.ErrProgramado):
+		problema.Escribir(w, problema.Conflicto("programado", "Ya tenés un cambio de plan programado: deshacelo para elegir otro."))
+	case errors.Is(err, ErrInvalido), errors.Is(err, ErrPlanInvalido), errors.Is(err, abono.ErrInvalido):
 		problema.Escribir(w, problema.Invalido("Revisá los datos."))
 	case errors.As(err, &emp):
 		s.log().Warn("mercadopago: la API respondió con error", "estado", emp.Estado, "cuerpo", recortar(emp.Cuerpo, 300))
@@ -150,17 +153,34 @@ func (s *Servicio) Rutas(mux *http.ServeMux) {
 		}
 		s.Problema(w, s.Reembolsar(r.Context(), d.TiendaID, n, b.Monto, d.TiendaID+":"+clave))
 	}))
-	mux.HandleFunc("POST /v1/panel/cuenta/suscripcion", sesion(true, func(w http.ResponseWriter, r *http.Request, d cuentas.Datos) {
+	// El abono (§56): cualquier pase de plan o ciclo, con su cotización. url vacía: quedó hecho; si no,
+	// hay que pasar por Mercado Pago (cargar la tarjeta del débito o pagar la diferencia).
+	cambiarAbono := sesion(true, func(w http.ResponseWriter, r *http.Request, d cuentas.Datos) {
 		var b struct{ Plan, Ciclo string }
 		if !leer(w, r, &b) {
 			return
 		}
-		u, err := s.Suscribir(r.Context(), d.TiendaID, d.Usuario.ID, b.Plan, b.Ciclo)
+		u, err := s.CambiarAbono(r.Context(), d.TiendaID, d.Usuario.ID, b.Plan, b.Ciclo)
 		if err != nil {
 			s.Problema(w, err)
 			return
 		}
 		escribir(w, http.StatusOK, map[string]string{"url": u})
+	})
+	mux.HandleFunc("POST /v1/panel/cuenta/abono", cambiarAbono)
+	// La app de antes de §56 sólo pedía el débito: ahora pasa por la misma cotización.
+	mux.HandleFunc("POST /v1/panel/cuenta/suscripcion", cambiarAbono)
+	// La vuelta de Mercado Pago: confirma el pago o el débito sin esperar el aviso.
+	mux.HandleFunc("POST /v1/panel/cuenta/abono/vuelta", sesion(true, func(w http.ResponseWriter, r *http.Request, d cuentas.Datos) {
+		var b struct{ Pago, Suscripcion string }
+		if !leer(w, r, &b) {
+			return
+		}
+		if len(b.Pago) > 64 || len(b.Suscripcion) > 64 {
+			s.Problema(w, ErrInvalido)
+			return
+		}
+		s.Problema(w, s.VolverAbono(r.Context(), d.TiendaID, b.Pago, b.Suscripcion))
 	}))
 
 	mux.HandleFunc("DELETE /v1/panel/cuenta/suscripcion", sesion(true, func(w http.ResponseWriter, r *http.Request, d cuentas.Datos) {

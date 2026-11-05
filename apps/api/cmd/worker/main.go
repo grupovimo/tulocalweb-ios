@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/avisos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/equipo"
@@ -146,6 +147,22 @@ func correr() error {
 			}
 			if _, err := lanzamientos.VencerSenas(ctx, app); err != nil && ctx.Err() == nil {
 				slog.Error("lanzamientos: vencer señas", "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
+	// El abono (§56), cada 5 minutos: los cambios de plan programados (bajar, pasar a gratis, cambiar de
+	// ciclo) que llegaron al próximo cobro. UPDATE condicionados: dos workers no aplican dos veces.
+	go func() {
+		t := time.NewTicker(5 * time.Minute)
+		defer t.Stop()
+		for {
+			if _, err := abono.AplicarProgramados(ctx, app); err != nil && ctx.Err() == nil {
+				slog.Error("abono: cambios programados", "error", err)
 			}
 			select {
 			case <-ctx.Done():

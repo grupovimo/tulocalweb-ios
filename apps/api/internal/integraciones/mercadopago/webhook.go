@@ -119,7 +119,16 @@ func (s *Servicio) Recibir(ctx context.Context, a Aviso) error {
 	case "subscription_authorized_payment":
 		// Cada cobro de la suscripción de una tienda: el pedido (aprobado) o el aviso (rechazado).
 		tienda, err := s.tiendaDeUsuario(ctx, a.UserID)
-		if err != nil || tienda == nil {
+		if err != nil {
+			return err
+		}
+		if tienda == nil {
+			// Un cobro del débito del abono de Tu Local Web (§56).
+			err = s.ConciliarCobroAbono(ctx, id)
+			var e *ErrorMP
+			if errors.As(err, &e) && e.Estado == http.StatusNotFound {
+				return nil
+			}
 			return err
 		}
 		return s.Pool.EnTienda(ctx, *tienda, func(t pgx.Tx) error {
@@ -131,8 +140,17 @@ func (s *Servicio) Recibir(ctx context.Context, a Aviso) error {
 			return err
 		}
 		if tienda == nil {
-			// Pagos de la cuenta de la plataforma (el abono) o de una cuenta que se desconectó.
-			return nil
+			// Pagos de la cuenta de la plataforma (la diferencia prorrateada del abono, §56) o de una
+			// cuenta que se desconectó.
+			if a.Type != "payment" {
+				return nil
+			}
+			err := s.ConciliarPagoAbono(ctx, id)
+			var e *ErrorMP
+			if errors.As(err, &e) && e.Estado == http.StatusNotFound {
+				return nil
+			}
+			return err
 		}
 		tipo := "mp.pago"
 		if a.Type == "order" {

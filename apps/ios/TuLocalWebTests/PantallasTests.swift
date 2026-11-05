@@ -54,6 +54,7 @@ final class PantallasTests: XCTestCase {
              {"id": "gastronomia", "nombre": "Gastronomía", "plantilla": "miga", "tienda": "Miga"}]
             """,
             "/v1/panel/onboarding": "{\"plantilla\": \"ceibo\", \"elecciones\": {\"rubro\": \"indumentaria\", \"pasoApp\": 2}, \"terminado\": false}",
+            "/v1/panel/cuenta/plan": PantallasTests.plan,
             "/v1/panel/importaciones/actual": """
             {"id": "i1", "plataforma": "shopify", "urlOrigen": "https://x.myshopify.com", "estado": "corriendo", "etapa": "productos",
              "progreso": {"productos": 12, "clientes": 0, "pedidos": 0, "redirecciones": 0, "repetidos": 1, "recortados": 0},
@@ -115,6 +116,34 @@ final class PantallasTests: XCTestCase {
     func testPantallaFinanzas() { montar(Finanzas()) }
     func testPantallaFacturacionArca() { montar(FacturacionArca()) }
     func testPantallaPlanCuenta() { montar(PlanCuenta()) }
+    /// El plan con prorrateo (§56): la respuesta de la API se decodifica y la hoja con el resumen se arma.
+    static let plan = """
+    {"actual": "emprende", "ciclo": "mes", "enPrueba": false, "diasPrueba": 0, "finPrueba": "2026-09-01T00:00:00Z",
+     "proximoCobro": "2026-11-20T00:00:00Z",
+     "abono": {"activo": true, "proximo": "2026-11-20T00:00:00Z", "programado": null},
+     "cotizaciones": {
+      "pro/mes": {"plan": "pro", "ciclo": "mes", "tipo": "sube", "hoy": 14516, "rige": "2026-11-05T12:00:00Z", "hasta": null,
+       "cobro": {"fecha": "2026-11-20T00:00:00Z", "importe": 49900}, "porCiclo": 49900,
+       "lineas": [{"texto": "Pro por 15 días", "importe": 24145}, {"texto": "Emprende ya pagado por esos días", "importe": -9629}],
+       "pago": "diferencia", "inicio": null},
+      "gratis/mes": {"plan": "gratis", "ciclo": "mes", "tipo": "gratis", "hoy": 0, "rige": "2026-11-20T00:00:00Z",
+       "hasta": "2026-11-20T00:00:00Z", "cobro": null, "porCiclo": 0, "lineas": [], "pago": "cancelar", "inicio": null},
+      "emprende/anio": {"plan": "emprende", "ciclo": "anio", "tipo": "ciclo", "hoy": 0, "rige": "2026-11-20T00:00:00Z",
+       "hasta": "2026-11-20T00:00:00Z", "cobro": {"fecha": "2026-11-20T00:00:00Z", "importe": 179100}, "porCiclo": 179100,
+       "lineas": [], "pago": "suscripcion", "inicio": "2026-11-20T00:00:00Z"}},
+     "uso": {"productos": 8, "personas": 2, "hornero": 0, "packs": 0, "sinIa": 0}, "medio": null,
+     "facturacion": {"razonSocial": "", "cuit": "", "tipo": "Factura B"},
+     "facturas": [{"numero": "cobro:1", "detalle": "Tu Local Web Emprende (mensual)", "total": 19900, "fecha": "2026-10-20T13:00:00Z"}],
+     "cancelado": null}
+    """
+    func testHojaPlanConResumen() throws {
+        let d = try JSONDecoder().decode(PlanCuenta.Datos.self, from: Data(Self.plan.utf8))
+        XCTAssertEqual(d.cotizacion("pro", "mes")?.hoy, 14516)
+        XCTAssertEqual(d.cotizacion("gratis", "anio")?.tipo, "gratis") // el gratis se cotiza con el ciclo vigente
+        XCTAssertEqual(Formato.diaMes("2026-11-20T00:00:00Z").isEmpty, false)
+        montar(HojaPlan(datos: d, preelegido: "pro") {})
+        montar(HojaPlan(datos: d, preelegido: "gratis") {})
+    }
     func testPantallaUsuariosYPermisos() { montar(UsuariosYPermisos()) }
     func testPantallaEditorProductoExistente() { montar(EditorProducto(id: "p1")) }
     func testPantallaPedidoManual() { montar(PedidoManual()) }

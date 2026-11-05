@@ -209,26 +209,6 @@
 			() => guardarMayorista(antes.activa, { unidades: antes.unidades, monto: antes.monto }, true)
 		);
 	}
-
-	// ---- Plan ----
-	async function elegir(id: (typeof PLANES)[number]['id'], nombre: string) {
-		if (id === data.plan.actual) return;
-		const r0 = await pedir('/panel/plan', 'PUT', { plan: id });
-		if (!r0) return;
-		// Plan pago con el abono real: se carga la tarjeta en Mercado Pago.
-		if (r0.status === 200) {
-			location.href = ((await r0.json()) as { url: string }).url;
-			return;
-		}
-		await invalidateAll();
-		ui.toast({
-			k: 'ok',
-			title: `Plan ${nombre} elegido`,
-			desc: data.plan.enPrueba
-				? 'Se cobra cuando termina tu prueba · sin permanencia'
-				: 'Cobramos la diferencia prorrateada'
-		});
-	}
 </script>
 
 <Seo
@@ -519,8 +499,9 @@
 										><Icon icon={I.phCheckBold} size={13} style="color:#237550" />{f}</span
 									>{/each}
 							</div>
-							<button type="button" onclick={() => elegir(p.id, p.nombre)}
-								>{actual ? `Quedarme en ${p.nombre}` : `Elegir ${p.nombre}`}</button
+							<!-- Se elige en Plan y facturación: ahí está el resumen de lo que se paga (§56). -->
+							<a class="elegir" href="{resolve('/panel/plan-y-facturacion')}?plan={p.id}"
+								>{actual ? `Ver mi plan` : `Elegir ${p.nombre}`}</a
 							>
 						</div>
 					{/each}
@@ -911,18 +892,20 @@
 		gap: 7px;
 		align-items: center;
 	}
-	.plan button {
+	.plan .elegir {
 		margin-top: auto;
 		padding: 11px;
 		border-radius: 999px;
 		border: 0;
 		background: var(--chip);
 		color: var(--tx);
+		text-align: center;
+		text-decoration: none;
 		font:
 			600 13.5px 'Instrument Sans',
 			sans-serif;
 	}
-	.plan.actual button {
+	.plan.actual .elegir {
 		background: #b0441d;
 		color: #fff;
 	}

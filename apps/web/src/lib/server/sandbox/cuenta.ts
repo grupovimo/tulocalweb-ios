@@ -59,7 +59,13 @@ export type EstadoCuenta = {
 	quitados: Set<string>;
 	roles: Map<string, Miembro['rol']>;
 	invitados: Invitado[];
-	plan: { actual?: Plan; ciclo?: 'mes' | 'anio' };
+	/** activo: ya «autorizó el débito» en la demo; programado: el cambio que rige al terminar la prueba. */
+	plan: {
+		actual?: Plan;
+		ciclo?: 'mes' | 'anio';
+		activo?: boolean;
+		programado?: { plan: Plan; ciclo: 'mes' | 'anio'; desde: string } | null;
+	};
 	/** Packs de 2.000 respuestas comprados, por mes ("2026-10"). */
 	packs: Record<string, number>;
 	/** Cancelado al final del período (o null). */

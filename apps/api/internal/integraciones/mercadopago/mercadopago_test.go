@@ -37,6 +37,7 @@ type mpFalso struct {
 	cuerpos   map[string]map[string]any
 	pagos     map[string]map[string]any
 	susc      map[string]map[string]any
+	autoriz   map[string]map[string]any // cobros de débitos (authorized_payments)
 	usuario   int64
 	refreshOK bool
 }
@@ -87,9 +88,22 @@ func (f *mpFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(r.URL.Path, "/preapproval/"):
 		id := strings.TrimPrefix(r.URL.Path, "/preapproval/")
 		if r.Method == http.MethodPut {
-			f.susc[id]["status"] = c["status"]
+			// Cambia lo que viene: el estado (baja, pausa) o el monto del débito.
+			if v, ok := c["status"]; ok {
+				f.susc[id]["status"] = v
+			}
+			if rec, ok := c["auto_recurring"].(map[string]any); ok {
+				f.susc[id]["transaction_amount"] = rec["transaction_amount"]
+			}
 		}
 		enviar(f.susc[id])
+	case strings.HasPrefix(r.URL.Path, "/authorized_payments/"):
+		a, ok := f.autoriz[strings.TrimPrefix(r.URL.Path, "/authorized_payments/")]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		enviar(a)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}

@@ -1698,6 +1698,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/cuenta/abono": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pasa a un plan y ciclo con su cotización (§56): lo que se paga hoy, desde cuándo rige y cómo. url vacía si quedó hecho (o programado para el próximo cobro); si no, adónde ir en Mercado Pago (cargar la tarjeta del débito o pagar la diferencia prorrateada). */
+        post: operations["cambiarAbono"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/cuenta/abono/vuelta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** La vuelta de Mercado Pago (pago de la diferencia o débito autorizado), sin esperar el aviso. */
+        post: operations["volverAbono"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/mercadopago": {
         parameters: {
             query?: never;
@@ -4572,7 +4606,33 @@ export interface components {
             enPrueba: boolean;
             diasPrueba: number;
             /** Format: date-time */
-            proximoCobro: string;
+            finPrueba: string;
+            /**
+             * Format: date-time
+             * @description El próximo cobro del débito; en la prueba, cuando termina
+             */
+            proximoCobro: string | null;
+            abono: {
+                /** @description Hay un débito autorizado en Mercado Pago */
+                activo: boolean;
+                /**
+                 * Format: date-time
+                 * @description Hasta cuándo está pago el plan vigente
+                 */
+                proximo: string | null;
+                programado: {
+                    /** @enum {string} */
+                    plan: "gratis" | "emprende" | "pro" | "negocio";
+                    /** @enum {string} */
+                    ciclo: "mes" | "anio";
+                    /** Format: date-time */
+                    desde: string;
+                } | null;
+            };
+            /** @description Lo que cuesta pasar a cada plan, por "plan/ciclo" (abono.Cotizar). Falta la de un cambio no permitido. */
+            cotizaciones: {
+                [key: string]: components["schemas"]["Cotizacion"];
+            };
             uso: {
                 productos: number;
                 personas: number;
@@ -4595,11 +4655,41 @@ export interface components {
                 numero: string;
                 detalle: string;
                 total: number;
+                /** Format: date-time */
+                fecha?: string;
             }[];
             cancelado: {
                 /** Format: date-time */
                 hasta: string;
             } | null;
+        };
+        /** @description Pasar a plan/ciclo: qué se paga hoy (con su detalle), desde cuándo rige y cuánto se cobra después. Pesos, IVA incluido. */
+        Cotizacion: {
+            /** @enum {string} */
+            plan: "gratis" | "emprende" | "pro" | "negocio";
+            /** @enum {string} */
+            ciclo: "mes" | "anio";
+            /** @enum {string} */
+            tipo: "actual" | "prueba" | "alta" | "sube" | "baja" | "ciclo" | "gratis" | "programado" | "mantener";
+            hoy: number;
+            /** Format: date-time */
+            rige: string;
+            /** Format: date-time */
+            hasta: string | null;
+            cobro: {
+                /** Format: date-time */
+                fecha: string;
+                importe: number;
+            } | null;
+            porCiclo: number;
+            lineas: {
+                texto: string;
+                importe: number;
+            }[];
+            /** @enum {string} */
+            pago: "ninguno" | "suscripcion" | "diferencia" | "actualizar" | "cancelar";
+            /** Format: date-time */
+            inicio: string | null;
         };
         UrlExterna: {
             /** Format: uri */
@@ -9191,6 +9281,63 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UrlExterna"];
                 };
+            };
+        };
+    };
+    cambiarAbono: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    plan: "gratis" | "emprende" | "pro" | "negocio";
+                    /** @enum {string} */
+                    ciclo: "mes" | "anio";
+                };
+            };
+        };
+        responses: {
+            /** @description Hecho (url vacía) o adónde ir */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        url: string;
+                    };
+                };
+            };
+            409: components["responses"]["Problema"];
+        };
+    };
+    volverAbono: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pago?: string;
+                    suscripcion?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Conciliado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
