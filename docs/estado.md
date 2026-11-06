@@ -12,11 +12,11 @@
 - **Demos** (migración 00076): `tiendas.demo = true` para lumbre, cafebruma y almacenverde. Su tienda online
   es vitrina («Es una tienda de ejemplo», la API rechaza comprar). Se corrigió el generador: los precios van
   en **pesos enteros**, no centavos (salían ×100). Regeneradas en producción el 6/11.
-- iOS: build del commit b2a7c06 con ios.yml en verde en grupovimo/tulocalweb-ios; el workflow `testflight`
-  (run 42156811609) quedó subiéndolo al cerrar la sesión.
+- iOS: build del commit b2a7c06 con ios.yml en verde en grupovimo/tulocalweb-ios, y subida a TestFlight
+  (run 42156811609 de `testflight`, en verde).
 - Copia previa a las migraciones: `/opt/tulocalweb/copias/antes-00076-202611060305.dump` en el VPS.
 - Falta:
-  - mirar que la build haya entrado a TestFlight y sumarla a «Socios» (`testflight-ultima`);
+  - que la build entre al grupo «Socios» (lo hace `testflight-ultima`);
   - facturar cada cobro del abono con ARCA (necesita que Nahuel genere el certificado con su clave fiscal);
   - `TestPermisosPorRol` falló una vez cerca de medianoche: pedidos de las 23:59 contra un «hoy» que arranca
     a las 00:00. No se volvió a correr; si falla de día, revisarla.
