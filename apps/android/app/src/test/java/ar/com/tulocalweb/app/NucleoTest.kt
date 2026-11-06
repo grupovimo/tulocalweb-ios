@@ -17,9 +17,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 // Clon de TuLocalWebTests/TuLocalWebTests.swift: los mismos casos, con los mismos nombres de grupo.
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class NucleoTest {
     // FormatoTests
     @Test fun pesosConEspacioFinoYPuntoDeMiles() {

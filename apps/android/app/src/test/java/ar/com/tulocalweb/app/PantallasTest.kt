@@ -165,9 +165,9 @@ class PantallasTest {
         assertEquals(9950, DatosPlan.conDescuento(19900, d.beneficio))
         assertEquals(19900, DatosPlan.conDescuento(19900, null))
         montar("HojaPlanPro") { HojaPlan(d, "pro") {} }
-        montar("HojaPlanGratis") { HojaPlan(d, "gratis") {} }
-        montar("HojaCancelar") { HojaCancelar(d) {} }
     }
+    @Test fun hojaPlanGratis() = montar("HojaPlanGratis") { HojaPlan(Api.json.decodeFromString(DatosPlan.serializer(), plan), "gratis") {} }
+    @Test fun hojaCancelar() = montar("HojaCancelar") { HojaCancelar(Api.json.decodeFromString(DatosPlan.serializer(), plan)) {} }
 
     @Test fun graficos() {
         val flujo = listOf(DiaFlujo(1, 100, 30), DiaFlujo(2, 0, 80))
