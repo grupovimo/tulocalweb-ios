@@ -10,6 +10,8 @@ struct Cuenta: View {
     @AppStorage("tema") private var tema = "sistema"
     @State private var faceID = false
     @State private var avisosPermitidos: Bool?
+    @State private var dosPasos: EstadoDosPasos?
+    @State private var verDosPasos = false
 
     var body: some View {
         ScrollView {
@@ -34,6 +36,10 @@ struct Cuenta: View {
                             .onChange(of: faceID) { _, v in Task { await cambiarFaceID(v) } }
                         Separador()
                     }
+                    fila("Verificación en dos pasos", detalle: dosPasos.map { $0.activo ? "Prendida" : "Apagada" }) {
+                        verDosPasos = true
+                    }
+                    Separador()
                     fila("Cambiar contraseña") { Task { await cambiarClave() } }
                     Separador()
                     fila("Cerrar otras sesiones") { Task { await cerrarOtras() } }
@@ -75,7 +81,15 @@ struct Cuenta: View {
         .navigationTitle("Cuenta")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { faceID = estado.conFaceID }
-        .task { await leerAvisos() }
+        .task {
+            await leerAvisos()
+            dosPasos = try? await estado.api.get("/v1/auth/segundo-factor")
+        }
+        .sheet(isPresented: $verDosPasos, onDismiss: {
+            Task { dosPasos = try? await estado.api.get("/v1/auth/segundo-factor") }
+        }) {
+            DosPasos(estadoInicial: dosPasos).hojaTLW([.large])
+        }
     }
 
     private func fila(_ texto: String, detalle: String? = nil, accion: @escaping () -> Void) -> some View {

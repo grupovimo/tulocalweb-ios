@@ -50,6 +50,8 @@ final class Estado {
     }
 
     var fase: Fase = .arrancando
+    /// Ingreso a medias con la verificación en dos pasos: falta el código (hoja en Ingresar).
+    var desafio: String?
     let api: Api
     var datos: DatosSesion?
     var acceso: Acceso?
@@ -180,7 +182,26 @@ final class Estado {
         try await entrar(s)
     }
 
+    /// Completa el ingreso con el código de la app autenticadora (o uno de recuperación). Si el
+    /// desafío venció, se vuelve al formulario.
+    func completarSegundoFactor(_ codigo: String) async throws {
+        guard let d = desafio else { return }
+        struct Cuerpo: Encodable { var desafio: String; var codigo: String }
+        do {
+            let s: SesionNueva = try await api.enviar("POST", "/v1/auth/segundo-factor", Cuerpo(desafio: d, codigo: codigo))
+            desafio = nil
+            try await entrar(s)
+        } catch let e as ErrorApi where e.estado == 401 {
+            desafio = nil
+            throw e
+        }
+    }
+
     private func entrar(_ s: SesionNueva) async throws {
+        if let d = s.segundoFactor, !d.isEmpty {
+            desafio = d
+            return
+        }
         Llavero.guardar(s.token, cuenta: "token")
         api.token = s.token
         Guardado.borrarTodo()

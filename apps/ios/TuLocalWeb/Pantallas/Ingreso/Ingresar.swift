@@ -55,6 +55,9 @@ struct Ingresar: View {
                 .presentationDragIndicator(.hidden)
                 .interactiveDismissDisabled()
         }
+        .sheet(isPresented: Binding(get: { estado.desafio != nil }, set: { if !$0 { estado.desafio = nil } })) {
+            CodigoIngreso().hojaTLW([.large])
+        }
         .task { await estado.cargarProveedores() }
     }
 

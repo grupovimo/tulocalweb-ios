@@ -11,6 +11,15 @@ struct SesionNueva: Codable {
     var tiendaId: String
     /// Sólo en el ingreso con Clerk: la cuenta se creó recién (sigue al onboarding, en la web).
     var nueva: Bool?
+    /// La cuenta tiene la verificación en dos pasos: no hay token todavía, sino este desafío, que se
+    /// completa con el código de la app autenticadora (POST /v1/auth/segundo-factor).
+    var segundoFactor: String?
+}
+
+/// GET /v1/auth/segundo-factor.
+struct EstadoDosPasos: Codable, Equatable {
+    var activo: Bool
+    var codigosRestantes: Int
 }
 
 struct DatosSesion: Codable, Equatable {
