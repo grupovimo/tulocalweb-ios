@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16: los pedidos por preparar como Live Update (la Live Activity de iOS). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- Fotos de productos y el escáner de Venta e Inventario (NSCameraUsageDescription). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Dictarle a Tincho (NSMicrophoneUsageDescription y NSSpeechRecognitionUsageDescription). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Entrar con la huella o la cara (Face ID en iOS). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Guardar en la galería la imagen para estados e historias en Android 8 y 9 (desde el 10 no hace falta). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <queries>
+        <!-- Custom Tabs para el ingreso con Clerk y para conectar Mercado Pago y Mercado Libre. -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+        <!-- El dictado. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <package android:name="com.instagram.android" />
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
+    <application
+        android:name=".app.TuLocalWebApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/red"
+        android:supportsRtl="false"
+        android:theme="@style/Tema.TuLocalWeb">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="ar.com.tulocalweb.app.archivos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/archivos" />
+        </provider>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- La vuelta de Clerk (Google y Apple) y la de conectar Mercado Pago y Mercado Libre, como en iOS. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ar.com.tulocalweb.app" />
+            </intent-filter>
+            <!-- tulocalweb://pedido/{n}, tulocalweb://producto/{id} (avisos y widgets). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tulocalweb" />
+            </intent-filter>
+        </activity>
+
+        <!-- Firebase se inicia a mano (app/Push.kt): sin config no hay push. -->
+        <service android:name=".app.ServicioPush" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- «Marcar como preparado» desde el aviso y desde los pedidos por preparar, sin abrir la app. -->
+        <receiver android:name=".app.AccionesPush" android:exported="false" />
+
+        <!-- «Ventas de hoy» (TuLocalWebWidgets en iOS). -->
+        <receiver android:name=".widgets.VentasDeHoyReceiver" android:exported="true" android:label="@string/widget_ventas">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_ventas" />
+        </receiver>
+    </application>
+</manifest>

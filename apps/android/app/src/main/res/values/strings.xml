@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tu Local Web</string>
+    <string name="widget_ventas">Ventas de hoy</string>
+    <string name="widget_ventas_descripcion">Cómo viene el día y los pedidos por preparar.</string>
+</resources>
