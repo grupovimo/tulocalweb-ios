@@ -80,7 +80,7 @@ fun Hoja(
                 AnimatedVisibility(estadoVisible, enter = fadeIn(), exit = fadeOut()) {
                     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickable(remember { MutableInteractionSource() }, null, onClick = alCerrar))
                 }
-                AnimatedVisibility(estadoVisible, enter = slideInVertically(Mov.entrada()) { it }, exit = slideOutVertically(Mov.entrada()) { it }) {
+                AnimatedVisibility(estadoVisible, enter = slideInVertically(Mov.entrada<androidx.compose.ui.unit.IntOffset>()) { it }, exit = slideOutVertically(Mov.entrada<androidx.compose.ui.unit.IntOffset>()) { it }) {
                     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                         val total = maxHeight
                         val densidad = LocalDensity.current

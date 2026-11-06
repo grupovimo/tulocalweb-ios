@@ -531,7 +531,7 @@ private fun Canales(canales: List<Tablero.Canal>, total: Double) {
             BoxWithConstraints(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(7.dp))) {
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     canales.forEach { c ->
-                        Box(Modifier.width(maxOf(2.dp, (maxWidth - 2.dp * (canales.size - 1)) * c.parte.toFloat())).fillMaxHeight().background(Marcas.colorCanal(c.canal)))
+                        Box(Modifier.width(maxOf(2.dp, (this@BoxWithConstraints.maxWidth - 2.dp * (canales.size - 1)) * c.parte.toFloat())).fillMaxHeight().background(Marcas.colorCanal(c.canal)))
                     }
                 }
             }

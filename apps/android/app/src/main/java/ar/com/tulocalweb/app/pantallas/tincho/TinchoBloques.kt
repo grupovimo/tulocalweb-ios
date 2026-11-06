@@ -165,7 +165,7 @@ private fun Barras(unidad: String, items: List<BloqueTincho.Barra>) {
                 Texto(b.etiqueta, Estilo(11f, Peso.regular), C.texto2, Modifier.width(84.dp), lineas = 1)
                 BoxWithConstraints(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.width(maxWidth * (b.valor / tope).toFloat()).height(20.dp).clip(RoundedCornerShape(5.dp))
+                        Box(Modifier.width(this@BoxWithConstraints.maxWidth * (b.valor / tope).toFloat()).height(20.dp).clip(RoundedCornerShape(5.dp))
                             .background(if (b.destacado == true) C.acento else C.acento.copy(alpha = 0.45f)))
                         Texto(corto(b.valor, unidad), Estilo(11f, Peso.semibold), C.texto2, lineas = 1)
                     }

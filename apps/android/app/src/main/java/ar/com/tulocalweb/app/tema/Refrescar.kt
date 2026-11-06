@@ -62,7 +62,7 @@ fun Refrescable(alRefrescar: suspend () -> Unit, modifier: Modifier = Modifier, 
                 if (tirado >= umbral) {
                     refrescando = true
                     tirado = umbral
-                    Haptico.suave()
+                    Haptico.impacto()
                     alcance.launch {
                         try { accion() } finally { refrescando = false; tirado = 0f }
                     }

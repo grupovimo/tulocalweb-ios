@@ -137,8 +137,8 @@ fun EsqueletoFilas(filas: Int = 4, miniatura: Dp = 48.dp, modifier: Modifier = M
                 Esqueleto(miniatura, miniatura, 12.dp)
                 BoxWithConstraints(Modifier.weight(1f).heightIn(min = 31.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Esqueleto(maxWidth * (if (i % 2 == 0) 0.7f else 0.8f), 13.dp)
-                        Esqueleto(maxWidth * (if (i % 2 == 0) 0.45f else 0.35f), 11.dp, suave = true)
+                        Esqueleto(this@BoxWithConstraints.maxWidth * (if (i % 2 == 0) 0.7f else 0.8f), 13.dp)
+                        Esqueleto(this@BoxWithConstraints.maxWidth * (if (i % 2 == 0) 0.45f else 0.35f), 11.dp, suave = true)
                     }
                 }
             }

@@ -88,7 +88,7 @@ private val simbolosRelleno = FontFamily(Font(R.font.simbolos_relleno))
 fun Icono(simbolo: String, tam: Float = 17f, color: Color = C.texto, modifier: Modifier = Modifier, descripcion: String? = null) {
     val relleno = simbolo.endsWith(".fill") || simbolo.contains(".fill.")
     val nombre = simbolo.replace(".fill", "")
-    val c = Simbolos.mapa[nombre] ?: Simbolos.mapa[nombre.substringBeforeLast('.')] ?: ''
+    val c = Simbolos.mapa[nombre] ?: Simbolos.mapa[nombre.substringBeforeLast('.')] ?: ' '
     // Los símbolos de Material son un poco más chicos que los de SF a igual tamaño de letra.
     BasicText(
         c.toString(),

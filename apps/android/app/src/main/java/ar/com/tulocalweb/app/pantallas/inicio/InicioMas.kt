@@ -147,7 +147,7 @@ fun TarjetaCajaLocal(caja: Tablero.Caja) {
                 BoxWithConstraints(Modifier.fillMaxWidth().height(8.dp).clip(Capsula)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         caja.medios.forEachIndexed { i, m ->
-                            Box(Modifier.width(maxOf(4.dp, maxWidth * m.monto / total)).fillMaxHeight().background(C.acento.copy(alpha = 1f - i * 0.22f)))
+                            Box(Modifier.width(maxOf(4.dp, this@BoxWithConstraints.maxWidth * m.monto / total)).fillMaxHeight().background(C.acento.copy(alpha = 1f - i * 0.22f)))
                         }
                     }
                 }
