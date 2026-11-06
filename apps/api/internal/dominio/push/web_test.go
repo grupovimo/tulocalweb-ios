@@ -37,7 +37,9 @@ func suscripcionDePrueba(t *testing.T, endpoint string) push.SuscripcionWeb {
 
 var ingresoMac = cuentas.Cliente{IP: "190.210.32.1", Agente: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
 
-func fcm(c string) string { return "https://fcm.googleapis.com/fcm/send/" + strings.Repeat(c, 20) }
+func endpointFCM(c string) string {
+	return "https://fcm.googleapis.com/fcm/send/" + strings.Repeat(c, 20)
+}
 
 // conWeb arma el handler con el push web prendido (clave pública VAPID).
 func (e *escenario) conWeb(t *testing.T) {
@@ -122,7 +124,7 @@ func TestSuscripcionWeb(t *testing.T) {
 	if rec := e.web(e.ses["duenio"], "GET", "/v1/panel/push-web", ""); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"clave":""`) {
 		t.Fatalf("estado apagado: %d %s", rec.Code, rec.Body)
 	}
-	b, _ := json.Marshal(suscripcionDePrueba(t, fcm("a")))
+	b, _ := json.Marshal(suscripcionDePrueba(t, endpointFCM("a")))
 	if rec := e.web(e.ses["duenio"], "POST", "/v1/panel/push-web", string(b)); rec.Code != http.StatusConflict {
 		t.Fatalf("suscribir apagado: %d", rec.Code)
 	}
@@ -131,7 +133,7 @@ func TestSuscripcionWeb(t *testing.T) {
 		t.Fatalf("sin sesión: %d", rec.Code)
 	}
 	// Un endpoint que no es de un servicio de push conocido no entra (el worker le haría un POST).
-	for _, mala := range []push.SuscripcionWeb{suscripcionDePrueba(t, "https://169.254.169.254/x"), {Endpoint: fcm("a"), P256dh: "x", Auth: "y"}} {
+	for _, mala := range []push.SuscripcionWeb{suscripcionDePrueba(t, "https://169.254.169.254/x"), {Endpoint: endpointFCM("a"), P256dh: "x", Auth: "y"}} {
 		b, _ := json.Marshal(mala)
 		if rec := e.web(e.ses["duenio"], "POST", "/v1/panel/push-web", string(b)); rec.Code != http.StatusBadRequest {
 			t.Fatalf("suscripción mala %+v: %d", mala, rec.Code)
@@ -142,17 +144,17 @@ func TestSuscripcionWeb(t *testing.T) {
 		t.Fatalf("prueba sin suscripción: %d", rec.Code)
 	}
 	for rol, c := range map[string]string{"duenio": "a", "admin": "b", "ventas": "c", "local": "d"} {
-		e.suscribir(t, rol, suscripcionDePrueba(t, fcm(c)))
+		e.suscribir(t, rol, suscripcionDePrueba(t, endpointFCM(c)))
 	}
 	if rec := e.web(e.ses["duenio"], "GET", "/v1/panel/push-web", ""); !strings.Contains(rec.Body.String(), `"suscripta":true`) {
 		t.Fatalf("estado: %s", rec.Body)
 	}
 	// La misma suscripción con otra cuenta en ese navegador pasa a esa.
-	e.suscribir(t, "local", suscripcionDePrueba(t, fcm("a")))
+	e.suscribir(t, "local", suscripcionDePrueba(t, endpointFCM("a")))
 	if n := e.suscripciones(t, "usuario_id = $1", e.ids["duenio"]); n != 0 {
 		t.Fatalf("a la dueña le quedaron %d", n)
 	}
-	e.suscribir(t, "duenio", suscripcionDePrueba(t, fcm("a")))
+	e.suscribir(t, "duenio", suscripcionDePrueba(t, endpointFCM("a")))
 	// RLS: cada persona ve sólo las suyas.
 	var vistas int
 	if err := e.b.App.EnUsuario(context.Background(), e.ids["ventas"], func(tx pgx.Tx) error {
@@ -177,9 +179,9 @@ func TestVentaYPruebaPorPushWeb(t *testing.T) {
 	e.conWeb(t)
 	ctx := context.Background()
 	for rol, c := range map[string]string{"duenio": "a", "admin": "b", "ventas": "c", "local": "d"} {
-		e.suscribir(t, rol, suscripcionDePrueba(t, fcm(c)))
+		e.suscribir(t, rol, suscripcionDePrueba(t, endpointFCM(c)))
 	}
-	f := &webFalso{muertos: map[string]bool{fcm("d"): true}}
+	f := &webFalso{muertos: map[string]bool{endpointFCM("d"): true}}
 	s := &push.Servicio{Pool: e.b.App, Web: f, Log: silencio()}
 	w := &outbox.Worker{Pool: e.b.Worker, Manejadores: s.Manejadores()}
 	// Los ingresos de armar: nadie tenía suscripción todavía.
@@ -196,7 +198,7 @@ func TestVentaYPruebaPorPushWeb(t *testing.T) {
 		t.Fatalf("salieron %d avisos, quería 4: %v", len(got), got)
 	}
 	for c, conMonto := range map[string]bool{"a": true, "b": true, "c": false, "d": false} {
-		a := got[fcm(c)]
+		a := got[endpointFCM(c)]
 		if strings.Contains(a.Body, "$ 24.020") != conMonto || strings.Contains(a.Body, "Lucía") || !strings.HasPrefix(a.Title, "Nueva venta #") {
 			t.Errorf("%s: %+v", c, a)
 		}
@@ -208,7 +210,7 @@ func TestVentaYPruebaPorPushWeb(t *testing.T) {
 		t.Errorf("envío sin Topic o TTL: %+v", f.envios[0])
 	}
 	// La suscripción vencida (410) se borró sola.
-	if n := e.suscripciones(t, "endpoint = $1", fcm("d")); n != 0 {
+	if n := e.suscripciones(t, "endpoint = $1", endpointFCM("d")); n != 0 {
 		t.Fatal("la suscripción vencida sigue")
 	}
 
@@ -220,10 +222,10 @@ func TestVentaYPruebaPorPushWeb(t *testing.T) {
 	if _, err := w.Pasada(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if len(f.envios) != 1 || f.envios[0].Endpoint != fcm("c") {
+	if len(f.envios) != 1 || f.envios[0].Endpoint != endpointFCM("c") {
 		t.Fatalf("prueba: %+v", f.envios)
 	}
-	if a := f.avisos(t)[fcm("c")]; a.Title != "Aviso de prueba" || a.URL != "/panel/notificaciones" {
+	if a := f.avisos(t)[endpointFCM("c")]; a.Title != "Aviso de prueba" || a.URL != "/panel/notificaciones" {
 		t.Errorf("prueba: %+v", a)
 	}
 
@@ -235,10 +237,10 @@ func TestVentaYPruebaPorPushWeb(t *testing.T) {
 	if _, err := w.Pasada(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if len(f.envios) != 1 || f.envios[0].Endpoint != fcm("a") {
+	if len(f.envios) != 1 || f.envios[0].Endpoint != endpointFCM("a") {
 		t.Fatalf("ingreso: %+v", f.envios)
 	}
-	if a := f.avisos(t)[fcm("a")]; a.Title != "Entraron a tu cuenta" || a.URL != "/panel/configuracion?tab=seguridad" || strings.Contains(a.Body, "190.") {
+	if a := f.avisos(t)[endpointFCM("a")]; a.Title != "Entraron a tu cuenta" || a.URL != "/panel/configuracion?tab=seguridad" || strings.Contains(a.Body, "190.") {
 		t.Errorf("ingreso: %+v", a)
 	}
 }
@@ -249,8 +251,8 @@ func TestPushWebContraServicioFalso(t *testing.T) {
 	e := armar(t)
 	e.conWeb(t)
 	ctx := context.Background()
-	e.suscribir(t, "duenio", suscripcionDePrueba(t, fcm("a")))
-	e.suscribir(t, "admin", suscripcionDePrueba(t, fcm("b")))
+	e.suscribir(t, "duenio", suscripcionDePrueba(t, endpointFCM("a")))
+	e.suscribir(t, "admin", suscripcionDePrueba(t, endpointFCM("b")))
 	var mu sync.Mutex
 	var pedidos []*http.Request
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -265,8 +267,8 @@ func TestPushWebContraServicioFalso(t *testing.T) {
 	}))
 	defer srv.Close()
 	// Los endpoints apuntan al servicio falso (el registro sólo acepta los servicios conocidos).
-	e.admin(t, `UPDATE auth.suscripciones_web SET endpoint = $1 WHERE endpoint = $2`, srv.URL+"/ok", fcm("a"))
-	e.admin(t, `UPDATE auth.suscripciones_web SET endpoint = $1 WHERE endpoint = $2`, srv.URL+"/vencida", fcm("b"))
+	e.admin(t, `UPDATE auth.suscripciones_web SET endpoint = $1 WHERE endpoint = $2`, srv.URL+"/ok", endpointFCM("a"))
+	e.admin(t, `UPDATE auth.suscripciones_web SET endpoint = $1 WHERE endpoint = $2`, srv.URL+"/vencida", endpointFCM("b"))
 	pub, priv, _ := webpush.GenerarClaves()
 	cli, err := webpush.Desde(pub, priv, "mailto:hola@tulocalweb.com.ar")
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,12 +16,15 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/roles"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/apns"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/fcm"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/problema"
 )
 
 // La Live Activity de los pedidos por preparar (docs/decisiones.md §54). La app la arranca y la
 // actualiza cuando está abierta; con la app cerrada, el worker la actualiza (o la arranca, con el
-// token de «push to start») al entrar una venta.
+// token de «push to start») al entrar una venta. En Android es una notificación en curso: el
+// teléfono pasa su token de FCM como el de la actividad y el de inicio, y el worker le manda el
+// estado como datos (tipo «actividad»).
 
 // EstadoActividad es el ContentState de PedidosPorPreparar en la app (Compartido/Actividad.swift):
 // los nombres de los campos tienen que coincidir.
@@ -40,8 +44,19 @@ type TokensActividad struct {
 
 var tokenActividad = regexp.MustCompile(`^[0-9a-f]{32,400}$`)
 
-// GuardarActividad guarda los tokens de la actividad del iPhone de la sesión. Actividad vacía: terminó.
+// GuardarActividad guarda los tokens de la actividad del teléfono de la sesión. Actividad vacía: terminó.
 func GuardarActividad(ctx context.Context, p Pool, usuario, sesion string, t TokensActividad) error {
+	if tok := strings.TrimSpace(t.Token); !tokenAPNs.MatchString(strings.ToLower(tok)) && TokenFCM(tok) {
+		// Android: el token de FCM, tal cual, también como actividad e inicio.
+		t.Token, t.Actividad, t.Inicio = tok, strings.TrimSpace(t.Actividad), strings.TrimSpace(t.Inicio)
+		if (t.Actividad != "" && t.Actividad != tok) || (t.Inicio != "" && t.Inicio != tok) {
+			return ErrInvalido
+		}
+		return p.EnUsuario(ctx, usuario, func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `SELECT app.actividad_dispositivo($1, $2, $3, $4)`, sesion, t.Token, t.Actividad, t.Inicio)
+			return err
+		})
+	}
 	t.Token = strings.ToLower(strings.TrimSpace(t.Token))
 	t.Actividad = strings.ToLower(strings.TrimSpace(t.Actividad))
 	t.Inicio = strings.ToLower(strings.TrimSpace(t.Inicio))
@@ -63,7 +78,7 @@ func rutasActividad(mux *http.ServeMux, p Pool) {
 			return
 		}
 		if d.SesionHash == "" || d.IA != "" || d.Mirada {
-			problema.Escribir(w, problema.SinPermiso("La actividad del iPhone es de la sesión de una persona."))
+			problema.Escribir(w, problema.SinPermiso("La actividad del teléfono es de la sesión de una persona."))
 			return
 		}
 		var t TokensActividad
@@ -104,6 +119,23 @@ func PayloadActividad(evento string, e EstadoActividad, tienda string, ahora tim
 	return b
 }
 
+// DatosActividad: lo que lee la notificación en curso de Android (ActividadEnApp.desdePush), como
+// texto. terminar «1»: cerrarla.
+func DatosActividad(e EstadoActividad, tienda string, terminar bool) map[string]string {
+	d := map[string]string{"tipo": "actividad", "tienda": tienda,
+		"porPreparar": strconv.Itoa(e.PorPreparar), "preparadosHoy": strconv.Itoa(e.PreparadosHoy)}
+	if e.UltimoNumero != nil {
+		d["ultimoNumero"] = strconv.Itoa(*e.UltimoNumero)
+	}
+	if e.UltimoCliente != nil {
+		d["ultimoCliente"] = *e.UltimoCliente
+	}
+	if terminar {
+		d["terminar"] = "1"
+	}
+	return d
+}
+
 // estadoActividad: cuántos pedidos esperan preparación, cuántos se prepararon hoy y el más nuevo.
 func (s *Servicio) estadoActividad(ctx context.Context, tienda string) (EstadoActividad, string, error) {
 	var e EstadoActividad
@@ -132,11 +164,11 @@ func (s *Servicio) estadoActividad(ctx context.Context, tienda string) (EstadoAc
 	return e, nombre, err
 }
 
-// actualizarActividades manda el estado nuevo a los iPhone del equipo con Pedidos: actualiza (o
+// actualizarActividades manda el estado nuevo a los teléfonos del equipo con Pedidos: actualiza (o
 // cierra, si no queda ninguno) la actividad en curso, o la arranca con el token de inicio. No frena
 // el aviso de venta: lo que falle se anota y listo.
 func (s *Servicio) actualizarActividades(ctx context.Context, tienda string) {
-	if !s.apnsActivo() {
+	if !s.telefonos() {
 		return
 	}
 	e, nombre, err := s.estadoActividad(ctx, tienda)
@@ -144,27 +176,27 @@ func (s *Servicio) actualizarActividades(ctx context.Context, tienda string) {
 		s.Log.Warn("push: estado de la actividad", "error", err)
 		return
 	}
-	type fila struct{ rol, actividad, inicio, entorno string }
+	type fila struct{ rol, actividad, inicio, entorno, plataforma string }
 	var filas []fila
 	err = s.Pool.EnTienda(ctx, tienda, func(t pgx.Tx) error {
-		rs, err := t.Query(ctx, `SELECT rol, coalesce(token_actividad, ''), coalesce(token_inicio, ''), entorno FROM app.actividades_de_tienda()`)
+		rs, err := t.Query(ctx, `SELECT rol, coalesce(token_actividad, ''), coalesce(token_inicio, ''), entorno, plataforma FROM app.actividades_de_tienda()`)
 		if err != nil {
 			return err
 		}
 		filas, err = pgx.CollectRows(rs, func(r pgx.CollectableRow) (fila, error) {
 			var f fila
-			err := r.Scan(&f.rol, &f.actividad, &f.inicio, &f.entorno)
+			err := r.Scan(&f.rol, &f.actividad, &f.inicio, &f.entorno, &f.plataforma)
 			return f, err
 		})
 		return err
 	})
 	if err != nil {
-		s.Log.Warn("push: iPhone con actividad", "error", err)
+		s.Log.Warn("push: teléfonos con actividad", "error", err)
 		return
 	}
 	ahora := time.Now()
 	for _, f := range filas {
-		if !roles.Puede(f.rol, roles.Pedidos) {
+		if !roles.Puede(f.rol, roles.Pedidos) || !s.sale(f.plataforma) {
 			continue
 		}
 		var token, evento string
@@ -179,10 +211,15 @@ func (s *Servicio) actualizarActividades(ctx context.Context, tienda string) {
 		default:
 			continue
 		}
-		envio := apns.Envio{Token: token, Entorno: f.entorno, Payload: PayloadActividad(evento, e, nombre, ahora),
-			Vence: ahora.Add(4 * time.Hour), Actividad: true}
-		err := s.APNs.Enviar(ctx, envio)
-		if errors.Is(err, apns.ErrTokenInvalido) {
+		var err error
+		if f.plataforma == "android" {
+			err = s.FCM.Enviar(ctx, fcm.Envio{Token: token, Datos: DatosActividad(e, nombre, evento == "end"),
+				Colapso: "actividad-" + tienda, Vida: 4 * time.Hour, SoloDatos: true})
+		} else {
+			err = s.APNs.Enviar(ctx, apns.Envio{Token: token, Entorno: f.entorno, Payload: PayloadActividad(evento, e, nombre, ahora),
+				Vence: ahora.Add(4 * time.Hour), Actividad: true})
+		}
+		if errors.Is(err, apns.ErrTokenInvalido) || errors.Is(err, fcm.ErrTokenInvalido) {
 			_ = s.Pool.EnTx(ctx, func(t pgx.Tx) error {
 				_, err := t.Exec(ctx, `SELECT app.olvidar_actividad($1)`, token)
 				return err

@@ -4765,12 +4765,15 @@ components:
     Dispositivo:
       type: object
       description: >-
-        Un iPhone para los avisos push. El payload que llega tiene aps.alert (title/body), sound,
-        thread-id (tienda-<id>, o cuenta) y, afuera de aps, ruta (pedido/<numero>, preguntas/ml/<id>,
-        cuenta/seguridad) y tienda (el id) para abrir la pantalla.
+        Un teléfono para los avisos push. En el iPhone (APNs) el payload tiene aps.alert (title/body),
+        sound, thread-id (tienda-<id>, o cuenta), category (venta: Ver pedido y Marcar como preparado) y,
+        afuera de aps, ruta (pedido/<numero>, preguntas/ml/<id>, cuenta/seguridad) y tienda (el id) para
+        abrir la pantalla. En Android (FCM) llega sólo con datos: titulo, cuerpo, ruta, tienda, hilo y
+        categoria; los pedidos por preparar, con tipo actividad.
       required: [token]
       properties:
-        token: { type: string, pattern: '^[0-9a-fA-F]{64,200}$', description: Token de APNs en hexadecimal }
+        token: { type: string, maxLength: 4096, description: 'Token de APNs en hexadecimal (iPhone) o de registro de FCM (Android)' }
+        plataforma: { type: string, enum: [ios, android], default: ios }
         entorno: { type: string, enum: [sandbox, produccion], default: produccion, description: sandbox para la app instalada desde Xcode }
         modelo: { type: string, maxLength: 60, description: 'Por ejemplo, iPhone15,2' }
         version: { type: string, maxLength: 30, description: Versión de la app }

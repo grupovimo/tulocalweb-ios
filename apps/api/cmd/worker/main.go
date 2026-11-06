@@ -32,6 +32,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/config"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/correo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/fcm"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/webpush"
 )
@@ -113,6 +114,12 @@ func correr() error {
 	if err != nil {
 		slog.Error("push: la clave de APNs no sirve, no se mandan avisos al iPhone", "error", err)
 	}
+	// Push a Android por FCM. Sin MOSTRADOR_FCM_CUENTA, apagado; una cuenta que no sirve no tira el
+	// worker.
+	cliFCM, err := fcm.Desde(cfg.FCMCuenta)
+	if err != nil {
+		slog.Error("push: la cuenta de FCM no sirve, no se mandan avisos a Android", "error", err)
+	}
 	// Push web al panel instalado como app (§43). Sin MOSTRADOR_VAPID_*, apagado; unas claves que no
 	// sirven tampoco tiran el worker.
 	cliWeb, err := webpush.Desde(cfg.VAPIDPublica, cfg.VAPIDPrivada, cfg.VAPIDSujeto)
@@ -124,7 +131,7 @@ func correr() error {
 	if c, err := cifrado.Nuevo(cfg.ClaveCifrado); err == nil && cfg.ClaveCifrado != "" {
 		conv.Cifra = c
 	}
-	ps := push.Nuevo(app, cliAPNs, slog.Default()).ConWeb(cliWeb)
+	ps := push.Nuevo(app, cliAPNs, slog.Default()).ConFCM(cliFCM).ConWeb(cliWeb)
 	// Lanzamientos (§52): «Ya salió» a quienes pidieron aviso, de a tandas.
 	lz := &lanzamientos.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	for _, ms := range []map[string]outbox.Manejador{mp.Manejadores(), ml.Manejadores(), av.Manejadores(), mc.Manejadores(), tg.Manejadores(), equipo.Manejadores(mails), imp.Manejadores(),

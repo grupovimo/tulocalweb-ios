@@ -4576,10 +4576,15 @@ export interface components {
             /** @description Política de cambios y devoluciones que se muestra en la tienda (vacía: el texto legal base) */
             politica?: string;
         };
-        /** @description Un iPhone para los avisos push. El payload que llega tiene aps.alert (title/body), sound, thread-id (tienda-<id>, o cuenta) y, afuera de aps, ruta (pedido/<numero>, preguntas/ml/<id>, cuenta/seguridad) y tienda (el id) para abrir la pantalla. */
+        /** @description Un teléfono para los avisos push. En el iPhone (APNs) el payload tiene aps.alert (title/body), sound, thread-id (tienda-<id>, o cuenta), category (venta: Ver pedido y Marcar como preparado) y, afuera de aps, ruta (pedido/<numero>, preguntas/ml/<id>, cuenta/seguridad) y tienda (el id) para abrir la pantalla. En Android (FCM) llega sólo con datos: titulo, cuerpo, ruta, tienda, hilo y categoria; los pedidos por preparar, con tipo actividad. */
         Dispositivo: {
-            /** @description Token de APNs en hexadecimal */
+            /** @description Token de APNs en hexadecimal (iPhone) o de registro de FCM (Android) */
             token: string;
+            /**
+             * @default ios
+             * @enum {string}
+             */
+            plataforma: "ios" | "android";
             /**
              * @description sandbox para la app instalada desde Xcode
              * @default produccion

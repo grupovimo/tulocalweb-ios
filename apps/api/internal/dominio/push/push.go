@@ -1,6 +1,6 @@
-// Package push: los avisos al iPhone de quienes atienden la tienda (docs/decisiones.md §40).
+// Package push: los avisos al teléfono de quienes atienden la tienda (docs/decisiones.md §40).
 //
-// La app registra el token de APNs de cada iPhone atado a la sesión con que entró
+// La app registra el token de cada teléfono (APNs en el iPhone, FCM en Android) atado a la sesión con que entró
 // (POST /v1/panel/dispositivos) y lo da de baja al salir (DELETE). El worker manda, por el outbox:
 // «Nueva venta #N» (push.venta, el mismo momento que el mail tienda.venta), «Pregunta nueva en
 // Mercado Libre» (push.pregunta_ml), «Te quedaste sin stock» (push.sin_stock, §41) y «Entraron a tu
@@ -37,12 +37,20 @@ type Dispositivo struct {
 	Entorno string `json:"entorno"`
 	Modelo  string `json:"modelo"`
 	Version string `json:"version"`
+	// Plataforma: ios (por defecto) o android (el token es de FCM).
+	Plataforma string `json:"plataforma"`
 }
 
 // ErrInvalido: el token o el entorno no tienen la forma esperada.
 var ErrInvalido = errors.New("dispositivo inválido")
 
-var tokenAPNs = regexp.MustCompile(`^[0-9a-f]{64,200}$`)
+var (
+	tokenAPNs = regexp.MustCompile(`^[0-9a-f]{64,200}$`)
+	tokenFCM  = regexp.MustCompile(`^[A-Za-z0-9_:-]{20,}$`)
+)
+
+// TokenFCM dice si el texto tiene forma de token de registro de FCM (el de un teléfono Android).
+func TokenFCM(t string) bool { return len(t) <= 4096 && tokenFCM.MatchString(t) }
 
 func limpiar(s string, max int) string {
 	s = strings.Map(func(r rune) rune {
@@ -60,8 +68,20 @@ func limpiar(s string, max int) string {
 
 // Normalizar valida y limpia lo que mandó la app.
 func Normalizar(d Dispositivo) (Dispositivo, error) {
-	d.Token = strings.ToLower(strings.TrimSpace(d.Token))
-	if !tokenAPNs.MatchString(d.Token) {
+	switch d.Plataforma {
+	case "", "ios":
+		d.Plataforma = "ios"
+		d.Token = strings.ToLower(strings.TrimSpace(d.Token))
+		if !tokenAPNs.MatchString(d.Token) {
+			return d, ErrInvalido
+		}
+	case "android":
+		// El de FCM distingue mayúsculas: va tal cual.
+		d.Token = strings.TrimSpace(d.Token)
+		if !TokenFCM(d.Token) {
+			return d, ErrInvalido
+		}
+	default:
 		return d, ErrInvalido
 	}
 	switch d.Entorno {
@@ -75,7 +95,7 @@ func Normalizar(d Dispositivo) (Dispositivo, error) {
 	return d, nil
 }
 
-// Registrar ata el iPhone a la sesión (sesion es el hash del token de la sesión) y a la persona.
+// Registrar ata el teléfono a la sesión (sesion es el hash del token de la sesión) y a la persona.
 // Si el token ya estaba con otra sesión, se mueve a esta.
 func Registrar(ctx context.Context, p Pool, usuario, sesion string, d Dispositivo) error {
 	d, err := Normalizar(d)
@@ -83,7 +103,7 @@ func Registrar(ctx context.Context, p Pool, usuario, sesion string, d Dispositiv
 		return err
 	}
 	return p.EnUsuario(ctx, usuario, func(t pgx.Tx) error {
-		_, err := t.Exec(ctx, `SELECT app.registrar_dispositivo($1, $2, $3, $4, $5)`, sesion, d.Token, d.Entorno, d.Modelo, d.Version)
+		_, err := t.Exec(ctx, `SELECT app.registrar_dispositivo($1, $2, $3, $4, $5, $6)`, sesion, d.Token, d.Entorno, d.Modelo, d.Version, d.Plataforma)
 		return err
 	})
 }
@@ -123,6 +143,11 @@ func Rutas(mux *http.ServeMux, p Pool) {
 		err := Registrar(r.Context(), p, s.Usuario.ID, s.SesionHash, d)
 		switch {
 		case errors.Is(err, ErrInvalido):
+			if d.Plataforma == "android" {
+				problema.Escribir(w, problema.Invalido("El token del teléfono no es válido.",
+					problema.Campo{Ruta: "token", Mensaje: "Tiene que ser el token de registro de FCM."}))
+				return
+			}
 			problema.Escribir(w, problema.Invalido("El token del iPhone o el entorno no son válidos.",
 				problema.Campo{Ruta: "token", Mensaje: "Tiene que ser el token de APNs en hexadecimal."}))
 		case err != nil:
@@ -152,10 +177,12 @@ type Aviso struct {
 	Ruta string
 	// Tienda: el id, para que la app cambie de tienda antes de abrir la ruta si hace falta.
 	Tienda string
+	// Categoria: los botones del aviso en la app («venta»: Ver pedido y Marcar como preparado).
+	Categoria string
 }
 
-// Payload arma el JSON de APNs: aps.alert con título y cuerpo, sonido, thread-id y, fuera de aps,
-// la ruta (y la tienda) para el enlace profundo.
+// Payload arma el JSON de APNs: aps.alert con título y cuerpo, sonido, thread-id, la categoría (los
+// botones del aviso) y, fuera de aps, la ruta (y la tienda) para el enlace profundo.
 func Payload(a Aviso) []byte {
 	type alerta struct {
 		Title string `json:"title"`
@@ -165,13 +192,26 @@ func Payload(a Aviso) []byte {
 		Alert    alerta `json:"alert"`
 		Sound    string `json:"sound"`
 		ThreadID string `json:"thread-id,omitempty"`
+		Category string `json:"category,omitempty"`
 	}
 	b, _ := json.Marshal(struct {
 		Aps    aps    `json:"aps"`
 		Ruta   string `json:"ruta,omitempty"`
 		Tienda string `json:"tienda,omitempty"`
-	}{aps{alerta{a.Titulo, a.Cuerpo}, "default", a.Hilo}, a.Ruta, a.Tienda})
+	}{aps{alerta{a.Titulo, a.Cuerpo}, "default", a.Hilo, a.Categoria}, a.Ruta, a.Tienda})
 	return b
+}
+
+// DatosFCM: lo que va en data del aviso de Android (sólo datos: la app arma la notificación con sus
+// acciones). Sólo lo que no está vacío.
+func DatosFCM(a Aviso) map[string]string {
+	d := map[string]string{}
+	for k, v := range map[string]string{"ruta": a.Ruta, "tienda": a.Tienda, "hilo": a.Hilo, "categoria": a.Categoria} {
+		if v != "" {
+			d[k] = v
+		}
+	}
+	return d
 }
 
 func pesos(n int64) string {

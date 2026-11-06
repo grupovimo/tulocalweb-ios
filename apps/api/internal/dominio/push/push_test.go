@@ -27,6 +27,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/apns"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/correo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db/pruebadb"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/fcm"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/servidor"
 )
@@ -44,6 +45,7 @@ func TestPayload(t *testing.T) {
 			Alert    struct{ Title, Body string } `json:"alert"`
 			Sound    string                       `json:"sound"`
 			ThreadID string                       `json:"thread-id"`
+			Category string                       `json:"category"`
 		} `json:"aps"`
 		Ruta, Tienda string
 	}
@@ -53,7 +55,8 @@ func TestPayload(t *testing.T) {
 	if p.Aps.Alert.Title != "Nueva venta #12" || p.Aps.Alert.Body != "$ 24.020 · 3 productos · Mercado Pago acreditado" {
 		t.Errorf("alerta: %+v", p.Aps.Alert)
 	}
-	if p.Aps.Sound != "default" || p.Aps.ThreadID != "tienda-t1" || p.Ruta != "pedido/12" || p.Tienda != "t1" {
+	// category «venta»: los botones Ver pedido y Marcar como preparado del iPhone.
+	if p.Aps.Sound != "default" || p.Aps.ThreadID != "tienda-t1" || p.Aps.Category != "venta" || p.Ruta != "pedido/12" || p.Tienda != "t1" {
 		t.Errorf("payload: %s", b)
 	}
 	if len(b) > 4096 {
@@ -279,7 +282,7 @@ func TestRegistroBajaYSesion(t *testing.T) {
 		}
 		// Ni registra el suyo con la sesión de otra persona.
 		err = e.b.App.EnUsuario(ctx, e.ids["ventas"], func(tx pgx.Tx) error {
-			_, err := tx.Exec(ctx, `SELECT app.registrar_dispositivo((SELECT token_hash FROM auth.sesiones WHERE usuario_id = $1), $2, 'sandbox', '', '')`,
+			_, err := tx.Exec(ctx, `SELECT app.registrar_dispositivo((SELECT token_hash FROM auth.sesiones WHERE usuario_id = $1), $2, 'sandbox', '', '', 'ios')`,
 				e.ids["duenio"], token("f"))
 			return err
 		})
@@ -570,5 +573,161 @@ func TestUn410BorraElToken(t *testing.T) {
 	}
 	if n := e.cuantos(t, "token = $1", token("a")); n != 1 {
 		t.Fatal("se borró un token que andaba")
+	}
+}
+
+// --- Android (FCM) ---
+
+// tokenFCM: con mayúsculas y dos puntos, como los de verdad (no se pasan a minúscula).
+func tokenFCM(c string) string {
+	return "dA" + strings.Repeat(c, 20) + ":APA91b" + strings.Repeat(c, 40)
+}
+
+// fcmFalso registra lo enviado y responde ErrTokenInvalido a los tokens muertos.
+type fcmFalso struct {
+	mu      sync.Mutex
+	envios  []fcm.Envio
+	muertos map[string]bool
+}
+
+func (f *fcmFalso) Enviar(_ context.Context, e fcm.Envio) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.envios = append(f.envios, e)
+	if f.muertos[e.Token] {
+		return fcm.ErrTokenInvalido
+	}
+	return nil
+}
+
+func (e *escenario) registrarAndroid(t *testing.T, rol, tok string) {
+	t.Helper()
+	if rec := e.pedir(e.ses[rol], "POST", `{"token":"`+tok+`","entorno":"produccion","modelo":"Pixel 9","version":"1.0","plataforma":"android"}`); rec.Code != http.StatusNoContent {
+		t.Fatalf("registrar Android %s: %d %s", rol, rec.Code, rec.Body)
+	}
+}
+
+func TestNormalizarAndroid(t *testing.T) {
+	d, err := push.Normalizar(push.Dispositivo{Token: " " + tokenFCM("x") + " ", Plataforma: "android"})
+	if err != nil || d.Token != tokenFCM("x") || d.Plataforma != "android" {
+		t.Fatalf("Android: %+v %v", d, err)
+	}
+	for _, x := range []push.Dispositivo{
+		{Token: "corto", Plataforma: "android"},
+		{Token: tokenFCM("x") + " ", Plataforma: "windows"},
+		{Token: tokenFCM("x")}, // sin plataforma es iPhone: no es hexadecimal
+	} {
+		if _, err := push.Normalizar(x); !errors.Is(err, push.ErrInvalido) {
+			t.Errorf("%+v: %v", x, err)
+		}
+	}
+	if d, _ := push.Normalizar(push.Dispositivo{Token: token("a")}); d.Plataforma != "ios" {
+		t.Errorf("sin plataforma: %q", d.Plataforma)
+	}
+}
+
+// La venta llega al iPhone por APNs y a Android por FCM sólo con datos (la app arma el aviso con
+// sus botones); un token de FCM muerto se borra.
+func TestVentaNuevaEnAndroid(t *testing.T) {
+	e := armar(t)
+	ctx := context.Background()
+	e.registrar(t, "duenio", token("a"))
+	e.registrarAndroid(t, "admin", tokenFCM("b"))
+	e.registrarAndroid(t, "ventas", tokenFCM("c"))
+	e.registrarAndroid(t, "local", tokenFCM("d"))
+	a := &apnsFalso{}
+	f := &fcmFalso{muertos: map[string]bool{tokenFCM("d"): true}}
+	s := &push.Servicio{Pool: e.b.App, APNs: a, FCM: f, Log: silencio()}
+	w := &outbox.Worker{Pool: e.b.Worker, Manejadores: s.Manejadores()}
+	vender(t, e)
+	if _, err := w.Pasada(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.envios) != 1 || a.envios[0].token != token("a") {
+		t.Fatalf("APNs: %+v", a.envios)
+	}
+	var avisos []fcm.Envio
+	for _, x := range f.envios {
+		if x.Datos["tipo"] != "actividad" {
+			avisos = append(avisos, x)
+		}
+	}
+	if len(avisos) != 3 {
+		t.Fatalf("FCM: salieron %d avisos, quería 3: %+v", len(avisos), avisos)
+	}
+	for _, x := range avisos {
+		if !x.SoloDatos || !strings.HasPrefix(x.Titulo, "Nueva venta #") || x.Datos["categoria"] != "venta" ||
+			x.Datos["ruta"] != "pedido/"+strings.TrimPrefix(x.Titulo, "Nueva venta #") || x.Datos["tienda"] != e.tienda {
+			t.Errorf("aviso a Android: %+v", x)
+		}
+		// El monto, sólo con Finanzas (admin sí, ventas no).
+		if conMonto := strings.Contains(x.Cuerpo, "$ 24.020"); conMonto != (x.Token == tokenFCM("b")) {
+			t.Errorf("%s: %q", x.Token[:4], x.Cuerpo)
+		}
+	}
+	if n := e.cuantos(t, "token = $1", tokenFCM("d")); n != 0 {
+		t.Fatal("el token de FCM inválido sigue registrado")
+	}
+	if n := e.cuantos(t, "token = $1 AND plataforma = 'android'", tokenFCM("b")); n != 1 {
+		t.Fatal("el token de Android no quedó con su plataforma (o se pasó a minúscula)")
+	}
+}
+
+// Sin FCM configurado, los teléfonos Android no se eligen (y el iPhone sigue recibiendo).
+func TestSinFCMNoSeEligeAndroid(t *testing.T) {
+	e := armar(t)
+	ctx := context.Background()
+	e.registrar(t, "duenio", token("a"))
+	e.registrarAndroid(t, "admin", tokenFCM("b"))
+	a := &apnsFalso{}
+	s := &push.Servicio{Pool: e.b.App, APNs: a, Log: silencio()}
+	w := &outbox.Worker{Pool: e.b.Worker, Manejadores: s.Manejadores()}
+	vender(t, e)
+	if _, err := w.Pasada(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.envios) != 1 || a.envios[0].token != token("a") {
+		t.Fatalf("APNs: %+v", a.envios)
+	}
+}
+
+// La notificación en curso de Android: el teléfono pasa su token como el de inicio; con la venta, el
+// worker le manda el estado por FCM (tipo «actividad»).
+func TestActividadEnAndroid(t *testing.T) {
+	e := armar(t)
+	ctx := context.Background()
+	e.registrarAndroid(t, "duenio", tokenFCM("a"))
+	r := httptest.NewRequest("PUT", "/v1/panel/dispositivos/actividad", strings.NewReader(`{"token":"`+tokenFCM("a")+`","actividad":"","inicio":"`+tokenFCM("a")+`"}`))
+	r.Header.Set("Authorization", "Bearer "+e.ses["duenio"])
+	r.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.h.ServeHTTP(rec, r)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("actividad: %d %s", rec.Code, rec.Body)
+	}
+	// Otro token como actividad no vale.
+	if err := push.GuardarActividad(ctx, e.b.App, e.ids["duenio"], "x", push.TokensActividad{Token: tokenFCM("a"), Actividad: tokenFCM("z")}); !errors.Is(err, push.ErrInvalido) {
+		t.Errorf("actividad ajena: %v", err)
+	}
+	f := &fcmFalso{}
+	s := &push.Servicio{Pool: e.b.App, FCM: f, Log: silencio()}
+	w := &outbox.Worker{Pool: e.b.Worker, Manejadores: s.Manejadores()}
+	vender(t, e)
+	// El pedido de prueba puede quedar «Sin pagar» (transferencia): se lo pasa a preparar.
+	e.admin(t, `UPDATE pedidos SET estado = 'Para preparar' WHERE tienda_id = $1`, e.tienda)
+	if _, err := w.Pasada(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var act *fcm.Envio
+	for i, x := range f.envios {
+		if x.Datos["tipo"] == "actividad" {
+			act = &f.envios[i]
+		}
+	}
+	if act == nil {
+		t.Fatalf("no salió la actividad: %+v", f.envios)
+	}
+	if !act.SoloDatos || act.Token != tokenFCM("a") || act.Datos["porPreparar"] == "" || act.Datos["tienda"] == "" || act.Datos["terminar"] != "" {
+		t.Errorf("actividad: %+v", act)
 	}
 }
