@@ -349,10 +349,12 @@ struct EscanearInventario: View {
         let l: PaginaProductos? = try? await estado.api.get("/v1/panel/listas/productos", query: [
             URLQueryItem(name: "q", value: codigo), URLQueryItem(name: "cuantos", value: "5"),
         ])
+        // En la pestaña donde se abrió el escáner (Más o Productos): antes iba siempre a Productos y desde
+        // Más no se veía nada.
         if let p = l?.filas.first(where: { $0.sku == codigo }) ?? l?.filas.first {
-            nav.productos.append(.editorProducto(p.id))
+            nav.abrir(.editorProducto(p.id))
         } else {
-            nav.productos.append(.nuevoProducto(codigo))
+            nav.abrir(.nuevoProducto(codigo))
         }
     }
 }

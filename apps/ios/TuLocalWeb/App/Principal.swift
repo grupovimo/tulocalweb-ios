@@ -52,6 +52,17 @@ final class Navegacion {
         }
     }
 
+    /// Empuja un destino en la pestaña que se está viendo (como NavigationLink, pero desde una acción).
+    func abrir(_ d: Destino) {
+        switch pestana {
+        case .inicio: inicio.append(d)
+        case .pedidos: pedidos.append(d)
+        case .productos: productos.append(d)
+        case .tincho: tincho.append(d)
+        case .mas: mas.append(d)
+        }
+    }
+
     func ir(_ ruta: Ruta) {
         switch ruta {
         case let .pedido(n):

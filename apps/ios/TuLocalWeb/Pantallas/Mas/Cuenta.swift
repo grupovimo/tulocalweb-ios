@@ -10,6 +10,8 @@ struct Cuenta: View {
     @AppStorage("tema") private var tema = "sistema"
     @State private var faceID = false
     @State private var avisosPermitidos: Bool?
+    /// Todavía no se le preguntó (notDetermined): tocar la fila pide el permiso en vez de ir a Ajustes.
+    @State private var avisosSinPreguntar = false
     @State private var dosPasos: EstadoDosPasos?
     @State private var verDosPasos = false
 
@@ -48,7 +50,7 @@ struct Cuenta: View {
                 EtiquetaSeccion(texto: "Avisos").padding(.horizontal, 4).padding(.top, 10)
                 VStack(spacing: 0) {
                     fila("Avisos en este iPhone", detalle: avisosPermitidos.map { $0 ? "Prendidos" : "Apagados" }) {
-                        if avisosPermitidos == false, let u = URL(string: UIApplication.openNotificationSettingsURLString) {
+                        if avisosPermitidos == false, !avisosSinPreguntar, let u = URL(string: UIApplication.openNotificationSettingsURLString) {
                             UIApplication.shared.open(u)
                         } else {
                             Task {
@@ -109,6 +111,7 @@ struct Cuenta: View {
     private func leerAvisos() async {
         let a = await UNUserNotificationCenter.current().notificationSettings()
         avisosPermitidos = a.authorizationStatus == .authorized || a.authorizationStatus == .provisional
+        avisosSinPreguntar = a.authorizationStatus == .notDetermined
     }
 
     private func cambiarFaceID(_ v: Bool) async {

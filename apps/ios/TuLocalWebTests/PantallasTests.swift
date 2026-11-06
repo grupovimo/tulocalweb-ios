@@ -25,56 +25,20 @@ final class ApiFalsa: URLProtocol {
 final class PantallasTests: XCTestCase {
     static let tienda = Acceso.Tienda(id: "t1", nombre: "Almacén Lumbre", slug: "almacen-lumbre", rol: "owner", logo: "https://api.prueba/logo.png")
 
+    /// Las respuestas compartidas con Android (apps/pruebas/respuestas.json): «MÉTODO ruta» o sólo la ruta.
+    static func respuestas() -> [String: String] {
+        guard let url = Bundle(for: PantallasTests.self).url(forResource: "respuestas", withExtension: "json"),
+              let datos = try? Data(contentsOf: url),
+              let raiz = try? JSONSerialization.jsonObject(with: datos) as? [String: Any] else { return [:] }
+        var r: [String: String] = [:]
+        for (k, v) in raiz where !k.hasPrefix("_") {
+            if let d = try? JSONSerialization.data(withJSONObject: v, options: [.fragmentsAllowed]) { r[k] = String(decoding: d, as: UTF8.self) }
+        }
+        return r
+    }
+
     override func setUp() {
-        let c = "{\"actual\": 12, \"anterior\": 4}"
-        ApiFalsa.respuestas = [
-            "/v1/panel/tablero": """
-            {"periodo": "7d", "desde": "2026-10-25T00:00:00Z", "hasta": "2026-11-01T00:00:00Z", "montos": true,
-             "kpis": {"pedidos": \(c), "clientesNuevos": \(c)}, "ultimosPedidos": [],
-             "paraHacer": {"preparar": 0, "transferencias": 0, "sinStock": 0, "sinStockEnMl": 0},
-             "hornero": {"carritos": 0, "ideasHechas": []}, "masVendidos": [],
-             "visitas": {"desde": "2026-10-01", "hoy": \(c), "dias7": \(c), "dias30": \(c), "visitantes": \(c),
-                         "vistas": \(c), "masVistos": []}}
-            """,
-            "/v1/panel/listas/productos": """
-            {"total": 2, "segmentos": {"active": 2}, "filas": [
-             {"id": "p1", "nombre": "Mate de calabaza con virola", "foto": "https://example.com/a.jpg", "precio": 18500,
-              "stock": 3, "canales": ["web"], "publicado": true, "estado": "active", "variantes": []},
-             {"id": "p2", "nombre": "Yerba", "precio": 4200, "stock": 0, "canales": [], "publicado": true,
-              "estado": "out", "variantes": []}]}
-            """,
-            "/v1/panel/cupones": """
-            {"cupones": [{"id": "c1", "codigo": "HOLA10", "tipo": "pct", "valor": 10, "descripcion": "",
-              "estado": "activo", "usos": 0, "limite": 0, "vendio": 0}],
-             "kpis": {"activos": 1, "usosMes": 0, "vendido": 0, "descontado": 0}}
-            """,
-            "/v1/panel/mi-tienda": "{\"diseno\": {\"portada\": null, \"logo\": null}}",
-            "/v1/rubros": """
-            [{"id": "indumentaria", "nombre": "Indumentaria", "plantilla": "ceibo", "tienda": "Ceibo"},
-             {"id": "gastronomia", "nombre": "Gastronomía", "plantilla": "miga", "tienda": "Miga"}]
-            """,
-            "/v1/panel/onboarding": "{\"plantilla\": \"ceibo\", \"elecciones\": {\"rubro\": \"indumentaria\", \"pasoApp\": 2}, \"terminado\": false}",
-            "/v1/panel/cuenta/plan": PantallasTests.plan,
-            "/v1/panel/importaciones/actual": """
-            {"id": "i1", "plataforma": "shopify", "urlOrigen": "https://x.myshopify.com", "estado": "corriendo", "etapa": "productos",
-             "progreso": {"productos": 12, "clientes": 0, "pedidos": 0, "redirecciones": 0, "repetidos": 1, "recortados": 0},
-             "errores": [], "creada": "2026-11-02T03:00:00Z", "terminada": null}
-            """,
-            "/v1/panel/telegram": "{\"vinculado\": false}",
-            "/v1/panel/integraciones/medicion": "{\"ga4\": \"G-ABC1234\", \"pixel\": null, \"feeds\": {\"gm\": true, \"meta\": false}}",
-            "/v1/panel/ia": """
-            {"permisos": {"leer": true, "escribir": true}, "conexiones": [{"id": "c1", "cliente": "Claude", "persona": "Nahuel",
-             "acciones": true, "creadaEn": "2026-11-01T10:00:00Z", "usadaEn": "2026-11-02T01:00:00Z"}]}
-            """,
-            "/v1/panel/productos/p1": """
-            {"id": "p1", "nombre": "Mesa ratona", "descripcion": "", "categoria": null, "precio": 90000, "costo": 0,
-             "sku": "", "stock": 2, "foto": null, "fotos": [], "canales": {"web": true}, "publicado": true,
-             "vendidos30d": 0, "slug": "mesa-ratona", "tipo": "hogar", "atributos": {"peso": "8500", "alto": "45"},
-             "opciones": [{"nombre": "Color", "valores": ["Natural", "Negro"]}],
-             "variantes": [{"id": "v1", "valores": {"Color": "Natural"}, "sku": "", "precio": null, "stock": 1, "foto": null, "activa": true},
-                           {"id": "v2", "valores": {"Color": "Negro"}, "sku": "", "precio": null, "stock": 1, "foto": null, "activa": true}]}
-            """,
-        ]
+        ApiFalsa.respuestas = Self.respuestas()
     }
 
     private func montar<V: View>(_ vista: V, segundos: Double = 4) {
@@ -117,26 +81,7 @@ final class PantallasTests: XCTestCase {
     func testPantallaFacturacionArca() { montar(FacturacionArca()) }
     func testPantallaPlanCuenta() { montar(PlanCuenta()) }
     /// El plan con prorrateo (§56): la respuesta de la API se decodifica y la hoja con el resumen se arma.
-    static let plan = """
-    {"actual": "emprende", "ciclo": "mes", "enPrueba": false, "diasPrueba": 0, "finPrueba": "2026-09-01T00:00:00Z",
-     "proximoCobro": "2026-11-20T00:00:00Z",
-     "abono": {"activo": true, "proximo": "2026-11-20T00:00:00Z", "programado": null},
-     "beneficio": {"pct": 50, "cobros": 3}, "beneficioUsado": true,
-     "cotizaciones": {
-      "pro/mes": {"plan": "pro", "ciclo": "mes", "tipo": "sube", "hoy": 14516, "rige": "2026-11-05T12:00:00Z", "hasta": null,
-       "cobro": {"fecha": "2026-11-20T00:00:00Z", "importe": 49900}, "porCiclo": 49900,
-       "lineas": [{"texto": "Pro por 15 días", "importe": 24145}, {"texto": "Emprende ya pagado por esos días", "importe": -9629}],
-       "pago": "diferencia", "inicio": null},
-      "gratis/mes": {"plan": "gratis", "ciclo": "mes", "tipo": "gratis", "hoy": 0, "rige": "2026-11-20T00:00:00Z",
-       "hasta": "2026-11-20T00:00:00Z", "cobro": null, "porCiclo": 0, "lineas": [], "pago": "cancelar", "inicio": null},
-      "emprende/anio": {"plan": "emprende", "ciclo": "anio", "tipo": "ciclo", "hoy": 0, "rige": "2026-11-20T00:00:00Z",
-       "hasta": "2026-11-20T00:00:00Z", "cobro": {"fecha": "2026-11-20T00:00:00Z", "importe": 179100}, "porCiclo": 179100,
-       "lineas": [], "pago": "suscripcion", "inicio": "2026-11-20T00:00:00Z"}},
-     "uso": {"productos": 8, "personas": 2, "hornero": 0, "packs": 0, "sinIa": 0}, "medio": null,
-     "facturacion": {"razonSocial": "", "cuit": "", "tipo": "Factura B"},
-     "facturas": [{"numero": "cobro:1", "detalle": "Tu Local Web Emprende (mensual)", "total": 19900, "fecha": "2026-10-20T13:00:00Z"}],
-     "cancelado": null}
-    """
+    static var plan: String { Self.respuestas()["/v1/panel/cuenta/plan"] ?? "{}" }
     func testHojaPlanConResumen() throws {
         let d = try JSONDecoder().decode(PlanCuenta.Datos.self, from: Data(Self.plan.utf8))
         XCTAssertEqual(d.cotizacion("pro", "mes")?.hoy, 14516)

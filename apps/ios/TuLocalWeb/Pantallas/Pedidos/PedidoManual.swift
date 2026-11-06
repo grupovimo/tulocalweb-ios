@@ -50,7 +50,10 @@ struct PedidoManual: View {
                                         .estilo(.footnote).foregroundStyle(C.texto2)
                                 }
                                 Spacer(minLength: 6)
-                                Stepper("\(it.cantidad)", value: Binding(get: { items[i].cantidad }, set: { n in
+                                // Al llegar a 0 la fila se borra: el Binding puede volver a leerse con un índice que
+                                // ya no existe, así que se fija antes (sin eso, la app se cerraba).
+                                Stepper("\(it.cantidad)", value: Binding(get: { items.indices.contains(i) ? items[i].cantidad : 0 }, set: { n in
+                                    guard items.indices.contains(i) else { return }
                                     if n <= 0 { items.remove(at: i) } else { items[i].cantidad = n }
                                 }), in: 0...999)
                                 .labelsHidden()

@@ -904,7 +904,7 @@ struct UsuariosYPermisos: View {
                 HStack(spacing: 12) {
                     AvatarIniciales(nombre: m.nombre.isEmpty ? m.contacto : m.nombre, tam: 42)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(m.nombre.isEmpty ? m.contacto : m.nombre + (m.vos ? " (vos)" : ""))
+                        Text((m.nombre.isEmpty ? m.contacto : m.nombre) + (m.vos ? " (vos)" : ""))
                             .estilo(.fila).foregroundStyle(C.texto).lineLimit(1)
                         Text(m.pendiente ? "Invitación pendiente · \(m.contacto)" : m.contacto)
                             .estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)

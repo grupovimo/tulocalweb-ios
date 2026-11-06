@@ -142,10 +142,17 @@ struct CrearTienda: View {
         do {
             if apple { try await estado.ingresarConApple() } else { try await estado.ingresarConGoogle() }
             cerrar()
+        } catch let e as Clerk.ErrorClerk where e.codigo == "cancelado" {
+            // Cancelado por la persona: nada que decir.
+        } catch let e as Clerk.ErrorClerk {
+            // Como en Ingresar: antes un error de Clerk no se veía y parecía que no pasaba nada.
+            Haptico.error()
+            error = Ingresar.mensajeClerk(e.codigo, apple: apple)
         } catch let e as ErrorApi {
             error = e.detalle
         } catch {
-            // Cancelado por la persona: nada que decir.
+            Haptico.error()
+            self.error = "No pudimos completar el ingreso. Probá de nuevo."
         }
     }
 }

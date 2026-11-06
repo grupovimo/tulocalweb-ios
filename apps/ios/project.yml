@@ -134,7 +134,11 @@ targets:
   TuLocalWebTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [TuLocalWebTests]
+    sources:
+      - TuLocalWebTests
+      # Las respuestas de la API simulada, compartidas con Android.
+      - path: ../pruebas/respuestas.json
+        buildPhase: resources
     dependencies:
       - target: TuLocalWeb
     settings:
