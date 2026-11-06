@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { ErrorApi } from '#lib/server/bff.ts';
 import { tomarInvitacion } from '#lib/server/auth/invitacion.ts';
-import { guardarSesion } from '#lib/server/auth/sesion.ts';
+import { guardarIngreso } from '#lib/server/auth/sesion.ts';
 import { destino } from '#lib/server/auth/volver.ts';
 import { cuentasDe, usaSandbox } from '#lib/server/datos/index.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -31,8 +31,8 @@ export const actions: Actions = {
 			// Viniendo de una invitación al equipo, la cuenta queda sumada a esa tienda y va al panel.
 			const invitacion = tomarInvitacion(event.cookies);
 			const r = await cuentasDe(event).ingresarConClerk(token, invitacion);
-			guardarSesion(event.cookies, r.token, r.venceEn);
 			hacia = r.nueva ? '/onboarding?paso=1' : invitacion ? '/panel' : destino(event.cookies);
+			if (guardarIngreso(event.cookies, r, hacia)) hacia = '/ingresar?m=codigo';
 		} catch (e) {
 			if (!(e instanceof ErrorApi)) throw e;
 			redirect(303, `/ingresar?error=${encodeURIComponent(e.codigo)}`);

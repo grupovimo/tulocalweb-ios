@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { ErrorApi } from '#lib/server/bff.ts';
-import { guardarSesion } from '#lib/server/auth/sesion.ts';
+import { guardarIngreso } from '#lib/server/auth/sesion.ts';
 import { esProveedor } from '#lib/server/auth/social.ts';
 import { cuentasDe, usaSandbox } from '#lib/server/datos/index.ts';
 import type { RequestHandler } from './$types';
@@ -19,8 +19,8 @@ export const GET: RequestHandler = async (event) => {
 	let destino = '/panel';
 	try {
 		const r = await cuentasDe(event).volverOAuth(params.proveedor, codigo, estado);
-		guardarSesion(event.cookies, r.token, r.venceEn);
 		if (r.nueva) destino = '/onboarding?paso=1';
+		if (guardarIngreso(event.cookies, r, destino)) destino = '/ingresar?m=codigo';
 	} catch (e) {
 		if (!(e instanceof ErrorApi)) throw e;
 		redirect(303, `/ingresar?error=${encodeURIComponent(e.codigo)}`);

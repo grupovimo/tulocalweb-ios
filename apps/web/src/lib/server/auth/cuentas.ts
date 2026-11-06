@@ -76,6 +76,39 @@ export class CuentasApi extends ClienteBff {
 	registrarConInvitacion(token: string, nombre: string, clave: string) {
 		return this.pedir<Sesion>('POST', '/v1/auth/invitacion/registro', { token, nombre, clave });
 	}
+	/** Completa un ingreso con verificación en dos pasos (el desafío y el código). */
+	completarSegundoFactor(desafio: string, codigo: string) {
+		return this.pedir<Sesion>('POST', '/v1/auth/segundo-factor', { desafio, codigo });
+	}
+	estadoSegundoFactor(sesion: string) {
+		return this.pedir<components['schemas']['EstadoSegundoFactor']>(
+			'GET',
+			'/v1/auth/segundo-factor',
+			undefined,
+			sesion
+		);
+	}
+	activarSegundoFactor(sesion: string) {
+		return this.pedir<{ secreto: string; uri: string }>(
+			'POST',
+			'/v1/auth/segundo-factor/activar',
+			{},
+			sesion
+		);
+	}
+	/** confirmar (devuelve los códigos de recuperación), codigos (nuevos) o desactivar. */
+	conCodigoSegundoFactor(
+		accion: 'confirmar' | 'codigos' | 'desactivar',
+		codigo: string,
+		sesion: string
+	) {
+		return this.pedir<components['schemas']['CodigosRecuperacion'] | undefined>(
+			'POST',
+			`/v1/auth/segundo-factor/${accion}`,
+			{ codigo },
+			sesion
+		);
+	}
 	/** Link para entrar sin contraseña, al WhatsApp de la cuenta. */
 	pedirEnlace(telefono: string) {
 		return this.pedir<void>('POST', '/v1/auth/enlace', { telefono });

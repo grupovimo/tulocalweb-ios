@@ -6,6 +6,8 @@
 	import CampoDireccion, { type EstadoDireccion } from '#lib/components/CampoDireccion.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Interruptor from '#lib/components/Interruptor.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import Qr from '#lib/marca/Qr.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
 	import { unsplash } from '#lib/landing/formato.ts';
@@ -174,6 +176,56 @@
 			title: cerradas === 1 ? 'Cerramos 1 sesión' : `Cerramos ${cerradas} sesiones`,
 			desc: 'Sólo queda abierta esta'
 		});
+	}
+
+	// ---- Verificación en dos pasos (§58): de la persona, con una app autenticadora ----
+	type Estado2 = { activo: boolean; codigosRestantes: number; disponible: boolean };
+	let dosPasos = $state<Estado2 | null>(null);
+	// paso: qr (escanear y confirmar), codigos (los de recuperación, una sola vez), apagar.
+	let hoja2 = $state<null | 'qr' | 'codigos' | 'apagar' | 'nuevos'>(null);
+	let alta2 = $state<{ secreto: string; uri: string } | null>(null);
+	let codigo2 = $state('');
+	let codigos2 = $state<string[]>([]);
+	let enviando2 = $state(false);
+	$effect(() => {
+		if (tab !== 'seguridad' || dosPasos) return;
+		fetch('/panel/segundo-factor')
+			.then((r) => (r.ok ? (r.json() as Promise<Estado2>) : null))
+			.then((e: Estado2 | null) => (dosPasos = e));
+	});
+	async function recargar2() {
+		const r = await fetch('/panel/segundo-factor');
+		if (r.ok) dosPasos = (await r.json()) as Estado2;
+	}
+	async function cambiar2(prender: boolean) {
+		codigo2 = '';
+		if (!prender) {
+			hoja2 = 'apagar';
+			return;
+		}
+		const r = await pedir('/panel/segundo-factor', 'POST', { accion: 'activar' });
+		if (!r) return;
+		alta2 = await r.json();
+		hoja2 = 'qr';
+	}
+	async function conCodigo2(accion: 'confirmar' | 'desactivar' | 'codigos') {
+		enviando2 = true;
+		const r = await pedir('/panel/segundo-factor', 'POST', { accion, codigo: codigo2 });
+		enviando2 = false;
+		if (!r) return;
+		codigo2 = '';
+		await recargar2();
+		if (accion === 'desactivar') {
+			hoja2 = null;
+			ui.toast({ k: 'ok', title: 'Verificación en dos pasos apagada' });
+			return;
+		}
+		codigos2 = ((await r.json()) as { codigos: string[] }).codigos;
+		hoja2 = 'codigos';
+	}
+	async function copiar2() {
+		await navigator.clipboard?.writeText(codigos2.join('\n'));
+		ui.toast({ k: 'ok', title: 'Códigos copiados' });
 	}
 
 	// ---- Venta mayorista (§49) ----
@@ -374,6 +426,30 @@
 							/>
 						</div>
 					{/each}
+					{#if dosPasos?.disponible}
+						<div class="opcion">
+							<span class="o-ico"><Icon icon={I.phLockKeyFill} size={18} /></span>
+							<span class="o-txt"
+								><span class="o-t">Verificación en dos pasos</span><span class="o-d"
+									>{dosPasos.activo
+										? `Prendida · ${dosPasos.codigosRestantes} códigos de recuperación`
+										: 'Además de la contraseña, un código de tu celular'}</span
+								>{#if dosPasos.activo}<button
+										type="button"
+										class="s-btn d2-mas"
+										onclick={() => {
+											codigo2 = '';
+											hoja2 = 'nuevos';
+										}}>Códigos nuevos</button
+									>{/if}</span
+							>
+							<Interruptor
+								checked={dosPasos.activo}
+								label="Verificación en dos pasos"
+								onchange={(v) => cambiar2(v)}
+							/>
+						</div>
+					{/if}
 					<div class="sesiones-cab">
 						<div class="sesiones-t">Sesiones activas</div>
 						{#if otras > 0}<button type="button" class="s-btn" onclick={cerrarOtras}
@@ -510,6 +586,83 @@
 		</div>
 	</div>
 </div>
+
+<Modal
+	bind:open={
+		() => !!hoja2,
+		(v) => {
+			if (!v) {
+				hoja2 = null;
+				void recargar2();
+			}
+		}
+	}
+	titulo="Verificación en dos pasos"
+	ancho={440}
+>
+	<div class="d2">
+		{#if hoja2 === 'qr' && alta2}
+			<div class="m-t">Prendé la verificación en dos pasos</div>
+			<p class="d2-p">
+				Escaneá el código con Google Authenticator, Microsoft Authenticator o la app de contraseñas
+				del iPhone, y escribí los seis números que te muestra.
+			</p>
+			<div class="d2-qr"><Qr texto={alta2.uri} alt="Código QR para tu app de autenticación" /></div>
+			<p class="d2-p chico">¿Lo cargás a mano? La clave es <code>{alta2.secreto}</code></p>
+		{:else if hoja2 === 'codigos'}
+			<div class="m-t">Guardá tus códigos de recuperación</div>
+			<p class="d2-p">
+				Si perdés el celular, cada uno te deja entrar una vez. Es la única vez que los vas a ver.
+			</p>
+			<ol class="d2-cods">
+				{#each codigos2 as c (c)}<li><code>{c}</code></li>{/each}
+			</ol>
+			<div class="m-acc">
+				<button type="button" class="btn btn-secondary" onclick={copiar2}>Copiar</button>
+				<button type="button" class="btn btn-primary" onclick={() => (hoja2 = null)}
+					>Ya los guardé</button
+				>
+			</div>
+		{:else}
+			<div class="m-t">
+				{hoja2 === 'apagar' ? 'Apagar la verificación en dos pasos' : 'Códigos de recuperación nuevos'}
+			</div>
+			<p class="d2-p">
+				Escribí el código de tu app (o uno de recuperación).{hoja2 === 'nuevos'
+					? ' Los códigos de antes dejan de servir.'
+					: ''}
+			</p>
+		{/if}
+		{#if hoja2 === 'qr' || hoja2 === 'apagar' || hoja2 === 'nuevos'}
+			<form
+				onsubmit={(e) => {
+					e.preventDefault();
+					void conCodigo2(
+						hoja2 === 'qr' ? 'confirmar' : hoja2 === 'apagar' ? 'desactivar' : 'codigos'
+					);
+				}}
+			>
+				<input
+					class="input d2-in"
+					bind:value={codigo2}
+					inputmode={hoja2 === 'qr' ? 'numeric' : 'text'}
+					autocomplete="one-time-code"
+					placeholder="123 456"
+					maxlength="12"
+					aria-label="Código"
+				/>
+				<div class="m-acc">
+					<button type="button" class="btn btn-secondary" onclick={() => (hoja2 = null)}
+						>Cancelar</button
+					>
+					<button class="btn btn-primary" disabled={enviando2 || codigo2.trim().length < 6}
+						>{hoja2 === 'qr' ? 'Prender' : hoja2 === 'apagar' ? 'Apagar' : 'Generar'}</button
+					>
+				</div>
+			</form>
+		{/if}
+	</div>
+</Modal>
 
 <style>
 	.pagina {
@@ -916,5 +1069,62 @@
 		.tabs {
 			flex-direction: row;
 		}
+	}
+	.d2-mas {
+		align-self: flex-start;
+		margin-top: 6px;
+	}
+	.d2 .m-t {
+		font-size: 21px;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+	.d2-p {
+		margin: 8px 0 0;
+		color: var(--mu);
+		font-size: 14px;
+		line-height: 1.45;
+		text-wrap: pretty;
+	}
+	.d2-p.chico {
+		font-size: 12.5px;
+		overflow-wrap: anywhere;
+	}
+	.d2-qr {
+		display: grid;
+		place-items: center;
+		margin-top: 14px;
+	}
+	.d2-qr :global(img) {
+		width: 196px;
+		height: 196px;
+		border-radius: 14px;
+	}
+	.d2-cods {
+		margin: 14px 0 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+	}
+	.d2-cods code,
+	.d2-p code {
+		font-family: ui-monospace, monospace;
+		font-size: 14px;
+	}
+	.d2-in {
+		margin-top: 14px;
+		width: 100%;
+		font-size: 20px;
+		letter-spacing: 0.12em;
+		text-align: center;
+	}
+	.d2 .m-acc {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		margin-top: 18px;
 	}
 </style>

@@ -13,12 +13,19 @@ import {
 	Restablecer
 } from '#lib/server/auth/esquemas.ts';
 import { esProveedor, irAlProveedor } from '#lib/server/auth/social.ts';
-import { guardarSesion } from '#lib/server/auth/sesion.ts';
+import {
+	borrarDesafio,
+	guardarIngreso,
+	guardarSesion,
+	leerDesafio
+} from '#lib/server/auth/sesion.ts';
 import { destino, VOLVER, volverValido } from '#lib/server/auth/volver.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const { url, cookies } = event;
+	// El código de la verificación en dos pasos, sólo con un ingreso a medias.
+	if (url.searchParams.get('m') === 'codigo' && !leerDesafio(cookies)) redirect(303, '/ingresar');
 	const v = url.searchParams.get('volver');
 	if (volverValido(v))
 		cookies.set(VOLVER, v, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 600 });
@@ -63,18 +70,20 @@ export const actions: Actions = {
 		if (!r.success)
 			return fail(400, { modo: 'login', email: String(f.email ?? ''), errores: errores(r.issues) });
 		if (usaSandbox()) redirect(303, '/prueba');
+		let hacia = '/panel';
 		try {
 			const s = await cuentasDe(event).ingresar(
 				r.output.email,
 				r.output.clave,
 				r.output.recordarme === 'on'
 			);
-			guardarSesion(event.cookies, s.token, s.venceEn);
+			hacia = destino(event.cookies);
+			if (guardarIngreso(event.cookies, s, hacia)) hacia = '/ingresar?m=codigo';
 		} catch (e) {
 			const x = deApi(e);
 			return fail(x.estado, { modo: 'login', email: r.output.email, errores: x.errores });
 		}
-		redirect(303, destino(event.cookies));
+		redirect(303, hacia);
 	},
 	registro: async (event) => {
 		const f = await datos(event.request);
@@ -138,18 +147,48 @@ export const actions: Actions = {
 			a: r.output.telefono
 		};
 	},
+	/** El código de la app autenticadora (o uno de recuperación) que completa el ingreso. */
+	codigo: async (event) => {
+		const codigo = String((await event.request.formData()).get('codigo') ?? '').trim();
+		const desafio = leerDesafio(event.cookies);
+		if (!desafio)
+			return fail(401, {
+				modo: 'login',
+				errores: { form: 'Se venció el ingreso. Ingresá de nuevo.' }
+			});
+		if (!codigo)
+			return fail(400, { modo: 'codigo', errores: { codigo: 'Escribí el código de tu app.' } });
+		try {
+			const s = await cuentasDe(event).completarSegundoFactor(desafio.d, codigo);
+			guardarSesion(event.cookies, s.token, s.venceEn);
+			borrarDesafio(event.cookies);
+		} catch (e) {
+			const x = deApi(e);
+			if (x.estado === 401) {
+				borrarDesafio(event.cookies);
+				return fail(401, { modo: 'login', errores: x.errores });
+			}
+			return fail(x.estado, {
+				modo: 'codigo',
+				errores: x.estado === 400 ? { codigo: 'El código no es correcto. Probá con el que muestra ahora.' } : x.errores
+			});
+		}
+		redirect(303, desafio.h);
+	},
 	/** Entra con el link del WhatsApp (un clic: así la vista previa del link no lo consume). */
 	entrar: async (event) => {
 		const token = String((await event.request.formData()).get('token') ?? '');
 		if (usaSandbox()) redirect(303, '/prueba');
+		let hacia = '/panel';
 		try {
 			const s = await cuentasDe(event).usarEnlace(token);
-			guardarSesion(event.cookies, s.token, s.venceEn);
+			hacia = destino(event.cookies);
+			if (guardarIngreso(event.cookies, s, hacia)) hacia = '/ingresar?m=codigo';
 		} catch (e) {
 			const x = deApi(e);
 			return fail(x.estado, { modo: 'enlace', errores: x.errores });
 		}
-		redirect(303, destino(event.cookies));
+		redirect(303, hacia);
 	},
 	recuperar: async (event: RequestEvent) => {
 		const f = await datos(event.request);

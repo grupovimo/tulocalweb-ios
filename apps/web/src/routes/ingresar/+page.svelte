@@ -28,7 +28,14 @@
 	let { data, form } = $props();
 
 	type Modo =
-		'login' | 'registro' | 'recuperar' | 'enviado' | 'restablecer' | 'whatsapp' | 'enlace';
+		| 'login'
+		| 'registro'
+		| 'recuperar'
+		| 'enviado'
+		| 'restablecer'
+		| 'whatsapp'
+		| 'enlace'
+		| 'codigo';
 	const MODOS: Modo[] = [
 		'login',
 		'registro',
@@ -36,7 +43,8 @@
 		'enviado',
 		'restablecer',
 		'whatsapp',
-		'enlace'
+		'enlace',
+		'codigo'
 	];
 	// Link del mail de recuperación: ?m=restablecer&token=…
 	const tokenUrl = $derived(page.url.searchParams.get('token') ?? '');
@@ -513,6 +521,36 @@
 						<p class="pie-nota">
 							¿Todavía no cargaste tu WhatsApp? Entrá con tu email y sumalo desde Mis datos.
 						</p>
+					</form>
+				{:else if modo === 'codigo'}
+					<!-- Verificación en dos pasos: la contraseña (o Google, Apple, el link) ya estuvo bien. -->
+					<form method="POST" action="?/codigo" class="col" use:enhance={conEnvio}>
+						<img src="/hornero/saludo.webp" alt="" class="ave-chica" />
+						<div>
+							<h1>Un paso más</h1>
+							<p class="bajada">
+								Escribí el código de seis números que muestra tu app de autenticación.
+							</p>
+						</div>
+						<label class="campo"
+							>Código<span class="in"
+								><input
+									name="codigo"
+									inputmode="numeric"
+									autocomplete="one-time-code"
+									placeholder="123 456"
+									maxlength="12"
+									aria-invalid={!!err.codigo}
+									aria-describedby={err.codigo ? 'err-codigo' : undefined}
+								/></span
+							></label
+						>{#if err.codigo}<small class="err" id="err-codigo">{err.codigo}</small>{/if}
+						<button type="submit" class="cta" disabled={enviando}>Entrar a mi panel</button>
+						<p class="bajada centro-l">
+							¿No tenés el teléfono? Usá uno de tus códigos de recuperación.
+						</p>
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- otro modo de esta misma pantalla (aModo usa resolve) -->
+						<a class="volver centro-l" href={aModo('login')}>Volver a ingresar</a>
 					</form>
 				{:else if modo === 'enlace'}
 					<!-- Link del WhatsApp: pide un clic, así la vista previa del link no lo consume. -->
