@@ -40,6 +40,16 @@ publica en las tiendas hasta que esté. Plan: `~/.claude/plans/sigamos-haciendo-
    aparecían. Arreglado en la API (`push.Payload`).
 2. Escanear inventario desde Más empujaba el producto en la pestaña Productos (no se veía nada). Ahora abre en la
    pestaña actual (`Navegacion.abrir`).
+3. Crear tienda se tragaba los errores de Clerk (tocabas Google, fallaba y no pasaba nada). Ahora los muestra como
+   Ingresar.
+4. Pedido manual: el contador podía leer una fila ya borrada al bajar a 0 (cierre de la app).
+5. Cuenta › Avisos: si todavía no se había pedido el permiso, la fila mandaba a Ajustes en vez de pedirlo.
+6. Usuarios y permisos: faltaba «(vos)» cuando la persona no tiene nombre (paréntesis mal puesto).
+
+## Dudas de producto que quedaron igual en los dos
+- Editar la meta: el chip dice «Igual que hoy» (proyecta el ritmo del mes; el handoff decía «Igual que octubre»).
+- Pedidos › Más › «Cancelar pedido» abre el detalle en vez de la hoja de cancelar.
+- Cancelar el plan, último paso: «Volver» cierra la hoja (como «Me quedo») en vez de volver a la oferta.
 
 ## Diferencias de plataforma aceptadas
 - Ingreso sólo con Google (sin «Seguir con Apple»).
@@ -49,10 +59,21 @@ publica en las tiendas hasta que esté. Plan: `~/.claude/plans/sigamos-haciendo-
 - «Marcar como preparado» desde el aviso de venta abre la app y lo marca ahí (en iOS también abre la app).
 - El ColorPicker de iOS es una grilla de colores con el código (`SelectorDeColor`); el Slider, `Deslizador`.
 
+## Repasadas (6/11)
+- Cuatro agentes en paralelo, el `.swift` entero contra el `.kt` entero (app y núcleo; inicio, pedidos, productos y
+  venta; Tincho, clientes y la primera mitad de Más; la otra mitad de Más y el tema). Unas 20 correcciones.
+- La mía: textos de cada `.swift` que no aparecen en Android (sólo quedan las diferencias aceptadas) y endpoints
+  (idénticos en los dos lados). Piezas sumadas: `Confirmacion(verTitulo)`, `Texto(monoespaciado)`,
+  `TextoRico(escalaMinima)`, `Hoja(estirable)` y la hoja que vuelve a su lugar si no se puede cerrar.
+- CI verde: Android 51 pantallas en claro y oscuro; iOS con `respuestas.json`. Galería:
+  https://claude.ai/artifact/9wkueUx5Wp6QJA3sr6H4Up
+- API desplegada el 6/11 con la migración 00077 (copia previa `/var/backups/tulocalweb/antes-202611060653.sql.gz`);
+  el worker lee `/claves/fcm.json` (`MOSTRADOR_FCM_CUENTA`, volumen sumado en `/opt/tulocalweb/compose.yml`).
+
 ## Sin probar en un teléfono
 Nunca corrió en un aparato real. Con la prueba interna de Play: el ingreso con Clerk, los avisos con sus botones y la
 notificación en curso, el escáner y el dictado.
 
 ## Falta
-1. Cuenta de servicio de Firebase en el VPS (`MOSTRADOR_FCM_CUENTA`) y reiniciar el worker.
-2. App en Play y prueba interna («Run workflow» → artifact `play`).
+1. App en Play y prueba interna («Run workflow» → artifact `play`).
+2. Probar en un teléfono el envío por FCM (todavía no hay ningún Android registrado).
