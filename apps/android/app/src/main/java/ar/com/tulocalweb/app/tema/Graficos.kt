@@ -89,11 +89,11 @@ import kotlin.math.roundToInt
 object Mov {
     private val suave = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
     /** Entrada de tarjetas: suave y corta. */
-    fun <T> entrada(): AnimationSpec<T> = tween(500, easing = suave)
+    fun <T> entrada(): androidx.compose.animation.core.FiniteAnimationSpec<T> = tween(500, easing = suave)
     /** Gráficos y barras que crecen. */
-    fun <T> crecer(): AnimationSpec<T> = tween(900, easing = suave)
+    fun <T> crecer(): androidx.compose.animation.core.FiniteAnimationSpec<T> = tween(900, easing = suave)
     /** Cambios por un toque (elegir, filtrar). */
-    fun <T> toque(): AnimationSpec<T> = tween(250, easing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f))
+    fun <T> toque(): androidx.compose.animation.core.FiniteAnimationSpec<T> = tween(250, easing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f))
 }
 
 /** Entra subiendo apenas y apareciendo, con un retraso para escalonar una grilla (una sola vez). */
