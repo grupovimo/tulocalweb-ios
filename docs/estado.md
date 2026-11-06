@@ -1,6 +1,25 @@
 # Estado del trabajo
 
-Última actualización: 31/10/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
+Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
+
+## 6/11/2026 · Verificación en dos pasos (§58) y demos como vitrina
+
+- **Dos pasos** (migración 00075): API, web y app de iPhone, todo desplegado. Prenderla: web › Configuración ›
+  Seguridad (QR + 10 códigos de recuperación) o app › Más › Cuenta (además «Abrir en mi app de
+  autenticación», para el mismo iPhone). Con ella prendida, todo ingreso devuelve `segundoFactor` en vez de
+  token; la web lo guarda en la cookie `__Host-tlw_desafio` y pide el código en `/ingresar?m=codigo`.
+  Prueba: `TestSegundoFactor` (+ vectores del RFC en `TestCodigoTOTPdelRFC`).
+- **Demos** (migración 00076): `tiendas.demo = true` para lumbre, cafebruma y almacenverde. Su tienda online
+  es vitrina («Es una tienda de ejemplo», la API rechaza comprar). Se corrigió el generador: los precios van
+  en **pesos enteros**, no centavos (salían ×100). Regeneradas en producción el 6/11.
+- iOS: build del commit b2a7c06 con ios.yml en verde en grupovimo/tulocalweb-ios; el workflow `testflight`
+  (run 42156811609) quedó subiéndolo al cerrar la sesión.
+- Copia previa a las migraciones: `/opt/tulocalweb/copias/antes-00076-202611060305.dump` en el VPS.
+- Falta:
+  - mirar que la build haya entrado a TestFlight y sumarla a «Socios» (`testflight-ultima`);
+  - facturar cada cobro del abono con ARCA (necesita que Nahuel genere el certificado con su clave fiscal);
+  - `TestPermisosPorRol` falló una vez cerca de medianoche: pedidos de las 23:59 contra un «hoy» que arranca
+    a las 00:00. No se volvió a correr; si falla de día, revisarla.
 
 ## 5/11/2026 · Descuento para quedarse (§57) y gráficos en la app
 

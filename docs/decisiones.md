@@ -1369,3 +1369,20 @@ Nahuel: «el link de mi tienda debería ser minombre.tulocalweb.com.ar, no tuloc
   monto, el beneficio no queda.
 - **Pantalla**: aviso «50 % off en tus próximos N cobros» en Plan y facturación (web y app) y el próximo cobro
   con el descuento. La app suma «Cancelar plan» con el mismo recorrido que la web.
+
+## 58. Verificación en dos pasos (migraciones 00075 y 00076, 6/11/2026)
+
+- **De la persona, no de la tienda**, con una app autenticadora (TOTP, RFC 6238: SHA-1, 6 números, 30 s,
+  ±1 paso). Sin SMS: cuesta plata y es lo más fácil de robar.
+- **Un solo enganche**: `cuentas.sesionDeUsuario`, el camino de todo ingreso a una cuenta que ya existe
+  (contraseña, Google y Apple por Clerk, Mercado Pago, link por WhatsApp). Con la verificación prendida,
+  devuelve un desafío (`Sesion.segundoFactor`, sin token) que dura 10 minutos y admite 5 intentos;
+  `POST /v1/auth/segundo-factor` lo cambia por la sesión. El registro y las invitaciones nuevas no pasan por
+  ahí (la cuenta recién se crea). Si había una invitación, se acepta después, desde el panel.
+- **Guardado**: el secreto va cifrado con `MOSTRADOR_CLAVE_CIFRADO` (contexto `totp:<usuario>`); sin esa
+  clave no se puede prender. Queda pendiente hasta confirmarlo con un primer código. De los 10 códigos de
+  recuperación (`abcd-efgh`, un uso cada uno) sólo se guarda el hash.
+- **Apagarla o pedir códigos nuevos** pide un código: con la sesión sola no alcanza.
+- **Topes**: 30 intentos por IP y 10 por persona cada 15 minutos.
+- **Demos**: `tiendas.demo` hace que la tienda online sea una vitrina, igual que la de una plantilla.
+
