@@ -90,13 +90,14 @@ fun Permisos() {
             }
             Texto("Saltear", Estilo.subheadFuerte, C.texto2, Modifier.clickable { estado.terminarPermisos() })
         }
-        AnimatedContent(paso, Modifier.weight(1f), transitionSpec = { (slideInHorizontally { it } + fadeIn()) togetherWith fadeOut() }, label = "paso") { _ ->
+        AnimatedContent(paso, Modifier.weight(1f), transitionSpec = { (slideInHorizontally { it } + fadeIn()) togetherWith fadeOut() }, label = "paso") { i ->
+            val p = ps[minOf(i, ps.size - 1)]
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp).padding(top = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 ImagenTincho(p.tincho, Modifier.size(p.tam))
                 Texto(p.titulo, Estilo.tituloPaso, C.texto, alinear = TextAlign.Center)
                 Texto(Formato.sinViudas(p.texto), Estilo.body16, C.texto2, alinear = TextAlign.Center, interlineado = 3f)
-                if (paso == 0) Box(Modifier.padding(top = 14.dp)) { MockPush() }
+                if (i == 0) Box(Modifier.padding(top = 14.dp)) { MockPush() }
             }
         }
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

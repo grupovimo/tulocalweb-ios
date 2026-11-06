@@ -46,6 +46,9 @@ object ActividadEnApp {
 
     @Serializable private data class Cuerpo(val token: String, val actividad: String?, val inicio: String?)
 
+    /** El token para arrancarla desde el servidor y la que ya estaba (de antes de abrir la app). */
+    suspend fun arrancarEscucha(ctx: Context) = avisar(ctx)
+
     private suspend fun avisar(ctx: Context) {
         val api = api ?: return
         val t = tokenPush ?: return

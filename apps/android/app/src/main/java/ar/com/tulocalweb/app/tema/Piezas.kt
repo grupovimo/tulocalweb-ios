@@ -134,7 +134,7 @@ fun BotonRedondo(simbolo: String, etiqueta: String, punto: Boolean = false, acci
         }
         if (punto) {
             val sup = C.superficie
-            Box(Modifier.align(Alignment.TopEnd).offset(x = (-9).dp + 2.dp, y = 8.dp - 2.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
+            Box(Modifier.align(Alignment.TopEnd).offset(x = (-9).dp, y = 8.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
         }
     }
 }

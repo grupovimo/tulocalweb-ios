@@ -187,7 +187,7 @@ fun ListaProductos() {
                                         add(OpcionDeMenu("Ajustar stock", "shippingbox") { stockDe = p })
                                         if (t != null && p.publicado) {
                                             val u = t.url(p.id)
-                                            add(OpcionDeMenu("Compartir", "square.and.arrow.up") { compartirTexto(ctx, Compartir.mensajeProducto(p.nombre, p.precio, u) + "\n" + u) })
+                                            add(OpcionDeMenu("Compartir", "square.and.arrow.up") { compartirTexto(ctx, Compartir.mensajeProducto(p.nombre, p.precio, u)) })
                                             add(OpcionDeMenu("Copiar link", "doc.on.doc") { Compartir.copiar(ctx, u, estado, "Copiamos el link del producto") })
                                         }
                                     }, { nav.productos.add(Destino.editorProducto(p.id)) }) { FilaProducto(p) }

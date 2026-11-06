@@ -51,17 +51,19 @@ data class OpcionConfirmacion(val titulo: String, val destructiva: Boolean = fal
 
 /** El diálogo de confirmación (confirmationDialog en iOS): título, mensaje, las opciones y «Volver». */
 @Composable
-fun Confirmacion(visible: Boolean, titulo: String, mensaje: String = "", opciones: List<OpcionConfirmacion>, alCerrar: () -> Unit, volver: String = "Volver") {
+/** verTitulo: el titleVisibility de iOS; sin pedirlo, el iPhone esconde el título (queda el mensaje, si hay). */
+fun Confirmacion(visible: Boolean, titulo: String, mensaje: String = "", opciones: List<OpcionConfirmacion>, alCerrar: () -> Unit, volver: String = "Volver", verTitulo: Boolean = true) {
     if (!visible) return
     Dialog(onDismissRequest = alCerrar, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.superficie)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Texto(titulo, Estilo(14f, Peso.semibold), C.texto2, alinear = TextAlign.Center)
+                val encabezado = verTitulo || mensaje.isNotEmpty()
+                if (encabezado) Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (verTitulo) Texto(titulo, Estilo(14f, Peso.semibold), C.texto2, alinear = TextAlign.Center)
                     if (mensaje.isNotEmpty()) Texto(mensaje, Estilo(13f, Peso.regular), C.texto2, alinear = TextAlign.Center)
                 }
-                opciones.forEach { o ->
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(C.linea))
+                opciones.forEachIndexed { i, o ->
+                    if (encabezado || i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(C.linea))
                     Box(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { o.accion(); alCerrar() }, contentAlignment = Alignment.Center) {
                         Texto(o.titulo, Estilo(18f, Peso.regular), if (o.destructiva) C.error else C.primarioTexto)
                     }

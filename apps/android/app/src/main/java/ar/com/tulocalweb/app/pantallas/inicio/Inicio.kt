@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import ar.com.tulocalweb.app.app.Destino
 import ar.com.tulocalweb.app.app.LocalEstado
@@ -355,10 +356,13 @@ private fun Meta(m: Tablero.Meta, editar: () -> Unit) {
         }
         if (m.objetivo > 0) {
             val t2 = C.texto2
+            // .minimumScaleFactor(0.7): el texto de abajo va en em para que se achique junto con el monto.
             TextoRico(buildAnnotatedString {
-                withStyle(Estilo.montoMeta.ts(true).toSpanStyle()) { append(Formato.pesos(m.actual)) }
-                withStyle(Estilo.subhead.ts(true).toSpanStyle().copy(color = t2)) { append("  de ${Formato.pesos(m.objetivo)}") }
-            }, Estilo.subhead, C.texto, lineas = 1, numeros = true)
+                append(Formato.pesos(m.actual))
+                withStyle(Estilo.subhead.ts(true).toSpanStyle().copy(color = t2, fontSize = (Estilo.subhead.tamano / Estilo.montoMeta.tamano).em)) {
+                    append("  de ${Formato.pesos(m.objetivo)}")
+                }
+            }, Estilo.montoMeta, C.texto, lineas = 1, numeros = true, escalaMinima = 0.7f)
             BoxWithConstraints(Modifier.fillMaxWidth().height(12.dp).clip(Capsula)) {
                 Box(Modifier.fillMaxSize().background(C.pistaMeta))
                 RayadoMeta(Modifier.width(maxWidth * minOf(1.0, proy).toFloat()).fillMaxHeight())

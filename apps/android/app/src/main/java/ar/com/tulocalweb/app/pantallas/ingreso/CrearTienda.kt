@@ -92,8 +92,12 @@ fun CrearTienda() {
         try {
             estado.ingresarConGoogle()
             cerrar()
+        } catch (e: Clerk.ErrorClerk) {
+            // Cancelado por la persona: nada que decir. Lo demás, como en Ingresar.
+            if (e.codigo != "cancelado") { Haptico.error(); error = mensajeClerk(e.codigo, apple = false) }
         } catch (e: ErrorApi) { error = e.detalle } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
-            // Cancelado por la persona: nada que decir.
+            Haptico.error()
+            error = "No pudimos completar el ingreso. Probá de nuevo."
         } finally { cargando = false }
     }
 

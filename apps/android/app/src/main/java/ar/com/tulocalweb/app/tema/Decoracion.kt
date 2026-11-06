@@ -54,12 +54,12 @@ fun TarjetaHeroe(
     val brocha = C.primario
     Box(
         Modifier.fillMaxWidth().aparecer().sombra(forma, C.sombraPrimario, 14.dp, y = 8.dp).clip(forma).background(brocha)
-            .brilloRadial(Color.White.copy(alpha = 0.18f), Offset(1f, 0f), 260f),
+            .brilloRadial(Color.White.copy(alpha = 0.18f), Offset(1f, 0f), 260f).padding(18.dp),
     ) {
         if (tincho != null) {
             ImagenTincho(tincho, Modifier.align(Alignment.BottomEnd).offset(x = 14.dp, y = 18.dp).size(110.dp).alpha(0.95f))
         }
-        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Texto(etiqueta, Estilo.footnoteFuerte, Color.White.copy(alpha = 0.85f))
             NumeroAnimado(valor, Estilo.montoPantalla, Color.White, escalaMinima = 0.6f)
             if (detalle != null) {

@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,6 +53,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -182,7 +182,12 @@ private fun Ticket(lineas: androidx.compose.runtime.snapshots.SnapshotStateList<
                 Texto("Apuntá al código de barras", Estilo.texto14, hex(0xFBF7F2, 0.85f), Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp))
             }
         }
-        Column(Modifier.weight(1f).offset(y = (-20).dp).clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(C.fondo)
+        // .padding(.top, -20) de iOS: la hoja sube 20 sobre la cámara y además crece esos 20 (offset sólo la corría).
+        Column(Modifier.weight(1f).layout { medible, r ->
+            val extra = 20.dp.roundToPx()
+            val p = medible.measure(r.copy(minHeight = r.minHeight + extra, maxHeight = if (r.hasBoundedHeight) r.maxHeight + extra else r.maxHeight))
+            layout(p.width, p.height - extra) { p.place(0, -extra) }
+        }.clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(C.fondo)
             .padding(horizontal = 20.dp).padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.clip(RoundedCornerShape(12.dp)).background(C.superficie)) { Buscador("Buscá por nombre o código", busqueda, { busqueda = it }) }
             if (resultados.isNotEmpty() && busqueda.isNotEmpty()) {
@@ -252,7 +257,7 @@ private fun Ticket(lineas: androidx.compose.runtime.snapshots.SnapshotStateList<
     val p = elegirVariante
     Confirmacion(p != null, "¿Cuál?", opciones = p?.variantes?.filter { it.activa }?.map { v ->
         OpcionConfirmacion("${v.texto} · ${v.stock}${Formato.fino}u.") { sumar(p, v) }
-    } ?: emptyList(), alCerrar = { elegirVariante = null }, volver = "Cancelar")
+    } ?: emptyList(), alCerrar = { elegirVariante = null }, volver = "Cancelar", verTitulo = false)
 }
 
 /** Botón redondo sobre la cámara (34, blanco al 16 %). */

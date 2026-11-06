@@ -202,10 +202,8 @@ fun HojaCorreo(listo: suspend () -> Unit) {
             CampoTexto("Código postal", cp, { cp = it }, Modifier.width(130.dp), teclado = KeyboardType.Number)
             CampoTexto("Localidad", localidad, { localidad = it }, Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Texto("Provincia", Estilo.body, C.texto, Modifier.weight(1f))
-            SelectorMenu(provincias, provincia, { provincia = it }, "Provincia")
-        }
+        // El Picker de menú fuera de un Form muestra sólo lo elegido (sin el título).
+        SelectorMenu(provincias, provincia, { provincia = it }, "Provincia")
         CampoTexto("Peso habitual de un paquete (gramos)", peso, { peso = it }, teclado = KeyboardType.Number)
     }
 }

@@ -66,6 +66,8 @@ fun Hoja(
     indicador: Boolean = false,
     /** .presentationDetents([.height(420)]) en iOS. */
     altoFijo: androidx.compose.ui.unit.Dp? = null,
+    /** Con altoFijo: .presentationDetents([.height(n), .large]), se estira hacia arriba hasta casi toda la pantalla. */
+    estirable: Boolean = false,
     radio: androidx.compose.ui.unit.Dp = 30.dp,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
@@ -84,8 +86,14 @@ fun Hoja(
                     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                         val total = maxHeight
                         val densidad = LocalDensity.current
-                        var altura by remember { mutableStateOf(alturas.first()) }
-                        val alto = altoFijo?.let { minOf(it + 34.dp, total * 0.94f) } ?: if (altura == Altura.media) total * 0.5f else total * 0.94f
+                        var altura by remember { mutableStateOf(if (altoFijo != null) Altura.media else alturas.first()) }
+                        val grandeOk = if (altoFijo != null) estirable else Altura.grande in alturas
+                        val medianaOk = if (altoFijo != null) true else Altura.media in alturas
+                        val alto = when {
+                            altura == Altura.grande && (altoFijo == null || estirable) -> total * 0.94f
+                            altoFijo != null -> minOf(altoFijo + 34.dp, total * 0.94f)
+                            else -> total * 0.5f
+                        }
                         val arrastre = remember { Animatable(0f) }
                         val alcance = rememberCoroutineScope()
                         Column(
@@ -101,8 +109,14 @@ fun Hoja(
                                     onDragStopped = { v ->
                                         val umbral = with(densidad) { 120.dp.toPx() }
                                         when {
-                                            arrastre.value < -umbral / 2 && Altura.grande in alturas -> { altura = Altura.grande; arrastre.animateTo(0f) }
-                                            arrastre.value > umbral || v > 1500f -> if (altura == Altura.grande && Altura.media in alturas) { altura = Altura.media; arrastre.animateTo(0f) } else alCerrar()
+                                            arrastre.value < -umbral / 2 && grandeOk -> { altura = Altura.grande; arrastre.animateTo(0f) }
+                                            arrastre.value > umbral || v > 1500f -> if (altura == Altura.grande && medianaOk && (altoFijo != null || Altura.media in alturas)) {
+                                                altura = Altura.media; arrastre.animateTo(0f)
+                                            } else {
+                                                alCerrar()
+                                                // Si no se puede cerrar (alCerrar no hace nada), vuelve a su lugar.
+                                                arrastre.animateTo(0f)
+                                            }
                                             else -> arrastre.animateTo(0f)
                                         }
                                     },

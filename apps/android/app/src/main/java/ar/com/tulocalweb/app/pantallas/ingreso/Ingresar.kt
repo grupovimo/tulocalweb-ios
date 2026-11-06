@@ -226,7 +226,7 @@ fun Ingresar(fondoDeSelector: Boolean = false) {
         }
         Hoja(crear, { crear = false }) { CrearTienda() }
         // 1d · «¿A qué tienda entrás?»: no se puede cerrar sin elegir (interactiveDismissDisabled).
-        Hoja(estado.fase == Estado.Fase.eligiendoTienda, {}, altoFijo = 520.dp) { ElegirTienda() }
+        Hoja(estado.fase == Estado.Fase.eligiendoTienda, {}, altoFijo = 520.dp, estirable = true) { ElegirTienda() }
         Hoja(estado.desafio != null, { estado.desafio = null }) { CodigoIngreso() }
     }
     LaunchedEffect(Unit) { estado.cargarProveedores() }

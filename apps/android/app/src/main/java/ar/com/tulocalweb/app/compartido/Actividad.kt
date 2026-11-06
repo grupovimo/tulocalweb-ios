@@ -2,6 +2,7 @@ package ar.com.tulocalweb.app.compartido
 
 import android.content.Context
 import ar.com.tulocalweb.app.nucleo.ActividadEnApp
+import ar.com.tulocalweb.app.nucleo.ErrorApi
 import kotlinx.serialization.Serializable
 
 // Clon de Compartido/Actividad.swift: 9a/9b · los pedidos por preparar (la Live Activity de iOS): viven mientras haya
@@ -16,7 +17,8 @@ object MarcarPreparado {
     @Serializable private data class Cuerpo(val estado: String)
 
     suspend fun hacer(ctx: Context, numero: Int) {
-        val api = SesionCompartida.api(ctx) ?: return
+        // Sin sesión falla (como SesionCompartida.post en iOS): quien lo llamó abre el pedido.
+        val api = SesionCompartida.api(ctx) ?: throw ErrorApi.desconocido
         api.hacer("POST", "/v1/panel/pedidos/$numero/estado", Cuerpo("Listo para despachar"))
         val datos = DatosHoy.traer(ctx)
         val previo = ActividadEnApp.estadoActual

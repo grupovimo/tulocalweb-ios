@@ -173,7 +173,7 @@ fun Mas() {
             contentAlignment = Alignment.Center) { Texto("Cerrar sesión", Estilo.fila, C.errorTinta) }
         Texto("Tu Local Web ${BuildConfig.VERSION_NAME}", Estilo.footnote, C.texto3, Modifier.fillMaxWidth().padding(top = 8.dp), alinear = TextAlign.Center)
     }
-    Hoja(cambiarTienda, { cambiarTienda = false }, altoFijo = 520.dp) { ElegirTienda { cambiarTienda = false } }
+    Hoja(cambiarTienda, { cambiarTienda = false }, altoFijo = 520.dp, estirable = true) { ElegirTienda { cambiarTienda = false } }
     Hoja(qr, { qr = false }) { estado.tienda?.let { QRTienda(it) } }
     Confirmacion(salir, "¿Cerrás la sesión en este teléfono?", "Dejás de recibir los avisos acá hasta que vuelvas a entrar.",
         listOf(OpcionConfirmacion("Cerrar sesión", destructiva = true) { estado.tarea { estado.salir() } }), { salir = false }, volver = "Cancelar")

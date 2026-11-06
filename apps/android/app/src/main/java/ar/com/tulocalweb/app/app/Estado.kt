@@ -388,6 +388,7 @@ class Estado(api: Api? = null) {
         tokenPush = token
         ActividadEnApp.api = api
         ActividadEnApp.tokenPush = token
+        contexto?.let { ActividadEnApp.arrancarEscucha(it) }
         if (api.token == null) return
         intentar { api.hacer("POST", "/v1/panel/dispositivos", Dispositivo(token = token, modelo = (Build.MODEL ?: "Android").take(60), version = BuildConfig.VERSION_NAME)) }
     }

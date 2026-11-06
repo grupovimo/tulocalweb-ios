@@ -251,7 +251,7 @@ fun EditorProducto(id: String?, sku: String? = null) {
         {
             val u = t.url(original["slug"]?.texto ?: id)
             MenuBoton(listOf(
-                OpcionDeMenu("Compartir", "square.and.arrow.up") { compartirTexto(ctx, Compartir.mensajeProducto(nombre, num(precio), u) + "\n" + u) },
+                OpcionDeMenu("Compartir", "square.and.arrow.up") { compartirTexto(ctx, Compartir.mensajeProducto(nombre, num(precio), u)) },
                 OpcionDeMenu("Copiar link", "doc.on.doc") { Compartir.copiar(ctx, u, estado, "Copiamos el link del producto") },
                 OpcionDeMenu("Ver en la tienda", "arrow.up.right.square") { abrirEnNavegador(ctx, u) },
             ), "Compartir el producto") { Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("square.and.arrow.up", 19f, C.primarioTexto) } }

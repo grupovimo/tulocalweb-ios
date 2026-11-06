@@ -262,7 +262,7 @@ fun ResenasYPreguntas() {
                 Box(Modifier.padding(top = 30.dp)) { EstadoTincho(Tincho.celebrando, "Todavía no hay reseñas", "Las de la tienda, Mercado Libre y Google aparecen acá.") }
             } else GrupoFilas(d.resenas, { it.id }) { r ->
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Estrellas(r.estrellas)
                         Texto(r.autor, Estilo.footnoteFuerte, C.texto, Modifier.weight(1f))
                         if (r.oculta) ChipSimple("Oculta", C.pista, C.texto2)
@@ -409,7 +409,8 @@ fun Cupones() {
         } else GrupoFilas(d.cupones, { it.id }) { c ->
             Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Texto(c.codigo, Estilo(16f, Peso.bold), C.texto)
+                    // .monospaced() en iOS: Instrument Sans no tiene números fijos, va la monoespaciada del sistema.
+                    Texto(c.codigo, Estilo(16f, Peso.bold), C.texto, monoespaciado = true)
                     Texto(c.descripcion.ifEmpty { resumenCupon(c) }, Estilo.footnote, C.texto2, lineas = 2)
                     Texto("${Formato.cantidad(c.usos, "uso", "usos")}${if (c.limite > 0) " de ${c.limite}" else ""} · vendió ${Formato.pesos(c.vendio)}", Estilo.footnote, C.texto3)
                 }
@@ -539,7 +540,8 @@ fun FacturacionArca() {
                     }
                 })
             }
-            BotonSecundario("Renovar el certificado", { alta = true }, lleno = true)
+            // .frame(maxWidth: .infinity) en iOS: el botón conserva su ancho y queda centrado.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { BotonSecundario("Renovar el certificado", { alta = true }) }
         }
     }
     Hoja(alta, { alta = false }) { HojaArca { actualizarHoja?.invoke() } }
@@ -647,7 +649,7 @@ fun UsuariosYPermisos() {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AvatarIniciales(m.nombre.ifEmpty { m.contacto }, 42.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Texto(if (m.nombre.isEmpty()) m.contacto else m.nombre + (if (m.vos) " (vos)" else ""), Estilo.fila, C.texto, lineas = 1)
+                    Texto((if (m.nombre.isEmpty()) m.contacto else m.nombre) + (if (m.vos) " (vos)" else ""), Estilo.fila, C.texto, lineas = 1)
                     Texto(if (m.pendiente) "Invitación pendiente · ${m.contacto}" else m.contacto, Estilo.footnote, C.texto2, lineas = 1)
                 }
                 if (m.vos || m.rol == "duena" || m.rol == "dueña") {
@@ -682,7 +684,7 @@ fun UsuariosYPermisos() {
                 }
             }
         }
-        BotonSecundario("Invitar a alguien", { invitar = true }, Modifier.padding(top = 4.dp), lleno = true)
+        Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) { BotonSecundario("Invitar a alguien", { invitar = true }) }
     }
     Hoja(invitar, { invitar = false }, listOf(Altura.media)) { HojaInvitar { actualizarHoja?.invoke() } }
 }

@@ -56,8 +56,11 @@ fun Texto(
     numeros: Boolean = false,
     escalaMinima: Float? = null,
     interlineado: Float = 0f,
+    /** .monospaced() de iOS (códigos de cupón, de ingreso). */
+    monoespaciado: Boolean = false,
 ) {
     val ts = estilo.ts(numeros).let { if (interlineado > 0f) it.copy(lineHeight = (estilo.tamano * 1.2f + interlineado).sp) else it }
+        .let { if (monoespaciado) it.copy(fontFamily = FontFamily.Monospace) else it }
     BasicText(
         texto, modifier,
         style = ts.copy(color = color, textAlign = alinear),
@@ -76,8 +79,10 @@ fun TextoRico(
     lineas: Int = Int.MAX_VALUE,
     alinear: TextAlign = TextAlign.Start,
     numeros: Boolean = false,
+    escalaMinima: Float? = null,
 ) {
-    BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis)
+    BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+        autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
 }
 
 private val simbolosContorno = FontFamily(Font(R.font.simbolos_contorno))

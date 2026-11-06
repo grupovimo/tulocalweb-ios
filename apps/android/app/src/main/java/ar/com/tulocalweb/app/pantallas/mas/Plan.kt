@@ -457,7 +457,8 @@ fun HojaCancelar(datos: DatosPlan, listo: suspend () -> Unit) {
                 repeat(3) { i -> Box(Modifier.weight(1f).height(4.dp).clip(Capsula).background(if (i <= paso) C.acento else C.pistaMeta)) }
             }
             AnimatedContent(paso, transitionSpec = { (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it } + fadeOut()) }, label = "paso") { p ->
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Como en iOS: el paso del motivo va a 12 y la oferta y la confirmación, a 14.
+                Column(verticalArrangement = Arrangement.spacedBy(if (p == 0) 12.dp else 14.dp)) {
                     when (p) {
                         0 -> {
                             Texto("¿Por qué te vas?", Estilo.tituloHojaChico, C.texto)

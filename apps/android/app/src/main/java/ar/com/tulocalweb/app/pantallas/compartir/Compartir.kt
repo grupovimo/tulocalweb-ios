@@ -221,7 +221,7 @@ fun CompartirTienda() {
                     val texto = "Usá el código ${c.codigo} en ${t.nombre} y tenés ${resumenCupon(c).lowercase()}: ${t.url}"
                     Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Texto(c.codigo, Estilo(16f, Peso.bold), C.texto)
+                            Texto(c.codigo, Estilo(16f, Peso.bold), C.texto, monoespaciado = true)
                             Texto(resumenCupon(c), Estilo.footnote, C.texto2)
                         }
                         BotonTonal("Compartir", { compartirTexto(ctx, texto) })

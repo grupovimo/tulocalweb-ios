@@ -119,7 +119,7 @@ fun PedidoManual() {
                                 Texto(it.producto.nombre, Estilo.fila, C.texto, lineas = 1)
                                 Texto(listOfNotNull(it.variante?.texto, Formato.pesos(it.precio)).joinToString(" · "), Estilo.footnote, C.texto2)
                             }
-                            Pasador(it.cantidad, { n -> if (n <= 0) items.removeAt(i) else items[i] = it.copy(cantidad = n) })
+                            Pasador(it.cantidad, { n -> if (i in items.indices) { if (n <= 0) items.removeAt(i) else items[i] = it.copy(cantidad = n) } })
                             Texto("${it.cantidad}", Estilo.fila, C.texto, Modifier.widthIn(min = 22.dp), numeros = true)
                         }
                     }
@@ -194,5 +194,5 @@ fun ElegirProducto(alElegir: (ProductoFila, ProductoFila.Variante?) -> Unit) {
     val p = variantesDe
     Confirmacion(p != null, "Elegí la variante", opciones = p?.variantes?.filter { it.activa }?.map { v ->
         OpcionConfirmacion("${v.texto} · ${Formato.pesos(v.precio ?: p.precio)}") { alElegir(p, v); estado.avisar("Agregamos ${p.nombre}") }
-    } ?: emptyList(), alCerrar = { variantesDe = null }, volver = "Cancelar")
+    } ?: emptyList(), alCerrar = { variantesDe = null }, volver = "Cancelar", verTitulo = false)
 }

@@ -590,7 +590,8 @@ fun AnilloAvance(valor: Double, tam: Dp = 76.dp, grosor: Dp = 9.dp) {
     Box(Modifier.size(tam).semantics { contentDescription = "Avance"; stateDescription = "${(valor * 100).roundToInt()} %" }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(tam)) {
             val g = grosor.toPx()
-            val r = size.minDimension / 2 - g / 2
+            // Como Circle().stroke en iOS: el trazo va centrado sobre el borde del círculo (sale g/2 del cuadro).
+            val r = size.minDimension / 2
             val tl = Offset(center.x - r, center.y - r)
             drawCircle(pista, r, style = Stroke(g))
             drawArc(Brush.sweepGradient(listOf(acento, hex(0xB0441D), acento)), -90f, 360f * v * factor, false, tl, Size(r * 2, r * 2), style = Stroke(g, cap = StrokeCap.Round))
