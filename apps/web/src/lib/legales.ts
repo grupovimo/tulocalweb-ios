@@ -195,7 +195,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -371,7 +371,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -510,7 +510,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -586,7 +586,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -619,7 +619,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Atención al cliente',
 				cuerpo: [
 					{
-						p: 'Podés escribirnos por email a soporte@tulocalweb.com.ar. Te respondemos en menos de 48 horas hábiles y te damos un número de reclamo.'
+						p: 'Podés escribirnos por WhatsApp al +54 223 592-6772 o por email a soporte@tulocalweb.com.ar. Te respondemos en menos de 48 horas hábiles y te damos un número de reclamo.'
 					}
 				]
 			},
@@ -664,7 +664,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Datos del proveedor',
 				cuerpo: [
 					{
-						p: 'Nahuel Santillán · CUIT 20-44859234-1 · Mar del Plata, provincia de Buenos Aires · legales@tulocalweb.com.ar.'
+						p: 'Nahuel Santillán · CUIT 20-44859234-1 · Mar del Plata, provincia de Buenos Aires · legales@tulocalweb.com.ar · WhatsApp +54 223 592-6772.'
 					}
 				]
 			},
@@ -682,7 +682,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -826,7 +826,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -951,7 +951,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -1071,7 +1071,7 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	}
 ];
