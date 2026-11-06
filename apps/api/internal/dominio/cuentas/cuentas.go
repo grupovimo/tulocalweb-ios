@@ -22,6 +22,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/tiendas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/cifrado"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/clerk"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/correo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db"
@@ -84,16 +85,21 @@ type Servicio struct {
 	SesionEquipo func(ctx context.Context, token string) (Datos, error)
 	// Geo ubica la IP de cada sesión (lista de sesiones y mail de ingreso). nil: sin lugar.
 	Geo geoip.Ubicador
+	// Cifra guarda el secreto de la verificación en dos pasos. nil: no se puede prender.
+	Cifra *cifrado.Cifrador
 }
 
 // Cliente es de dónde viene el pedido (para la sesión y los límites).
 type Cliente struct{ IP, Agente string }
 
-// Sesion recién creada: el token se le da al BFF una sola vez.
+// Sesion recién creada: el token se le da al BFF una sola vez. Con la verificación en dos pasos
+// prendida, el ingreso no trae token sino SegundoFactor: el desafío que se completa con el código
+// (POST /v1/auth/segundo-factor); VenceEn es entonces cuándo vence el desafío.
 type Sesion struct {
-	Token    string    `json:"token"`
-	VenceEn  time.Time `json:"venceEn"`
-	TiendaID string    `json:"tiendaId"`
+	Token         string    `json:"token"`
+	VenceEn       time.Time `json:"venceEn"`
+	TiendaID      string    `json:"tiendaId"`
+	SegundoFactor string    `json:"segundoFactor,omitempty"`
 }
 
 // Alta de cuenta (registro).
@@ -305,10 +311,17 @@ func (s *Servicio) Ingresar(ctx context.Context, email, clave string, recordarme
 
 // sesionDeUsuario abre una sesión de la persona en su primera tienda. Es el camino de todo ingreso a
 // una cuenta que ya existe (clave, Google y Apple por Clerk, Mercado Pago, link por WhatsApp): en la
-// misma transacción encola el mail «Entraron a tu cuenta». El registro no pasa por acá.
+// misma transacción encola el mail «Entraron a tu cuenta». El registro no pasa por acá. Con la
+// verificación en dos pasos prendida devuelve el desafío en vez de la sesión (segundo_factor.go).
 func (s *Servicio) sesionDeUsuario(ctx context.Context, usuario string, vida time.Duration, cl Cliente) (Sesion, error) {
 	var ses Sesion
 	err := s.Pool.EnTx(ctx, func(tx pgx.Tx) error {
+		if activo, err := segundoFactorActivo(ctx, tx, usuario); err != nil {
+			return err
+		} else if activo {
+			ses, err = crearDesafio(ctx, tx, usuario, vida, cl)
+			return err
+		}
 		var tienda *string
 		err := tx.QueryRow(ctx, `SELECT tienda_id FROM auth.membresias WHERE usuario_id = $1 ORDER BY creada_en LIMIT 1`, usuario).Scan(&tienda)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {

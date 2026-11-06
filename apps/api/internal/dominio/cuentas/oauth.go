@@ -277,7 +277,9 @@ func (s *Servicio) entrarConPerfil(ctx context.Context, proveedor string, perfil
 // conInvitacion: después de entrar a una cuenta que ya existía, usa la invitación (si hay) y deja
 // la sesión en esa tienda. Si la invitación ya no sirve, se entra igual a la cuenta.
 func (s *Servicio) conInvitacion(ctx context.Context, ses Sesion, err error, invitacion string) Sesion {
-	if err != nil || invitacion == "" {
+	// Con la verificación en dos pasos todavía no hay sesión: la invitación se acepta después, desde
+	// el panel (queda pendiente para su email).
+	if err != nil || invitacion == "" || ses.SegundoFactor != "" {
 		return ses
 	}
 	if t, e := s.AceptarInvitacion(ctx, ses.Token, invitacion); e == nil {

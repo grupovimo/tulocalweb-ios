@@ -225,10 +225,12 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		var diseno, negocio []byte
 		var mp bool
 		var autos map[string]bool
+		// Las tiendas de demostración (dominio/demo) se ven como la vitrina de una plantilla: todo a
+		// la vista, pero no se compra ni se guarda nada.
 		if err := t.QueryRow(ctx, `SELECT nombre, plantilla, diseno_publicado, negocio,
-				EXISTS (SELECT 1 FROM mp_conexiones WHERE tienda_id = $1 AND NOT reautorizar), ga4, pixel_meta, automaticas
+				EXISTS (SELECT 1 FROM mp_conexiones WHERE tienda_id = $1 AND NOT reautorizar), ga4, pixel_meta, automaticas, demo
 			FROM tiendas WHERE id = $1`, id).Scan(&out.Nombre, &out.Plantilla, &diseno, &negocio, &mp,
-			&out.Medicion.GA4, &out.Medicion.Pixel, &autos); err != nil {
+			&out.Medicion.GA4, &out.Medicion.Pixel, &autos, &out.Vitrina); err != nil {
 			return err
 		}
 		// Correo Argentino se ofrece sólo con la cuenta de MiCorreo conectada (cotiza la API, nunca una tabla).
@@ -543,7 +545,7 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	}
 	id, _ := tiendaDe(ctx, pool, slug)
 	c.Nombre, c.Email = strings.TrimSpace(c.Nombre), strings.TrimSpace(c.Email)
-	if len(c.Carrito) == 0 || len(c.Carrito) > 50 || len(c.Nombre) < 2 || len(c.Nombre) > 80 || !emailValido.MatchString(c.Email) ||
+	if t.Vitrina || len(c.Carrito) == 0 || len(c.Carrito) > 50 || len(c.Nombre) < 2 || len(c.Nombre) > 80 || !emailValido.MatchString(c.Email) ||
 		(c.Pago != "transferencia" && c.Pago != "mercadopago") {
 		return Resultado{}, ErrInvalido
 	}

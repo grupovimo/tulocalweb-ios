@@ -2,6 +2,8 @@
 // creíbles (ropa, café y almacén), con catálogo, clientes, cuatro meses de pedidos, reseñas,
 // preguntas, visitas y cupones, para mostrar el producto en vivo. Las usa `mostradorctl demo-tiendas`.
 //
+// La tienda queda con demo = true: su tienda online es una vitrina (se ve todo y no se compra).
+//
 // Sale SQL para correr como superusuario con los disparadores apagados (session_replication_role =
 // replica): con ellos prendidos, cada pedido avisaría a la dueña, a Telegram y al comprador, y
 // encolaría una factura en ARCA. Nada de eso tiene que pasar con ventas que no existieron.
@@ -72,7 +74,7 @@ var Tiendas = []Tienda{
 		Canales: map[string]int{"web": 45, "ig": 25, "wa": 20, "pos": 10},
 		Pagos:   map[string]int{"mp": 45, "transf": 30, "tarjeta": 15, "modo": 10},
 		Envios:  map[string]int{"andreani": 35, "correo": 20, "moto": 25, "retiro": 20},
-		MetaMes: 14_000_000_00, Clientes: 70,
+		MetaMes: 14_000_000, Clientes: 70,
 	},
 	{
 		Slug: "cafebruma", Nombre: "Café Bruma", Rubro: "gastronomia", Plantilla: "mostaza",
@@ -82,7 +84,7 @@ var Tiendas = []Tienda{
 		Canales: map[string]int{"pos": 65, "wa": 20, "web": 15},
 		Pagos:   map[string]int{"efectivo": 30, "mp": 35, "modo": 15, "tarjeta": 20},
 		Envios:  map[string]int{"retiro": 75, "moto": 25},
-		MetaMes: 4_200_000_00, Clientes: 90,
+		MetaMes: 4_200_000, Clientes: 90,
 	},
 	{
 		Slug: "almacenverde", Nombre: "Almacén Verde", Rubro: "almacen", Plantilla: "yerbal",
@@ -92,7 +94,7 @@ var Tiendas = []Tienda{
 		Canales: map[string]int{"web": 40, "wa": 40, "pos": 20},
 		Pagos:   map[string]int{"transf": 40, "mp": 35, "efectivo": 15, "uala": 10},
 		Envios:  map[string]int{"moto": 45, "correo": 20, "retiro": 35},
-		MetaMes: 3_000_000_00, Clientes: 80,
+		MetaMes: 3_000_000, Clientes: 80,
 	},
 }
 
@@ -254,7 +256,7 @@ func combinar(opcion string, valores []string) [][]map[string]string {
 	return out
 }
 
-func redondear(c int64) int64 { return (c + 5000) / 10000 * 10000 } // a la centena de pesos
+func redondear(c int64) int64 { return (c + 50) / 100 * 100 } // a la centena de pesos
 
 func tienda(b *strings.Builder, t Tienda, c Catalogo, dueno string, ahora time.Time, r *rand.Rand) error {
 	tid := uuid(r)
@@ -269,8 +271,8 @@ func tienda(b *strings.Builder, t Tienda, c Catalogo, dueno string, ahora time.T
 		"whatsapp": t.Whatsapp, "email": "", "horario": t.Horario, "alias": "", "cbu": "", "titular": "", "politica": "",
 	}
 	fmt.Fprintf(b, `INSERT INTO tiendas (id, slug, nombre, rubro, plantilla, plan, creada_en, onboarding_terminado_en, meta_mensual,
-	diseno_borrador, diseno_publicado, negocio, prueba_hasta)
-VALUES (%s, %s, %s, %s, %s, 'pro', %s, %s, %d, %s, %s, %s, %s);
+	diseno_borrador, diseno_publicado, negocio, prueba_hasta, demo)
+VALUES (%s, %s, %s, %s, %s, 'pro', %s, %s, %d, %s, %s, %s, %s, true);
 `, q(tid), q(t.Slug), q(t.Nombre), q(t.Rubro), q(t.Plantilla), ts(creada), ts(creada.Add(2*time.Hour)), t.MetaMes,
 		j(d), j(d), j(negocio), ts(ahora.AddDate(0, 2, 0)))
 	fmt.Fprintf(b, "INSERT INTO auth.membresias (usuario_id, tienda_id, rol) SELECT id, %s, 'duenio' FROM auth.usuarios WHERE email = %s;\n",
@@ -280,11 +282,11 @@ VALUES (%s, %s, %s, %s, %s, 'pro', %s, %s, %d, %s, %s, %s, %s);
 	var prods []producto
 	for i, p := range c.Productos {
 		pid := uuid(r)
-		precio := p.Precio * 100
+		precio := p.Precio
 		var oferta, ofertaHasta string = "NULL", "NULL"
 		if p.Anterior != nil {
-			precio = *p.Anterior * 100
-			oferta, ofertaHasta = fmt.Sprint(p.Precio*100), ts(ahora.AddDate(0, 0, 9))
+			precio = *p.Anterior
+			oferta, ofertaHasta = fmt.Sprint(p.Precio), ts(ahora.AddDate(0, 0, 9))
 		}
 		desc := ""
 		if p.Detalle != nil {
@@ -316,7 +318,7 @@ VALUES (%s, %s, %s, %s, %s, %d, %d, %s, %d, %s, ARRAY[%s], '{"web": true, "pos":
 			ts(creada.Add(time.Duration(3+i)*time.Hour)), j(opciones), q(tid), q(p.Nombre), q(pid), oferta, ofertaHasta)
 		pr := producto{id: pid, nombre: p.Nombre, foto: p.Foto, precio: precio}
 		if p.Anterior != nil {
-			pr.precio = p.Precio * 100
+			pr.precio = p.Precio
 		}
 		for k, v := range vars {
 			vid := uuid(r)
@@ -370,7 +372,7 @@ VALUES (%s, %s, %s, %s, %s, %d, %d, %s, %d, %s, ARRAY[%s], '{"web": true, "pos":
 		cuando   time.Time
 	}
 	var entregados []vendido
-	envios := map[string]int64{"andreani": 6900_00, "correo": 5400_00, "moto": 3500_00, "mercadoenvios": 0, "retiro": 0, "oca": 6200_00}
+	envios := map[string]int64{"andreani": 6900, "correo": 5400, "moto": 3500, "mercadoenvios": 0, "retiro": 0, "oca": 6200}
 	for dia := creada.AddDate(0, 0, 3); !dia.After(ahora); dia = dia.AddDate(0, 0, 1) {
 		avance := float64(dia.Sub(creada)) / float64(ahora.Sub(creada))
 		cuantos := t.PorDia[0] + r.IntN(t.PorDia[1]-t.PorDia[0]+1)
@@ -506,8 +508,8 @@ VALUES (%s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s);
 	fmt.Fprintf(b, `INSERT INTO cupones (tienda_id, codigo, tipo, valor, descripcion, usos, vendio, desconto, canales, creado_en) VALUES
 	(%s, 'BIENVENIDA10', 'pct', 10, '10%% en tu primera compra', %d, %d, %d, '{web}', %s),
 	(%s, 'ENVIOGRATIS', 'envio', 0, 'Envío gratis en compras grandes', %d, %d, %d, '{web}', %s);
-`, q(tid), 30+r.IntN(40), (2_000_000+r.Int64N(3_000_000))*100, (180_000+r.Int64N(200_000))*100, ts(creada.AddDate(0, 0, 5)),
-		q(tid), 12+r.IntN(20), (1_200_000+r.Int64N(2_000_000))*100, (60_000+r.Int64N(90_000))*100, ts(creada.AddDate(0, 1, 0)))
+`, q(tid), 30+r.IntN(40), 2_000_000+r.Int64N(3_000_000), 180_000+r.Int64N(200_000), ts(creada.AddDate(0, 0, 5)),
+		q(tid), 12+r.IntN(20), 1_200_000+r.Int64N(2_000_000), 60_000+r.Int64N(90_000), ts(creada.AddDate(0, 1, 0)))
 	return nil
 }
 

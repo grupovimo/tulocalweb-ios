@@ -54,6 +54,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/segundo-factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Si la persona tiene prendida la verificación en dos pasos */
+        get: operations["estadoSegundoFactor"];
+        put?: never;
+        /** Completa un ingreso con verificación en dos pasos: el desafío (segundoFactor del ingreso) y el código de la app autenticadora o uno de recuperación */
+        post: operations["completarSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/segundo-factor/activar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Un secreto nuevo (pendiente) y su otpauth:// para el QR; queda prendida al confirmar */
+        post: operations["activarSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/segundo-factor/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/segundo-factor/codigos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reemplaza los códigos de recuperación (pide un código) */
+        post: operations["nuevosCodigosRecuperacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/segundo-factor/desactivar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apaga la verificación en dos pasos (pide un código de la app o de recuperación) */
+        post: operations["desactivarSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/proveedores": {
         parameters: {
             query?: never;
@@ -5464,11 +5549,27 @@ export interface components {
             clave: string;
         };
         Sesion: {
-            /** @description Se entrega una sola vez; el BFF lo guarda en una cookie httpOnly */
+            /** @description Se entrega una sola vez; el BFF lo guarda en una cookie httpOnly. Vacío si viene segundoFactor */
             token: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Con segundoFactor, cuándo vence el desafío (10 minutos)
+             */
             venceEn: string;
             tiendaId: string;
+            /** @description La cuenta tiene la verificación en dos pasos: el desafío que se completa con el código (POST /v1/auth/segundo-factor). Sin token ni sesión hasta entonces */
+            segundoFactor?: string;
+        };
+        EstadoSegundoFactor: {
+            activo: boolean;
+            /** Format: date-time */
+            desde: string | null;
+            /** @description Códigos de recuperación sin usar */
+            codigosRestantes: number;
+        };
+        CodigosRecuperacion: {
+            /** @description Diez códigos «abcd-efgh» de un solo uso; es la única vez que se ven */
+            codigos: string[];
         };
         IngresoSocial: components["schemas"]["Sesion"] & {
             /** @description La cuenta se creó recién: sigue al onboarding */
@@ -6249,6 +6350,177 @@ export interface operations {
                 };
             };
             429: components["responses"]["Problema"];
+        };
+    };
+    estadoSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoSegundoFactor"];
+                };
+            };
+            401: components["responses"]["Problema"];
+        };
+    };
+    completarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    desafio: string;
+                    codigo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sesión */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sesion"];
+                };
+            };
+            /** @description Código incorrecto (cuenta como intento; 5 por desafío) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Desafío vencido o sin intentos (`desafio_vencido`): ingresar de nuevo */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            429: components["responses"]["Problema"];
+        };
+    };
+    activarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secreto */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description En base32, para cargarlo a mano */
+                        secreto: string;
+                        uri: string;
+                    };
+                };
+            };
+            409: components["responses"]["Problema"];
+        };
+    };
+    confirmarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    codigo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Prendida */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodigosRecuperacion"];
+                };
+            };
+            400: components["responses"]["Problema"];
+        };
+    };
+    nuevosCodigosRecuperacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    codigo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Códigos nuevos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodigosRecuperacion"];
+                };
+            };
+            400: components["responses"]["Problema"];
+        };
+    };
+    desactivarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    codigo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Apagada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
         };
     };
     proveedores: {

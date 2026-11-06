@@ -94,6 +94,11 @@ func correr() error {
 	// van sin lugar (nunca uno inventado) y la API arranca igual.
 	cs := &cuentas.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio,
 		OAuth: cuentas.Proveedores(cfg.OAuth), WhatsApp: wa, Clerk: clerkDe(cfg)}
+	if c, err := cifrado.Nuevo(cfg.ClaveCifrado); err == nil {
+		cs.Cifra = c
+	} else {
+		slog.Warn("cuentas: sin MOSTRADOR_CLAVE_CIFRADO, la verificación en dos pasos queda apagada")
+	}
 	if geo, err := geoip.Abrir(cfg.GeoIP); err != nil {
 		slog.Error("geoip: no abrió la base, las sesiones van sin lugar", "ruta", cfg.GeoIP, "error", err)
 	} else if geo != nil {

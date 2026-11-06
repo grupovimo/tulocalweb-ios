@@ -52,6 +52,70 @@ paths:
         '200': { description: Sesión, content: { application/json: { schema: { $ref: '#/components/schemas/Sesion' } } } }
         '401': { description: 'Email o contraseña mal (`credenciales_invalidas`), con `restantes`: los intentos que quedan antes de pausar el ingreso de ese email 15 minutos (5 por ventana; se dice exista o no la cuenta)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
         '429': { $ref: '#/components/responses/Problema' }
+  /v1/auth/segundo-factor:
+    post:
+      operationId: completarSegundoFactor
+      summary: 'Completa un ingreso con verificación en dos pasos: el desafío (segundoFactor del ingreso) y el código de la app autenticadora o uno de recuperación'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [desafio, codigo]
+              properties:
+                desafio: { type: string }
+                codigo: { type: string }
+      responses:
+        '200': { description: Sesión, content: { application/json: { schema: { $ref: '#/components/schemas/Sesion' } } } }
+        '400': { description: 'Código incorrecto (cuenta como intento; 5 por desafío)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+        '401': { description: 'Desafío vencido o sin intentos (`desafio_vencido`): ingresar de nuevo', content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problema' } } } }
+        '429': { $ref: '#/components/responses/Problema' }
+    get:
+      operationId: estadoSegundoFactor
+      summary: Si la persona tiene prendida la verificación en dos pasos
+      responses:
+        '200': { description: Estado, content: { application/json: { schema: { $ref: '#/components/schemas/EstadoSegundoFactor' } } } }
+        '401': { $ref: '#/components/responses/Problema' }
+  /v1/auth/segundo-factor/activar:
+    post:
+      operationId: activarSegundoFactor
+      summary: 'Un secreto nuevo (pendiente) y su otpauth:// para el QR; queda prendida al confirmar'
+      responses:
+        '200':
+          description: Secreto
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secreto, uri]
+                properties:
+                  secreto: { type: string, description: 'En base32, para cargarlo a mano' }
+                  uri: { type: string }
+        '409': { $ref: '#/components/responses/Problema' }
+  /v1/auth/segundo-factor/confirmar:
+    post:
+      operationId: confirmarSegundoFactor
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [codigo], properties: { codigo: { type: string } } } } } }
+      responses:
+        '200': { description: Prendida, con los códigos de recuperación, content: { application/json: { schema: { $ref: '#/components/schemas/CodigosRecuperacion' } } } }
+        '400': { $ref: '#/components/responses/Problema' }
+  /v1/auth/segundo-factor/codigos:
+    post:
+      operationId: nuevosCodigosRecuperacion
+      summary: Reemplaza los códigos de recuperación (pide un código)
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [codigo], properties: { codigo: { type: string } } } } } }
+      responses:
+        '200': { description: Códigos nuevos, content: { application/json: { schema: { $ref: '#/components/schemas/CodigosRecuperacion' } } } }
+        '400': { $ref: '#/components/responses/Problema' }
+  /v1/auth/segundo-factor/desactivar:
+    post:
+      operationId: desactivarSegundoFactor
+      summary: Apaga la verificación en dos pasos (pide un código de la app o de recuperación)
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [codigo], properties: { codigo: { type: string } } } } } }
+      responses:
+        '204': { description: Apagada }
+        '400': { $ref: '#/components/responses/Problema' }
   /v1/auth/proveedores:
     get:
       operationId: proveedores
@@ -5717,9 +5781,22 @@ components:
       type: object
       required: [token, venceEn, tiendaId]
       properties:
-        token: { type: string, description: 'Se entrega una sola vez; el BFF lo guarda en una cookie httpOnly' }
-        venceEn: { type: string, format: date-time }
+        token: { type: string, description: 'Se entrega una sola vez; el BFF lo guarda en una cookie httpOnly. Vacío si viene segundoFactor' }
+        venceEn: { type: string, format: date-time, description: 'Con segundoFactor, cuándo vence el desafío (10 minutos)' }
         tiendaId: { type: string }
+        segundoFactor: { type: string, description: 'La cuenta tiene la verificación en dos pasos: el desafío que se completa con el código (POST /v1/auth/segundo-factor). Sin token ni sesión hasta entonces' }
+    EstadoSegundoFactor:
+      type: object
+      required: [activo, desde, codigosRestantes]
+      properties:
+        activo: { type: boolean }
+        desde: { type: string, format: date-time, nullable: true }
+        codigosRestantes: { type: integer, description: 'Códigos de recuperación sin usar' }
+    CodigosRecuperacion:
+      type: object
+      required: [codigos]
+      properties:
+        codigos: { type: array, items: { type: string }, description: 'Diez códigos «abcd-efgh» de un solo uso; es la única vez que se ven' }
     IngresoSocial:
       allOf:
         - { $ref: '#/components/schemas/Sesion' }
