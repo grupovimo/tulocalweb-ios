@@ -1,0 +1,462 @@
+[
+	{
+		"plantilla": "ceibo",
+		"tienda": "Tienda Lumbre",
+		"rubro": "Moda",
+		"ciudad": "CABA",
+		"categorias": [
+			"Abrigos",
+			"Básicos",
+			"Accesorios"
+		],
+		"productos": [
+			{
+				"id": "tapado-merino-ceibo",
+				"nombre": "Tapado Merino Ceibo",
+				"categoria": "Abrigos",
+				"precio": 186000,
+				"anterior": 248000,
+				"foto": "1525507119028-ed4c629a60a3",
+				"etiqueta": "Hot Sale",
+				"detalle": null
+			},
+			{
+				"id": "campera-de-cuero-sur",
+				"nombre": "Campera de cuero Sur",
+				"categoria": "Abrigos",
+				"precio": 312000,
+				"anterior": null,
+				"foto": "1551028719-00167b16eac5",
+				"etiqueta": "Nuevo",
+				"detalle": null
+			},
+			{
+				"id": "remera-pima",
+				"nombre": "Remera Pima",
+				"categoria": "Básicos",
+				"precio": 28500,
+				"anterior": null,
+				"foto": "1521572163474-6864f9cf17ab",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "jean-recto-delta",
+				"nombre": "Jean Recto Delta",
+				"categoria": "Básicos",
+				"precio": 64900,
+				"anterior": null,
+				"foto": "1542272604-787c3835535d",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "vestido-lino-ceibo",
+				"nombre": "Vestido Lino Ceibo",
+				"categoria": "Básicos",
+				"precio": 98400,
+				"anterior": 131200,
+				"foto": "1496747611176-843222e1e57c",
+				"etiqueta": "Hot Sale",
+				"detalle": null
+			},
+			{
+				"id": "sweater-trenzado",
+				"nombre": "Sweater Trenzado",
+				"categoria": "Abrigos",
+				"precio": 74800,
+				"anterior": null,
+				"foto": "1576566588028-4147f3842f27",
+				"etiqueta": "Nuevo",
+				"detalle": null
+			},
+			{
+				"id": "tote-de-cuero",
+				"nombre": "Tote de cuero",
+				"categoria": "Accesorios",
+				"precio": 118000,
+				"anterior": null,
+				"foto": "1548036328-c9fa89d128fa",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "stiletto-noche",
+				"nombre": "Stiletto Noche",
+				"categoria": "Accesorios",
+				"precio": 142000,
+				"anterior": null,
+				"foto": "1543163521-1bf539c55dd2",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "camisa-oversize",
+				"nombre": "Camisa Oversize",
+				"categoria": "Básicos",
+				"precio": 52600,
+				"anterior": null,
+				"foto": "1594633312681-425c7b97ccd1",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "blazer-lumbre",
+				"nombre": "Blazer Lumbre",
+				"categoria": "Abrigos",
+				"precio": 168000,
+				"anterior": 224000,
+				"foto": "1591047139829-d91aecb6caea",
+				"etiqueta": "Hot Sale",
+				"detalle": null
+			},
+			{
+				"id": "remera-basica-negra",
+				"nombre": "Remera Básica Negra",
+				"categoria": "Básicos",
+				"precio": 24500,
+				"anterior": null,
+				"foto": "1503342217505-b0a15ec3261c",
+				"etiqueta": null,
+				"detalle": null
+			},
+			{
+				"id": "conjunto-tejido",
+				"nombre": "Conjunto Tejido",
+				"categoria": "Básicos",
+				"precio": 132000,
+				"anterior": null,
+				"foto": "1485968579580-b6d095142e6e",
+				"etiqueta": "Últimos",
+				"detalle": null
+			}
+		]
+	},
+	{
+		"plantilla": "mostaza",
+		"tienda": "Café Bruma",
+		"rubro": "Café de especialidad",
+		"ciudad": "CABA",
+		"categorias": [
+			"Cafés",
+			"Panadería",
+			"Salado",
+			"Café en grano"
+		],
+		"productos": [
+			{
+				"id": "flat-white",
+				"nombre": "Flat white",
+				"categoria": "Cafés",
+				"precio": 4200,
+				"anterior": null,
+				"foto": "1509042239860-f550ce710b93",
+				"etiqueta": "Más pedido",
+				"detalle": "Doble ristretto y leche texturizada"
+			},
+			{
+				"id": "capuccino",
+				"nombre": "Capuccino",
+				"categoria": "Cafés",
+				"precio": 3900,
+				"anterior": null,
+				"foto": "1572442388796-11668a67e53d",
+				"etiqueta": null,
+				"detalle": "Con canela o cacao, vos elegís"
+			},
+			{
+				"id": "espresso",
+				"nombre": "Espresso",
+				"categoria": "Cafés",
+				"precio": 2600,
+				"anterior": null,
+				"foto": "1510707577719-ae7c14805e3a",
+				"etiqueta": null,
+				"detalle": "Blend de la casa · Brasil y Colombia"
+			},
+			{
+				"id": "cold-brew",
+				"nombre": "Cold brew",
+				"categoria": "Cafés",
+				"precio": 4800,
+				"anterior": null,
+				"foto": "1461023058943-07fcbe16d735",
+				"etiqueta": "Nuevo",
+				"detalle": "18 horas en frío, con o sin leche"
+			},
+			{
+				"id": "medialunas-de-manteca",
+				"nombre": "Medialunas de manteca",
+				"categoria": "Panadería",
+				"precio": 2600,
+				"anterior": null,
+				"foto": "1555507036-ab1f4038808a",
+				"etiqueta": "Más pedido",
+				"detalle": "2×1 hasta las 11"
+			},
+			{
+				"id": "budin-de-limon",
+				"nombre": "Budín de limón",
+				"categoria": "Panadería",
+				"precio": 6900,
+				"anterior": null,
+				"foto": "1691242720281-9269de4d9f86",
+				"etiqueta": null,
+				"detalle": "Con glaseado de limón y amapola"
+			},
+			{
+				"id": "alfajor-de-maicena",
+				"nombre": "Alfajor de maicena",
+				"categoria": "Panadería",
+				"precio": 2400,
+				"anterior": null,
+				"foto": "1558961363-fa8fdf82db35",
+				"etiqueta": "Sin TACC",
+				"detalle": "Dulce de leche y coco"
+			},
+			{
+				"id": "tostado-en-masa-madre",
+				"nombre": "Tostado en masa madre",
+				"categoria": "Salado",
+				"precio": 8900,
+				"anterior": null,
+				"foto": "1528735602780-2552fd46c7af",
+				"etiqueta": null,
+				"detalle": "Jamón cocido natural y queso tybo"
+			},
+			{
+				"id": "avocado-toast",
+				"nombre": "Avocado toast",
+				"categoria": "Salado",
+				"precio": 9800,
+				"anterior": null,
+				"foto": "1588137378633-dea1336ce1e2",
+				"etiqueta": "Vegano",
+				"detalle": "Palta, huevo poché y semillas"
+			},
+			{
+				"id": "jugo-de-naranja",
+				"nombre": "Jugo de naranja",
+				"categoria": "Salado",
+				"precio": 3600,
+				"anterior": null,
+				"foto": "1600271886742-f049cd451bba",
+				"etiqueta": null,
+				"detalle": "Exprimido en el momento"
+			},
+			{
+				"id": "cafe-finca-la-esperanza",
+				"nombre": "Café Finca La Esperanza",
+				"categoria": "Café en grano",
+				"precio": 17500,
+				"anterior": null,
+				"foto": "1559056199-641a0ac8b55e",
+				"etiqueta": null,
+				"detalle": "Colombia · Panela · durazno · cacao"
+			},
+			{
+				"id": "cafe-yirgacheffe",
+				"nombre": "Café Yirgacheffe",
+				"categoria": "Café en grano",
+				"precio": 21900,
+				"anterior": null,
+				"foto": "1447933601403-0c6688de566e",
+				"etiqueta": null,
+				"detalle": "Etiopía · Jazmín · limón · té negro"
+			},
+			{
+				"id": "cafe-cerrado-mineiro",
+				"nombre": "Café Cerrado Mineiro",
+				"categoria": "Café en grano",
+				"precio": 14900,
+				"anterior": null,
+				"foto": "1514432324607-a09d9b4aefdd",
+				"etiqueta": null,
+				"detalle": "Brasil · Chocolate · avellana"
+			},
+			{
+				"id": "cafe-blend-de-la-casa",
+				"nombre": "Café Blend de la casa",
+				"categoria": "Café en grano",
+				"precio": 13500,
+				"anterior": null,
+				"foto": "1495474472287-4d71bcdd2085",
+				"etiqueta": null,
+				"detalle": "Brasil + Colombia · Dulce de leche · nuez"
+			},
+			{
+				"id": "cafe-huehuetenango",
+				"nombre": "Café Huehuetenango",
+				"categoria": "Café en grano",
+				"precio": 19400,
+				"anterior": null,
+				"foto": "1559056199-641a0ac8b55e",
+				"etiqueta": null,
+				"detalle": "Guatemala · Caramelo · manzana roja"
+			},
+			{
+				"id": "cafe-decaf-sierra",
+				"nombre": "Café Decaf Sierra",
+				"categoria": "Café en grano",
+				"precio": 16200,
+				"anterior": null,
+				"foto": "1447933601403-0c6688de566e",
+				"etiqueta": null,
+				"detalle": "México · Cacao · miel · sin cafeína"
+			}
+		]
+	},
+	{
+		"plantilla": "yerbal",
+		"tienda": "Almacén Verde",
+		"rubro": "Almacén natural",
+		"ciudad": "Córdoba",
+		"categorias": [
+			"Frutos secos",
+			"Almacén",
+			"Orgánicos"
+		],
+		"productos": [
+			{
+				"id": "almendras-peladas-non-pareil",
+				"nombre": "Almendras peladas Non Pareil",
+				"categoria": "Frutos secos",
+				"precio": 14990,
+				"anterior": 21400,
+				"foto": "1508061253366-f7da158b6d46",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "nueces-mariposa",
+				"nombre": "Nueces mariposa",
+				"categoria": "Frutos secos",
+				"precio": 12800,
+				"anterior": null,
+				"foto": "1563412885-139e4045ec60",
+				"etiqueta": null,
+				"detalle": "500 g"
+			},
+			{
+				"id": "mani-tostado-sin-sal",
+				"nombre": "Maní tostado sin sal",
+				"categoria": "Frutos secos",
+				"precio": 3900,
+				"anterior": 4600,
+				"foto": "1567892737950-30c4db37cd89",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "mix-energetico",
+				"nombre": "Mix energético",
+				"categoria": "Frutos secos",
+				"precio": 8400,
+				"anterior": null,
+				"foto": "1599599810769-bcde5a160d32",
+				"etiqueta": null,
+				"detalle": "500 g"
+			},
+			{
+				"id": "yerba-organica-misionera",
+				"nombre": "Yerba orgánica Misionera",
+				"categoria": "Almacén",
+				"precio": 6200,
+				"anterior": null,
+				"foto": "1675001077188-809370ce3279",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "harina-integral-agroecologica",
+				"nombre": "Harina integral agroecológica",
+				"categoria": "Orgánicos",
+				"precio": 2900,
+				"anterior": 3400,
+				"foto": "1574323347407-f5e1ad6d020b",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "avena-arrollada",
+				"nombre": "Avena arrollada",
+				"categoria": "Almacén",
+				"precio": 2400,
+				"anterior": null,
+				"foto": "1614961233913-a5113a4a34ed",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "miel-de-monte",
+				"nombre": "Miel de monte",
+				"categoria": "Orgánicos",
+				"precio": 7600,
+				"anterior": null,
+				"foto": "1587049352846-4a222e784d38",
+				"etiqueta": null,
+				"detalle": "500 g"
+			},
+			{
+				"id": "aceite-de-oliva-extra-virgen",
+				"nombre": "Aceite de oliva extra virgen",
+				"categoria": "Almacén",
+				"precio": 15900,
+				"anterior": 18200,
+				"foto": "1474979266404-7eaacbcd87c5",
+				"etiqueta": null,
+				"detalle": "1 L"
+			},
+			{
+				"id": "arroz-yamani",
+				"nombre": "Arroz yamaní",
+				"categoria": "Orgánicos",
+				"precio": 3600,
+				"anterior": null,
+				"foto": "1586201375761-83865001e31c",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "lentejas",
+				"nombre": "Lentejas",
+				"categoria": "Almacén",
+				"precio": 3200,
+				"anterior": null,
+				"foto": "1515543904379-3d757afe72e4",
+				"etiqueta": null,
+				"detalle": "1 kg"
+			},
+			{
+				"id": "semillas-de-chia",
+				"nombre": "Semillas de chía",
+				"categoria": "Orgánicos",
+				"precio": 4800,
+				"anterior": 5600,
+				"foto": "1514733670139-4d87a1941d55",
+				"etiqueta": null,
+				"detalle": "500 g"
+			},
+			{
+				"id": "pasas-de-uva-rubias",
+				"nombre": "Pasas de uva rubias",
+				"categoria": "Frutos secos",
+				"precio": 5200,
+				"anterior": null,
+				"foto": "1596591868231-05e808fd131d",
+				"etiqueta": null,
+				"detalle": "500 g"
+			},
+			{
+				"id": "cafe-de-especialidad",
+				"nombre": "Café de especialidad",
+				"categoria": "Almacén",
+				"precio": 17500,
+				"anterior": null,
+				"foto": "1559056199-641a0ac8b55e",
+				"etiqueta": null,
+				"detalle": "250 g"
+			}
+		]
+	}
+]

@@ -10,6 +10,10 @@
 //	                         MOSTRADOR_CLAVE_NUEVA y el rol es soporte, administracion o duenio
 //	mostradorctl dominio regalar|activar|quitar …
 //	                         el dominio propio de una tienda en Cloudflare (ver dominio.go)
+//	mostradorctl demo-tiendas <email> [borrar]
+//	                         escribe el SQL de las tres tiendas de demostración (dominio/demo) para la
+//	                         cuenta de ese email, o el que las borra. Se corre como superusuario:
+//	                         mostradorctl demo-tiendas x@y.com | psql -U postgres -d mostrador
 //
 // Las claves de los roles salen de MOSTRADOR_CLAVE_<ROL> (vacías en desarrollo).
 package main
@@ -25,6 +29,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/demo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/partners"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/config"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db"
@@ -34,6 +39,24 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "uso: mostradorctl bootstrap|migrar|partner-demo <email>|equipo-alta")
 		os.Exit(2)
+	}
+	// Las demos no tocan la base desde acá: escriben SQL (ver dominio/demo).
+	if os.Args[1] == "demo-tiendas" {
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "uso: mostradorctl demo-tiendas <email> [borrar]")
+			os.Exit(2)
+		}
+		if len(os.Args) > 3 && os.Args[3] == "borrar" {
+			fmt.Print("BEGIN;\n" + demo.Borrar() + "COMMIT;\n")
+			return
+		}
+		s, err := demo.SQL(os.Args[2], time.Now())
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		fmt.Print(s)
+		return
 	}
 	if err := correr(os.Args[1]); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
