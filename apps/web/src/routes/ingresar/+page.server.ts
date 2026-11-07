@@ -70,7 +70,7 @@ export const actions: Actions = {
 		if (!r.success)
 			return fail(400, { modo: 'login', email: String(f.email ?? ''), errores: errores(r.issues) });
 		if (usaSandbox()) redirect(303, '/prueba');
-		let hacia = '/panel';
+		let hacia: string;
 		try {
 			const s = await cuentasDe(event).ingresar(
 				r.output.email,
@@ -170,7 +170,10 @@ export const actions: Actions = {
 			}
 			return fail(x.estado, {
 				modo: 'codigo',
-				errores: x.estado === 400 ? { codigo: 'El código no es correcto. Probá con el que muestra ahora.' } : x.errores
+				errores:
+					x.estado === 400
+						? { codigo: 'El código no es correcto. Probá con el que muestra ahora.' }
+						: x.errores
 			});
 		}
 		redirect(303, desafio.h);
@@ -179,7 +182,7 @@ export const actions: Actions = {
 	entrar: async (event) => {
 		const token = String((await event.request.formData()).get('token') ?? '');
 		if (usaSandbox()) redirect(303, '/prueba');
-		let hacia = '/panel';
+		let hacia: string;
 		try {
 			const s = await cuentasDe(event).usarEnlace(token);
 			hacia = destino(event.cookies);

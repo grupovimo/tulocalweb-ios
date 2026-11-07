@@ -625,7 +625,9 @@
 			</div>
 		{:else}
 			<div class="m-t">
-				{hoja2 === 'apagar' ? 'Apagar la verificación en dos pasos' : 'Códigos de recuperación nuevos'}
+				{hoja2 === 'apagar'
+					? 'Apagar la verificación en dos pasos'
+					: 'Códigos de recuperación nuevos'}
 			</div>
 			<p class="d2-p">
 				Escribí el código de tu app (o uno de recuperación).{hoja2 === 'nuevos'

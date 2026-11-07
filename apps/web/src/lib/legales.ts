@@ -195,7 +195,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -371,7 +372,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -510,7 +512,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -586,7 +589,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -682,7 +686,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -826,7 +831,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -951,7 +957,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	},
 	{
@@ -1071,7 +1078,8 @@ export const LEGALES: Legal[] = [
 		],
 		cierre: {
 			titulo: '¿Te quedó alguna duda?',
-			texto: 'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
+			texto:
+				'Escribinos por WhatsApp al +54 223 592-6772 o a legales@tulocalweb.com.ar y te respondemos en 48 horas hábiles.'
 		}
 	}
 ];
