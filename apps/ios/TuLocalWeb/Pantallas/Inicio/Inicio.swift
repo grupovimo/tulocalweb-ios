@@ -55,11 +55,17 @@ struct Inicio: View {
 
     // MARK: Encabezado
 
+    /// Sin nombre cargado queda «Hola» a secas (no «Hola,» con la coma colgando).
+    private var saludo: String {
+        let nombre = (carga.valor?.hola ?? estado.datos?.nombreDePila ?? "").trimmingCharacters(in: .whitespaces)
+        return nombre.isEmpty ? "Hola" : "Hola, \(nombre)"
+    }
+
     private var encabezado: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(Formato.fechaLarga(Date())).estilo(.subhead).foregroundStyle(C.texto2)
-                Text("Hola, \(carga.valor?.hola ?? estado.datos?.nombreDePila ?? "")")
+                Text(saludo)
                     .estilo(se ? Estilo(tamano: 28, peso: .bold, tracking: -0.025, relativo: .title) : .saludo)
                     .foregroundStyle(C.texto)
                     .lineLimit(1).minimumScaleFactor(0.8)

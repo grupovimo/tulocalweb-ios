@@ -79,21 +79,21 @@ struct VistaBloque: View {
     }
 
     private func cifras(_ items: [BloqueTincho.Cifra]) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, c in
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(c.titulo).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
-                    Text(c.valor).estilo(.headline).monospacedDigit().foregroundStyle(C.texto)
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                    if let d = c.detalle {
-                        Text(d).estilo(.footnoteFuerte).foregroundStyle(VistaBloque.tinta(c.tono))
-                    }
+        // Las dos de cada fila con el mismo alto (la que tiene detalle no queda más alta que su vecina).
+        FilasParejas(cantidad: items.count, espacio: 8) { n in
+            let c = items[n]
+            VStack(alignment: .leading, spacing: 3) {
+                Text(c.titulo).estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
+                Text(c.valor).estilo(.headline).monospacedDigit().foregroundStyle(C.texto)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                if let d = c.detalle {
+                    Text(d).estilo(.footnoteFuerte).foregroundStyle(VistaBloque.tinta(c.tono))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(C.superficie, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.anillo, lineWidth: 1))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(12)
+            .background(C.superficie, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.anillo, lineWidth: 1))
         }
     }
 

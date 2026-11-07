@@ -109,8 +109,9 @@ struct CompartirTienda: View {
                 .padding(.trailing, 70)
             HStack(spacing: 8) {
                 Button { Compartir.copiar(t.url, estado) } label: {
+                    // El fondo es blanco siempre: la tinta va fija (la de oscuro, clarita, no se leía sobre blanco).
                     Label("Copiar link", systemImage: "doc.on.doc")
-                        .estilo(.label).foregroundStyle(C.primarioTinta)
+                        .estilo(.label).foregroundStyle(Color(hex: 0x8E3A16))
                         .padding(.horizontal, 14).frame(height: 38)
                         .background(.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 }

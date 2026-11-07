@@ -21,8 +21,10 @@ struct TarjetaHeroe<Pie: View>: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text(etiqueta).estilo(.footnoteFuerte).foregroundStyle(.white.opacity(0.85))
+                // Con Tincho, el valor le deja lugar (como el detalle): «Plan Emprende mensual» le pasaba por encima.
                 Text(valor).estilo(.montoPantalla).monospacedDigit().foregroundStyle(.white)
-                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .lineLimit(1).minimumScaleFactor(tincho == nil ? 0.6 : 0.5)
+                    .padding(.trailing, tincho == nil ? 0 : 90)
                     .contentTransition(.numericText())
                     .animation(Mov.toque, value: valor)
                 if let detalle {
@@ -75,7 +77,7 @@ struct IndicadorIcono: View {
                 Text(detalle).estilo(.chip).foregroundStyle(C.texto3).lineLimit(2)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(14)
         .tarjeta(radio: 18)
         .onAppear { visto = true }
@@ -85,8 +87,9 @@ struct IndicadorIcono: View {
 struct GrillaIndicadores: View {
     var items: [IndicadorIcono]
     var body: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
-            ForEach(Array(items.enumerated()), id: \.offset) { n, i in i.aparecer(0.05 + Double(n) * 0.05) }
+        // De a dos por fila y con el mismo alto (la que tiene detalle no queda más alta que su vecina).
+        FilasParejas(cantidad: items.count, espacio: 10) { n in
+            items[n].aparecer(0.05 + Double(n) * 0.05)
         }
     }
 }

@@ -18,6 +18,31 @@ extension View {
     func margenPantalla() -> some View { modifier(MargenPantalla()) }
 }
 
+/// Grilla de tarjetas de a `columnas` por fila, con todas las de una fila al mismo alto (IntrinsicSize.Min en
+/// Android): la fila toma el alto de la más alta y cada celda se estira si su fondo va después de
+/// `.frame(maxHeight: .infinity)`. Con LazyVGrid cada tarjeta quedaba con su propio alto.
+struct FilasParejas<Celda: View>: View {
+    var cantidad: Int
+    var columnas = 2
+    var espacio: CGFloat
+    @ViewBuilder var celda: (Int) -> Celda
+    var body: some View {
+        VStack(spacing: espacio) {
+            ForEach(Array(stride(from: 0, to: cantidad, by: columnas)), id: \.self) { inicio in
+                HStack(alignment: .top, spacing: espacio) {
+                    ForEach(inicio..<min(inicio + columnas, cantidad), id: \.self) { n in
+                        celda(n).frame(maxWidth: .infinity)
+                    }
+                    ForEach(0..<max(0, inicio + columnas - cantidad), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity).frame(height: 0)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
 private struct MargenPantalla: ViewModifier {
     @Environment(\.margen) private var margen
     func body(content: Content) -> some View { content.padding(.horizontal, margen) }
@@ -136,6 +161,8 @@ struct BotonPrincipal: ButtonStyle {
         configuration.label
             .estilo(.headline)
             .foregroundStyle(.white)
+            // En un renglón, achicando la letra antes que partir o cortar («Pagar con Mercado Pago» al lado del total).
+            .lineLimit(1).minimumScaleFactor(0.75)
             .padding(.horizontal, 22)
             .frame(maxWidth: .infinity, minHeight: alto)
             .background(C.primario, in: RoundedRectangle(cornerRadius: alto >= 56 ? 15 : 14, style: .continuous))
@@ -339,7 +366,27 @@ struct Segmentado<Valor: Hashable>: View {
     var opciones: [(Valor, String)]
     @Binding var elegido: Valor
     @Namespace private var ns
+    @State private var ancho: CGFloat = 0
+    @Environment(\.dynamicTypeSize) private var tamanoLetra
+
+    /// Si alguna opción no entra (Transferencia, Mercado Pago), la letra se achica igual en todas antes que cortar con
+    /// «…»: todas del mismo tamaño, como el control de iOS (con minimumScaleFactor cada una se achicaba por su lado).
+    private var estiloSegmento: Estilo {
+        let e = Estilo.label
+        guard ancho > 0, !opciones.isEmpty else { return e }
+        _ = tamanoLetra
+        let tamano = UIFontMetrics(forTextStyle: .footnote).scaledValue(for: e.tamano)
+        let fuente = UIFont(name: e.peso.nombre, size: tamano) ?? .systemFont(ofSize: tamano, weight: e.peso.ui)
+        let mas = opciones.map { ($0.1 as NSString).size(withAttributes: [.font: fuente, .kern: tamano * e.tracking]).width }.max() ?? 0
+        let lugar = ancho / CGFloat(opciones.count) - 8
+        guard mas > lugar, mas > 0 else { return e }
+        var chico = e
+        chico.tamano = e.tamano * max(0.7, lugar / mas)
+        return chico
+    }
+
     var body: some View {
+        let estilo = estiloSegmento
         HStack(spacing: 0) {
             ForEach(opciones, id: \.0) { op in
                 let activo = op.0 == elegido
@@ -348,8 +395,10 @@ struct Segmentado<Valor: Hashable>: View {
                     Haptico.seleccion()
                 } label: {
                     Text(op.1)
-                        .estilo(.label)
+                        .estilo(estilo)
                         .foregroundStyle(activo ? C.texto : C.texto2)
+                        .lineLimit(1).minimumScaleFactor(0.9)
+                        .padding(.horizontal, 4)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background {
                             if activo {
@@ -367,6 +416,13 @@ struct Segmentado<Valor: Hashable>: View {
         }
         .padding(3)
         .frame(height: 36)
+        .background {
+            GeometryReader { g in
+                Color.clear
+                    .onAppear { ancho = g.size.width - 6 }
+                    .onChange(of: g.size.width) { _, w in ancho = w - 6 }
+            }
+        }
         .background(C.segmentado, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 }

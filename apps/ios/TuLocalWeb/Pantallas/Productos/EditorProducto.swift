@@ -145,30 +145,30 @@ struct EditorProducto: View {
             Text("¿Qué vas a vender?").estilo(.headline).foregroundStyle(C.texto)
             Text(Formato.sinViudas("Así te pedimos sólo los datos que van con tu producto."))
                 .estilo(.footnote).foregroundStyle(C.texto2)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(TipoProducto.allCases) { t in
-                    Button {
-                        Haptico.seleccion()
-                        tipo = t
-                        eligiendoTipo = false
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Image(systemName: t.simbolo).font(.system(size: 20, weight: .semibold)).foregroundStyle(C.primarioTexto)
-                                .frame(width: 40, height: 40).background(C.crema, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            Text(t.nombre).estilo(.subheadFuerte).foregroundStyle(C.texto)
-                                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                            Text(t.ejemplo).estilo(.footnote).foregroundStyle(C.texto2)
-                                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
-                        .padding(14)
-                        .tarjeta(radio: 16)
-                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(tipo == t ? C.acento : .clear, lineWidth: 1.5))
+            // Las dos de cada fila con el mismo alto, aunque el ejemplo de una ocupe más renglones.
+            FilasParejas(cantidad: TipoProducto.allCases.count, espacio: 10) { n in
+                let t = TipoProducto.allCases[n]
+                Button {
+                    Haptico.seleccion()
+                    tipo = t
+                    eligiendoTipo = false
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Image(systemName: t.simbolo).font(.system(size: 20, weight: .semibold)).foregroundStyle(C.primarioTexto)
+                            .frame(width: 40, height: 40).background(C.crema, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Text(t.nombre).estilo(.subheadFuerte).foregroundStyle(C.texto)
+                            .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                        Text(t.ejemplo).estilo(.footnote).foregroundStyle(C.texto2)
+                            .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(tipo == t ? .isSelected : [])
+                    .frame(maxWidth: .infinity, minHeight: 128, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(14)
+                    .tarjeta(radio: 16)
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(tipo == t ? C.acento : .clear, lineWidth: 1.5))
                 }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(tipo == t ? .isSelected : [])
             }
         }
     }
