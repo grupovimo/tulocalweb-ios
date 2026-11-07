@@ -49,7 +49,7 @@ struct EditarMeta: View {
                 .overlay(alignment: .bottom) { Rectangle().fill(C.acento).frame(height: 2) }
                 HStack(spacing: 8) {
                     if vendido > 0 {
-                        chip("Igual que hoy", 0) { texto = String(vendido * dias / pasaron) }
+                        chip("A este ritmo", 0) { texto = String(vendido * dias / pasaron) }
                     }
                     chip("+10\(Formato.fino)%", 10) { texto = String(base * 110 / 100) }
                     chip("+20\(Formato.fino)%", 20) { texto = String(base * 120 / 100) }

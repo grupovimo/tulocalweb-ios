@@ -42,6 +42,7 @@ import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.Guardado
 import ar.com.tulocalweb.app.nucleo.Marcas
 import ar.com.tulocalweb.app.nucleo.PaginaPedidos
+import ar.com.tulocalweb.app.nucleo.PedidoDetalle
 import ar.com.tulocalweb.app.nucleo.PedidoFila
 import ar.com.tulocalweb.app.nucleo.Tincho
 import ar.com.tulocalweb.app.nucleo.abrirUrl
@@ -87,6 +88,8 @@ fun ListaPedidos() {
     var guardadoEn by remember { mutableStateOf<Instant?>(null) }
     var cargandoMas by remember { mutableStateOf(false) }
     var masDe by remember { mutableStateOf<PedidoFila?>(null) }
+    // «Cancelar pedido» desde «Más»: el pedido entero para la hoja de cancelar.
+    var cancelando by remember { mutableStateOf<PedidoDetalle?>(null) }
     val lista = rememberLazyListState()
     val chipsEstado = rememberLazyListState()
 
@@ -131,6 +134,15 @@ fun ListaPedidos() {
 
     /** Cambio de estado optimista: se ve al instante, vuelve atrás si la API no lo acepta, y el toast ofrece «Deshacer»
      *  (el estado anterior). */
+    suspend fun abrirCancelar(p: PedidoFila) {
+        try {
+            cancelando = estado.api.get<PedidoDetalle>("/v1/panel/pedidos/${p.numero}")
+        } catch (e: ErrorApi) {
+            Haptico.error()
+            estado.avisar(e.detalle, ok = false)
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {}
+    }
+
     suspend fun mover(p: PedidoFila, nuevo: String, texto: String? = null) {
         val d = carga.valor ?: return
         val i = d.filas.indexOfFirst { it.numero == p.numero }
@@ -258,8 +270,11 @@ fun ListaPedidos() {
         p.telefonoWhatsApp?.let { u -> add(OpcionConfirmacion("Escribirle por WhatsApp") { abrirUrl(ctx, u) }) }
         val ant = Marcas.anterior(p.estado, p.envio)
         if (ant != null && p.estado != "Cancelado") add(OpcionConfirmacion("Volver a «${ChipEstado.texto(ant, p.envio)}»") { alcance.launch { mover(p, ant) } })
-        if (p.estado != "Entregado" && p.estado != "Cancelado") add(OpcionConfirmacion("Cancelar pedido", destructiva = true) { nav.pedidos.add(Destino.pedido(p.numero)) })
+        if (p.estado != "Entregado" && p.estado != "Cancelado") add(OpcionConfirmacion("Cancelar pedido", destructiva = true) { alcance.launch { abrirCancelar(p) } })
     }, alCerrar = { masDe = null }, volver = "Cancelar")
+    Hoja(cancelando != null, { cancelando = null }) {
+        cancelando?.let { c -> CancelarPedido(c) { cargar(); estado.refrescarResumen() } }
+    }
 }
 
 /** «12 pedidos · $ 340.000 · ticket promedio $ 28.300». */

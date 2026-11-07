@@ -104,7 +104,7 @@ fun EditarMeta(actual: Int, vendido: Int, alGuardar: suspend () -> Unit) {
                 }
             }
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (vendido > 0) Chip("Igual que hoy", 0) { texto = (vendido * dias / pasaron).toString() }
+                if (vendido > 0) Chip("A este ritmo", 0) { texto = (vendido * dias / pasaron).toString() }
                 Chip("+10${Formato.fino}%", 10) { texto = (base * 110 / 100).toString() }
                 Chip("+20${Formato.fino}%", 20) { texto = (base * 120 / 100).toString() }
             }

@@ -493,7 +493,7 @@ fun HojaCancelar(datos: DatosPlan, listo: suspend () -> Unit) {
                                 Etiqueta("checkmark.shield", "Tus productos y pedidos quedan guardados")
                             }
                             BotonDestructivo("Cancelar mi plan", { alcance.launch { darDeBaja() } }, habilitado = !enviando)
-                            BotonTexto("Volver", { cerrar() })
+                            BotonTexto("Volver", { paso = 1 }) // Vuelve a la oferta; cerrar es «Me quedo».
                         }
                     }
                 }

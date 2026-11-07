@@ -46,10 +46,10 @@ publica en las tiendas hasta que esté. Plan: `~/.claude/plans/sigamos-haciendo-
 5. Cuenta › Avisos: si todavía no se había pedido el permiso, la fila mandaba a Ajustes en vez de pedirlo.
 6. Usuarios y permisos: faltaba «(vos)» cuando la persona no tiene nombre (paréntesis mal puesto).
 
-## Dudas de producto que quedaron igual en los dos
-- Editar la meta: el chip dice «Igual que hoy» (proyecta el ritmo del mes; el handoff decía «Igual que octubre»).
-- Pedidos › Más › «Cancelar pedido» abre el detalle en vez de la hoja de cancelar.
-- Cancelar el plan, último paso: «Volver» cierra la hoja (como «Me quedo») en vez de volver a la oferta.
+## Dudas de producto (resueltas el 7/11, «lo que sea mejor para el usuario»; iguales en los dos)
+- Editar la meta: el chip que proyecta el ritmo del mes dice «A este ritmo» (antes «Igual que hoy»).
+- Pedidos › Más › «Cancelar pedido» abre la hoja de cancelar ahí mismo (antes abría el detalle).
+- Cancelar el plan, último paso: «Volver» vuelve a la oferta; cerrar sin cancelar es «Me quedo».
 
 ## Diferencias de plataforma aceptadas
 - Ingreso sólo con Google (sin «Seguir con Apple»).

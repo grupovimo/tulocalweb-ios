@@ -635,7 +635,8 @@ struct HojaCancelar: View {
             .estilo(.texto14).foregroundStyle(C.texto)
             Button("Cancelar mi plan") { Task { await darDeBaja() } }
                 .buttonStyle(BotonDestructivo()).disabled(enviando)
-            Button("Volver") { cerrar() }.buttonStyle(BotonTexto())
+            // Vuelve a la oferta (cerrar es «Me quedo», en el primer paso).
+            Button("Volver") { withAnimation(Mov.entrada) { paso = 1 } }.buttonStyle(BotonTexto())
         }
     }
 

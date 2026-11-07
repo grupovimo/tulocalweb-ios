@@ -14,6 +14,8 @@ struct ListaPedidos: View {
     @State private var guardadoEn: Date?
     @State private var cargandoMas = false
     @State private var masDe: PedidoFila?
+    /// «Cancelar pedido» desde «Más»: el pedido entero para la hoja de cancelar.
+    @State private var cancelando: PedidoDetalle?
 
     struct Datos {
         var filas: [PedidoFila]
@@ -89,6 +91,15 @@ struct ListaPedidos: View {
         }
         .onAppear(perform: tomarFiltro)
         .onChange(of: nav.filtroPedidos) { _, _ in tomarFiltro() }
+        .sheet(isPresented: Binding(get: { cancelando != nil }, set: { if !$0 { cancelando = nil } })) {
+            if let c = cancelando {
+                CancelarPedido(pedido: c) {
+                    await cargar()
+                    await estado.refrescarResumen()
+                }
+                .hojaTLW([.large])
+            }
+        }
         .confirmationDialog(masDe.map { "Pedido #\($0.numero)" } ?? "", isPresented: Binding(get: { masDe != nil }, set: { if !$0 { masDe = nil } }),
                             titleVisibility: .visible, presenting: masDe) { p in
             Button("Ver el pedido") { nav.pedidos.append(.pedido(p.numero)) }
@@ -99,7 +110,7 @@ struct ListaPedidos: View {
                 Button("Volver a «\(ChipEstado.texto(ant, envio: p.envio))»") { Task { await mover(p, a: ant) } }
             }
             if p.estado != "Entregado" && p.estado != "Cancelado" {
-                Button("Cancelar pedido", role: .destructive) { nav.pedidos.append(.pedido(p.numero)) }
+                Button("Cancelar pedido", role: .destructive) { Task { await abrirCancelar(p) } }
             }
         }
     }
@@ -284,6 +295,15 @@ struct ListaPedidos: View {
 
     /// Cambio de estado optimista: se ve al instante, vuelve atrás si la API no lo acepta, y el toast
     /// ofrece «Deshacer» (el estado anterior).
+    private func abrirCancelar(_ p: PedidoFila) async {
+        do {
+            cancelando = try await estado.api.get("/v1/panel/pedidos/\(p.numero)")
+        } catch let e as ErrorApi {
+            Haptico.error()
+            estado.avisar(e.detalle, ok: false)
+        } catch {}
+    }
+
     private func mover(_ p: PedidoFila, a nuevo: String, texto: String? = nil) async {
         guard var d = carga.valor, let i = d.filas.firstIndex(where: { $0.numero == p.numero }) else { return }
         let antes = d.filas[i]
