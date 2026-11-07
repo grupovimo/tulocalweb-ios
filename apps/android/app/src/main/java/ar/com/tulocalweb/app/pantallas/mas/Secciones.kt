@@ -191,7 +191,7 @@ fun CarritosAbandonados() {
                     Miniatura(c.foto, 44.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Texto(c.nombre, Estilo.fila, C.texto, lineas = 1)
-                        Texto("${Formato.cantidad(c.cantidad, "producto", "productos")} · ${Formato.hace(c.creado)} · ${c.desde}", Estilo.footnote, C.texto2, lineas = 1)
+                        Texto("${Formato.cantidad(c.cantidad, "producto", "productos")} · ${Formato.hace(c.creado)} · ${c.desde}", Estilo.footnote, C.texto2, lineas = 2)
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Texto(Formato.pesos(c.total), Estilo.fila, C.texto, numeros = true)
@@ -356,8 +356,8 @@ fun Devoluciones() {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Miniatura(v.foto, 44.dp)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Texto(v.producto, Estilo.fila, C.texto, lineas = 1)
-                            Texto("${v.cliente} · pedido #${v.pedido} · ${Formato.dia(v.creada)}", Estilo.footnote, C.texto2, lineas = 1)
+                            Texto(v.producto, Estilo.fila, C.texto, lineas = 2)
+                            Texto("${v.cliente} · pedido #${v.pedido} · ${Formato.dia(v.creada)}", Estilo.footnote, C.texto2, lineas = 2)
                         }
                         Texto(Formato.pesos(v.monto), Estilo.fila, C.texto, numeros = true)
                     }
@@ -651,8 +651,9 @@ fun UsuariosYPermisos() {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AvatarIniciales(m.nombre.ifEmpty { m.contacto }, 42.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Texto((if (m.nombre.isEmpty()) m.contacto else m.nombre) + (if (m.vos) " (vos)" else ""), Estilo.fila, C.texto, lineas = 1)
-                    Texto(if (m.pendiente) "Invitación pendiente · ${m.contacto}" else m.contacto, Estilo.footnote, C.texto2, lineas = 1)
+                    Texto((if (m.nombre.isEmpty()) m.contacto else m.nombre) + (if (m.vos) " (vos)" else ""), Estilo.fila, C.texto, lineas = 1, escalaMinima = 0.8f)
+                    // Sin nombre, el contacto ya es el título: no se repite (quedaban dos mails cortados con «…»).
+                    Texto(if (m.pendiente) (if (m.nombre.isEmpty()) "Invitación pendiente" else "Invitación pendiente · ${m.contacto}") else m.contacto, Estilo.footnote, C.texto2, lineas = 1)
                 }
                 if (m.vos || m.rol == "duena" || m.rol == "dueña") {
                     Texto(nombreRolEquipo(m.rol), Estilo.label, C.texto2)

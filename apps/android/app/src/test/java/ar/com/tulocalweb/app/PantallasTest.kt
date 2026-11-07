@@ -166,7 +166,7 @@ class PantallasTest {
         estado(mapOf("/v1/panel/listas/productos" to """{"total": 0, "segmentos": {}, "filas": []}""", "/v1/panel/cupones" to null))) { CompartirTienda() }
     // Todas las pantallas de la app con la API simulada (lo que no está, 404): un crash al abrirlas salta acá.
     @Test fun pantallaInicio() = montar("Inicio") { Inicio() }
-    @Test fun pantallaListaPedidos() = montar("ListaPedidos") { ListaPedidos() }
+    @Test fun pantallaListaPedidos() = montar("ListaPedidos", espera = 3000) { ListaPedidos() }
     @Test fun pantallaListaProductos() = montar("ListaProductos") { ListaProductos() }
     @Test fun pantallaTinchoChat() = montar("TinchoChat", estado(mapOf("POST /panel/hornero" to respuestaTincho)), espera = 2500) { TinchoChat() }
     @Test fun pantallaMas() = montar("Mas") { Mas() }

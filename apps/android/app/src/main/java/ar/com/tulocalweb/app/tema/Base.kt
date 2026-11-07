@@ -72,7 +72,12 @@ fun Texto(
 
 /** Sin renglones viudos en ningún texto de la app (iOS los evita solo al cortar los renglones): cada párrafo pasa por
  *  Formato.sinViudas, que pega la última palabra a la anteúltima y las cortas («a», «de», «y») a la siguiente. */
-fun sinViuda(texto: String): String = if (' ' !in texto) texto else texto.split('\n').joinToString("\n") { ar.com.tulocalweb.app.nucleo.Formato.sinViudas(it) }
+fun sinViuda(texto: String): String = if (' ' !in texto) texto else texto.split('\n').joinToString("\n") { p ->
+    // Un link al final no se pega a la palabra de antes (quedaba un bloque largo que no entraba en ningún renglón).
+    val i = p.lastIndexOf(' ')
+    if (i > 0 && "://" in p.substring(i)) ar.com.tulocalweb.app.nucleo.Formato.sinViudas(p.substring(0, i)) + p.substring(i)
+    else ar.com.tulocalweb.app.nucleo.Formato.sinViudas(p)
+}
 
 /** Texto con partes de distinto estilo (Text + Text en iOS). */
 @Composable

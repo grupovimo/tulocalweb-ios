@@ -191,7 +191,8 @@ private fun marcasEje(minimo: Double, maximo: Double, cantidad: Int): List<Doubl
     val crudo = rango / cantidad
     val potencia = 10.0.pow(floor(log10(crudo)))
     val paso = listOf(1.0, 2.0, 2.5, 5.0, 10.0, 20.0).map { it * potencia }.filter { it >= 1.0 && kotlin.math.abs(it - Math.round(it)) < 1e-9 }.firstOrNull { it >= crudo } ?: 1.0
-    val desde = ceil(minimo / paso) * paso
+    // Desde la marca de abajo del mínimo: un saldo negativo no queda por debajo del eje, encima de los días.
+    val desde = floor(minimo / paso) * paso
     return generateSequence(desde) { it + paso }.takeWhile { it <= maximo + 1e-9 }.toList()
 }
 

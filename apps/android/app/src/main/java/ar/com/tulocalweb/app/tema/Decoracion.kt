@@ -64,7 +64,7 @@ fun TarjetaHeroe(
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Texto(etiqueta, Estilo.footnoteFuerte, Color.White.copy(alpha = 0.85f))
             // Con Tincho, el valor le deja lugar (como el detalle): «Plan Emprende mensual» le pasaba por encima.
-            NumeroAnimado(valor, Estilo.montoPantalla, Color.White, Modifier.padding(end = if (tincho == null) 0.dp else 90.dp), escalaMinima = 0.6f)
+            NumeroAnimado(valor, Estilo.montoPantalla, Color.White, Modifier.padding(end = if (tincho == null) 0.dp else 90.dp), escalaMinima = if (tincho == null) 0.6f else 0.5f)
             if (detalle != null) {
                 Texto(detalle, Estilo.texto14, Color.White.copy(alpha = 0.9f), Modifier.padding(end = if (tincho == null) 0.dp else 90.dp))
             }

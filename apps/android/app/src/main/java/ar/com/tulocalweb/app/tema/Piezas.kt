@@ -64,6 +64,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import ar.com.tulocalweb.app.nucleo.Acceso
 import ar.com.tulocalweb.app.nucleo.Formato
@@ -332,6 +333,16 @@ fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) ->
         val ancho = maxWidth / n
         val i = opciones.indexOfFirst { it.first == elegido }.coerceAtLeast(0)
         val x by animateDpAsState(ancho * i, tween(220), label = "segmento")
+        // Si alguna opción no entra (Transferencia, Mercado Pago), la letra se achica igual en todas antes que cortar
+        // con «…»: todas del mismo tamaño, como el control de iOS.
+        val medidor = rememberTextMeasurer()
+        val densidad = LocalDensity.current
+        val estiloSegmento = remember(opciones, ancho) {
+            val mas = opciones.maxOfOrNull { medidor.measure(it.second, Estilo.label.ts()).size.width } ?: 0
+            val lugar = with(densidad) { (ancho - 8.dp).toPx() }
+            val f = if (mas <= 0 || mas <= lugar) 1f else (lugar / mas).coerceAtLeast(0.7f)
+            Estilo.label.copy(tamano = Estilo.label.tamano * f)
+        }
         if (opciones.any { it.first == elegido }) {
             Box(Modifier.offset(x = x).width(ancho).fillMaxHeight().sombra(RoundedCornerShape(8.dp), hex(0x2A140C, 0.12f), 1.5.dp, y = 1.dp)
                 .clip(RoundedCornerShape(8.dp)).background(C.segmentoElegido))
@@ -345,8 +356,7 @@ fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) ->
                     }.semantics { selected = activo },
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Como el UISegmentedControl: la letra se achica antes que cortar con «…» (Transferencia, Mercado Pago).
-                    Texto(t, Estilo.label, if (activo) C.texto else C.texto2, Modifier.padding(horizontal = 4.dp), lineas = 1, escalaMinima = 0.7f)
+                    Texto(t, estiloSegmento, if (activo) C.texto else C.texto2, Modifier.padding(horizontal = 4.dp), lineas = 1, escalaMinima = 0.9f)
                 }
             }
         }

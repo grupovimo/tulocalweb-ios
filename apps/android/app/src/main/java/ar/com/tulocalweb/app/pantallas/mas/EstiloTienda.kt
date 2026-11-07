@@ -146,7 +146,7 @@ fun SelectorDeColor(nombre: String, hexActual: String, alCambiar: (String) -> Un
     var abierto by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().clickable { abierto = true }, verticalAlignment = Alignment.CenterVertically) {
         Texto(nombre, Estilo.body16, C.texto, Modifier.weight(1f))
-        Box(Modifier.size(28.dp).clip(CircleShape).background(Hex.color(hexActual) ?: Color.White).border(1.dp, C.linea2, CircleShape)
+        Box(Modifier.size(28.dp).clip(CircleShape).background(Hex.color(hexActual) ?: Color.White).border(1.dp, C.texto3.copy(alpha = 0.6f), CircleShape) /* con anillo marcado: un color oscuro no se pierde en la tarjeta oscura */
             .semantics { contentDescription = "Elegir $nombre" })
     }
     val grilla = listOf(
@@ -169,7 +169,7 @@ fun SelectorDeColor(nombre: String, hexActual: String, alCambiar: (String) -> Un
                     fila.forEach { c ->
                         val on = texto.equals(c, true)
                         Box(Modifier.size(34.dp).clip(CircleShape).background(Hex.color(c) ?: Color.Gray)
-                            .border(if (on) 3.dp else 1.dp, if (on) C.texto else C.linea2, CircleShape).clickable { texto = c })
+                            .border(if (on) 3.dp else 1.dp, if (on) C.texto else C.texto3.copy(alpha = 0.6f), CircleShape).clickable { texto = c })
                     }
                 }
             }
