@@ -151,6 +151,8 @@ class PantallasTest {
         for (t in listOf("claro", "oscuro")) {
             tema.value = t
             asentar(espera)
+            // Un par de cuadros más: lo que llegó en el último paso termina de medirse (filas nuevas de una lista).
+            repeat(3) { Thread.sleep(40); compose.mainClock.advanceTimeByFrame(); compose.waitForIdle() }
             compose.onRoot().captureRoboImage("build/capturas/$nombre-$t.png")
         }
     }
