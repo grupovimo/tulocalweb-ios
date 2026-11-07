@@ -132,9 +132,11 @@ class PantallasTest {
 
     /** Deja correr la carga: las respuestas llegan por el hilo de OkHttp y vuelven al principal. */
     private fun asentar(ms: Long) {
-        repeat(12) {
+        // Con más espera, también más tiempo real: la primera respuesta de OkHttp a veces llegaba después de la captura.
+        val pasos = maxOf(12, (ms / 100).toInt())
+        repeat(pasos) {
             Thread.sleep(60)
-            compose.mainClock.advanceTimeBy(ms / 12)
+            compose.mainClock.advanceTimeBy(ms / pasos)
             compose.waitForIdle()
         }
     }
