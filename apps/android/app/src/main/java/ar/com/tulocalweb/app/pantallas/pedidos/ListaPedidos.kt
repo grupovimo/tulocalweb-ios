@@ -176,6 +176,9 @@ fun ListaPedidos() {
 
     fun tomarFiltro() { nav.filtroPedidos?.let { filtro = it; nav.filtroPedidos = null } }
 
+    // La carga se lee acá y no adentro de la lista: así, cuando llegan los pedidos, se arma la lista de nuevo entera
+    // (leída sólo adentro, el primer render quedaba con el buscador repetido en el lugar del resumen).
+    val cargaVista = carga
     Refrescable({ cargar() }) {
         LazyColumn(Modifier.fillMaxSize(), state = lista, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
             guardadoEn?.let { g -> item { Box(Modifier.padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp)) { BannerSinConexion(g) } } }
@@ -194,7 +197,7 @@ fun ListaPedidos() {
                     }
                 }
             }
-            carga.valor?.let { d ->
+            cargaVista.valor?.let { d ->
                 item { Box(Modifier.padding(top = 2.dp).margenPantalla()) { ResumenPedidos(d) } }
                 item {
                     val e = d.etapas
@@ -222,7 +225,7 @@ fun ListaPedidos() {
                     }
                 }
             }
-            when (val c = carga) {
+            when (val c = cargaVista) {
                 Carga.cargando -> item { Box(Modifier.margenPantalla().padding(top = 24.dp)) { EsqueletoFilas(5) } }
                 is Carga.error -> item { Box(Modifier.padding(top = 60.dp)) { EstadoError("los pedidos", c.e) { estado.tarea { cargar() } } } }
                 is Carga.listo -> {
