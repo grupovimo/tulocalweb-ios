@@ -1,6 +1,14 @@
 package ar.com.tulocalweb.app
 
 import androidx.compose.foundation.layout.Column
+import ar.com.tulocalweb.app.nucleo.Web
+import ar.com.tulocalweb.app.nucleo.DatosSesion
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
@@ -96,6 +104,18 @@ class PantallasTest {
     companion object {
         val tienda = Acceso.Tienda("t1", "Almacén Lumbre", "almacen-lumbre", "owner", "https://api.prueba/logo.png")
         val plan: String get() = ApiFalsa.respuestas()["/v1/panel/cuenta/plan"] ?: "{}"
+        /** Una respuesta de Tincho con todos los bloques (y uno que no existe, que se ignora). */
+        val respuestaTincho = """
+        {"texto": "Hoy llevás **$ 539.000** en 15 pedidos.", "bloques": [
+          {"tipo": "cifras", "items": [{"titulo": "Ventas", "valor": "$ 539.000", "detalle": "▲ 53 %", "tono": "ok"}, {"titulo": "Pedidos", "valor": "15"}]},
+          {"tipo": "barras", "titulo": "Más vendidos", "unidad": "unidades", "items": [{"etiqueta": "Yerba", "valor": 208, "destacado": true}, {"etiqueta": "Mate", "valor": 120}]},
+          {"tipo": "linea", "titulo": "Ventas por día", "unidad": "pesos", "puntos": [{"etiqueta": "lun 26", "valor": 500000}, {"etiqueta": "mar 27", "valor": 776400}, {"etiqueta": "mié 28", "valor": 344700}], "anterior": [400000, 600000, 300000]},
+          {"tipo": "tabla", "titulo": "Detalle", "columnas": ["Producto", "Stock"], "filas": [["Yerba", "17"], ["Kit", "Sin stock"]]},
+          {"tipo": "lista", "titulo": "Para reponer", "items": [{"titulo": "Kit matero", "detalle": "Se vende", "insignia": "Sin stock", "tono": "mal"}]},
+          {"tipo": "progreso", "titulo": "Meta del mes", "actual": 11011500, "objetivo": 21600000, "unidad": "pesos", "detalle": "Proyección"},
+          {"tipo": "nuevo-que-no-existe"}
+        ], "acciones": [{"texto": "Ver pedidos", "ir": "pedidos"}], "sugerencias": ["¿Y ayer?"]}
+        """
     }
 
     private fun estado(extra: Map<String, String?> = emptyMap()): Estado {
@@ -104,6 +124,9 @@ class PantallasTest {
         val e = Estado(api)
         e.contexto = RuntimeEnvironment.getApplication()
         e.acceso = Acceso("t1", "owner", listOf("catalogo", "ventas"), listOf(tienda))
+        e.datos = DatosSesion(DatosSesion.Usuario("u1", "Martina Gómez", "martina@almacenlumbre.com.ar"), "t1", "owner", java.time.Instant.parse("2026-12-31T00:00:00Z"))
+        // Tincho (la web, /panel/hornero) contesta con la misma API simulada.
+        Web.clientePrueba = OkHttpClient.Builder().addInterceptor(ApiFalsa(ApiFalsa.respuestas() + extra)).build()
         return e
     }
 
@@ -130,8 +153,13 @@ class PantallasTest {
         }
     }
 
-    /** Lo que en iOS va en una hoja: a pantalla completa. */
-    @Composable private fun EnHoja(contenido: @Composable ColumnScope.() -> Unit) = Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { contenido() }
+    /** Piezas sueltas (gráficos, bloques de Tincho, el editor de estilo): con fondo, margen y aire entre una y otra,
+     *  como quedan adentro de una pantalla. */
+    @Composable private fun EnHoja(contenido: @Composable ColumnScope.() -> Unit) =
+        Column(Modifier.fillMaxSize().background(C.fondo).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { contenido() }
+
+    /** Lo que en la app va en una Hoja: a pantalla completa, con el fondo de la hoja. */
+    @Composable private fun ComoHoja(contenido: @Composable () -> Unit) = Box(Modifier.fillMaxSize().background(C.elevado).statusBarsPadding()) { contenido() }
 
     @Test fun compartirTienda() = montar("CompartirTienda") { CompartirTienda() }
     @Test fun compartirTiendaSinProductos() = montar("CompartirTiendaSinProductos",
@@ -140,7 +168,7 @@ class PantallasTest {
     @Test fun pantallaInicio() = montar("Inicio") { Inicio() }
     @Test fun pantallaListaPedidos() = montar("ListaPedidos") { ListaPedidos() }
     @Test fun pantallaListaProductos() = montar("ListaProductos") { ListaProductos() }
-    @Test fun pantallaTinchoChat() = montar("TinchoChat") { TinchoChat() }
+    @Test fun pantallaTinchoChat() = montar("TinchoChat", estado(mapOf("POST /panel/hornero" to respuestaTincho)), espera = 2500) { TinchoChat() }
     @Test fun pantallaMas() = montar("Mas") { Mas() }
     @Test fun pantallaDetallePedido() = montar("DetallePedido") { DetallePedido(1048) }
     @Test fun pantallaAvisos() = montar("Avisos") { Avisos() }
@@ -164,10 +192,10 @@ class PantallasTest {
         // El descuento para quedarse (§57): mitad del débito mientras queden cobros.
         assertEquals(9950, DatosPlan.conDescuento(19900, d.beneficio))
         assertEquals(19900, DatosPlan.conDescuento(19900, null))
-        montar("HojaPlanPro") { HojaPlan(d, "pro") {} }
+        montar("HojaPlanPro") { ComoHoja { HojaPlan(d, "pro") {} } }
     }
-    @Test fun hojaPlanGratis() = montar("HojaPlanGratis") { HojaPlan(Api.json.decodeFromString(DatosPlan.serializer(), plan), "gratis") {} }
-    @Test fun hojaCancelar() = montar("HojaCancelar") { HojaCancelar(Api.json.decodeFromString(DatosPlan.serializer(), plan)) {} }
+    @Test fun hojaPlanGratis() = montar("HojaPlanGratis") { ComoHoja { HojaPlan(Api.json.decodeFromString(DatosPlan.serializer(), plan), "gratis") {} } }
+    @Test fun hojaCancelar() = montar("HojaCancelar") { ComoHoja { HojaCancelar(Api.json.decodeFromString(DatosPlan.serializer(), plan)) {} } }
 
     @Test fun graficos() {
         val flujo = listOf(DiaFlujo(1, 100, 30), DiaFlujo(2, 0, 80))
@@ -194,25 +222,15 @@ class PantallasTest {
     @Test fun pantallaCentroAyuda() = montar("CentroAyuda") { CentroAyuda() }
     @Test fun pantallaMiTiendaEditor() = montar("MiTiendaEditor") { MiTiendaEditor() }
     @Test fun onboarding() = montar("Onboarding") { Onboarding() }
-    @Test fun crearTienda() = montar("CrearTienda") { CrearTienda() }
+    @Test fun crearTienda() = montar("CrearTienda") { ComoHoja { CrearTienda() } }
     @Test fun importarTienda() = montar("ImportarTienda") { ImportarTienda() }
     @Test fun telegram() = montar("Telegram") { TelegramTincho() }
     @Test fun medicion() = montar("Medicion") { MedicionTienda() }
     @Test fun iaConectadas() = montar("IAConectadas") { IAConectadas() }
 
     @Test fun bloquesDeTincho() {
-        val json = """
-        {"texto": "Hoy llevás **$ 539.000** en 15 pedidos.", "bloques": [
-          {"tipo": "cifras", "items": [{"titulo": "Ventas", "valor": "$ 539.000", "detalle": "▲ 53 %", "tono": "ok"}, {"titulo": "Pedidos", "valor": "15"}]},
-          {"tipo": "barras", "titulo": "Más vendidos", "unidad": "unidades", "items": [{"etiqueta": "Yerba", "valor": 208, "destacado": true}, {"etiqueta": "Mate", "valor": 120}]},
-          {"tipo": "linea", "titulo": "Ventas por día", "unidad": "pesos", "puntos": [{"etiqueta": "lun 26", "valor": 500000}, {"etiqueta": "mar 27", "valor": 776400}, {"etiqueta": "mié 28", "valor": 344700}], "anterior": [400000, 600000, 300000]},
-          {"tipo": "tabla", "titulo": "Detalle", "columnas": ["Producto", "Stock"], "filas": [["Yerba", "17"], ["Kit", "Sin stock"]]},
-          {"tipo": "lista", "titulo": "Para reponer", "items": [{"titulo": "Kit matero", "detalle": "Se vende", "insignia": "Sin stock", "tono": "mal"}]},
-          {"tipo": "progreso", "titulo": "Meta del mes", "actual": 11011500, "objetivo": 21600000, "unidad": "pesos", "detalle": "Proyección"},
-          {"tipo": "nuevo-que-no-existe"}
-        ], "acciones": [{"texto": "Ver pedidos", "ir": "pedidos"}], "sugerencias": ["¿Y ayer?"]}
-        """
-        val r = Api.json.decodeFromString(RespuestaTincho.serializer(), json)
+
+        val r = Api.json.decodeFromString(RespuestaTincho.serializer(), respuestaTincho)
         assertEquals(7, r.bloques?.size)
         assertEquals("$ 1,2 M", corto(1_250_000.0, "pesos"))
         montar("BloquesDeTincho", espera = 1000) { EnHoja { (r.bloques ?: emptyList()).forEach { VistaBloque(it) } } }
@@ -220,7 +238,7 @@ class PantallasTest {
 
     @Test fun estadisticas() = montar("Estadisticas") { Estadisticas() }
     @Test fun integraciones() = montar("Integraciones") { Integraciones() }
-    @Test fun hojaHistoria() = montar("HojaHistoria") { EnHoja { HojaHistoria(tienda) } }
+    @Test fun hojaHistoria() = montar("HojaHistoria") { ComoHoja { HojaHistoria(tienda) } }
     @Test fun editorProductoNuevoPreguntaElTipo() = montar("EditorProductoNuevo") { EditorProducto(null) }
 
     @Test fun tipoDeLosProductosDeAntes() {
@@ -238,7 +256,7 @@ class PantallasTest {
     @Test fun principal() = montar("Principal") { Principal() }
     @Test fun splash() = montar("Splash", espera = 1000) { Splash() }
     @Test fun ingresar() = montar("Ingresar", espera = 1000) { Ingresar() }
-    @Test fun elegirTienda() = montar("ElegirTienda", estado().also { it.acceso = Acceso("t1", "owner", tiendas = listOf(tienda, tienda.copy(id = "t2", nombre = "Lumbre Palermo", slug = "lumbre-palermo"))) }) { ElegirTienda() }
+    @Test fun elegirTienda() = montar("ElegirTienda", estado().also { it.acceso = Acceso("t1", "owner", tiendas = listOf(tienda, tienda.copy(id = "t2", nombre = "Lumbre Palermo", slug = "lumbre-palermo"))) }) { ComoHoja { ElegirTienda() } }
     @Test fun permisos() = montar("Permisos", espera = 1000) { Permisos() }
     @Test fun bloqueo() = montar("Bloqueo", espera = 1000) { Bloqueo() }
     @Test fun buscar() = montar("Buscar", espera = 1000) { Buscar() }

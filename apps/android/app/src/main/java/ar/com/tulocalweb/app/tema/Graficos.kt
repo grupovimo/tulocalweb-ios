@@ -184,12 +184,13 @@ private fun curva(puntos: List<Offset>): Path {
 }
 
 /** Valores «lindos» para un eje (AxisMarks automático). */
+/** Los ejes son de montos y cantidades enteras: el paso es de 1 como mínimo (con 0,5 o 2,5 salían «2, 2, 1, 1, 0»). */
 private fun marcasEje(minimo: Double, maximo: Double, cantidad: Int): List<Double> {
     val rango = maximo - minimo
     if (rango <= 0) return listOf(minimo)
     val crudo = rango / cantidad
     val potencia = 10.0.pow(floor(log10(crudo)))
-    val paso = listOf(1.0, 2.0, 2.5, 5.0, 10.0).map { it * potencia }.first { it >= crudo }
+    val paso = listOf(1.0, 2.0, 2.5, 5.0, 10.0, 20.0).map { it * potencia }.filter { it >= 1.0 && kotlin.math.abs(it - Math.round(it)) < 1e-9 }.firstOrNull { it >= crudo } ?: 1.0
     val desde = ceil(minimo / paso) * paso
     return generateSequence(desde) { it + paso }.takeWhile { it <= maximo + 1e-9 }.toList()
 }

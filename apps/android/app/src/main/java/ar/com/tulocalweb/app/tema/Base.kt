@@ -62,12 +62,17 @@ fun Texto(
     val ts = estilo.ts(numeros).let { if (interlineado > 0f) it.copy(lineHeight = (estilo.tamano * 1.2f + interlineado).sp) else it }
         .let { if (monoespaciado) it.copy(fontFamily = FontFamily.Monospace) else it }
     BasicText(
-        texto, modifier,
+        // Los links se pueden cortar después de «https://» (antes se partían en «….com» / «.ar»).
+        if (lineas > 1) sinViuda(texto).replace("://", "://\u200B") else texto, modifier,
         style = ts.copy(color = color, textAlign = alinear),
         maxLines = lineas, overflow = TextOverflow.Ellipsis,
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) },
     )
 }
+
+/** Sin renglones viudos en ningún texto de la app (iOS los evita solo al cortar los renglones): cada párrafo pasa por
+ *  Formato.sinViudas, que pega la última palabra a la anteúltima y las cortas («a», «de», «y») a la siguiente. */
+fun sinViuda(texto: String): String = if (' ' !in texto) texto else texto.split('\n').joinToString("\n") { ar.com.tulocalweb.app.nucleo.Formato.sinViudas(it) }
 
 /** Texto con partes de distinto estilo (Text + Text en iOS). */
 @Composable
@@ -81,7 +86,8 @@ fun TextoRico(
     numeros: Boolean = false,
     escalaMinima: Float? = null,
 ) {
-    BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+    val t = if (lineas > 1 && !texto.hasLinkAnnotations(0, texto.length)) AnnotatedString(sinViuda(texto.text), texto.spanStyles, texto.paragraphStyles) else texto
+    BasicText(t, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
 }
 

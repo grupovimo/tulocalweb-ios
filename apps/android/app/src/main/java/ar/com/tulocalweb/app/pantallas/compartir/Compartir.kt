@@ -147,7 +147,9 @@ fun CompartirTienda() {
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.height(38.dp).clip(RoundedCornerShape(11.dp)).background(Color.White).clickable { Compartir.copiar(ctx, t.url, estado) }.padding(horizontal = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icono("doc.on.doc", 14f, C.primarioTinta); Texto("Copiar link", Estilo.label, C.primarioTinta)
+                    // El fondo es blanco siempre: la tinta va fija (la de oscuro, clarita, no se leía sobre blanco).
+                    val tinta = hex(0x8E3A16)
+                    Icono("doc.on.doc", 14f, tinta); Texto("Copiar link", Estilo.label, tinta)
                 }
                 Row(Modifier.height(38.dp).clip(RoundedCornerShape(11.dp)).background(Color.White.copy(alpha = 0.18f)).clickable { nav.web = t.url }.padding(horizontal = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -203,10 +205,10 @@ fun CompartirTienda() {
                         Texto(Formato.pesos(p.precio), Estilo.footnote, C.texto2, numeros = true)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Box(Modifier.weight(1f).semantics { contentDescription = "Compartir ${p.nombre}" }) {
-                                BotonTonal("", { compartirTexto(ctx, Compartir.mensajeProducto(p.nombre, p.precio, u)) }, Modifier.fillMaxWidth(), simbolo = "square.and.arrow.up")
+                                BotonTonal("", { compartirTexto(ctx, Compartir.mensajeProducto(p.nombre, p.precio, u)) }, Modifier.fillMaxWidth(), lleno = true, simbolo = "square.and.arrow.up")
                             }
                             Box(Modifier.weight(1f).semantics { contentDescription = "Copiar el link de ${p.nombre}" }) {
-                                BotonTonal("", { Compartir.copiar(ctx, u, estado, "Copiamos el link del producto") }, Modifier.fillMaxWidth(), simbolo = "doc.on.doc")
+                                BotonTonal("", { Compartir.copiar(ctx, u, estado, "Copiamos el link del producto") }, Modifier.fillMaxWidth(), lleno = true, simbolo = "doc.on.doc")
                             }
                         }
                     }

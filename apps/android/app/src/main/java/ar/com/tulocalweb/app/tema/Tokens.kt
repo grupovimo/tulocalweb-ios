@@ -3,7 +3,10 @@ package ar.com.tulocalweb.app.tema
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -44,7 +47,10 @@ fun TemaTLW(tema: String = "sistema", contenido: @Composable () -> Unit) {
     val oscuro = when (tema) { "oscuro" -> true; "claro" -> false; else -> isSystemInDarkTheme() }
     CompositionLocalProvider(LocalOscuro provides oscuro) {
         // El ancho de la pantalla, para los márgenes del handoff (SE / estándar / Pro Max).
-        BoxWithConstraints {
+        // El fondo lo pinta la app y no la ventana: la ventana sigue el tema del sistema y, con «Oscuro» elegido en la
+        // app y el teléfono en claro, las pantallas sin fondo propio (Inicio, Pedidos, Productos) quedaban crema
+        // con letra clara.
+        BoxWithConstraints(Modifier.fillMaxSize().background(C.fondo)) {
             CompositionLocalProvider(LocalAnchoPantalla provides maxWidth.value, content = contenido)
         }
     }

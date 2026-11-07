@@ -159,16 +159,20 @@ fun BotonPrincipal(
     val forma = RoundedCornerShape(radio)
     val brocha = C.primario
     Tocable(alTocar, modifier, habilitado) { apretado ->
+        val opacidad = if (habilitado) (if (apretado) 0.85f else 1f) else 0.5f
         Row(
-            Modifier.alpha(if (habilitado) (if (apretado) 0.85f else 1f) else 0.5f)
-                .sombra(forma, C.sombraPrimario, 8.dp, y = 6.dp)
+            // La sombra va por fuera del alpha: con alpha < 1 el botón se dibuja en una capa recortada a su borde y la
+            // sombra quedaba cortada en seco abajo (deshabilitado o apretado).
+            Modifier.sombra(forma, C.sombraPrimario.let { it.copy(alpha = it.alpha * opacidad) }, 8.dp, y = 6.dp)
+                .alpha(opacidad)
                 .then(if (lleno) Modifier.fillMaxWidth() else Modifier).heightIn(min = alto)
                 .clip(forma).background(brocha).padding(horizontal = 22.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (cargando) Rueda(Color.White) else if (contenido != null) contenido() else {
                 if (simbolo != null) Icono(simbolo, 17f, Color.White)
-                Texto(texto, Estilo.headline, Color.White, lineas = 1)
+                // En un renglón, achicando la letra antes que cortar con «…» («Pagar con Mercado Pago» al lado del total).
+                Texto(texto, Estilo.headline, Color.White, lineas = 1, escalaMinima = 0.75f)
             }
         }
     }
@@ -190,10 +194,12 @@ fun BotonTexto(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifier
 
 /** Botón tonal (`cream` con `primary-ink`). */
 @Composable
-fun BotonTonal(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifier, alto: Dp = 34.dp, simbolo: String? = null, habilitado: Boolean = true) {
+fun BotonTonal(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifier, alto: Dp = 34.dp, simbolo: String? = null, habilitado: Boolean = true,
+               /** .frame(maxWidth: .infinity) del label en iOS: el fondo ocupa todo el ancho que le dan (con weight o fillMaxWidth). */
+               lleno: Boolean = false) {
     Tocable(alTocar, modifier, habilitado) { apretado ->
         Row(
-            Modifier.heightIn(min = alto).alpha(if (!habilitado) 0.5f else if (apretado) 0.7f else 1f).clip(RoundedCornerShape(10.dp)).background(C.crema).padding(horizontal = 14.dp),
+            Modifier.then(if (lleno) Modifier.fillMaxWidth() else Modifier).heightIn(min = alto).alpha(if (!habilitado) 0.5f else if (apretado) 0.7f else 1f).clip(RoundedCornerShape(10.dp)).background(C.crema).padding(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (simbolo != null) Icono(simbolo, 13f, C.primarioTinta)
@@ -338,7 +344,10 @@ fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) ->
                         alElegir(v); Haptico.seleccion()
                     }.semantics { selected = activo },
                     contentAlignment = Alignment.Center,
-                ) { Texto(t, Estilo.label, if (activo) C.texto else C.texto2, lineas = 1) }
+                ) {
+                    // Como el UISegmentedControl: la letra se achica antes que cortar con «…» (Transferencia, Mercado Pago).
+                    Texto(t, Estilo.label, if (activo) C.texto else C.texto2, Modifier.padding(horizontal = 4.dp), lineas = 1, escalaMinima = 0.7f)
+                }
             }
         }
     }

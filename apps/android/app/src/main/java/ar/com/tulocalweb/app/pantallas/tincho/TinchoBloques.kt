@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
@@ -141,10 +144,10 @@ private fun TarjetaBloque(titulo: String, contenido: @Composable ColumnScope.() 
 private fun Cifras(items: List<BloqueTincho.Cifra>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items.chunked(2).forEach { par ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 par.forEach { c ->
                     val forma = RoundedCornerShape(14.dp)
-                    Column(Modifier.weight(1f).clip(forma).background(C.superficie).border(1.dp, C.anillo, forma).padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().clip(forma).background(C.superficie).border(1.dp, C.anillo, forma).padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Texto(c.titulo, Estilo.footnote, C.texto2, lineas = 1)
                         Texto(c.valor, Estilo.headline, C.texto, lineas = 1, numeros = true, escalaMinima = 0.6f)
                         c.detalle?.let { Texto(it, Estilo.footnoteFuerte, tintaTono(c.tono)) }
@@ -204,7 +207,7 @@ private fun Linea(unidad: String, puntos: List<BloqueTincho.Punto>, anterior: Li
         puntos.forEachIndexed { i, pt ->
             if (i % cada == 0) {
                 val r = medidor.measure(pt.etiqueta, Estilo(11f, Peso.regular).ts().copy(color = texto2))
-                drawText(r, topLeft = Offset(x(i) - r.size.width / 2, h + 2.dp.toPx()))
+                drawText(r, topLeft = Offset((x(i) - r.size.width / 2).coerceIn(iz - 8.dp.toPx(), size.width - r.size.width), h + 2.dp.toPx()))
             }
         }
     }
@@ -212,16 +215,46 @@ private fun Linea(unidad: String, puntos: List<BloqueTincho.Punto>, anterior: Li
 
 @Composable
 private fun Tabla(columnas: List<String>, filas: List<List<String>>) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        columnas.forEachIndexed { i, c ->
-            Column(horizontalAlignment = if (i == 0) Alignment.Start else Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Texto(c, Estilo.footnoteFuerte, C.texto2)
-                Box(Modifier.width(1.dp).height(1.dp))
-                filas.forEach { f ->
+    // Grid de SwiftUI: cada fila con el alto de su celda más alta y cada columna con el ancho de la más ancha (antes eran
+    // columnas sueltas y los renglones no quedaban a la par).
+    val n = columnas.size
+    if (n == 0) return
+    val linea = C.linea
+    Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        Layout({
+            columnas.forEach { Texto(it, Estilo.footnoteFuerte, C.texto2, lineas = 1) }
+            Box(Modifier.background(linea))
+            filas.forEach { f ->
+                (0 until n).forEach { i ->
                     val v = f.getOrNull(i) ?: ""
                     Texto(v, if (i == 0) Estilo.fila else Estilo.texto14, if (v == "Sin stock") C.errorTinta else C.texto,
                         if (i == 0) Modifier.widthIn(max = 170.dp) else Modifier, lineas = 2, numeros = true, alinear = if (i == 0) TextAlign.Start else TextAlign.End)
                 }
+            }
+        }) { medibles, restricciones ->
+            val libre = restricciones.copy(minWidth = 0, minHeight = 0, maxWidth = Constraints.Infinity)
+            val sep = 14.dp.roundToPx(); val vsep = 8.dp.roundToPx()
+            val cab = medibles.take(n).map { it.measure(libre) }
+            val celdas = medibles.drop(n + 1).map { it.measure(libre) }.chunked(n)
+            val anchos = (0 until n).map { i -> maxOf(cab[i].width, celdas.maxOfOrNull { it[i].width } ?: 0) }
+            val total = anchos.sum() + sep * (n - 1).coerceAtLeast(0)
+            val divisor = medibles[n].measure(Constraints.fixed(total.coerceAtLeast(0), 1.dp.roundToPx()))
+            val altoCab = cab.maxOfOrNull { it.height } ?: 0
+            val altos = celdas.map { r -> r.maxOf { it.height } }
+            val alto = altoCab + vsep + divisor.height + altos.sumOf { vsep + it }
+            layout(total, alto) {
+                fun fila(r: List<androidx.compose.ui.layout.Placeable>, y: Int, h: Int) {
+                    var x = 0
+                    r.forEachIndexed { i, c ->
+                        c.place(if (i == 0) x else x + anchos[i] - c.width, y + (h - c.height) / 2)
+                        x += anchos[i] + sep
+                    }
+                }
+                fila(cab, 0, altoCab)
+                var y = altoCab + vsep
+                divisor.place(0, y)
+                y += divisor.height
+                celdas.forEachIndexed { k, r -> y += vsep; fila(r, y, altos[k]); y += altos[k] }
             }
         }
     }

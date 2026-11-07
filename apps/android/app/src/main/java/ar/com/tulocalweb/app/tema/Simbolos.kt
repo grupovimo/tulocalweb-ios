@@ -5,58 +5,58 @@ package ar.com.tulocalweb.app.tema
 internal object Simbolos {
     val mapa: Map<String, Char> = mapOf(
         "apple.logo" to '\uf2da', // phone_iphone
-        "arrow.down" to '\ue5db', // arrow_downward
         "arrow.down.doc" to '\uf090', // download
         "arrow.down.right" to '\uf1e4', // south_east
+        "arrow.down" to '\ue5db', // arrow_downward
         "arrow.left.arrow.right" to '\ue8d4', // swap_horiz
         "arrow.right" to '\ue5c8', // arrow_forward
         "arrow.triangle.2.circlepath" to '\ue627', // sync
-        "arrow.up" to '\ue5d8', // arrow_upward
         "arrow.up.circle" to '\uf182', // arrow_circle_up
-        "arrow.up.right" to '\uf8ce', // arrow_outward
         "arrow.up.right.square" to '\ue89e', // open_in_new
-        "arrow.uturn.backward" to '\ue166', // undo
+        "arrow.up.right" to '\uf8ce', // arrow_outward
+        "arrow.up" to '\ue5d8', // arrow_upward
         "arrow.uturn.backward.circle" to '\ue166', // undo
+        "arrow.uturn.backward" to '\ue166', // undo
         "at" to '\ue0e6', // alternate_email
         "bag" to '\uf1cc', // shopping_bag
         "banknote" to '\uef63', // payments
         "barcode.viewfinder" to '\ue70c', // barcode_scanner
-        "bell" to '\ue7f5', // notifications
         "bell.badge" to '\uf4fe', // notifications_unread
+        "bell" to '\ue7f5', // notifications
         "bolt" to '\uea0b', // bolt
         "bubble.left.and.bubble.right" to '\ue8af', // forum
         "building.2" to '\uea40', // apartment
-        "calendar" to '\uebcc', // calendar_month
         "calendar.badge.clock" to '\uefd6', // schedule
+        "calendar" to '\uebcc', // calendar_month
         "camera" to '\ue412', // photo_camera
         "cart" to '\ue8cc', // shopping_cart
         "chart.bar.xaxis" to '\ue26b', // bar_chart
         "chart.line.uptrend.xyaxis" to '\ue8e5', // trending_up
         "chart.xyaxis.line" to '\ue6e1', // show_chart
-        "checkmark" to '\ue668', // check
         "checkmark.circle" to '\uf0be', // check_circle
         "checkmark.seal" to '\uef76', // verified
         "checkmark.shield" to '\uf013', // verified_user
         "checkmark.square" to '\ue9de', // check_box
+        "checkmark" to '\ue668', // check
         "chevron.down" to '\ue5cf', // expand_more
         "chevron.left" to '\ue5cb', // chevron_left
         "chevron.right" to '\ue5cc', // chevron_right
-        "chevron.up" to '\ue5ce', // expand_less
         "chevron.up.chevron.down" to '\ue5d7', // unfold_more
+        "chevron.up" to '\ue5ce', // expand_less
         "circle" to '\ue836', // radio_button_unchecked
-        "clock" to '\uefd6', // schedule
         "clock.arrow.circlepath" to '\ue8b3', // history
+        "clock" to '\uefd6', // schedule
         "creditcard" to '\ue8a1', // credit_card
         "cube.box" to '\uf720', // deployed_code
-        "doc" to '\ue873', // description
         "doc.on.doc" to '\ue14d', // content_copy
         "doc.text" to '\ue873', // description
-        "ellipsis" to '\ue5d3', // more_horiz
+        "doc" to '\ue873', // description
         "ellipsis.circle" to '\ue5d3', // more_horiz
-        "envelope" to '\ue159', // mail
+        "ellipsis" to '\ue5d3', // more_horiz
         "envelope.badge" to '\uf18a', // mark_email_unread
-        "exclamationmark" to '\ue645', // priority_high
+        "envelope" to '\ue159', // mail
         "exclamationmark.triangle" to '\uf083', // warning
+        "exclamationmark" to '\ue645', // priority_high
         "eye" to '\ue8f4', // visibility
         "faceid" to '\ue90d', // fingerprint
         "flag.checkered" to '\uf06e', // sports_score
@@ -67,13 +67,14 @@ internal object Simbolos {
         "gift" to '\ue8f6', // redeem
         "heart.circle" to '\ue87e', // favorite
         "house" to '\ue9b2', // home
+        "iphone" to '\ue7ba', // smartphone
         "largecircle.circle" to '\ue837', // radio_button_checked
         "lightbulb" to '\ue90f', // lightbulb
-        "line.3.horizontal" to '\ue5d2', // menu
         "line.3.horizontal.decrease" to '\ue152', // filter_list
+        "line.3.horizontal" to '\ue5d2', // menu
         "link" to '\ue250', // link
-        "list.bullet.rectangle" to '\ue0ee', // list_alt
         "list.bullet.rectangle.portrait" to '\ue0ee', // list_alt
+        "list.bullet.rectangle" to '\ue0ee', // list_alt
         "lock" to '\ue899', // lock
         "magnifyingglass" to '\uef7a', // search
         "megaphone" to '\uef49', // campaign
@@ -86,19 +87,19 @@ internal object Simbolos {
         "percent" to '\ueb58', // percent
         "person.2" to '\uea21', // group
         "person.badge.key" to '\uef3d', // admin_panel_settings
-        "person.crop.circle" to '\uf20b', // account_circle
         "person.crop.circle.badge.plus" to '\uea4d', // person_add
+        "person.crop.circle" to '\uf20b', // account_circle
         "phone" to '\uf0d4', // call
         "photo.badge.plus" to '\ue43e', // add_photo_alternate
         "photo.on.rectangle" to '\ue413', // photo_library
-        "plus" to '\ue145', // add
         "plus.circle" to '\ue990', // add_circle
+        "plus" to '\ue145', // add
         "point.3.connected.trianglepath.dotted" to '\ue9f4', // hub
         "printer" to '\ue8ad', // print
         "puzzlepiece.extension" to '\ue87b', // extension
         "qrcode" to '\ue00a', // qr_code_2
-        "questionmark" to '\ueb8b', // question_mark
         "questionmark.circle" to '\ue8fd', // help
+        "questionmark" to '\ueb8b', // question_mark
         "receipt" to '\uef6e', // receipt_long
         "rectangle.3.group" to '\ue871', // dashboard
         "seal" to '\uef76', // verified
@@ -106,23 +107,23 @@ internal object Simbolos {
         "shoe" to '\uf87d', // footprint
         "sofa" to '\uefed', // chair
         "sparkles" to '\ue65f', // auto_awesome
-        "square" to '\ue3c6', // crop_square
         "square.and.arrow.up" to '\ue6b8', // ios_share
         "square.and.pencil" to '\uf88d', // edit_square
         "square.grid.2x2" to '\ue9b0', // grid_view
-        "star" to '\uf09a', // star
+        "square" to '\ue3c6', // crop_square
         "star.bubble" to '\uf07c', // reviews
+        "star" to '\uf09a', // star
         "stop" to '\ue047', // stop
         "storefront" to '\uea12', // storefront
         "tag" to '\uf05b', // sell
-        "textformat" to '\ue262', // text_fields
         "textformat.size" to '\ue245', // format_size
+        "textformat" to '\ue262', // text_fields
         "ticket" to '\ue638', // confirmation_number
         "trash" to '\ue92e', // delete
         "tshirt" to '\uef7b', // apparel
         "waveform" to '\ue1b8', // graphic_eq
         "wifi.slash" to '\ue648', // wifi_off
-        "xmark" to '\ue5cd', // close
         "xmark.circle" to '\ue888', // cancel
+        "xmark" to '\ue5cd', // close
     )
 }

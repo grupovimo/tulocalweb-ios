@@ -103,8 +103,10 @@ fun <E> GrupoFilas(elementos: List<E>, id: (E) -> Any, inset: Dp = 16.dp, fila: 
 @Composable
 fun FilaDato(etiqueta: String, valor: String, color: Color = C.texto) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-        Texto(etiqueta, Estilo.body16, C.texto2, Modifier.padding(end = 8.dp))
-        Texto(valor, Estilo.fila, color, Modifier.weight(1f), alinear = TextAlign.End, numeros = true)
+        // El valor (un monto, una fecha) entra entero y la etiqueta usa lo que queda: al revés, una etiqueta larga dejaba
+        // al monto en una columna de un carácter.
+        Texto(etiqueta, Estilo.body16, C.texto2, Modifier.weight(1f).padding(end = 8.dp))
+        Texto(valor, Estilo.fila, color, alinear = TextAlign.End, numeros = true)
     }
 }
 

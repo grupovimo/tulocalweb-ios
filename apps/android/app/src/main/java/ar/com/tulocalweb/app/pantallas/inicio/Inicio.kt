@@ -153,7 +153,7 @@ private fun Encabezado(nombre: String, sinLeer: Int, se: Boolean) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp).margenPantalla(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Texto(Formato.fechaLarga(Instant.now()), Estilo.subhead, C.texto2)
-            Texto("Hola, $nombre", if (se) Estilo(28f, Peso.bold, -0.025f) else Estilo.saludo, C.texto,
+            Texto(if (nombre.isBlank()) "Hola" else "Hola, $nombre", if (se) Estilo(28f, Peso.bold, -0.025f) else Estilo.saludo, C.texto,
                 Modifier.semantics { heading() }, lineas = 1, escalaMinima = 0.8f)
         }
         Spacer(Modifier.width(8.dp))

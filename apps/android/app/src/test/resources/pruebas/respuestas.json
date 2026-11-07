@@ -304,6 +304,22 @@
     "lineas": [],
     "pago": "suscripcion",
     "inicio": "2026-11-20T00:00:00Z"
+   },
+   "emprende/mes": {
+    "plan": "emprende",
+    "ciclo": "mes",
+    "tipo": "actual",
+    "hoy": 0,
+    "rige": "2026-11-05T12:00:00Z",
+    "hasta": null,
+    "cobro": {
+     "fecha": "2026-11-20T00:00:00Z",
+     "importe": 19900
+    },
+    "porCiclo": 19900,
+    "lineas": [],
+    "pago": "ninguno",
+    "inicio": null
    }
   },
   "uso": {
@@ -328,5 +344,492 @@
    }
   ],
   "cancelado": null
+ },
+ "/v1/panel/pedidos": {
+  "total": 5,
+  "suma": 86320,
+  "filas": [
+   {
+    "numero": 1048,
+    "cliente": "Martina Gómez",
+    "canal": "web",
+    "pago": "mp",
+    "envio": "correo",
+    "estado": "Para preparar",
+    "total": 24020,
+    "creado": "2026-11-07T13:12:00Z",
+    "productos": [
+     {
+      "nombre": "Yerba Lumbre suave"
+     },
+     {
+      "nombre": "Mate de calabaza con virola"
+     }
+    ],
+    "cantidadProductos": 3,
+    "telefono": "+5492235551234"
+   },
+   {
+    "numero": 1047,
+    "cliente": "Lucía Fernández",
+    "canal": "whatsapp",
+    "pago": "transf",
+    "envio": "retiro",
+    "estado": "Sin pagar",
+    "total": 18500,
+    "creado": "2026-11-07T11:40:00Z",
+    "productos": [
+     {
+      "nombre": "Mate de calabaza con virola"
+     }
+    ],
+    "cantidadProductos": 1,
+    "telefono": "+5492235554321"
+   },
+   {
+    "numero": 1046,
+    "cliente": "Joaquín Pérez",
+    "canal": "ml",
+    "pago": "mp",
+    "envio": "correo",
+    "estado": "Listo para despachar",
+    "total": 8400,
+    "creado": "2026-11-06T19:05:00Z",
+    "productos": [
+     {
+      "nombre": "Yerba Lumbre suave"
+     }
+    ],
+    "cantidadProductos": 2,
+    "telefono": null
+   },
+   {
+    "numero": 1045,
+    "cliente": "Sofía Ruiz",
+    "canal": "instagram",
+    "pago": "efectivo",
+    "envio": "moto",
+    "estado": "En camino",
+    "total": 31200,
+    "creado": "2026-11-06T15:30:00Z",
+    "productos": [
+     {
+      "nombre": "Kit matero"
+     },
+     {
+      "nombre": "Bombilla de alpaca"
+     }
+    ],
+    "cantidadProductos": 2,
+    "telefono": null
+   },
+   {
+    "numero": 1044,
+    "cliente": "Tomás Díaz",
+    "canal": "local",
+    "pago": "efectivo",
+    "envio": "local",
+    "estado": "Entregado",
+    "total": 4200,
+    "creado": "2026-11-05T17:20:00Z",
+    "productos": [
+     {
+      "nombre": "Yerba Lumbre suave"
+     }
+    ],
+    "cantidadProductos": 1,
+    "telefono": null
+   }
+  ],
+  "etapas": {
+   "Para preparar": 1,
+   "Sin pagar": 1,
+   "Listo para despachar": 1,
+   "En camino": 1,
+   "Entregado": 1
+  }
+ },
+ "/v1/panel/pedidos/1048": {
+  "numero": 1048,
+  "cliente": "Martina Gómez",
+  "canal": "web",
+  "pago": "mp",
+  "envio": "correo",
+  "estado": "Para preparar",
+  "total": 24020,
+  "creado": "2026-11-07T13:12:00Z",
+  "cantidadProductos": 3,
+  "items": [
+   {
+    "productoId": "p2",
+    "nombre": "Yerba Lumbre suave",
+    "cantidad": 2,
+    "precio": 4200,
+    "variante": "1 kg"
+   },
+   {
+    "productoId": "p1",
+    "nombre": "Mate de calabaza con virola",
+    "cantidad": 1,
+    "precio": 18500
+   }
+  ],
+  "subtotal": 26900,
+  "costoEnvio": 2500,
+  "descuentos": [
+   {
+    "concepto": "Cupón HOLA10",
+    "monto": 2690
+   },
+   {
+    "concepto": "Pago con transferencia",
+    "monto": 2690
+   }
+  ],
+  "comprador": {
+   "nombre": "Martina Gómez",
+   "telefono": "+5492235551234",
+   "email": "martina@correo.com",
+   "desde": "2026-03-14T00:00:00Z",
+   "pedidos": 4,
+   "gastado": 96500
+  },
+  "estadoPago": "Acreditado",
+  "seguimiento": null,
+  "nota": "Si no estoy, dejalo en la portería.",
+  "entrega": {
+   "direccion": "Av. Colón 2450, 3.º B",
+   "cp": "7600",
+   "provincia": "Buenos Aires",
+   "localidad": "Mar del Plata"
+  },
+  "historial": [
+   {
+    "texto": "Pedido recibido",
+    "cuando": "2026-11-07T13:12:00Z",
+    "hecho": true
+   },
+   {
+    "texto": "Pago acreditado",
+    "cuando": "2026-11-07T13:13:00Z",
+    "hecho": true
+   },
+   {
+    "texto": "Preparado",
+    "hecho": false
+   },
+   {
+    "texto": "Despachado",
+    "hecho": false
+   }
+  ],
+  "codigo": "k3f9a2"
+ },
+ "/v1/panel/listas/clientes": {
+  "total": 4,
+  "filas": [
+   {
+    "id": "c1",
+    "nombre": "Martina Gómez",
+    "telefono": "+5492235551234",
+    "email": "martina@correo.com",
+    "ciudad": "Mar del Plata",
+    "gastado": 96500,
+    "pedidos": 4,
+    "ultima": 0.2,
+    "seg": "vip"
+   },
+   {
+    "id": "c2",
+    "nombre": "Lucía Fernández",
+    "telefono": "+5492235554321",
+    "ciudad": "Batán",
+    "gastado": 18500,
+    "pedidos": 1,
+    "ultima": 0.4,
+    "seg": "nuevo"
+   },
+   {
+    "id": "c3",
+    "nombre": "Joaquín Pérez",
+    "email": "joaquin@correo.com",
+    "ciudad": "Córdoba",
+    "gastado": 42300,
+    "pedidos": 3,
+    "ultima": 1.2
+   },
+   {
+    "id": "c4",
+    "nombre": "Sofía Ruiz",
+    "telefono": "+5491155550000",
+    "ciudad": "CABA",
+    "gastado": 31200,
+    "pedidos": 1,
+    "ultima": 12.5
+   }
+  ]
+ },
+ "/v1/panel/notificaciones": {
+  "notificaciones": [
+   {
+    "id": "n1",
+    "tipo": "web",
+    "titulo": "Venta nueva · $ 24.020",
+    "detalle": "Martina compró Yerba Lumbre suave y 2 productos más.",
+    "creada": "2026-11-07T13:12:00Z",
+    "leida": false,
+    "ruta": "/panel/pedidos/1048"
+   },
+   {
+    "id": "n2",
+    "tipo": "transf",
+    "titulo": "Transferencia por confirmar",
+    "detalle": "Lucía avisó que transfirió $ 18.500 del pedido #1047.",
+    "creada": "2026-11-07T11:45:00Z",
+    "leida": false,
+    "ruta": "/panel/pedidos/1047"
+   },
+   {
+    "id": "n3",
+    "tipo": "warn",
+    "titulo": "Kit matero sin stock",
+    "detalle": "Lo pausamos en la tienda y en Mercado Libre.",
+    "creada": "2026-11-06T18:00:00Z",
+    "leida": true
+   },
+   {
+    "id": "n4",
+    "tipo": "star",
+    "titulo": "Reseña de 5 estrellas",
+    "detalle": "«Llegó rapidísimo y la yerba es buenísima.»",
+    "creada": "2026-11-05T10:20:00Z",
+    "leida": true,
+    "ruta": "/panel/resenas-y-preguntas"
+   }
+  ],
+  "sinLeer": 2
+ },
+ "/v1/panel/notificaciones/sin-leer": {
+  "sinLeer": 2
+ },
+ "/v1/panel/carritos": {
+  "carritos": [
+   {
+    "id": "k1",
+    "nombre": "Camila Torres",
+    "desde": "Tienda online",
+    "creado": "2026-11-07T09:30:00Z",
+    "cantidad": 2,
+    "total": 22700,
+    "recordado": false
+   },
+   {
+    "id": "k2",
+    "nombre": "Bruno Sosa",
+    "desde": "Instagram",
+    "creado": "2026-11-06T21:10:00Z",
+    "cantidad": 1,
+    "total": 18500,
+    "recordado": true
+   }
+  ],
+  "abiertos": 2,
+  "monto": 41200,
+  "recuperado": 56800,
+  "tasa": 0.18
+ },
+ "/v1/panel/resenas": {
+  "preguntas": [
+   {
+    "id": "q1",
+    "producto": "Mate de calabaza con virola",
+    "pregunta": "¿Viene curado o hay que curarlo?",
+    "creada": "2026-11-07T10:00:00Z",
+    "sugerida": "¡Hola! Viene sin curar: te mandamos los pasos para curarlo en casa."
+   },
+   {
+    "id": "q2",
+    "producto": "Yerba Lumbre suave",
+    "pregunta": "¿Hacen envíos a Tandil?",
+    "creada": "2026-11-06T16:40:00Z",
+    "sugerida": "",
+    "respuesta": "Sí, por Correo Argentino llega en 2 o 3 días."
+   }
+  ],
+  "resenas": [
+   {
+    "id": "r1",
+    "autor": "Martina G.",
+    "estrellas": 5,
+    "texto": "Llegó rapidísimo y la yerba es buenísima.",
+    "origen": "Tienda",
+    "creada": "2026-11-05T10:20:00Z",
+    "producto": "Yerba Lumbre suave",
+    "conCompra": true
+   }
+  ],
+  "promedio": 4.8,
+  "total": 13,
+  "porEstrellas": [
+   0,
+   0,
+   1,
+   2,
+   10
+  ]
+ },
+ "/v1/panel/devoluciones": {
+  "devoluciones": [
+   {
+    "id": "v1",
+    "producto": "Mate de calabaza con virola",
+    "cliente": "Joaquín Pérez",
+    "pedido": 1031,
+    "creada": "2026-11-06T12:00:00Z",
+    "motivo": "Llegó con una rajadura",
+    "monto": 18500,
+    "resolucion": "Reembolso",
+    "estado": "Pendiente"
+   },
+   {
+    "id": "v2",
+    "producto": "Bombilla de alpaca",
+    "cliente": "Sofía Ruiz",
+    "pedido": 1012,
+    "creada": "2026-10-28T12:00:00Z",
+    "motivo": "No era el modelo",
+    "monto": 7200,
+    "resolucion": "Cambio",
+    "estado": "Aprobada"
+   }
+  ],
+  "tasa": 0.02
+ },
+ "/v1/panel/finanzas": {
+  "vendido30": 539000,
+  "disponible": 214300,
+  "cuenta": "Mercado Pago · almacenlumbre",
+  "kpis": {
+   "aLiquidar": 86300,
+   "aLiquidarDetalle": "Se acredita en 3 días",
+   "gastos": 120400,
+   "gastosDetalle": "Comisiones y envíos",
+   "ganancia": 198700,
+   "gananciaDetalle": "Después de costos",
+   "margen": 37,
+   "mes": "noviembre"
+  },
+  "flujo": [
+   {
+    "dia": 1,
+    "entra": 42000,
+    "sale": 8000
+   },
+   {
+    "dia": 2,
+    "entra": 18000,
+    "sale": 21000
+   },
+   {
+    "dia": 3,
+    "entra": 56000,
+    "sale": 12000
+   },
+   {
+    "dia": 4,
+    "entra": 31000,
+    "sale": 4000
+   },
+   {
+    "dia": 5,
+    "entra": 24000,
+    "sale": 30000
+   },
+   {
+    "dia": 6,
+    "entra": 61000,
+    "sale": 9000
+   },
+   {
+    "dia": 7,
+    "entra": 38000,
+    "sale": 6000
+   }
+  ],
+  "caja": {
+   "ventas": 214300,
+   "gastos": 64000,
+   "meta": "Meta de noviembre: $ 1.200.000",
+   "metaPct": 18,
+   "falta": 985700
+  },
+  "movimientos": [
+   {
+    "id": "m1",
+    "tipo": "mp",
+    "titulo": "Pedido #1048",
+    "detalle": "Mercado Pago",
+    "monto": 24020
+   },
+   {
+    "id": "m2",
+    "tipo": "gasto",
+    "titulo": "Comisión de Mercado Pago",
+    "detalle": "Pedido #1048",
+    "monto": -1490
+   },
+   {
+    "id": "m3",
+    "tipo": "correo",
+    "titulo": "Envío por Correo Argentino",
+    "detalle": "Pedido #1046",
+    "monto": -2500
+   }
+  ]
+ },
+ "/v1/panel/arca": {
+  "conectada": true,
+  "cuit": "20-31456789-3",
+  "razonSocial": "Almacén Lumbre",
+  "condicion": "Monotributo",
+  "puntoVenta": 3,
+  "ambiente": "produccion",
+  "certificado": true,
+  "certificadoVence": "2027-08-14T00:00:00Z",
+  "facturarAlCobrar": true
+ },
+ "/v1/panel/configuracion": {
+  "negocio": {
+   "nombre": "Almacén Lumbre",
+   "whatsapp": "+54 9 223 555-1234",
+   "email": "hola@almacenlumbre.com.ar",
+   "direccion": "Av. Colón 2450, Mar del Plata",
+   "horario": "Lunes a sábado de 9 a 20",
+   "alias": "almacen.lumbre.mp",
+   "cbu": "0000003100012345678901",
+   "titular": "Nahuel Santillán"
+  },
+  "equipo": [
+   {
+    "id": "u1",
+    "nombre": "Martina Gómez",
+    "contacto": "martina@almacenlumbre.com.ar",
+    "rol": "dueña",
+    "vos": true
+   },
+   {
+    "id": "u2",
+    "nombre": "Tomás Díaz",
+    "contacto": "tomas@almacenlumbre.com.ar",
+    "rol": "ventas"
+   },
+   {
+    "id": "u3",
+    "nombre": "",
+    "contacto": "ventas@almacenlumbre.com.ar",
+    "rol": "local",
+    "pendiente": true
+   }
+  ]
  }
 }

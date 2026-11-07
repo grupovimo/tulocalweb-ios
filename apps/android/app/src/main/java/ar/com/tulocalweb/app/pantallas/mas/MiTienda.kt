@@ -239,9 +239,9 @@ fun MiTiendaEditor() {
                     }
                     if (urlTienda != null && !sinPublicar) {
                         Row(Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            BotonTonal("Copiar link", { Compartir.copiar(ctx, urlTienda, estado) }, Modifier.weight(1f), alto = 38.dp, simbolo = "doc.on.doc")
+                            BotonTonal("Copiar link", { Compartir.copiar(ctx, urlTienda, estado) }, Modifier.weight(1f), alto = 38.dp, lleno = true, simbolo = "doc.on.doc")
                             estado.tienda?.let { t ->
-                                BotonTonal("Compartir", { compartirTexto(ctx, Compartir.mensajeTienda(t)) }, Modifier.weight(1f), alto = 38.dp, simbolo = "square.and.arrow.up")
+                                BotonTonal("Compartir", { compartirTexto(ctx, Compartir.mensajeTienda(t)) }, Modifier.weight(1f), alto = 38.dp, lleno = true, simbolo = "square.and.arrow.up")
                             }
                         }
                     }

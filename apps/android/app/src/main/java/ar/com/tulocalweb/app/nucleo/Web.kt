@@ -50,7 +50,10 @@ object Valor {
  *  API en esas dos rutas (hooks.server.ts, RUTAS_APP). */
 object Web {
     val base: String = BuildConfig.WEB.ifEmpty { "https://tulocalweb.com.ar" }.trimEnd('/')
-    private val http by lazy { Api.cliente() }
+    private val cliente by lazy { Api.cliente() }
+    /** Las pruebas le ponen la API simulada, para que la galería muestre a Tincho respondiendo. */
+    internal var clientePrueba: okhttp3.OkHttpClient? = null
+    private val http get() = clientePrueba ?: cliente
 
     /** Sube una foto (JPEG) y devuelve su URL pública (https://tulocalweb.com.ar/f/…). */
     suspend fun subirFoto(datos: ByteArray, token: String?): String = withContext(Dispatchers.IO) {

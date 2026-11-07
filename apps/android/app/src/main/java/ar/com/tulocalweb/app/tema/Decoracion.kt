@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,7 +63,8 @@ fun TarjetaHeroe(
         }
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Texto(etiqueta, Estilo.footnoteFuerte, Color.White.copy(alpha = 0.85f))
-            NumeroAnimado(valor, Estilo.montoPantalla, Color.White, escalaMinima = 0.6f)
+            // Con Tincho, el valor le deja lugar (como el detalle): «Plan Emprende mensual» le pasaba por encima.
+            NumeroAnimado(valor, Estilo.montoPantalla, Color.White, Modifier.padding(end = if (tincho == null) 0.dp else 90.dp), escalaMinima = 0.6f)
             if (detalle != null) {
                 Texto(detalle, Estilo.texto14, Color.White.copy(alpha = 0.9f), Modifier.padding(end = if (tincho == null) 0.dp else 90.dp))
             }
@@ -97,8 +100,9 @@ fun VistaIndicadorIcono(i: IndicadorIcono, modifier: Modifier = Modifier) {
 fun GrillaIndicadores(items: List<IndicadorIcono>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items.chunked(2).forEachIndexed { f, par ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                par.forEachIndexed { c, i -> VistaIndicadorIcono(i, Modifier.weight(1f).aparecer(0.05 + (f * 2 + c) * 0.05)) }
+            // Las dos tarjetas de la fila con el mismo alto (la que tiene detalle no queda más alta que su vecina).
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                par.forEachIndexed { c, i -> VistaIndicadorIcono(i, Modifier.weight(1f).fillMaxHeight().aparecer(0.05 + (f * 2 + c) * 0.05)) }
                 if (par.size == 1) Spacer(Modifier.weight(1f))
             }
         }
