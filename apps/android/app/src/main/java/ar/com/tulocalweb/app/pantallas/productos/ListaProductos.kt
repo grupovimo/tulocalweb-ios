@@ -115,8 +115,8 @@ fun ListaProductos() {
 
     Refrescable({ cargar() }) {
         LazyColumn(Modifier.fillMaxSize(), state = lista, contentPadding = PaddingValues(bottom = 90.dp)) {
-            guardadoEn?.let { g -> item { Box(Modifier.padding(horizontal = 16.dp).padding(top = 2.dp)) { BannerSinConexion(g) } } }
-            item {
+            guardadoEn?.let { g -> item("sinConexion") { Box(Modifier.padding(horizontal = 16.dp).padding(top = 2.dp)) { BannerSinConexion(g) } } }
+            item("encabezado") {
                 Box(Modifier.padding(top = 8.dp).margenPantalla()) {
                     EncabezadoGrande("Productos") {
                         BotonRedondo("magnifyingglass", "Buscar") { nav.buscar = true }
@@ -124,7 +124,7 @@ fun ListaProductos() {
                     }
                 }
             }
-            if (estado.puede("catalogo")) item {
+            if (estado.puede("catalogo")) item("acciones") {
                 Row(Modifier.padding(top = 12.dp).margenPantalla(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.height(42.dp).clip(Capsula).background(C.primario).clickable { nav.productos.add(Destino.nuevoProducto(null)) }.padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -137,7 +137,7 @@ fun ListaProductos() {
                 }
             }
             carga.valor?.segmentos?.let { seg ->
-                item {
+                item("tira") {
                     Box(Modifier.padding(top = 12.dp)) {
                         TiraEstados(listOf(
                             EstadoTira("Publicados", (seg["active"] ?: 0) + (seg["out"] ?: 0), C.ok, "active,out"),
@@ -147,8 +147,8 @@ fun ListaProductos() {
                     }
                 }
             }
-            item { Box(Modifier.padding(top = 12.dp).margenPantalla()) { Buscador("Nombre, SKU o código", busqueda, { busqueda = it }) } }
-            item {
+            item("buscador") { Box(Modifier.padding(top = 12.dp).margenPantalla()) { Buscador("Nombre, SKU o código", busqueda, { busqueda = it }) } }
+            item("chips") {
                 val seg = carga.valor?.segmentos ?: emptyMap()
                 val total = seg.values.sum()
                 LazyRow(Modifier.padding(top = 12.dp), contentPadding = PaddingValues(horizontal = margen), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -159,7 +159,7 @@ fun ListaProductos() {
                 }
             }
             carga.valor?.let { d ->
-                if (d.filas.isNotEmpty()) item {
+                if (d.filas.isNotEmpty()) item("orden") {
                     Row(Modifier.padding(horizontal = margen + 4.dp).padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Texto(Formato.cantidad(d.total, "producto", "productos"), Estilo.texto14, C.texto2, Modifier.weight(1f))
                         MenuBoton(ordenesProductos.map { (v, t) -> OpcionDeMenu(t, if (orden == v) "checkmark" else "") { orden = v } }, "Orden") {

@@ -178,8 +178,10 @@ fun ListaPedidos() {
 
     Refrescable({ cargar() }) {
         LazyColumn(Modifier.fillMaxSize(), state = lista, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
-            guardadoEn?.let { g -> item { Box(Modifier.padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp)) { BannerSinConexion(g) } } }
-            item {
+            guardadoEn?.let { g -> item("sinConexion") { Box(Modifier.padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 8.dp)) { BannerSinConexion(g) } } }
+            // Con claves: al llegar los datos se insertan el resumen y la tira, y sin clave la lista se quedaba con
+            // filas viejas en el lugar de las nuevas (el buscador repetido arriba de la tira).
+            item("encabezado") {
                 Box(Modifier.padding(top = 4.dp).margenPantalla()) {
                     EncabezadoGrande("Pedidos") {
                         BotonRedondo("magnifyingglass", "Buscar") { nav.buscar = true }
@@ -195,8 +197,8 @@ fun ListaPedidos() {
                 }
             }
             carga.valor?.let { d ->
-                item { Box(Modifier.padding(top = 2.dp).margenPantalla()) { ResumenPedidos(d) } }
-                item {
+                item("resumen") { Box(Modifier.padding(top = 2.dp).margenPantalla()) { ResumenPedidos(d) } }
+                item("tira") {
                     val e = d.etapas
                     Box(Modifier.padding(top = 12.dp)) {
                         TiraEstados(listOf(
@@ -209,8 +211,8 @@ fun ListaPedidos() {
                     }
                 }
             }
-            item { Box(Modifier.padding(top = 12.dp).margenPantalla()) { Buscador("Número, cliente o producto", busqueda, { busqueda = it }) } }
-            item {
+            item("buscador") { Box(Modifier.padding(top = 12.dp).margenPantalla()) { Buscador("Número, cliente o producto", busqueda, { busqueda = it }) } }
+            item("chips") {
                 val etapas = carga.valor?.etapas ?: emptyMap()
                 val total = etapas.values.sum()
                 LazyRow(Modifier.padding(top = 12.dp), state = chipsEstado, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = margen),
