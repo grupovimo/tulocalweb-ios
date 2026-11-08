@@ -74,6 +74,13 @@ publica en las tiendas hasta que esté. Plan: `~/.claude/plans/sigamos-haciendo-
 Nunca corrió en un aparato real. Con la prueba interna de Play: el ingreso con Clerk, los avisos con sus botones y la
 notificación en curso, el escáner y el dictado.
 
+## Repaso visual (7/11), a revisar por Nahuel
+- Galería: https://claude.ai/artifact/9wkueUx5Wp6QJA3sr6H4Up
+- Arreglado: el modo oscuro que salía crema, Pedidos sin resumen, textos con «…», alturas desparejas, renglones viudos y 12 pantallas sin datos.
+- También en el iPhone (4bc06ad: FilasParejas, Segmentado, BotonPrincipal, «Hola» sin nombre, «Copiar link», margen del plan); TestFlight subido.
+- Para retomar: Nahuel mira la galería y hace un repaso profundo de todo. Lo que marque se arregla en Android y,
+  si también pasa en el iPhone, en los dos lados, con TestFlight después.
+
 ## Falta
 1. App en Play y prueba interna («Run workflow» → artifact `play`).
 2. Probar en un teléfono el envío por FCM (todavía no hay ningún Android registrado).
