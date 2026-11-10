@@ -167,9 +167,13 @@ struct MiTiendaEditor: View {
         let p = plantillas.first { $0.id == plantilla }
         return VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .bottomLeading) {
-                AsyncImage(url: URL(string: portada.isEmpty ? (p?.img ?? "") : portada)) { i in i.resizable().scaledToFill() }
-                    placeholder: { Color(hex: p?.colorFondo ?? 0xF4EFEA) }
-                    .frame(height: 170).frame(maxWidth: .infinity).clipped()
+                // La foto llena un lugar fijo y se recorta ahí: suelta, una muy ancha ensanchaba todo el editor.
+                Color.clear.frame(height: 170).frame(maxWidth: .infinity)
+                    .overlay {
+                        AsyncImage(url: URL(string: portada.isEmpty ? (p?.img ?? "") : portada)) { i in i.resizable().scaledToFill() }
+                            placeholder: { Color(hex: p?.colorFondo ?? 0xF4EFEA) }
+                    }
+                    .clipped()
                 LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
                 HStack(alignment: .bottom, spacing: 10) {
                     if !logo.isEmpty {
@@ -223,8 +227,9 @@ struct MiTiendaEditor: View {
                 if subiendo == titulo.lowercased() {
                     ProgressView().tint(C.acento).frame(height: 70)
                 } else if !url.isEmpty {
-                    AsyncImage(url: URL(string: url)) { i in i.resizable().scaledToFill() } placeholder: { C.pista }
-                        .frame(height: 70).frame(maxWidth: .infinity).clipped()
+                    Color.clear.frame(height: 70).frame(maxWidth: .infinity)
+                        .overlay { AsyncImage(url: URL(string: url)) { i in i.resizable().scaledToFill() } placeholder: { C.pista } }
+                        .clipped()
                         .background(oscuro ? Color(hex: 0x1C1A17) : .clear)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 } else {
