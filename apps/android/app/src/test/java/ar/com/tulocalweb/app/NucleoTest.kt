@@ -1,5 +1,6 @@
 package ar.com.tulocalweb.app
 
+import ar.com.tulocalweb.app.app.Destino
 import ar.com.tulocalweb.app.app.Ruta
 import ar.com.tulocalweb.app.nucleo.Api
 import ar.com.tulocalweb.app.nucleo.Clerk
@@ -61,7 +62,10 @@ class NucleoTest {
         assertEquals(Ruta.pedido(1048), Ruta.de("tulocalweb://pedido/1048"))
         assertEquals(Ruta.producto("abc"), Ruta.de("tulocalweb://producto/abc"))
         assertNull(Ruta.de("pedido/x"))
-        assertNull(Ruta.de("cuenta/seguridad"))
+        // Los push de seguridad y de preguntas de Mercado Libre abren su pantalla; lo desconocido, nada.
+        assertEquals(Ruta.destino(Destino.cuenta), Ruta.de("cuenta/seguridad"))
+        assertEquals(Ruta.destino(Destino.resenas), Ruta.de("preguntas/ml/q1"))
+        assertNull(Ruta.de("cualquiera/cosa"))
     }
 
     // ClerkTests
