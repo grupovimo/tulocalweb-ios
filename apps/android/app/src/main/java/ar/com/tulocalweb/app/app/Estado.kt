@@ -49,12 +49,12 @@ sealed class Ruta {
     data class web(val url: String) : Ruta()
 
     companion object {
-        /** `pedido/1048` (el `ruta` del push), `tulocalweb://pedido/1048` o un link del panel (Enlaces). */
+        /** `pedido/1048` (el `ruta` del push), `tulocalweb://pedido/1048` o un link del panel (Vinculos). */
         fun de(texto: String): Ruta? {
             var t = texto
             val u = runCatching { android.net.Uri.parse(texto) }.getOrNull()
             if (u?.scheme == "tulocalweb") t = (listOf(u.host ?: "") + u.pathSegments).joinToString("/")
-            else if (u?.scheme == "https" || u?.scheme == "http") return Enlaces.ruta(u)
+            else if (u?.scheme == "https" || u?.scheme == "http") return Vinculos.ruta(u)
             val partes = t.split("/").filter { it.isNotEmpty() }
             return when (partes.firstOrNull()) {
                 "pedido" -> partes.getOrNull(1)?.toIntOrNull()?.let { pedido(it) }

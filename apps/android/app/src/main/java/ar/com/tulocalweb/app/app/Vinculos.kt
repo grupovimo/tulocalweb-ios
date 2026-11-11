@@ -3,10 +3,10 @@ package ar.com.tulocalweb.app.app
 import android.net.Uri
 
 /** Los links de tulocalweb.com.ar que abren la app (App Links) y las rutas del panel que mandan los avisos (clon de
- *  App/Enlaces.swift). Qué paths abren la app lo declara `apps/pruebas/enlaces.json` (de ahí sale el assetlinks de la
+ *  App/Vinculos.swift). Qué paths abren la app lo declara `apps/pruebas/enlaces.json` (de ahí sale el assetlinks de la
  *  web y el manifest lo repite); acá, a qué pantalla lleva cada uno. Lo que la app no tiene se abre en la web dentro
  *  de la app, nunca queda en nada. */
-object Enlaces {
+object Vinculos {
     fun ruta(u: Uri): Ruta? {
         val host = u.host ?: return null
         if (host != "tulocalweb.com.ar" && host != "www.tulocalweb.com.ar") return null

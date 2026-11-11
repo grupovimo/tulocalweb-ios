@@ -72,7 +72,7 @@
             </intent-filter>
             <!-- App Links del panel (Universal Links en iOS). Los mismos patrones que apps/pruebas/enlaces.json
                  (EnlacesTest lo controla): «app» como path/pathPrefix y «web» como grupos que no abren la app (Android 15+;
-                 antes, si llega uno, Enlaces lo abre en la web dentro de la app). Las tiendas nunca: son de los compradores. -->
+                 antes, si llega uno, Vinculos lo abre en la web dentro de la app). Las tiendas nunca: son de los compradores. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

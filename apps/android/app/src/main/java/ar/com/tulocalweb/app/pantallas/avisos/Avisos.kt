@@ -31,7 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import ar.com.tulocalweb.app.app.BarraDe
 import ar.com.tulocalweb.app.app.BotonBarra
-import ar.com.tulocalweb.app.app.Enlaces
+import ar.com.tulocalweb.app.app.Vinculos
 import ar.com.tulocalweb.app.app.LocalEstado
 import ar.com.tulocalweb.app.app.LocalNavegacion
 import ar.com.tulocalweb.app.app.Pestana
@@ -81,9 +81,9 @@ fun Avisos() {
             carga = Carga.listo(l.map { if (it.id == n.id) it.copy(leida = true) else it })
             intentar { estado.api.hacer("POST", "/v1/panel/notificaciones/${n.id}/leida") }
         }
-        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Enlaces, como un link.
+        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Vinculos, como un link.
         val ruta = n.ruta ?: return
-        Enlaces.ruta(Uri.parse("https://tulocalweb.com.ar$ruta"))?.let { nav.ir(it) }
+        Vinculos.ruta(Uri.parse("https://tulocalweb.com.ar$ruta"))?.let { nav.ir(it) }
     }
 
     suspend fun leerTodo() {
