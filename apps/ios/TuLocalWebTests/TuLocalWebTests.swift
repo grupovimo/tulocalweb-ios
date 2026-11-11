@@ -40,7 +40,10 @@ final class RutaTests: XCTestCase {
         XCTAssertEqual(Ruta(texto: "tulocalweb://pedido/1048"), .pedido(1048))
         XCTAssertEqual(Ruta(texto: "tulocalweb://producto/abc"), .producto("abc"))
         XCTAssertNil(Ruta(texto: "pedido/x"))
-        XCTAssertNil(Ruta(texto: "cuenta/seguridad"))
+        // Los push de seguridad y de preguntas de Mercado Libre abren su pantalla; lo desconocido, nada.
+        XCTAssertEqual(Ruta(texto: "cuenta/seguridad"), .destino(.cuenta))
+        XCTAssertEqual(Ruta(texto: "preguntas/ml/q1"), .destino(.resenas))
+        XCTAssertNil(Ruta(texto: "cualquiera/cosa"))
     }
 }
 
