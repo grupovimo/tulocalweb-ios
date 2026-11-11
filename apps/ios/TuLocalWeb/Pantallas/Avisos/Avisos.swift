@@ -135,8 +135,8 @@ struct Avisos: View {
             carga = .listo(l)
             try? await estado.api.hacer("POST", "/v1/panel/notificaciones/\(n.id)/leida")
         }
-        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Enlaces, como un link.
-        guard let ruta = n.ruta, let u = URL(string: "https://tulocalweb.com.ar\(ruta)"), let r = Enlaces.ruta(u) else { return }
+        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Vinculos, como un link.
+        guard let ruta = n.ruta, let u = URL(string: "https://tulocalweb.com.ar\(ruta)"), let r = Vinculos.ruta(u) else { return }
         nav.ir(r)
     }
 

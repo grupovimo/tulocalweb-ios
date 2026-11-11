@@ -3,7 +3,7 @@ import Foundation
 /// Los links de tulocalweb.com.ar que abren la app (Universal Links), y las rutas del panel que mandan los avisos.
 /// Qué paths abren la app lo declara `apps/pruebas/enlaces.json` (de ahí sale el AASA de la web); acá, a qué
 /// pantalla lleva cada uno. Lo que la app no tiene se abre en la web dentro de la app, nunca queda en nada.
-enum Enlaces {
+enum Vinculos {
     static func ruta(_ u: URL) -> Ruta? {
         guard let host = u.host(), host == "tulocalweb.com.ar" || host == "www.tulocalweb.com.ar" else { return nil }
         let query = URLComponents(url: u, resolvingAgainstBaseURL: false)?.queryItems ?? []
