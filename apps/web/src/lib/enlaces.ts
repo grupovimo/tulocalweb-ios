@@ -30,10 +30,18 @@ export function aasa() {
 export function assetlinks() {
 	return [
 		{
-			relation: ['delegate_permission/common.handle_all_urls', 'delegate_permission/common.get_login_creds'],
-			target: { namespace: 'android_app', package_name: enlaces.android, sha256_cert_fingerprints: enlaces.huellas }
+			relation: [
+				'delegate_permission/common.handle_all_urls',
+				'delegate_permission/common.get_login_creds'
+			],
+			target: {
+				namespace: 'android_app',
+				package_name: enlaces.android,
+				sha256_cert_fingerprints: enlaces.huellas
+			}
 		}
 	];
 }
 
-export const respuestaJSON = (cuerpo: unknown) => new Response(JSON.stringify(cuerpo), { headers: json });
+export const respuestaJSON = (cuerpo: unknown) =>
+	new Response(JSON.stringify(cuerpo), { headers: json });

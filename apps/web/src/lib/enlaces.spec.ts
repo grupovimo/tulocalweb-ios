@@ -5,8 +5,19 @@ import { aasa, assetlinks } from './enlaces.ts';
 /** Cómo decide iOS: el primer componente que coincide gana; `*` es cualquier cosa. */
 function abreLaApp(url: string): boolean {
 	const u = new URL(url, 'https://' + enlaces.dominio);
-	for (const c of aasa().applinks.details[0].components as { '/': string; '?'?: Record<string, string>; exclude?: boolean }[]) {
-		const camino = new RegExp('^' + c['/'].replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+	for (const c of aasa().applinks.details[0].components as {
+		'/': string;
+		'?'?: Record<string, string>;
+		exclude?: boolean;
+	}[]) {
+		const camino = new RegExp(
+			'^' +
+				c['/']
+					.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+					.replace(/\*/g, '.*')
+					.replace(/\?/g, '.') +
+				'$'
+		);
 		if (!camino.test(u.pathname)) continue;
 		if (c['?'] && !Object.entries(c['?']).every(([k, v]) => u.searchParams.get(k) === v)) continue;
 		return !c.exclude;
@@ -21,7 +32,14 @@ describe('enlaces', () => {
 		}
 	});
 	it('la landing y las páginas públicas nunca abren la app', () => {
-		for (const url of ['/', '/ayuda', '/legales/terminos', '/t/una-tienda', '/t/una-tienda/carrito', '/invitacion']) {
+		for (const url of [
+			'/',
+			'/ayuda',
+			'/legales/terminos',
+			'/t/una-tienda',
+			'/t/una-tienda/carrito',
+			'/invitacion'
+		]) {
 			expect(abreLaApp(url), url).toBe(false);
 		}
 	});
