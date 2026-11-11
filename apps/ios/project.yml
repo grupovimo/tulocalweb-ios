@@ -36,6 +36,11 @@ targets:
           - $(AppIdentifierPrefix)ar.com.tulocalweb.app
         com.apple.developer.applesignin:
           - Default
+        # Los links del panel (tulocalweb.com.ar/panel/...) abren la app: la web sirve el AASA desde
+        # apps/pruebas/enlaces.json.
+        com.apple.developer.associated-domains:
+          - applinks:tulocalweb.com.ar
+          - webcredentials:tulocalweb.com.ar
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ar.com.tulocalweb.app
@@ -138,6 +143,9 @@ targets:
       - TuLocalWebTests
       # Las respuestas de la API simulada, compartidas con Android.
       - path: ../pruebas/respuestas.json
+        buildPhase: resources
+      # Qué links abren la app (EnlacesTests), la misma lista que sirve la web.
+      - path: ../pruebas/enlaces.json
         buildPhase: resources
     dependencies:
       - target: TuLocalWeb

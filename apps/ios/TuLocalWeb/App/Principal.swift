@@ -68,9 +68,17 @@ final class Navegacion {
         case let .pedido(n):
             pestana = .pedidos
             pedidos = [.pedido(n)]
-        case .producto:
+        case let .producto(id):
+            pestana = .productos
+            productos = [.editorProducto(id)]
+        case .productos:
             pestana = .productos
             productos = []
+        case let .destino(d):
+            pestana = .inicio
+            inicio.append(d)
+        case let .web(u):
+            web = u
         case .avisos:
             pestana = .inicio
             inicio = [.avisos]

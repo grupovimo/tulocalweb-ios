@@ -135,34 +135,9 @@ struct Avisos: View {
             carga = .listo(l)
             try? await estado.api.hacer("POST", "/v1/panel/notificaciones/\(n.id)/leida")
         }
-        // La ruta es la del panel web (/panel/pedidos/1048): las que tienen pantalla en la app se abren acá.
-        guard let ruta = n.ruta else { return }
-        let partes = ruta.split(separator: "/").map(String.init)
-        if partes.count >= 3, partes[0] == "panel", partes[1] == "pedidos", let num = Int(partes[2]) {
-            nav.inicio.append(.pedido(num))
-        } else if ruta.hasPrefix("/panel/pedidos") {
-            nav.tocar(.pedidos)
-        } else if ruta.hasPrefix("/panel/productos") || ruta.hasPrefix("/panel/inventario") {
-            nav.tocar(.productos)
-        } else if let d = Avisos.destino(ruta) {
-            nav.inicio.append(d)
-        } else if let u = URL(string: "https://tulocalweb.com.ar\(ruta)") {
-            nav.web = u
-        }
-    }
-
-    /// Las secciones del panel que tienen pantalla en la app.
-    static func destino(_ ruta: String) -> Destino? {
-        let tabla: [(String, Destino)] = [
-            ("/panel/carritos-abandonados", .carritos), ("/panel/resenas-y-preguntas", .resenas),
-            ("/panel/devoluciones", .devoluciones), ("/panel/cupones", .cupones), ("/panel/finanzas", .finanzas),
-            ("/panel/facturacion", .facturacion), ("/panel/plan", .plan), ("/panel/integraciones", .integraciones),
-            ("/panel/usuarios-y-permisos", .usuarios), ("/panel/clientes", .clientes), ("/panel/ventas-en-local", .caja),
-            ("/panel/configuracion", .negocio), ("/panel/notificaciones", .preferenciasAvisos), ("/panel/links", .links),
-            ("/panel/informes", .estadisticas), ("/panel/mi-tienda", .miTienda), ("/panel/tienda", .miTienda),
-            ("/ayuda", .ayuda),
-        ]
-        return tabla.first { ruta.hasPrefix($0.0) }?.1
+        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Enlaces, como un link.
+        guard let ruta = n.ruta, let u = URL(string: "https://tulocalweb.com.ar\(ruta)"), let r = Enlaces.ruta(u) else { return }
+        nav.ir(r)
     }
 
     private func leerTodo() async {

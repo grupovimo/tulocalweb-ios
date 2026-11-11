@@ -13,22 +13,34 @@ enum Ruta: Hashable {
     case pedidos
     case inicio
     case compartir
+    case productos
+    /// Una sección del panel que la app tiene (clientes, cupones, finanzas…), sobre Inicio.
+    case destino(Destino)
+    /// Un link de tulocalweb.com.ar que la app no tiene: se abre la web dentro de la app.
+    case web(URL)
 
-    /// `pedido/1048` (el `ruta` del push) o `tulocalweb://pedido/1048`.
+    /// `pedido/1048` (el `ruta` del push), `tulocalweb://pedido/1048` o un link del panel (Enlaces).
     init?(texto: String) {
         var t = texto
         if let u = URL(string: texto), u.scheme == "tulocalweb" {
             t = ([u.host ?? ""] + u.pathComponents.filter { $0 != "/" }).joined(separator: "/")
+        } else if let u = URL(string: texto), u.scheme == "https" || u.scheme == "http" {
+            guard let r = Enlaces.ruta(u) else { return nil }
+            self = r
+            return
         }
         let partes = t.split(separator: "/").map(String.init)
         guard let primera = partes.first else { return nil }
         switch primera {
         case "pedido": guard partes.count > 1, let n = Int(partes[1]) else { return nil }; self = .pedido(n)
         case "producto": guard partes.count > 1 else { return nil }; self = .producto(partes[1])
-        case "avisos": self = .avisos
+        case "avisos", "notificaciones": self = .avisos
         case "pedidos": self = .pedidos
         case "inicio": self = .inicio
         case "compartir": self = .compartir
+        // Los push de preguntas de Mercado Libre y de seguridad de la cuenta.
+        case "preguntas": self = .destino(.resenas)
+        case "cuenta": self = .destino(.cuenta)
         default: return nil
         }
     }
