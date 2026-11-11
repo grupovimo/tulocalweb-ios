@@ -42,21 +42,30 @@ sealed class Ruta {
     data object pedidos : Ruta()
     data object inicio : Ruta()
     data object compartir : Ruta()
+    data object productos : Ruta()
+    /** Una sección del panel que la app tiene (clientes, cupones, finanzas…), sobre Inicio. */
+    data class destino(val d: Destino) : Ruta()
+    /** Un link de tulocalweb.com.ar que la app no tiene: se abre la web dentro de la app. */
+    data class web(val url: String) : Ruta()
 
     companion object {
-        /** `pedido/1048` (el `ruta` del push) o `tulocalweb://pedido/1048`. */
+        /** `pedido/1048` (el `ruta` del push), `tulocalweb://pedido/1048` o un link del panel (Enlaces). */
         fun de(texto: String): Ruta? {
             var t = texto
             val u = runCatching { android.net.Uri.parse(texto) }.getOrNull()
             if (u?.scheme == "tulocalweb") t = (listOf(u.host ?: "") + u.pathSegments).joinToString("/")
+            else if (u?.scheme == "https" || u?.scheme == "http") return Enlaces.ruta(u)
             val partes = t.split("/").filter { it.isNotEmpty() }
             return when (partes.firstOrNull()) {
                 "pedido" -> partes.getOrNull(1)?.toIntOrNull()?.let { pedido(it) }
                 "producto" -> partes.getOrNull(1)?.let { producto(it) }
-                "avisos" -> avisos
+                "avisos", "notificaciones" -> avisos
                 "pedidos" -> pedidos
                 "inicio" -> inicio
                 "compartir" -> compartir
+                // Los push de preguntas de Mercado Libre y de seguridad de la cuenta.
+                "preguntas" -> destino(Destino.resenas)
+                "cuenta" -> destino(Destino.cuenta)
                 else -> null
             }
         }

@@ -34,6 +34,10 @@ publica en las tiendas hasta que esté. Plan: `~/.claude/plans/sigamos-haciendo-
   (migración `00077_android.sql`), avisos y actividad por FCM, `MOSTRADOR_FCM_CUENTA` en el worker.
 - **Llave de subida:** `~/Trabajo/vimo/credenciales-android/tulocalweb-subida.{jks,clave}` (SHA-256
   3B:6C:DA:18:8C:55:C4:C6:4B:0F:E7:35:4F:45:24:84:AB:2C:76:FF:DA:6C:0B:EA:AC:D2:9A:8E:F2:16:97:62).
+- **Play (11/11/2026):** app 4976235202658506239, firma de Play (SHA-256
+  49:4F:40:03:3E:72:3B:23:38:C4:0F:1B:8E:6F:4C:D8:EF:A6:64:39:CB:D1:BC:52:60:BD:43:34:88:F7:11:70). Versión 1 (1.0.0)
+  en prueba interna para la lista «Equipo»; link https://play.google.com/apps/internaltest/4700866843622052380. Nada
+  en producción. El `.aab` sale de `gh workflow run android.yml` en grupovimo/tulocalweb-android (artifact `play`).
 
 ## Bugs del iOS encontrados al clonar (corregidos en los dos lados)
 1. El aviso de venta no llevaba `category: "venta"` en APNs: los botones Ver pedido y Marcar como preparado nunca

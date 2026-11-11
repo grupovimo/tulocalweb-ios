@@ -166,7 +166,10 @@ class Navegacion {
     fun ir(ruta: Ruta) {
         when (ruta) {
             is Ruta.pedido -> { pestana = Pestana.pedidos; poner(Pestana.pedidos, listOf(Destino.pedido(ruta.n))) }
-            is Ruta.producto -> { pestana = Pestana.productos; poner(Pestana.productos, emptyList()) }
+            is Ruta.producto -> { pestana = Pestana.productos; poner(Pestana.productos, listOf(Destino.editorProducto(ruta.id))) }
+            Ruta.productos -> { pestana = Pestana.productos; poner(Pestana.productos, emptyList()) }
+            is Ruta.destino -> { pestana = Pestana.inicio; camino(Pestana.inicio).add(ruta.d) }
+            is Ruta.web -> web = ruta.url
             Ruta.avisos -> { pestana = Pestana.inicio; poner(Pestana.inicio, listOf(Destino.avisos)) }
             Ruta.pedidos -> { pestana = Pestana.pedidos; poner(Pestana.pedidos, emptyList()) }
             Ruta.inicio -> { pestana = Pestana.inicio; poner(Pestana.inicio, emptyList()) }

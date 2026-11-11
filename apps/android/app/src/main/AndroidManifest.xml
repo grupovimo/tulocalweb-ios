@@ -70,6 +70,24 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tulocalweb" />
             </intent-filter>
+            <!-- App Links del panel (Universal Links en iOS). Los mismos patrones que apps/pruebas/enlaces.json
+                 (EnlacesTest lo controla): «app» como path/pathPrefix y «web» como grupos que no abren la app (Android 15+;
+                 antes, si llega uno, Enlaces lo abre en la web dentro de la app). Las tiendas nunca: son de los compradores. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="tulocalweb.com.ar" />
+                <data android:path="/panel" />
+                <data android:pathPrefix="/panel/" />
+                <uri-relative-filter-group android:allow="false"><data android:queryPattern=".*web=1.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/panel/pedidos/imprimir" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/panel/importar/tiendanube/vuelta" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/panel/mi-tienda/vista" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPrefix="/panel/fotos" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPrefix="/panel/hornero" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/panel/tienda" /></uri-relative-filter-group>
+            </intent-filter>
         </activity>
 
         <!-- Firebase se inicia a mano (app/Push.kt): sin config no hay push. -->

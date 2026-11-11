@@ -1,5 +1,6 @@
 package ar.com.tulocalweb.app.pantallas.avisos
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import ar.com.tulocalweb.app.app.BarraDe
 import ar.com.tulocalweb.app.app.BotonBarra
-import ar.com.tulocalweb.app.app.Destino
+import ar.com.tulocalweb.app.app.Enlaces
 import ar.com.tulocalweb.app.app.LocalEstado
 import ar.com.tulocalweb.app.app.LocalNavegacion
 import ar.com.tulocalweb.app.app.Pestana
@@ -80,17 +81,9 @@ fun Avisos() {
             carga = Carga.listo(l.map { if (it.id == n.id) it.copy(leida = true) else it })
             intentar { estado.api.hacer("POST", "/v1/panel/notificaciones/${n.id}/leida") }
         }
-        // La ruta es la del panel web (/panel/pedidos/1048): las que tienen pantalla en la app se abren acá.
+        // La ruta es la del panel web (/panel/pedidos?pedido=1048): la abre Enlaces, como un link.
         val ruta = n.ruta ?: return
-        val partes = ruta.split("/").filter { it.isNotEmpty() }
-        val num = if (partes.size >= 3 && partes[0] == "panel" && partes[1] == "pedidos") partes[2].toIntOrNull() else null
-        when {
-            num != null -> nav.inicio.add(Destino.pedido(num))
-            ruta.startsWith("/panel/pedidos") -> nav.tocar(Pestana.pedidos)
-            ruta.startsWith("/panel/productos") || ruta.startsWith("/panel/inventario") -> nav.tocar(Pestana.productos)
-            destinoAviso(ruta) != null -> nav.inicio.add(destinoAviso(ruta)!!)
-            else -> nav.web = "https://tulocalweb.com.ar$ruta"
-        }
+        Enlaces.ruta(Uri.parse("https://tulocalweb.com.ar$ruta"))?.let { nav.ir(it) }
     }
 
     suspend fun leerTodo() {
@@ -164,16 +157,3 @@ private fun secciones(l: List<Notificacion>): List<Pair<String, List<Notificacio
     return r.map { it.key to it.value }
 }
 
-/** Las secciones del panel que tienen pantalla en la app. */
-fun destinoAviso(ruta: String): Destino? {
-    val tabla = listOf(
-        "/panel/carritos-abandonados" to Destino.carritos, "/panel/resenas-y-preguntas" to Destino.resenas,
-        "/panel/devoluciones" to Destino.devoluciones, "/panel/cupones" to Destino.cupones, "/panel/finanzas" to Destino.finanzas,
-        "/panel/facturacion" to Destino.facturacion, "/panel/plan" to Destino.plan, "/panel/integraciones" to Destino.integraciones,
-        "/panel/usuarios-y-permisos" to Destino.usuarios, "/panel/clientes" to Destino.clientes, "/panel/ventas-en-local" to Destino.caja,
-        "/panel/configuracion" to Destino.negocio, "/panel/notificaciones" to Destino.preferenciasAvisos, "/panel/links" to Destino.links,
-        "/panel/informes" to Destino.estadisticas, "/panel/mi-tienda" to Destino.miTienda, "/panel/tienda" to Destino.miTienda,
-        "/ayuda" to Destino.ayuda,
-    )
-    return tabla.firstOrNull { ruta.startsWith(it.first) }?.second
-}
