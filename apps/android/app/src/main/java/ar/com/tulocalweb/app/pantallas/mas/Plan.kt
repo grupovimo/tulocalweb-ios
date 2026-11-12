@@ -50,9 +50,9 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 import kotlin.math.roundToInt
 
-// Clon de Pantallas/Mas/Plan.swift: el plan de Tu Local Web (§56), igual que Plan y facturación del panel: elegir un
-// plan no cobra nada; el resumen muestra qué se paga hoy (línea por línea), desde cuándo rige y cuánto se cobra después,
-// y recién «Confirmar» pasa por Mercado Pago. Las cuentas vienen hechas de la API (abono.Cotizar).
+// Clon de Pantallas/Mas/Plan.swift: el plan de Tu Local Web (§56). En la app de la tienda (política de Google Play) no se
+// paga ni se pasa a un plan pago: se ve el plan, el uso y las facturas, y se puede pasar a Gratis, cancelar o deshacer un
+// cambio programado. Las cuentas vienen hechas de la API (abono.Cotizar).
 
 /** Los planes (apps/web/src/lib/panel/planes.ts): nombre, para quién y qué incluye. Los precios salen de las
  *  cotizaciones de la API. */
@@ -157,7 +157,8 @@ fun PlanCuenta() {
             EtiquetaSeccion("Facturas", Modifier.padding(horizontal = 4.dp).padding(top = 8.dp))
             GrupoFilas(d.facturas, { it.numero }) { f -> FilaDato(f.fecha?.let { "${f.detalle} · ${Formato.diaMes(it)}" } ?: f.detalle, Formato.pesos(f.total)) }
         }
-        BotonPrincipal("Cambiar de plan", { hoja = d.actual }, Modifier.padding(top = 6.dp), alto = 48.dp)
+        // Sólo pasar a Gratis (sin cobros): elegir un plan pago no está en la app.
+        if (d.actual != "gratis" && d.abono?.programado == null && planPermitido(d, "gratis")) BotonTexto("Pasar a Gratis", { hoja = "gratis" }, Modifier.padding(top = 6.dp), alto = 48.dp)
         if (d.actual != "gratis" && d.abono?.programado?.plan != "gratis") BotonTexto("Cancelar plan", { cancelar = true }, alto = 44.dp, color = C.errorTinta)
     }
     Hoja(hoja != null, { hoja = null }) { datos?.let { d -> HojaPlan(d, hoja) { actualizarHoja?.invoke() } } }
@@ -188,15 +189,16 @@ fun HojaPlan(datos: DatosPlan, preelegido: String? = null, listo: suspend () -> 
     val estado = LocalEstado.current
     val cerrar = LocalCerrarHoja.current
     val alcance = rememberCoroutineScope()
-    var plan by remember { mutableStateOf(preelegido ?: datos.actual) }
-    var ciclo by remember { mutableStateOf(datos.ciclo) }
+    // Sólo lo que no cobra: quedarse con el plan actual (deshacer un cambio programado) o pasar a Gratis.
+    val opciones = CatalogoPlanes.todos.filter { it.id == datos.actual || it.id == "gratis" }
+    // Un plan pago nunca queda elegido: si llega uno, se muestra el actual.
+    var plan by remember { mutableStateOf(preelegido?.takeIf { planPermitido(datos, it) } ?: datos.actual) }
+    val ciclo = datos.ciclo
     var enviando by remember { mutableStateOf(false) }
-    val cot = datos.cotizacion(plan, ciclo)
+    val cot = datos.cotizacion(plan, ciclo)?.takeIf { !it.pasaPorMercadoPago }
     val hayCambio = cot?.let { !it.sinCambio } ?: false
 
     fun boton(c: CotizacionPlan): String = when {
-        c.pago == "diferencia" || (c.pago == "suscripcion" && c.hoy > 0) -> "Pagar con Mercado Pago"
-        c.pago == "suscripcion" -> "Seguir a Mercado Pago"
         c.tipo == "mantener" -> "Deshacer el cambio"
         else -> if (c.plan == "gratis") "Pasar a Gratis" else "Confirmar el cambio"
     }
@@ -207,22 +209,14 @@ fun HojaPlan(datos: DatosPlan, preelegido: String? = null, listo: suspend () -> 
     suspend fun confirmar(c: CotizacionPlan) {
         enviando = true
         try {
-            val u: U = estado.api.enviar("POST", "/v1/panel/cuenta/abono", S(c.plan, c.ciclo))
+            estado.api.enviar<U, S>("POST", "/v1/panel/cuenta/abono", S(c.plan, c.ciclo))
             val nombre = CatalogoPlanes.de(c.plan).nombre
-            if (u.url.isNotEmpty()) {
-                // Mercado Pago: cargar la tarjeta del débito o pagar la diferencia. El plan cambia cuando avisa.
-                ConectarCuenta.abrir(u.url)
-                listo()
-                estado.avisar("Si completaste el pago, en unos segundos tenés $nombre.")
-            } else {
-                listo()
-                Haptico.exito()
-                when (c.tipo) {
-                    "baja" -> estado.avisar("Pasás a $nombre el ${Formato.diaMes(c.rige)}. Hasta ahí seguís con lo que pagaste.")
-                    "gratis" -> estado.avisar(c.hasta?.let { "Pasás a Gratis el ${Formato.diaMes(it)}. No te cobramos más." } ?: "Pasaste al plan Gratis.")
-                    "mantener" -> estado.avisar("Seguís con ${CatalogoPlanes.de(datos.actual).nombre}.")
-                    else -> estado.avisar("Ya tenés el plan $nombre.")
-                }
+            listo()
+            Haptico.exito()
+            when (c.tipo) {
+                "gratis" -> estado.avisar(c.hasta?.let { "Pasás a Gratis el ${Formato.diaMes(it)}. No te cobramos más." } ?: "Pasaste al plan Gratis.")
+                "mantener" -> estado.avisar("Seguís con ${CatalogoPlanes.de(datos.actual).nombre}.")
+                else -> estado.avisar("Listo, tenés el plan $nombre.")
             }
             cerrar()
         } catch (e: ErrorApi) { Haptico.error(); estado.avisar(e.detalle, ok = false) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
@@ -233,12 +227,11 @@ fun HojaPlan(datos: DatosPlan, preelegido: String? = null, listo: suspend () -> 
     Column(Modifier.fillMaxSize()) {
         Grabber()
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Texto("Elegí tu plan", Estilo.tituloHojaChico, C.texto)
-            Texto(Formato.sinViudas("Nada se cobra hasta que confirmes. Precios en pesos, con IVA incluido y sin permanencia."), Estilo.subhead, C.texto2)
-            Segmentado(listOf("mes" to "Por mes", "anio" to "Por año · −25 %"), ciclo, { ciclo = it })
-            CatalogoPlanes.todos.forEach { p ->
-                TarjetaPlan(p, ciclo == "anio", plan == p.id, datos.actual == p.id, datos.cotizacion(p.id, ciclo) != null) {
-                    if (datos.cotizacion(p.id, ciclo) == null) estado.avisar("Tenés un cambio programado: deshacelo para elegir otro plan.", ok = false)
+            Texto("Tu plan", Estilo.tituloHojaChico, C.texto)
+            Texto(Formato.sinViudas("Pasar al plan Gratis no tiene costo. Tus productos y pedidos quedan guardados."), Estilo.subhead, C.texto2)
+            opciones.forEach { p ->
+                TarjetaPlan(p, ciclo == "anio", plan == p.id, datos.actual == p.id, planPermitido(datos, p.id)) {
+                    if (!planPermitido(datos, p.id)) estado.avisar("Tenés un cambio programado: deshacelo para elegir otro plan.", ok = false)
                     else { plan = p.id; Haptico.seleccion() }
                 }
             }
@@ -247,6 +240,13 @@ fun HojaPlan(datos: DatosPlan, preelegido: String? = null, listo: suspend () -> 
         }
         if (cot != null && hayCambio) BarraConfirmar(cot, boton(cot), enviando) { alcance.launch { confirmar(cot) } }
     }
+}
+
+/** Se puede elegir en la app: Gratis o el plan actual, cotizado y sin pago de por medio. */
+fun planPermitido(d: DatosPlan, id: String): Boolean {
+    if (id != "gratis" && id != d.actual) return false
+    val c = d.cotizacion(id, d.ciclo) ?: return false
+    return !c.pasaPorMercadoPago
 }
 
 /** Una tarjeta de plan elegible. */
@@ -305,8 +305,6 @@ private fun ResumenCambio(c: CotizacionPlan, datos: DatosPlan) {
         else -> ""
     }
     val como = when (c.pago) {
-        "suscripcion" -> "Cargás la tarjeta en Mercado Pago y queda el débito automático. Lo das de baja cuando quieras."
-        "diferencia" -> "Pagás la diferencia en Mercado Pago (tarjeta, dinero en cuenta o efectivo). Tu débito se actualiza solo."
         "actualizar" -> "Actualizamos el monto de tu débito de Mercado Pago. No tenés que cargar nada."
         "cancelar" -> "Damos de baja tu débito de Mercado Pago: no te cobramos más."
         else -> ""
@@ -348,12 +346,11 @@ private fun ResumenCambio(c: CotizacionPlan, datos: DatosPlan) {
         if (como.isNotEmpty()) {
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.crema2).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(C.okFondo), contentAlignment = Alignment.Center) {
-                    Icono(if (c.pasaPorMercadoPago) "creditcard.fill" else "checkmark.shield.fill", 15f, C.okTinta)
+                    Icono("checkmark.shield.fill", 15f, C.okTinta)
                 }
                 Texto(Formato.sinViudas(como), Estilo.footnote, C.texto2, Modifier.weight(1f))
             }
         }
-        Texto("Tu Local Web nunca ve tu tarjeta.", Estilo.footnote, C.texto3)
     }
 }
 
@@ -375,7 +372,7 @@ private fun BarraConfirmar(c: CotizacionPlan, boton: String, enviando: Boolean, 
                 Texto("Hoy pagás", Estilo.footnote, C.texto2)
                 Texto(Formato.pesos(c.hoy), Estilo.total, C.texto, numeros = true)
             }
-            BotonPrincipal(if (enviando) "Un momento…" else boton, accion, Modifier.weight(1f), habilitado = !enviando, simbolo = if (c.pasaPorMercadoPago) "lock.fill" else null)
+            BotonPrincipal(if (enviando) "Un momento…" else boton, accion, Modifier.weight(1f), habilitado = !enviando)
         }
     }
 }

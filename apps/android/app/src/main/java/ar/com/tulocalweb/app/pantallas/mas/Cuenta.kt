@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +36,7 @@ import ar.com.tulocalweb.app.app.LocalNavegacion
 import ar.com.tulocalweb.app.app.Push
 import ar.com.tulocalweb.app.nucleo.ErrorApi
 import ar.com.tulocalweb.app.nucleo.EstadoDosPasos
+import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.abrirUrl
 import ar.com.tulocalweb.app.nucleo.opcional
 import ar.com.tulocalweb.app.tema.*
@@ -50,6 +56,7 @@ fun Cuenta() {
     var avisosPermitidos by remember { mutableStateOf<Boolean?>(null) }
     var dosPasos by remember { mutableStateOf<EstadoDosPasos?>(null) }
     var verDosPasos by remember { mutableStateOf(false) }
+    var borrar by remember { mutableStateOf(false) }
 
     fun leerAvisos() { avisosPermitidos = Push.hayPermiso(ctx) }
 
@@ -82,9 +89,9 @@ fun Cuenta() {
     }
 
     @Composable
-    fun Fila(texto: String, detalle: String? = null, accion: () -> Unit) {
+    fun Fila(texto: String, detalle: String? = null, color: androidx.compose.ui.graphics.Color = C.texto, accion: () -> Unit) {
         Row(Modifier.fillMaxWidth().clickable(onClick = accion).padding(horizontal = 16.dp, vertical = 13.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Texto(texto, Estilo.body16, C.texto, Modifier.weight(1f))
+            Texto(texto, Estilo.body16, color, Modifier.weight(1f))
             if (detalle != null) Texto(detalle, Estilo.body16, C.texto2)
             Chevron(8f)
         }
@@ -132,6 +139,81 @@ fun Cuenta() {
             Separador()
             Fila("Escribirle a soporte") { abrirUrl(ctx, "mailto:hola@tulocalweb.com.ar?subject=Ayuda%20desde%20la%20app") }
         }
+        if (estado.datos != null) {
+            EtiquetaSeccion("Tu cuenta", Modifier.padding(horizontal = 4.dp).padding(top = 10.dp))
+            Column(Modifier.fillMaxWidth().tarjeta()) { Fila("Borrar mi cuenta", color = C.errorTinta) { borrar = true } }
+        }
     }
     Hoja(verDosPasos, { verDosPasos = false; estado.tarea { dosPasos = estado.api.opcional("/v1/auth/segundo-factor") } }) { DosPasos(dosPasos) }
+    Hoja(borrar, { borrar = false }) { HojaBorrarCuenta() }
+}
+
+/** Borrar la cuenta (DELETE /v1/auth/cuenta, lo pide Google Play): se borran la persona y sus datos, y se cierran las
+ *  tiendas donde es la única dueña. Para confirmar, escribe su mail; después, la huella o el PIN. */
+@Composable
+fun HojaBorrarCuenta() {
+    val estado = LocalEstado.current
+    val cerrar = LocalCerrarHoja.current
+    val alcance = rememberCoroutineScope()
+    val email = estado.datos?.usuario?.email.orEmpty()
+    var confirmacion by remember { mutableStateOf("") }
+    var enviando by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    // Las tiendas que se cierran con la cuenta: las que tiene como dueña (si hay otra persona dueña, lo resuelve la API).
+    val propias = (estado.acceso?.tiendas ?: emptyList()).filter { it.rol == "duenio" }.map { it.nombre }
+    val cierre = when (propias.size) {
+        0 -> "Las tiendas donde trabajás siguen andando: sólo dejás de tener acceso."
+        1 -> "Si sos la única persona dueña de ${propias[0]}, la tienda se cierra con sus productos y pedidos."
+        else -> "Las tiendas donde sos la única persona dueña (${propias.joinToString(", ")}) se cierran con sus productos y pedidos."
+    }
+    val ok = coincideEmail(confirmacion, email)
+
+    suspend fun borrar() {
+        if (!coincideEmail(confirmacion, email)) return
+        if (!estado.confirmarIdentidad("Para borrar tu cuenta")) return
+        enviando = true
+        error = null
+        try {
+            // La API compara con el mail tal cual: va el de la sesión, no lo que se tipeó.
+            estado.borrarCuenta(email)
+            Haptico.exito()
+            cerrar()
+        } catch (e: ErrorApi) {
+            Haptico.error()
+            error = e.detalle
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            error = ErrorApi.desconocido.detalle
+        } finally { enviando = false }
+    }
+
+    Column(Modifier.fillMaxSize().imePadding()) {
+        Grabber()
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(60.dp).clip(CircleShape).background(C.errorFondo), contentAlignment = Alignment.Center) { Icono("person.crop.circle.badge.xmark", 28f, C.errorTinta) }
+            Texto("Borrar mi cuenta", Estilo.tituloHojaChico, C.texto)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Dato("person.fill.xmark", "Tu cuenta se desactiva ahora y tus datos personales se borran a los 30 días.")
+                Dato("storefront", cierre)
+                Dato("exclamationmark.triangle", "En esos 30 días la recuperás escribiendo a hola@tulocalweb.com.ar. Después no se puede deshacer.")
+            }
+            Texto(Formato.sinViudas("Para confirmar, escribí tu email: $email"), Estilo.footnote, C.texto2)
+            CampoTexto("Tu email", confirmacion, { confirmacion = it }, teclado = KeyboardType.Email)
+            error?.let { MensajeError(it) }
+        }
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BotonDestructivo(if (enviando) "Un momento…" else "Borrar mi cuenta", { alcance.launch { borrar() } }, habilitado = ok && !enviando)
+            BotonTexto("Me quedo", { cerrar() }, alto = 44.dp)
+        }
+    }
+}
+
+/** El mail escrito para confirmar, sin espacios y sin importar mayúsculas. */
+fun coincideEmail(escrito: String, email: String): Boolean = email.isNotEmpty() && escrito.trim().lowercase() == email.lowercase()
+
+@Composable
+private fun Dato(simbolo: String, texto: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+        Icono(simbolo, 15f, C.texto, Modifier.padding(top = 2.dp))
+        Texto(Formato.sinViudas(texto), Estilo.texto14, C.texto, Modifier.weight(1f))
+    }
 }

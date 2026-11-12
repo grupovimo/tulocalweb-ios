@@ -64,7 +64,7 @@ fun Estadisticas() {
         LaunchedEffect(periodo) { if (periodo != anterior) { anterior = periodo; actualizar() } }
         Segmentado(listOf("hoy" to "Hoy", "7d" to "7 días", "30d" to "30 días"), periodo, { periodo = it })
         val t = d.tablero
-        TarjetaHeroe("Ventas · $nombrePeriodo", Formato.pesos((t.ventas?.actual ?: 0.0).toInt()), variacion(t.ventas), Tincho.grafico)
+        TarjetaHeroe("Ventas · $nombrePeriodo", Formato.pesos(t.ventas?.actual ?: 0.0), variacion(t.ventas), Tincho.grafico)
         val s = t.serie
         if (s != null && s.actual.any { it > 0 }) {
             TarjetaSeccion("Cómo vienen las ventas", "chart.xyaxis.line") {
@@ -73,7 +73,7 @@ fun Estadisticas() {
         }
         GrillaIndicadores(listOf(
             IndicadorIcono("bag.fill", "Pedidos", "${t.kpis.pedidos.actual.toInt()}", variacion(t.kpis.pedidos)),
-            IndicadorIcono("receipt", "Ticket promedio", Formato.pesos((t.kpis.ticket?.actual ?: 0.0).toInt()), variacion(t.kpis.ticket), T.avisoFondo to T.avisoTinta),
+            IndicadorIcono("receipt", "Ticket promedio", Formato.pesos(t.kpis.ticket?.actual ?: 0.0), variacion(t.kpis.ticket), T.avisoFondo to T.avisoTinta),
             IndicadorIcono("person.crop.circle.badge.plus", "Clientes nuevos", "${t.kpis.clientesNuevos.actual.toInt()}", variacion(t.kpis.clientesNuevos), T.okFondo to T.okTinta),
             IndicadorIcono("percent", "Margen del mes", d.informes?.kpis?.margen?.let { "$it %" } ?: "—", tono = T.errorFondo to T.errorTinta),
         ))

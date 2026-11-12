@@ -25,7 +25,7 @@ android {
         applicationId = "ar.com.tulocalweb.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
         versionName = "1.0.0"
 
         buildConfigField("String", "API", cadena(local("tlw.api", "https://api.tulocalweb.com.ar")))

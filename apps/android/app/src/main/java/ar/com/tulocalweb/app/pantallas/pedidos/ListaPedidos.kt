@@ -62,7 +62,7 @@ private data class DatosPedidos(
     val total: Int,
     val etapas: Map<String, Int>,
     /** La suma en pesos de los pedidos del filtro (0 si el rol no ve montos). */
-    val suma: Int = 0,
+    val suma: Long = 0,
 )
 
 private val etapasPedidos: List<Pair<String?, String>> = listOf(

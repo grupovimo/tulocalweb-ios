@@ -42,9 +42,12 @@ class Dictado(private val ctx: Context, private val estado: Estado) {
         }
     }
 
+    /** El del aparato no tiene bajado el español: desde ahí se usa el de red. */
+    private var sinAparato = false
+
     private fun empezar() {
-        val r = if (android.os.Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(ctx)) SpeechRecognizer.createOnDeviceSpeechRecognizer(ctx)
-        else SpeechRecognizer.createSpeechRecognizer(ctx)
+        val enAparato = !sinAparato && android.os.Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(ctx)
+        val r = if (enAparato) SpeechRecognizer.createOnDeviceSpeechRecognizer(ctx) else SpeechRecognizer.createSpeechRecognizer(ctx)
         reconocedor = r
         r.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -53,7 +56,26 @@ class Dictado(private val ctx: Context, private val estado: Estado) {
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
             override fun onEvent(eventType: Int, params: Bundle?) {}
-            override fun onError(e: Int) { parar() }
+            override fun onError(e: Int) {
+                if (reconocedor !== r) return
+                parar()
+                val idioma = e == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED || e == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
+                if (idioma && enAparato) {
+                    // Sin el español en el aparato (Pixel, Samsung): se prueba con el reconocedor de red.
+                    sinAparato = true
+                    try { empezar() } catch (x: Exception) { error = "No pudimos usar el micrófono ahora." }
+                    return
+                }
+                error = when (e) {
+                    SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No te escuchamos. Tocá el micrófono y hablá de nuevo."
+                    SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER, SpeechRecognizer.ERROR_SERVER_DISCONNECTED ->
+                        "Para dictar hace falta internet. Revisá la conexión."
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Para dictar, habilitá el micrófono en los ajustes del teléfono."
+                    SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED, SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "Tu teléfono no tiene el dictado en español. Escribile a Tincho."
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "El dictado está ocupado. Probá de nuevo en un rato."
+                    else -> "No pudimos usar el micrófono ahora."
+                }
+            }
             override fun onPartialResults(p: Bundle?) {
                 p?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.let { texto = it; reiniciarSilencio() }
             }
@@ -68,7 +90,7 @@ class Dictado(private val ctx: Context, private val estado: Estado) {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-AR")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, enAparato)
         })
         reiniciarSilencio()
     }
@@ -80,8 +102,9 @@ class Dictado(private val ctx: Context, private val estado: Estado) {
 
     fun parar() {
         silencio?.cancel()
-        reconocedor?.let { runCatching { it.stopListening(); it.destroy() } }
+        val r = reconocedor
         reconocedor = null
+        r?.let { runCatching { it.stopListening(); it.destroy() } }
         escuchando = false
     }
 }

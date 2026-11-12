@@ -234,7 +234,7 @@ data class PedidoFila(
 }
 
 @Serializable
-data class PaginaPedidos(val total: Int = 0, val suma: Int = 0, val filas: List<PedidoFila> = emptyList(), val etapas: Map<String, Int> = emptyMap())
+data class PaginaPedidos(val total: Int = 0, val suma: Long = 0, val filas: List<PedidoFila> = emptyList(), val etapas: Map<String, Int> = emptyMap())
 
 @Serializable
 data class PedidoDetalle(

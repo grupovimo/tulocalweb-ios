@@ -94,6 +94,20 @@ object Push {
         return PendingIntent.getBroadcast(ctx, ("preparado$numero$actividad").hashCode(), i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
+    /** «Preparado» falló desde la notificación: se avisa y, al tocarlo, se abre el pedido. */
+    fun noSePudoPreparar(ctx: Context, numero: Int) {
+        if (!hayPermiso(ctx)) return
+        val id = "no-preparado/$numero".hashCode()
+        val b = NotificationCompat.Builder(ctx, CANAL_AVISOS)
+            .setSmallIcon(R.drawable.ic_aviso)
+            .setColor(0xFFD9652F.toInt())
+            .setContentTitle("No pudimos marcar #$numero como preparado")
+            .setContentText("Tocá para abrir el pedido y probar de nuevo.")
+            .setAutoCancel(true)
+            .setContentIntent(abrir(ctx, "pedido/$numero", id))
+        runCatching { NotificationManagerCompat.from(ctx).notify(id, b.build()) }
+    }
+
     /** Arma y muestra un aviso: título, cuerpo, agrupado por tienda y, en las ventas (categoría «venta»), «Ver pedido» y
      *  «Marcar como preparado» (7b). */
     fun mostrar(ctx: Context, d: Map<String, String>) {
@@ -160,8 +174,8 @@ class AccionesPush : BroadcastReceiver() {
                 else SesionCompartida.api(ctx)?.hacer("POST", "/v1/panel/pedidos/$numero/estado", Cuerpo("Listo para despachar"))
             }.isSuccess
             if (ok && aviso != 0) NotificationManagerCompat.from(ctx).cancel(aviso)
-            // Si no se pudo, se abre el pedido (como iOS: rutaPendiente).
-            if (!ok) runCatching { Push.abrir(ctx, "pedido/$numero", numero).send() }
+            // Si no se pudo, un aviso que abre el pedido al tocarlo: desde un receiver Android 12+ no deja abrir la app.
+            if (!ok) Push.noSePudoPreparar(ctx, numero)
             Widgets.actualizar(ctx)
             EnPrimerPlano.alAviso?.invoke()
             pendiente.finish()

@@ -60,6 +60,7 @@ internal object Simbolos {
         "eye" to '\ue8f4', // visibility
         "faceid" to '\ue90d', // fingerprint
         "flag.checkered" to '\uf06e', // sports_score
+        "flag" to '\uf0c6', // flag
         "flame" to '\uef55', // local_fire_department
         "flashlight.off" to '\uf00a', // flashlight_off
         "flashlight.on" to '\uf00b', // flashlight_on
@@ -88,7 +89,9 @@ internal object Simbolos {
         "person.2" to '\uea21', // group
         "person.badge.key" to '\uef3d', // admin_panel_settings
         "person.crop.circle.badge.plus" to '\uea4d', // person_add
+        "person.crop.circle.badge.xmark" to '\uef66', // person_remove
         "person.crop.circle" to '\uf20b', // account_circle
+        "person.fill.xmark" to '\uef66', // person_remove
         "phone" to '\uf0d4', // call
         "photo.badge.plus" to '\ue43e', // add_photo_alternate
         "photo.on.rectangle" to '\ue413', // photo_library

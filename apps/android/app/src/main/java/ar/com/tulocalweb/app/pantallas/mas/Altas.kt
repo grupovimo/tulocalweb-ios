@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,14 +46,16 @@ import ar.com.tulocalweb.app.nucleo.ErrorApi
 import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.archivoParaCompartir
 import ar.com.tulocalweb.app.nucleo.compartirArchivo
+import ar.com.tulocalweb.app.nucleo.intentar
 import ar.com.tulocalweb.app.nucleo.opcional
 import ar.com.tulocalweb.app.tema.*
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 // Clon de Pantallas/Mas/Altas.swift: lo que antes pedía la computadora, ahora desde el celular: conectar Mercado Pago,
-// Mercado Libre y Correo Argentino, crear cupones, cambiar de plan y cargar el certificado de ARCA.
+// Mercado Libre y Correo Argentino, crear cupones y cargar el certificado de ARCA.
 
 // MARK: - Conectar una cuenta (OAuth)
 
@@ -63,8 +66,26 @@ object ConectarCuenta {
     var abrirPestana: (String) -> Unit = {}
     private var esperando: CompletableDeferred<String?>? = null
 
-    /** MainActivity: llegó la vuelta (ar.com.tulocalweb.app://integraciones/… o …://importar/tiendanube). */
-    fun vuelta(url: String) { esperando?.complete(url) }
+    /** MainActivity: llegó la vuelta (ar.com.tulocalweb.app://integraciones/… o …://importar/tiendanube). false si nadie
+     *  la esperaba (el sistema cerró la app mientras estaba la pestaña). */
+    fun vuelta(url: String): Boolean = esperando?.complete(url) ?: false
+
+    /** La vuelta llegó a una app que se volvió a abrir de cero: se canjea el código igual y se refresca lo que se ve. */
+    suspend fun retomar(u: Uri, estado: ar.com.tulocalweb.app.app.Estado) {
+        snapshotFlow { estado.fase }.first { it != ar.com.tulocalweb.app.app.Estado.Fase.arrancando }
+        if (estado.api.token == null) return
+        val codigo = u.getQueryParameter("code")
+        val est = u.getQueryParameter("state")
+        val proveedor = u.pathSegments.firstOrNull().orEmpty()
+        val nombre = when (proveedor) { "mercadopago" -> "Mercado Pago"; "mercadolibre" -> "Mercado Libre"; "tiendanube" -> "Tiendanube"; else -> "La cuenta" }
+        if (codigo != null && est != null && proveedor.matches(Regex("^[a-z]+$"))) {
+            val ok = if (u.host == "importar") {
+                runCatching { estado.api.enviar<Importacion, V>("POST", "/v1/panel/importaciones/$proveedor/vuelta", V(codigo, est)) }.isSuccess
+            } else intentar { estado.api.hacer("POST", "/v1/panel/integraciones/$proveedor/vuelta", V(codigo, est)) }
+            if (ok) estado.avisar(if (u.host == "importar") "Empezamos a traer tu tienda de $nombre." else "$nombre quedó conectada.")
+        }
+        estado.version += 1
+    }
 
     /** MainActivity: la Custom Tab se cerró sin vuelta. */
     fun cancelado() { esperando?.complete(null) }
@@ -106,9 +127,6 @@ object ConectarCuenta {
         if (codigo == null || estado == null) return arranco()
         return try { api.enviar<Importacion, V>("POST", "/v1/panel/importaciones/tiendanube/vuelta", V(codigo, estado)); true } catch (e: Exception) { arranco() }
     }
-
-    /** Abre una página de pago (la suscripción al plan) y vuelve cuando se cierra. */
-    suspend fun abrir(url: String) { abrirYEsperar(url) }
 }
 
 // MARK: - Piezas de formulario

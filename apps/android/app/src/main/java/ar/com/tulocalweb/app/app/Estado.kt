@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import ar.com.tulocalweb.app.BuildConfig
 import ar.com.tulocalweb.app.nucleo.Acceso
@@ -14,6 +15,7 @@ import ar.com.tulocalweb.app.nucleo.Api
 import ar.com.tulocalweb.app.nucleo.Clerk
 import ar.com.tulocalweb.app.nucleo.DatosSesion
 import ar.com.tulocalweb.app.nucleo.ErrorApi
+import ar.com.tulocalweb.app.nucleo.errorDe
 import ar.com.tulocalweb.app.nucleo.Guardado
 import ar.com.tulocalweb.app.nucleo.Llavero
 import ar.com.tulocalweb.app.nucleo.Preferencias
@@ -31,6 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -115,6 +118,8 @@ class Estado(api: Api? = null) {
     var alPedirPermiso: suspend (String) -> Boolean = { true }
     /** La huella, la cara o el PIN del teléfono (LAContext.evaluatePolicy). */
     var alConfirmarIdentidad: suspend (String) -> Boolean = { true }
+    /** La app abrió una actividad del sistema (la cámara): a la vuelta no se bloquea aunque haya tardado. */
+    var abrioOtraApp = false
     /** Si el teléfono tiene huella o cara cargada (canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics)). */
     var hayBiometria: () -> Boolean = { false }
 
@@ -156,19 +161,30 @@ class Estado(api: Api? = null) {
             fase = Fase.adentro
             refrescarResumen()
             pedirTokenPushSiCorresponde()
-        } catch (e: ErrorApi) {
-            if (e.sinConexion) {
-                // Sin internet se entra igual con lo guardado (handoff 5a).
-                datos = Guardado.leer<DatosSesion>("sesion")?.first
-                acceso = Guardado.leer<Acceso>("acceso")?.first
-                if (conFaceID) bloqueada = true
-                fase = if (datos == null) Fase.afuera else Fase.adentro
-            } else { olvidarSesion(); fase = Fase.afuera }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            olvidarSesion(); fase = Fase.afuera
+            val error = errorDe(e)
+            // Sólo un 401 cierra la sesión. Sin internet, un 500 o un deploy en curso: se entra con lo guardado.
+            if (error.sinSesion || error.estado == 401 || error.codigo == "cuenta_borrada") { olvidarSesion(); fase = Fase.afuera; return }
+            entrarConLoGuardado(error)
         }
+    }
+
+    /** Sin conexión (handoff 5a) o con la API caída: se entra con lo último que se guardó y se avisa. */
+    private fun entrarConLoGuardado(error: ErrorApi) {
+        datos = Guardado.leer<DatosSesion>("sesion")?.first
+        acceso = Guardado.leer<Acceso>("acceso")?.first
+        if (datos == null || acceso == null) {
+            // Sin nada guardado no hay qué mostrar: la sesión queda y se vuelve a probar al abrir la app.
+            fase = Fase.afuera
+            avisar(if (error.sinConexion) "No hay internet. Revisá la conexión y probá de nuevo." else "No pudimos cargar tu tienda. Probá de nuevo en un rato.", ok = false)
+            return
+        }
+        if (conFaceID) bloqueada = true
+        fase = Fase.adentro
+        if (!error.sinConexion) avisar("No pudimos actualizar tu tienda. Ves lo último que se guardó.", ok = false)
+        tarea { refrescarResumen(); pedirTokenPushSiCorresponde() }
     }
 
     private suspend fun cargarSesion() = coroutineScope {
@@ -227,8 +243,29 @@ class Estado(api: Api? = null) {
         canjearClerk(jwt)
     }
 
-    /** MainActivity: llegó la vuelta (`ar.com.tulocalweb.app://callback`). */
-    fun vueltaClerk(nonce: String?) { vuelta?.complete(nonce ?: "") }
+    /** MainActivity: llegó la vuelta (`ar.com.tulocalweb.app://callback`). Si el sistema cerró la app mientras estaba
+     *  la pestaña, nadie la espera: se termina el ingreso con lo que Clerk dejó guardado (tlw_clerk). */
+    fun vueltaClerk(nonce: String?) {
+        val d = vuelta
+        if (d != null) { d.complete(nonce ?: ""); return }
+        val ctx = contexto ?: return
+        if (!Clerk.hayIntento(ctx)) return
+        tarea {
+            snapshotFlow { fase }.first { it != Fase.arrancando }
+            if (fase != Fase.afuera) return@tarea
+            try {
+                cargarProveedores()
+                val c = Clerk(ctx, api.http, proveedores?.clerkPublicable.orEmpty()).takeIf { it.disponible } ?: throw Clerk.ErrorClerk("sin_clave")
+                canjearClerk(c.completar(nonce))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: ErrorApi) {
+                avisar(e.detalle, ok = false)
+            } catch (e: Exception) {
+                avisar("No pudimos terminar el ingreso con Google. Probá de nuevo.", ok = false)
+            }
+        }
+    }
 
     /** MainActivity: la Custom Tab se cerró sin vuelta (ASWebAuthenticationSessionError.canceledLogin). */
     fun clerkCancelado() { vuelta?.complete(CANCELADO) }
@@ -325,6 +362,19 @@ class Estado(api: Api? = null) {
         intentar { api.hacer("POST", "/v1/auth/salir") }
         olvidarSesion()
         fase = Fase.afuera
+    }
+
+    @Serializable private data class CuerpoBorrar(val confirmacion: String)
+
+    /** Borra la cuenta de la persona (DELETE /v1/auth/cuenta, con su mail tal cual como confirmación): la API la desactiva,
+     *  borra sus datos y cierra las tiendas donde es la única dueña. Después la app olvida la sesión y vuelve a Ingresar. */
+    suspend fun borrarCuenta(email: String) {
+        api.hacer("DELETE", "/v1/auth/cuenta", CuerpoBorrar(email))
+        olvidarSesion()
+        permisosVistos = false
+        ponerFaceID(false)
+        fase = Fase.afuera
+        avisar("Borramos tu cuenta y tus datos.")
     }
 
     private fun sesionPerdida() {

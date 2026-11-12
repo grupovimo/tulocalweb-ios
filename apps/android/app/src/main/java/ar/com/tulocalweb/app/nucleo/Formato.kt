@@ -33,10 +33,13 @@ object Formato {
 
     /** Un número entero con punto de miles: 1.234.567. */
     fun numero(n: Int): String = miles.format(n)
+    fun numero(n: Long): String = miles.format(n)
 
     /** Pesos enteros (la API manda pesos sin centavos): `$ 24.020`, `−$ 2.400`. */
     fun pesos(n: Int): String = if (n < 0) "−$$fino${numero(-n)}" else "$$fino${numero(n)}"
-    fun pesos(n: Double): String = pesos(Math.round(n).toInt())
+    /** Las sumas (pedidos del filtro, ventas del mes) pueden pasar los $ 2.147 millones de un Int. */
+    fun pesos(n: Long): String = if (n < 0) "−$$fino${numero(-n)}" else "$$fino${numero(n)}"
+    fun pesos(n: Double): String = pesos(Math.round(n))
 
     /** Un porcentaje con un decimal si hace falta: `12,4 %`, `73 %`. */
     fun porcentaje(p: Double): String = "${decimal.format(p)}$fino%"

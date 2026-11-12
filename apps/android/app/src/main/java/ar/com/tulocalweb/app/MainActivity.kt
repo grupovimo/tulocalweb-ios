@@ -18,6 +18,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.snapshotFlow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -26,12 +27,14 @@ import ar.com.tulocalweb.app.app.Estado
 import ar.com.tulocalweb.app.app.LocalEstado
 import ar.com.tulocalweb.app.app.Raiz
 import ar.com.tulocalweb.app.app.Ruta
+import ar.com.tulocalweb.app.app.TuLocalWebApp
 import ar.com.tulocalweb.app.nucleo.Clerk
 import ar.com.tulocalweb.app.pantallas.mas.ConectarCuenta
 import ar.com.tulocalweb.app.nucleo.intentar
 import ar.com.tulocalweb.app.tema.Haptico
 import ar.com.tulocalweb.app.tema.TemaTLW
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.lang.ref.WeakReference
@@ -40,20 +43,15 @@ import java.lang.ref.WeakReference
  *  los links, la vuelta de Clerk y de conectar cuentas, el permiso de avisos y la huella, y vuelve a bloquear la app
  *  si estuvo más de un minuto afuera con la huella prendida. Es FragmentActivity por BiometricPrompt. */
 class MainActivity : FragmentActivity() {
-    private lateinit var estado: Estado
-    /** Si la Custom Tab volvió con una vuelta (si no, la persona la cerró: «cancelado» en iOS). */
-    private var conVuelta = false
-    private var abrioPestana = false
-    private var enSegundoPlano: Long? = null
-    private var permiso: CompletableDeferred<Boolean>? = null
+    private val estado: Estado get() = TuLocalWebApp.estado
+    private var huella: BiometricPrompt? = null
+    // El resultado del permiso llega a la actividad nueva si esta se recreó: lo que se espera vive en el proceso.
     private val pedirPermiso = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> permiso?.complete(ok); permiso = null }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT))
         Haptico.vista = WeakReference(window.decorView)
-        estado = Estado()
-        estado.contexto = applicationContext
         estado.abrirPestana = { url -> abrirPestana(url) }
         ConectarCuenta.abrirPestana = { url -> abrirPestana(url) }
         estado.alPedirPermisoPush = { pedirPermisoAvisos() }
@@ -62,12 +60,22 @@ class MainActivity : FragmentActivity() {
         estado.hayBiometria = { BiometricManager.from(this).canAuthenticate(BIOMETRIC_STRONG or BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS }
         // Con la app abierta, un aviso que llega pone al día el resumen y las listas (willPresent en iOS).
         EnPrimerPlano.alAviso = { lifecycleScope.launch { estado.refrescarResumen(); estado.version += 1 } }
-        atender(intent)
+        // Recreada (tema, letra, pantalla dividida) o restaurada: el intent ya se atendió.
+        if (savedInstanceState == null) atender(intent)
         setContent {
             TemaTLW(estado.tema) {
                 CompositionLocalProvider(LocalEstado provides estado) { Raiz(estado) }
             }
         }
+    }
+
+    override fun onDestroy() {
+        // La huella a medias no queda colgada: la pantalla de bloqueo la vuelve a pedir.
+        huella?.let { runCatching { it.cancelAuthentication() } }
+        huella = null
+        identidad?.complete(false); identidad = null
+        if (!isChangingConfigurations) { permiso?.complete(false); permiso = null }
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -77,16 +85,16 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        enSegundoPlano = System.currentTimeMillis()
+        if (!isChangingConfigurations) enSegundoPlano = System.currentTimeMillis()
     }
 
     override fun onStart() {
         super.onStart()
-        if (!::estado.isInitialized) return
         // Con la huella prendida, volver después de un minuto pide identificarse.
         val d = enSegundoPlano
-        if (estado.conFaceID && estado.fase == Estado.Fase.adentro && d != null && System.currentTimeMillis() - d > 60_000 && !abrioPestana) estado.bloqueada = true
+        if (estado.conFaceID && estado.fase == Estado.Fase.adentro && d != null && System.currentTimeMillis() - d > 60_000 && !abrioPestana && !estado.abrioOtraApp) estado.bloqueada = true
         enSegundoPlano = null
+        estado.abrioOtraApp = false
         if (estado.fase == Estado.Fase.adentro) lifecycleScope.launch { estado.refrescarResumen() }
     }
 
@@ -112,53 +120,75 @@ class MainActivity : FragmentActivity() {
         val u = i?.data ?: return
         if (u.scheme == Clerk.ESQUEMA) {
             conVuelta = true
-            if (u.host == "integraciones" || u.host == "importar") ConectarCuenta.vuelta(u.toString())
-            else estado.vueltaClerk(u.getQueryParameter("rotating_token_nonce"))
+            if (u.host == "integraciones" || u.host == "importar") {
+                // Si el sistema cerró la app mientras estaba la pestaña, nadie la espera: se canjea igual.
+                if (!ConectarCuenta.vuelta(u.toString())) estado.tarea { ConectarCuenta.retomar(u, estado) }
+            } else estado.vueltaClerk(u.getQueryParameter("rotating_token_nonce"))
             return
         }
         val r = Ruta.de(u.toString()) ?: return
-        // «Marcar como preparado» desde el aviso de una venta: se marca y se avisa; si falla, se abre el pedido.
-        if (i.getStringExtra("accion") == "preparado" && r is Ruta.pedido) {
-            i.removeExtra("accion")
-            lifecycleScope.launch {
+        // El aviso es de otra tienda: se cambia antes de abrir la ruta.
+        val tienda = i.getStringExtra("tienda")?.takeIf { it.isNotBlank() }
+        i.removeExtra("tienda")
+        val preparado = i.getStringExtra("accion") == "preparado" && r is Ruta.pedido
+        i.removeExtra("accion")
+        lifecycleScope.launch {
+            // Abierta desde el aviso con la app cerrada: primero termina de cargar la sesión.
+            if (tienda != null) snapshotFlow { estado.fase }.first { it != Estado.Fase.arrancando }
+            if (tienda != null && estado.acceso?.tiendas?.any { it.id == tienda } == true && tienda != estado.acceso?.tiendaId) {
+                if (!intentar { estado.elegirTienda(tienda) }) { estado.avisar("No pudimos cambiar de tienda. Probá de nuevo.", ok = false); return@launch }
+            }
+            // «Marcar como preparado» desde el aviso de una venta: se marca y se avisa; si falla, se abre el pedido.
+            if (preparado && r is Ruta.pedido) {
                 if (intentar { estado.api.hacer("POST", "/v1/panel/pedidos/${r.n}/estado", Cuerpo("Listo para despachar")) }) {
                     estado.version += 1
                     estado.avisar("#${r.n} listo")
                 } else estado.rutaPendiente = r
+                return@launch
             }
-            return
+            estado.rutaPendiente = r
         }
-        estado.rutaPendiente = r
     }
 
     /** Un permiso del sistema: true si ya estaba o si lo dio. */
     private suspend fun pedir(p: String): Boolean {
         if (checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED) return true
+        permiso?.complete(false)
         val d = CompletableDeferred<Boolean>()
         permiso = d
-        pedirPermiso.launch(p)
+        runCatching { pedirPermiso.launch(p) }.onFailure { permiso = null; return false }
         return d.await()
     }
 
     private suspend fun pedirPermisoAvisos(): Boolean {
         if (Build.VERSION.SDK_INT < 33) return true
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return true
-        val d = CompletableDeferred<Boolean>()
-        permiso = d
-        pedirPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
-        return d.await()
+        return pedir(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     /** La huella, la cara o el PIN (.deviceOwnerAuthentication): sin nada configurado, deja pasar (como iOS). */
     private suspend fun confirmar(motivo: String): Boolean {
         val permitidos = if (Build.VERSION.SDK_INT >= 30) BIOMETRIC_STRONG or BIOMETRIC_WEAK or DEVICE_CREDENTIAL else BIOMETRIC_WEAK or DEVICE_CREDENTIAL
         if (BiometricManager.from(this).canAuthenticate(permitidos) != BiometricManager.BIOMETRIC_SUCCESS) return true
+        identidad?.complete(false)
         val d = CompletableDeferred<Boolean>()
+        identidad = d
         val p = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { d.complete(true) }
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { d.complete(false) }
         })
+        huella = p
         p.authenticate(BiometricPrompt.PromptInfo.Builder().setTitle("Tu Local Web").setSubtitle(motivo).setAllowedAuthenticators(permitidos).build())
-        return d.await()
+        return try { d.await() } finally { if (identidad === d) identidad = null; if (huella === p) huella = null }
+    }
+
+    companion object {
+        /** Si la Custom Tab volvió con una vuelta (si no, la persona la cerró: «cancelado» en iOS). Viven en el proceso:
+         *  si la actividad se recrea con la pestaña abierta, lo que espera la vuelta no queda colgado. */
+        private var conVuelta = false
+        private var abrioPestana = false
+        /** Cuándo pasó a segundo plano: también si se cerró con «atrás» y se volvió a abrir (el Estado sigue vivo). */
+        private var enSegundoPlano: Long? = null
+        private var permiso: CompletableDeferred<Boolean>? = null
+        private var identidad: CompletableDeferred<Boolean>? = null
     }
 }

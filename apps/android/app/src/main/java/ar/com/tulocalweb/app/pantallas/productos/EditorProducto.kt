@@ -1,5 +1,7 @@
 package ar.com.tulocalweb.app.pantallas.productos
 
+import android.Manifest
+import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -37,6 +39,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -238,7 +241,8 @@ fun EditorProducto(id: String?, sku: String? = null) {
     }
 
     // La cámara del sistema (UIImagePickerController) y la galería (PhotosPicker, hasta 8).
-    var fotoCamara by remember { mutableStateOf<Uri?>(null) }
+    // Guardado aparte: si el sistema cierra la app con la cámara abierta, la foto vuelve igual.
+    var fotoCamara by rememberSaveable { mutableStateOf<Uri?>(null) }
     val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val u = fotoCamara
         if (ok && u != null) alcance.launch { subir(u) }
@@ -334,7 +338,20 @@ fun EditorProducto(id: String?, sku: String? = null) {
                     }
                     repeat(subiendo) { Box(Modifier.size(96.dp).clip(RoundedCornerShape(16.dp)).background(C.pista), contentAlignment = Alignment.Center) { Rueda(C.acento) } }
                     if (fotos.size + subiendo < 8) {
-                        BotonFoto("camera", "Sacar foto") { val (_, u) = Fotos.archivoCamara(ctx); fotoCamara = u; camara.launch(u) }
+                        BotonFoto("camera", "Sacar foto") {
+                            alcance.launch {
+                                if (!estado.alPedirPermiso(Manifest.permission.CAMERA)) {
+                                    estado.avisar("Para sacar fotos, dale permiso a la cámara en los ajustes del teléfono.", ok = false); return@launch
+                                }
+                                try {
+                                    val (_, u) = Fotos.archivoCamara(ctx); fotoCamara = u; estado.abrioOtraApp = true; camara.launch(u)
+                                } catch (e: ActivityNotFoundException) {
+                                    estado.avisar("No encontramos una app de cámara. Elegí una foto de la galería.", ok = false)
+                                } catch (e: SecurityException) {
+                                    estado.avisar("Para sacar fotos, dale permiso a la cámara en los ajustes del teléfono.", ok = false)
+                                }
+                            }
+                        }
                         BotonFoto("photo.on.rectangle", "Galería") { galeria.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                     }
                 }

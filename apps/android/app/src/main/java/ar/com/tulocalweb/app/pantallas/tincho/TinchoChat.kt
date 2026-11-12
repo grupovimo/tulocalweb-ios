@@ -67,6 +67,7 @@ import ar.com.tulocalweb.app.app.LocalNavegacion
 import ar.com.tulocalweb.app.app.Pestana
 import ar.com.tulocalweb.app.nucleo.Tincho
 import ar.com.tulocalweb.app.nucleo.Web
+import ar.com.tulocalweb.app.nucleo.copiar
 import ar.com.tulocalweb.app.tema.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -171,6 +172,21 @@ fun TinchoChat() {
     fun reintentar(p: String) { if (!escribiendo) responder(p) }
 
     /** Los botones de Tincho llevan a la pantalla de la app. */
+    /** Manda la pregunta y la respuesta a seguridad@ por mail (la API no tiene dónde recibirlo). Sin app de mail, se
+     *  copia el texto y se avisa a qué casilla mandarlo. */
+    fun reportar(m: Mensaje) {
+        Haptico.seleccion()
+        val i = mensajes.indexOfFirst { it.id == m.id }.takeIf { it >= 0 } ?: mensajes.size
+        val pregunta = mensajes.take(i).lastOrNull { !it.deTincho }?.texto.orEmpty()
+        val cuerpo = cuerpoReporte(pregunta, m.respuesta?.texto ?: m.texto, estado.tienda?.id)
+        val mail = android.content.Intent(android.content.Intent.ACTION_SENDTO, android.net.Uri.parse(mailReporte(cuerpo)))
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { ctx.startActivity(mail) }.isFailure) {
+            copiar(ctx, cuerpo)
+            estado.avisar("Copiamos la respuesta. Mandala a $CASILLA_REPORTE para que la revisemos.")
+        }
+    }
+
     fun ir(destino: String) {
         Haptico.seleccion()
         when (destino) {
@@ -249,9 +265,9 @@ fun TinchoChat() {
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(0.5.dp).background(C.linea))
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = lista, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            item { BurbujaTincho(Mensaje(true, saludo), revelando, ::ir) }
+            item { BurbujaTincho(Mensaje(true, saludo), revelando, ::ir, ::reportar) }
             items(visibles, key = { it.id }) { m ->
-                Box(Modifier.animateItem()) { if (m.deTincho) BurbujaTincho(m, revelando, ::ir) else BurbujaPersona(m) }
+                Box(Modifier.animateItem()) { if (m.deTincho) BurbujaTincho(m, revelando, ::ir, ::reportar) else BurbujaPersona(m) }
             }
             if (escribiendo) item(key = "escribiendo") { EscribiendoAhora() }
             if (sinConexion && !escribiendo) item(key = "desenchufado") {
@@ -318,7 +334,7 @@ private fun EscribiendoAhora() {
 }
 
 @Composable
-private fun BurbujaTincho(m: Mensaje, revelando: Pair<String, Int>?, ir: (String) -> Unit) {
+private fun BurbujaTincho(m: Mensaje, revelando: Pair<String, Int>?, ir: (String) -> Unit, reportar: (Mensaje) -> Unit) {
     val texto = m.respuesta?.texto ?: m.texto
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (texto.isNotEmpty()) {
@@ -350,6 +366,12 @@ private fun BurbujaTincho(m: Mensaje, revelando: Pair<String, Int>?, ir: (String
                         }
                     }
                 }
+                // Las respuestas son de IA: cualquiera se puede reportar (políticas de Google y Apple).
+                Row(Modifier.clip(Capsula).clickable { reportar(m) }.padding(vertical = 4.dp, horizontal = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icono("flag", 12f, C.texto3)
+                    Texto("Reportar respuesta", Estilo.footnote, C.texto3)
+                }
             }
         }
     }
@@ -362,6 +384,20 @@ private fun BurbujaPersona(m: Mensaje) {
         Texto(m.texto, Estilo.body16, Color.White, Modifier.widthIn(max = 260.dp).clip(formaPersona).background(C.primario).padding(horizontal = 14.dp, vertical = 10.dp))
     }
 }
+
+const val CASILLA_REPORTE = "seguridad@tulocalweb.com.ar"
+
+/** El mail del reporte: la pregunta, la respuesta y la tienda (como cuerpoReporte en iOS). */
+fun cuerpoReporte(pregunta: String, respuesta: String, tienda: String?): String {
+    var t = "Quiero reportar esta respuesta de Tincho.\n\nMotivo: \n\n"
+    if (pregunta.isNotEmpty()) t += "Pregunta: ${pregunta.take(500)}\n\n"
+    t += "Respuesta: ${respuesta.take(1500)}"
+    if (tienda != null) t += "\n\nTienda: $tienda"
+    return t
+}
+
+fun mailReporte(cuerpo: String): String =
+    "mailto:$CASILLA_REPORTE?subject=${android.net.Uri.encode("Reporte de una respuesta de Tincho")}&body=${android.net.Uri.encode(cuerpo)}"
 
 /** **negritas** del texto de Tincho (sin tomar el resto como Markdown). */
 fun conFormato(t: String): AnnotatedString = buildAnnotatedString {

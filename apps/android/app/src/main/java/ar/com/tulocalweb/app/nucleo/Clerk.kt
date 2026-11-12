@@ -126,6 +126,10 @@ class Clerk(private val ctx: Context, private val http: OkHttpClient, publicable
         const val ESQUEMA = "ar.com.tulocalweb.app"
         const val VUELTA = "ar.com.tulocalweb.app://callback"
 
+        /** Hay un ingreso empezado (para retomarlo si el sistema cerró la app mientras estaba la pestaña). */
+        fun hayIntento(ctx: Context): Boolean =
+            !ctx.getSharedPreferences("tlw_clerk", Context.MODE_PRIVATE).getString("intento", null).isNullOrBlank()
+
         /** La Frontend API sale de la clave publicable: pk_<entorno>_<base64("host$")>. */
         fun fapiDe(publicable: String?): String? {
             val m = Regex("^pk_(live|test)_([A-Za-z0-9+/=_-]+)$").find(publicable.orEmpty()) ?: return null

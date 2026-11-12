@@ -435,11 +435,11 @@ fun Finanzas() {
     @Serializable data class Movimiento(val id: String, val tipo: String = "", val titulo: String = "", val detalle: String = "", val monto: Int = 0)
     @Serializable data class Flujo(val dia: Int, val entra: Int = 0, val sale: Int = 0)
     @Serializable data class Caja(val ventas: Int = 0, val gastos: Int = 0, val meta: String = "", val metaPct: Int = 0, val falta: Int = 0)
-    @Serializable data class Datos(val vendido30: Int? = null, val disponible: Int? = null, val cuenta: String? = null, val kpis: Kpis = Kpis(), val flujo: List<Flujo>? = null,
+    @Serializable data class Datos(val vendido30: Long? = null, val disponible: Long? = null, val cuenta: String? = null, val kpis: Kpis = Kpis(), val flujo: List<Flujo>? = null,
                                    val caja: Caja? = null, val movimientos: List<Movimiento> = emptyList())
 
     PantallaSeccion("Finanzas", "las finanzas", { estado.api.get<Datos>("/v1/panel/finanzas") }) { d, _ ->
-        TarjetaHeroe(if (d.disponible != null) "Disponible en Mercado Pago" else "Vendido en los últimos 30 días", Formato.pesos(d.disponible ?: d.vendido30 ?: 0),
+        TarjetaHeroe(if (d.disponible != null) "Disponible en Mercado Pago" else "Vendido en los últimos 30 días", Formato.pesos(d.disponible ?: d.vendido30 ?: 0L),
             d.cuenta ?: d.vendido30?.let { if (d.disponible != null) "Vendiste ${Formato.pesos(it)} en 30 días" else "" }, Tincho.grafico)
         EtiquetaSeccion(Formato.mayuscula(d.kpis.mes), Modifier.padding(horizontal = 4.dp).padding(top = 4.dp))
         GrillaIndicadores(listOf(

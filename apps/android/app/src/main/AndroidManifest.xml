@@ -11,8 +11,6 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Entrar con la huella o la cara (Face ID en iOS). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <!-- Guardar en la galería la imagen para estados e historias en Android 8 y 9 (desde el 10 no hace falta). -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <queries>

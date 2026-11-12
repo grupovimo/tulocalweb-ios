@@ -49,6 +49,8 @@ import ar.com.tulocalweb.app.pantallas.tincho.RespuestaTincho
 import ar.com.tulocalweb.app.pantallas.tincho.TinchoChat
 import ar.com.tulocalweb.app.pantallas.tincho.VistaBloque
 import ar.com.tulocalweb.app.pantallas.tincho.corto
+import ar.com.tulocalweb.app.pantallas.tincho.cuerpoReporte
+import ar.com.tulocalweb.app.pantallas.tincho.mailReporte
 import ar.com.tulocalweb.app.pantallas.venta.VentaLocal
 import ar.com.tulocalweb.app.tema.*
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -177,6 +179,34 @@ class PantallasTest {
     @Test fun pantallaDetallePedido() = montar("DetallePedido") { DetallePedido(1048) }
     @Test fun pantallaAvisos() = montar("Avisos") { Avisos() }
     @Test fun pantallaCuenta() = montar("Cuenta") { Cuenta() }
+    @Test fun hojaBorrarCuenta() = montar("HojaBorrarCuenta") { ComoHoja { HojaBorrarCuenta() } }
+
+    /** Borrar la cuenta desde la app (Google Play): DELETE /v1/auth/cuenta con el mail y vuelve a Ingresar. */
+    @Test fun borrarCuentaVuelveAIngresar() {
+        assertTrue(coincideEmail(" Martina@AlmacenLumbre.com.ar ", "martina@almacenlumbre.com.ar"))
+        assertTrue(!coincideEmail("otra@almacenlumbre.com.ar", "martina@almacenlumbre.com.ar") && !coincideEmail("", ""))
+        val e = estado()
+        e.fase = Estado.Fase.adentro
+        kotlinx.coroutines.runBlocking { e.borrarCuenta("martina@almacenlumbre.com.ar") }
+        assertEquals(Estado.Fase.afuera, e.fase)
+        assertNull(e.api.token)
+        assertNull(e.datos)
+    }
+
+    /** Al arrancar, un error que no es 401 no cierra la sesión (un deploy o un 500 no saca a nadie). */
+    @Test fun arrancarConLaApiCaidaNoCierraLaSesion() {
+        val e = estado(mapOf("/v1/auth/sesion" to null))
+        kotlinx.coroutines.runBlocking { e.arrancar() }
+        assertEquals("x", e.api.token)
+    }
+
+    /** «Reportar respuesta» de Tincho: el mail a seguridad@ con la pregunta, la respuesta y la tienda. */
+    @Test fun reporteDeTincho() {
+        val c = cuerpoReporte("¿Cómo vengo hoy?", "Llevás **$ 539.000**", "t1")
+        assertTrue(c.contains("Pregunta: ¿Cómo vengo hoy?") && c.contains("Respuesta: Llevás") && c.endsWith("Tienda: t1"))
+        val m = mailReporte(c)
+        assertTrue(m.startsWith("mailto:seguridad@tulocalweb.com.ar?subject=") && !m.contains(" "))
+    }
     @Test fun pantallaClientes() = montar("Clientes") { Clientes() }
     @Test fun pantallaCajaDelDia() = montar("CajaDelDia") { CajaDelDia() }
     @Test fun pantallaCarritosAbandonados() = montar("CarritosAbandonados") { CarritosAbandonados() }
@@ -196,7 +226,8 @@ class PantallasTest {
         // El descuento para quedarse (§57): mitad del débito mientras queden cobros.
         assertEquals(9950, DatosPlan.conDescuento(19900, d.beneficio))
         assertEquals(19900, DatosPlan.conDescuento(19900, null))
-        montar("HojaPlanPro") { ComoHoja { HojaPlan(d, "pro") {} } }
+        // En la app no se pasa a un plan pago (política de Google Play): «pro» no se ofrece y queda el plan actual.
+        montar("HojaPlanActual") { ComoHoja { HojaPlan(d, "pro") {} } }
     }
     @Test fun hojaPlanGratis() = montar("HojaPlanGratis") { ComoHoja { HojaPlan(Api.json.decodeFromString(DatosPlan.serializer(), plan), "gratis") {} } }
     @Test fun hojaCancelar() = montar("HojaCancelar") { ComoHoja { HojaCancelar(Api.json.decodeFromString(DatosPlan.serializer(), plan)) {} } }
