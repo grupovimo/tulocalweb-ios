@@ -194,6 +194,22 @@ func correr() error {
 			}
 		}
 	}()
+	// Cuentas borradas desde la app: a los 30 días se borran sus datos personales. Una vez por día.
+	go func() {
+		cs := &cuentas.Servicio{Pool: app}
+		t := time.NewTicker(24 * time.Hour)
+		defer t.Stop()
+		for {
+			if _, err := cs.PurgarBorradas(ctx); err != nil && ctx.Err() == nil {
+				slog.Error("cuentas: purgar borradas", "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
 	// Visitas de las tiendas: cada hora se borran los vistos de días anteriores (con la sal del día
 	// perdida ya no sirven) y las visitas de hace más de 400 días.
 	go func() {

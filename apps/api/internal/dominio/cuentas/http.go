@@ -143,6 +143,22 @@ func (s *Servicio) Rutas(mux *http.ServeMux, claveBFF string) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	mux.HandleFunc("DELETE /v1/auth/cuenta", func(w http.ResponseWriter, r *http.Request) {
+		d, ok := SesionDe(r)
+		if !ok {
+			problema.Escribir(w, problema.SinSesion())
+			return
+		}
+		var b struct{ Confirmacion string }
+		if !leer(w, r, &b) {
+			return
+		}
+		if err := s.BorrarCuenta(r.Context(), d, b.Confirmacion); err != nil {
+			escribirError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 	mux.HandleFunc("GET /v1/auth/sesion", func(w http.ResponseWriter, r *http.Request) {
 		d, ok := SesionDe(r)
 		if !ok {
@@ -368,6 +384,8 @@ func escribirError(w http.ResponseWriter, err error) {
 			p.Restantes = &c.Restantes
 		}
 		problema.Escribir(w, p)
+	case errors.Is(err, ErrCuentaBorrada):
+		problema.Escribir(w, problema.Conflicto("cuenta_borrada", "Esta cuenta se borró. Si fue un error, escribinos a hola@tulocalweb.com.ar dentro de los 30 días y la recuperamos."))
 	case errors.Is(err, ErrOtroEmail):
 		problema.Escribir(w, problema.Conflicto("otro_email", "Esta invitación es para otro email. Entrá con la cuenta de ese email o pedile a quien te invitó que te mande una nueva."))
 	case errors.Is(err, ErrEmailEnUso):

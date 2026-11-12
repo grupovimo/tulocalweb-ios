@@ -144,6 +144,54 @@ func TestSalirCierraLaSesion(t *testing.T) {
 	}
 }
 
+func TestBorrarCuenta(t *testing.T) {
+	s, _, b := nuevo(t)
+	ses, _ := s.Registrar(ctx, alta("lucia@laesquina.com.ar"), cl)
+	d, err := s.Sesion(ctx, ses.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var inv cuentas.ErrInvalido
+	if err := s.BorrarCuenta(ctx, d, "otra@laesquina.com.ar"); !errors.As(err, &inv) {
+		t.Fatalf("sin el email correcto no se borra: %v", err)
+	}
+	if err := s.BorrarCuenta(ctx, d, " Lucia@LaEsquina.com.ar "); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Sesion(ctx, ses.Token); !errors.Is(err, cuentas.ErrSinSesion) {
+		t.Fatalf("la sesión tiene que desaparecer: %v", err)
+	}
+	var cerrada bool
+	err = b.App.EnTienda(ctx, ses.TiendaID, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, `SELECT cerrada_en IS NOT NULL FROM tiendas WHERE id = $1`, ses.TiendaID).Scan(&cerrada)
+	})
+	if err != nil || !cerrada {
+		t.Fatalf("la tienda donde era la única dueña se cierra: %v %v", cerrada, err)
+	}
+	if _, err := s.Ingresar(ctx, "lucia@laesquina.com.ar", "Abcdefghijk1", false, cl); !errors.Is(err, cuentas.ErrCuentaBorrada) {
+		t.Fatalf("con la cuenta borrada no se puede entrar: %v", err)
+	}
+
+	t.Run("a los 30 días se borran sus datos personales", func(t *testing.T) {
+		if n, err := s.PurgarBorradas(ctx); err != nil || n != 0 {
+			t.Fatalf("antes de los 30 días no se purga: %d %v", n, err)
+		}
+		if _, err := b.App.Exec(ctx, `UPDATE auth.usuarios SET desactivada_en = now() - interval '31 days' WHERE id = $1`, d.Usuario.ID); err != nil {
+			t.Fatal(err)
+		}
+		if n, err := s.PurgarBorradas(ctx); err != nil || n != 1 {
+			t.Fatalf("purgadas %d %v", n, err)
+		}
+		var nombre, email string
+		if err := b.App.QueryRow(ctx, `SELECT nombre, email FROM auth.usuarios WHERE id = $1`, d.Usuario.ID).Scan(&nombre, &email); err != nil {
+			t.Fatal(err)
+		}
+		if nombre != "Cuenta borrada" || strings.Contains(email, "lucia") {
+			t.Fatalf("quedaron datos personales: %q %q", nombre, email)
+		}
+	})
+}
+
 var linkRe = regexp.MustCompile(`https://tulocalweb\.com\.ar/ingresar\?m=restablecer&token=([A-Za-z0-9_-]+)`)
 
 func TestRecuperarYRestablecer(t *testing.T) {

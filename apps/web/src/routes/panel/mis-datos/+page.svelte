@@ -127,6 +127,28 @@
 		// Carga completa: sin sandbox, cualquier pedido del panel que siga en camino redirige a /demo.
 		location.assign(resolve('/'));
 	}
+
+	// ---- Borrar mi cuenta (la persona; Google Play pide esta página) ----
+	let borrando = $state(false);
+	let confirmaEmail = $state('');
+	const email = $derived(data.email);
+	const okEmail = $derived(!!email && confirmaEmail.trim().toLowerCase() === email.toLowerCase());
+	function abrirBorrar() {
+		confirmaEmail = '';
+		borrando = true;
+	}
+	async function borrarCuenta() {
+		if (!okEmail) return;
+		const r = await fetch('/panel/mis-datos/borrar-cuenta', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ confirmacion: email })
+		});
+		if (!r.ok)
+			return ui.toast({ k: 'err', title: 'No se borró', desc: 'Probá de nuevo en un rato.' });
+		borrando = false;
+		location.assign(resolve('/ingresar'));
+	}
 </script>
 
 <Seo title="Mis datos · Panel" description="Tus datos" path="/panel/mis-datos" noindex />
@@ -248,6 +270,15 @@
 				</div>
 				<button type="button" class="rojo" onclick={abrirCerrar}>Cerrar cuenta</button>
 			</div>
+			{#if email}
+				<div class="p-fila">
+					<div class="p-txt">
+						<b>Borrar mi cuenta</b>
+						<div>Tu usuario se desactiva hoy y tus datos personales se borran a los 30 días</div>
+					</div>
+					<button type="button" class="rojo" onclick={abrirBorrar}>Borrar mi cuenta</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -270,6 +301,24 @@
 	<div class="m-acc">
 		<button type="button" class="b-sec" onclick={() => (cerrando = false)}>No, volver</button>
 		<button type="button" class="b-roja" disabled={!ok} onclick={cerrar}>Cerrar cuenta</button>
+	</div>
+</Modal>
+
+<Modal bind:open={borrando} titulo="Borrar mi cuenta" ancho={460} padding={24}>
+	<span class="m-ico"><Icon icon={I.phWarningOctagonFill} size={26} style="color:#B83A2E" /></span>
+	<div class="m-t">¿Borrar tu cuenta?</div>
+	<div class="m-d">
+		Tu cuenta se desactiva ahora y tus datos personales se borran a los 30 días. Las tiendas donde
+		sos la única dueña se cierran. En esos 30 días la recuperás escribiendo a
+		<b>hola@tulocalweb.com.ar</b>; después no se puede deshacer.
+	</div>
+	<div class="m-c">Escribí <b>{email}</b> para confirmar</div>
+	<input class="m-in" bind:value={confirmaEmail} placeholder={email} aria-label="Tu email" />
+	<div class="m-acc">
+		<button type="button" class="b-sec" onclick={() => (borrando = false)}>No, volver</button>
+		<button type="button" class="b-roja" disabled={!okEmail} onclick={borrarCuenta}
+			>Borrar mi cuenta</button
+		>
 	</div>
 </Modal>
 

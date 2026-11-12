@@ -23,6 +23,10 @@ export class CuentasApi extends ClienteBff {
 	salir(token: string) {
 		return this.pedir<void>('POST', '/v1/auth/salir', undefined, token);
 	}
+	/** Borrar la cuenta: se desactiva ya y la API borra los datos personales a los 30 días. */
+	borrarCuenta(token: string, confirmacion: string) {
+		return this.pedir<void>('DELETE', '/v1/auth/cuenta', { confirmacion }, token);
+	}
 	/** El link de contraseña nueva, por email o al WhatsApp de la cuenta. */
 	recuperar(a: { email: string } | { telefono: string }) {
 		return this.pedir<void>('POST', '/v1/auth/recuperar', a);

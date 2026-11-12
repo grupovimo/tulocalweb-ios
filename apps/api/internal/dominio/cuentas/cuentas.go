@@ -40,6 +40,8 @@ var (
 	// ErrOtroEmail: la invitación es para otro email que el de la cuenta que la quiere usar.
 	ErrOtroEmail = errors.New("la invitación es para otro email")
 	ErrSinSesion = errors.New("sin sesión")
+	// ErrCuentaBorrada: la persona borró su cuenta; en los DiasParaBorrar días soporte la puede reactivar.
+	ErrCuentaBorrada = errors.New("la cuenta se borró")
 )
 
 // MaxIntentosIngreso: intentos con contraseña por email cada 15 minutos; después se pausa el ingreso.
@@ -316,6 +318,13 @@ func (s *Servicio) Ingresar(ctx context.Context, email, clave string, recordarme
 func (s *Servicio) sesionDeUsuario(ctx context.Context, usuario string, vida time.Duration, cl Cliente) (Sesion, error) {
 	var ses Sesion
 	err := s.Pool.EnTx(ctx, func(tx pgx.Tx) error {
+		var borrada bool
+		if err := tx.QueryRow(ctx, `SELECT desactivada_en IS NOT NULL FROM auth.usuarios WHERE id = $1`, usuario).Scan(&borrada); err != nil {
+			return err
+		}
+		if borrada {
+			return ErrCuentaBorrada
+		}
 		if activo, err := segundoFactorActivo(ctx, tx, usuario); err != nil {
 			return err
 		} else if activo {
@@ -384,7 +393,7 @@ func (s *Servicio) Sesion(ctx context.Context, token string) (Datos, error) {
 		FROM auth.sesiones s
 		JOIN auth.usuarios u ON u.id = s.usuario_id
 		LEFT JOIN auth.membresias m ON m.usuario_id = s.usuario_id AND m.tienda_id = s.tienda_id
-		WHERE s.token_hash = $1 AND s.vence_en > now()`, hashToken(token)).
+		WHERE s.token_hash = $1 AND s.vence_en > now() AND u.desactivada_en IS NULL`, hashToken(token)).
 		Scan(&d.Usuario.ID, &d.Usuario.Nombre, &d.Usuario.Email, &d.Usuario.Foto, &tienda, &rol, &d.VenceEn, &visto, &cerrarInactivas)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return d, ErrSinSesion
@@ -412,6 +421,79 @@ func (s *Servicio) Sesion(ctx context.Context, token string) (Datos, error) {
 func (s *Servicio) Salir(ctx context.Context, token string) error {
 	_, err := s.Pool.Exec(ctx, `DELETE FROM auth.sesiones WHERE token_hash = $1`, hashToken(token))
 	return err
+}
+
+// DiasParaBorrar: días entre que la persona borra su cuenta y que se borran sus datos personales. En
+// ese tiempo soporte la puede reactivar.
+const DiasParaBorrar = 30
+
+// BorrarCuenta atiende «Borrar mi cuenta» (lo piden Google Play y la App Store). Se confirma
+// escribiendo el email. La cuenta queda desactivada al instante: se cierran sus sesiones, se olvidan
+// sus teléfonos y se cierran las tiendas donde es la única dueña (como «Cerrar la tienda»). Sus datos
+// personales los borra PurgarBorradas a los DiasParaBorrar días.
+func (s *Servicio) BorrarCuenta(ctx context.Context, d Datos, confirmacion string) error {
+	if !strings.EqualFold(strings.TrimSpace(confirmacion), d.Usuario.Email) {
+		return ErrInvalido{"confirmacion", "Escribí tu email tal cual para confirmar."}
+	}
+	filas, err := s.Pool.Query(ctx, `
+		SELECT m.tienda_id FROM auth.membresias m
+		WHERE m.usuario_id = $1 AND m.rol = 'duenio' AND NOT EXISTS (
+			SELECT 1 FROM auth.membresias o
+			WHERE o.tienda_id = m.tienda_id AND o.rol = 'duenio' AND o.usuario_id <> $1)`, d.Usuario.ID)
+	if err != nil {
+		return err
+	}
+	tiendas, err := pgx.CollectRows(filas, pgx.RowTo[string])
+	if err != nil {
+		return err
+	}
+	for _, t := range tiendas {
+		err := s.Pool.EnTienda(ctx, t, func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `UPDATE tiendas SET cerrada_en = coalesce(cerrada_en, now()), cancelada_en = coalesce(cancelada_en, now()) WHERE id = $1`, t)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return s.Pool.EnUsuario(ctx, d.Usuario.ID, func(tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, `UPDATE auth.usuarios SET desactivada_en = now() WHERE id = $1`, d.Usuario.ID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM auth.dispositivos WHERE usuario_id = $1`, d.Usuario.ID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `DELETE FROM auth.sesiones WHERE usuario_id = $1`, d.Usuario.ID)
+		return err
+	})
+}
+
+// PurgarBorradas borra los datos personales de las cuentas que se borraron hace más de DiasParaBorrar
+// días: nombre, email, teléfono, foto, contraseña y las identidades de Google, Apple y los demás. La
+// fila queda (anónima) para que las ventas y los registros del negocio no pierdan a quién apuntan.
+func (s *Servicio) PurgarBorradas(ctx context.Context) (int64, error) {
+	var n int64
+	err := s.Pool.EnTx(ctx, func(tx pgx.Tx) error {
+		filas, err := tx.Query(ctx, `
+			UPDATE auth.usuarios SET nombre = 'Cuenta borrada', email = 'borrada-' || id || '@tulocalweb.invalid',
+				telefono = NULL, foto = NULL, clave_hash = NULL
+			WHERE desactivada_en < now() - make_interval(days => $1) AND email NOT LIKE 'borrada-%@tulocalweb.invalid'
+			RETURNING id`, DiasParaBorrar)
+		if err != nil {
+			return err
+		}
+		ids, err := pgx.CollectRows(filas, pgx.RowTo[string])
+		if err != nil {
+			return err
+		}
+		n = int64(len(ids))
+		if n == 0 {
+			return nil
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM auth.identidades WHERE usuario_id = ANY($1::uuid[])`, ids)
+		return err
+	})
+	return n, err
 }
 
 // Recuperar manda el link para crear una contraseña nueva, si la cuenta existe. Nunca dice si existe.
