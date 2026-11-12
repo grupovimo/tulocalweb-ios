@@ -110,7 +110,7 @@ struct PaletaTienda: Equatable {
         if oscuro {
             fondoArriba = Color(hex: mezclar(a, 0x22140D, 0.55))
             fondoAbajo = Color(hex: mezclar(a, 0x22140D, 0.82))
-            sobre = Color(hex: 0xFBF7F2)
+            self.sobre = Color(hex: 0xFBF7F2)
             sobre2 = Color(hex: 0xCDB8A8)
             sobreSuave = Color(hex: 0xFBF7F2, alfa: 0.35)
             velo = Color(hex: 0xFFFFFF, alfa: 0.06)
@@ -125,7 +125,7 @@ struct PaletaTienda: Equatable {
         } else {
             fondoArriba = Color(hex: a)
             fondoAbajo = Color(hex: a)
-            sobre = Color(hex: s)
+            self.sobre = Color(hex: s)
             sobre2 = Color(hex: s, alfa: 0.88)
             sobreSuave = Color(hex: s, alfa: claroEncima ? 0.55 : 0.45)
             velo = Color(hex: s, alfa: claroEncima ? 0.14 : 0.08)
