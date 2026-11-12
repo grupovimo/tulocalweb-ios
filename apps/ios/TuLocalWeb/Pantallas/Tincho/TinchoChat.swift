@@ -59,12 +59,19 @@ struct TinchoChat: View {
                     if e { withAnimation { lector.scrollTo("escribiendo", anchor: .bottom) } }
                 }
             }
-            if !escribiendo && !sinConexion { sugerencias }
-            entrada
+            // Sugerencias y entrada sobre el mismo fondo que la charla: lo que sube se desvanece detrás,
+            // sin un corte de color. La barra de pestañas ya la reserva la pila (Principal.pila).
+            VStack(spacing: 0) {
+                if !escribiendo && !sinConexion { sugerencias }
+                entrada
+            }
+            .background(alignment: .top) {
+                LinearGradient(colors: [C.fondo.opacity(0), C.fondo], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 24).offset(y: -24).allowsHitTesting(false)
+            }
         }
         .background(C.fondo.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
-        .safeAreaPadding(.bottom, M.tabBar)
         .task {
             guard !saludado else { return }
             saludado = true
@@ -267,7 +274,6 @@ struct TinchoChat: View {
             .padding(.horizontal, 16)
         }
         .padding(.top, 8)
-        .background(C.elevado)
         .transition(.opacity)
     }
 
@@ -330,8 +336,7 @@ struct TinchoChat: View {
                 .accessibilityLabel("Enviar")
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
-        .background(C.elevado)
+        .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 10)
     }
 
     // MARK: Lógica

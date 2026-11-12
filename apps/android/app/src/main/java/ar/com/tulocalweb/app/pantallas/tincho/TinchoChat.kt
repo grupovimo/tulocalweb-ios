@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -264,7 +265,10 @@ fun TinchoChat() {
             }
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(0.5.dp).background(C.linea))
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = lista, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Sugerencias y entrada sobre el mismo fondo que la charla: lo que sube se desvanece detrás, sin
+        // un corte de color (igual que iOS).
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+        LazyColumn(Modifier.fillMaxSize(), state = lista, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { BurbujaTincho(Mensaje(true, saludo), revelando, ::ir, ::reportar) }
             items(visibles, key = { it.id }) { m ->
                 Box(Modifier.animateItem()) { if (m.deTincho) BurbujaTincho(m, revelando, ::ir, ::reportar) else BurbujaPersona(m) }
@@ -279,10 +283,13 @@ fun TinchoChat() {
                 }
             }
         }
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(24.dp)
+                .background(Brush.verticalGradient(listOf(C.fondo.copy(alpha = 0f), C.fondo))))
+        }
         AnimatedVisibility(!escribiendo && !sinConexion, enter = fadeIn(), exit = fadeOut()) {
             // 6a: las sugerencias en chips arriba de la entrada, a mano del pulgar.
             val ultimas = mensajes.lastOrNull { it.deTincho }?.respuesta?.sugerencias ?: emptyList()
-            LazyRow(Modifier.fillMaxWidth().background(C.elevado).padding(top = 8.dp), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(Modifier.fillMaxWidth().padding(top = 8.dp), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(ultimas.ifEmpty { iniciales }) { s ->
                     Texto(s, Estilo.footnoteFuerte, C.primarioTinta, Modifier.clip(Capsula).background(C.crema2).border(1.dp, C.linea2, Capsula)
                         .clickable { preguntar(s) }.padding(horizontal = 12.dp, vertical = 8.dp), lineas = 1)
@@ -290,7 +297,7 @@ fun TinchoChat() {
             }
         }
         // Entrada
-        Row(Modifier.fillMaxWidth().background(C.elevado).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             val forma = RoundedCornerShape(22.dp)
             Entrada(texto, { texto = it }, "Preguntale a Tincho", Modifier.weight(1f).clip(forma).background(C.superficie).border(1.dp, C.linea2, forma)
                 .padding(horizontal = 16.dp, vertical = 11.dp), estilo = Estilo.body16, lineas = 1, lineasMaximas = 4, accionTeclado = ImeAction.Send, alEnviar = { preguntar(texto) })
