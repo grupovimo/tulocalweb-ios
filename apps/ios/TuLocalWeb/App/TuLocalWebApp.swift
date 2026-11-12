@@ -68,6 +68,14 @@ struct Raiz: View {
                 Principal()
                     .transition(.opacity)
             }
+            // En Ingresar también se ven los avisos: la sesión que venció, la cuenta borrada o la API caída.
+            if estado.fase == .afuera, let aviso = estado.aviso {
+                VistaAviso(aviso: aviso) { estado.aviso = nil }
+                    .padding(.horizontal, 16).padding(.bottom, 24)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(1)
+            }
             if estado.bloqueada {
                 Bloqueo().transition(.opacity).zIndex(2)
             }

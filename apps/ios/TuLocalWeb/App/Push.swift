@@ -45,10 +45,13 @@ final class Delegado: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
         let info = response.notification.request.content.userInfo
         guard let texto = info["ruta"] as? String, let ruta = Ruta(texto: texto) else { return }
         let marcar = response.actionIdentifier == "preparado"
+        // La tienda del aviso: con varias, primero se pasa a esa y después se abre la ruta.
+        let tienda = info["tienda"] as? String
         await MainActor.run {
             guard let estado = self.estado else { return }
-            if marcar, case let .pedido(n) = ruta {
-                Task {
+            Task {
+                guard await estado.pasarATiendaDelAviso(tienda) else { return }
+                if marcar, case let .pedido(n) = ruta {
                     struct Cuerpo: Encodable { var estado: String }
                     do {
                         try await estado.api.hacer("POST", "/v1/panel/pedidos/\(n)/estado", Cuerpo(estado: "Listo para despachar"))
@@ -57,9 +60,9 @@ final class Delegado: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
                     } catch {
                         estado.rutaPendiente = ruta
                     }
+                } else {
+                    estado.rutaPendiente = ruta
                 }
-            } else {
-                estado.rutaPendiente = ruta
             }
         }
     }

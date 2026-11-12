@@ -3,7 +3,7 @@ import SwiftUI
 import UserNotifications
 
 /// 11h · Cuenta: la persona, seguridad (Face ID, contraseña, cerrar otras sesiones), tema
-/// (Claro / Oscuro / Sistema), avisos y ayuda.
+/// (Claro / Oscuro / Sistema), avisos, ayuda y borrar la cuenta (guía 5.1.1(v) de Apple).
 struct Cuenta: View {
     @Environment(Estado.self) private var estado
     @Environment(Navegacion.self) private var nav
@@ -14,6 +14,7 @@ struct Cuenta: View {
     @State private var avisosSinPreguntar = false
     @State private var dosPasos: EstadoDosPasos?
     @State private var verDosPasos = false
+    @State private var borrar = false
 
     var body: some View {
         ScrollView {
@@ -74,6 +75,20 @@ struct Cuenta: View {
                     }
                 }
                 .tarjeta()
+                if estado.datos != nil {
+                    EtiquetaSeccion(texto: "Tu cuenta").padding(.horizontal, 4).padding(.top, 10)
+                    Button { borrar = true } label: {
+                        HStack {
+                            Text("Borrar mi cuenta").estilo(.body16).foregroundStyle(C.errorTinta)
+                            Spacer()
+                            Chevron(ancho: 8)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 13)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .tarjeta()
+                }
             }
             .padding(.top, 10)
             .margenPantalla()
@@ -91,6 +106,9 @@ struct Cuenta: View {
             Task { dosPasos = try? await estado.api.get("/v1/auth/segundo-factor") }
         }) {
             DosPasos(estadoInicial: dosPasos).hojaTLW([.large])
+        }
+        .sheet(isPresented: $borrar) {
+            HojaBorrarCuenta().hojaTLW([.large])
         }
     }
 
@@ -147,3 +165,85 @@ struct Cuenta: View {
     }
 }
 
+/// Borrar la cuenta (DELETE /v1/auth/cuenta): la cuenta se desactiva al instante, se cierran las tiendas
+/// donde es la única dueña y la API borra sus datos personales a los 30 días. Para confirmar, escribe
+/// su mail; después, Face ID o el código.
+struct HojaBorrarCuenta: View {
+    @Environment(Estado.self) private var estado
+    @Environment(\.dismiss) private var cerrar
+    @State private var confirmacion = ""
+    @State private var enviando = false
+    @State private var error: String?
+
+    private var email: String { estado.datos?.usuario.email ?? "" }
+    /// Las tiendas que se cierran con la cuenta: las que tiene como dueña. Si hay otra persona dueña,
+    /// esa tienda sigue (lo resuelve la API).
+    private var propias: [String] {
+        (estado.acceso?.tiendas ?? []).filter { $0.rol == "duenio" }.map(\.nombre)
+    }
+    static func coincide(_ escrito: String, _ email: String) -> Bool {
+        !email.isEmpty && escrito.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == email.lowercased()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Grabber()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Image(systemName: "person.crop.circle.badge.xmark").font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(C.errorTinta)
+                        .frame(width: 60, height: 60).background(C.errorFondo, in: Circle())
+                    Text("Borrar mi cuenta").estilo(.tituloHojaChico).foregroundStyle(C.texto)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(Formato.sinViudas("Tu cuenta se desactiva ahora y tus datos personales se borran a los 30 días."), systemImage: "person.fill.xmark")
+                        Label(Formato.sinViudas(cierre), systemImage: "storefront")
+                        Label(Formato.sinViudas("En esos 30 días la recuperás escribiendo a hola@tulocalweb.com.ar. Después no se puede deshacer."),
+                              systemImage: "exclamationmark.triangle")
+                    }
+                    .estilo(.texto14).foregroundStyle(C.texto)
+                    Text(Formato.sinViudas("Para confirmar, escribí tu email: \(email)"))
+                        .estilo(.footnote).foregroundStyle(C.texto2)
+                    CampoTexto(titulo: "Tu email", texto: $confirmacion, teclado: .emailAddress)
+                    if let error { MensajeError(texto: error) }
+                }
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            VStack(spacing: 4) {
+                Button(enviando ? "Un momento…" : "Borrar mi cuenta") { Task { await borrar() } }
+                    .buttonStyle(BotonDestructivo())
+                    .disabled(!Self.coincide(confirmacion, email) || enviando)
+                    .opacity(Self.coincide(confirmacion, email) ? 1 : 0.5)
+                Button("Me quedo") { cerrar() }.buttonStyle(BotonTexto(alto: 44))
+            }
+            .padding(.horizontal, 20).padding(.bottom, 12)
+        }
+    }
+
+    private var cierre: String {
+        switch propias.count {
+        case 0: return "Las tiendas donde trabajás siguen andando: sólo dejás de tener acceso."
+        case 1: return "Si sos la única persona dueña de \(propias[0]), la tienda se cierra con sus productos y pedidos."
+        default: return "Las tiendas donde sos la única persona dueña (\(propias.joined(separator: ", "))) se cierran con sus productos y pedidos."
+        }
+    }
+
+    private func borrar() async {
+        guard Self.coincide(confirmacion, email) else { return }
+        guard await estado.confirmarIdentidad("Para borrar tu cuenta") else { return }
+        enviando = true
+        error = nil
+        defer { enviando = false }
+        do {
+            // La API compara con el mail tal cual: va el de la sesión, no lo que se tipeó.
+            try await estado.borrarCuenta(confirmacion: email)
+            Haptico.exito()
+            cerrar()
+        } catch let e as ErrorApi {
+            Haptico.error()
+            error = e.detalle
+        } catch {
+            self.error = ErrorApi.desconocido.detalle
+        }
+    }
+}

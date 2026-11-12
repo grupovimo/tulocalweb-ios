@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // Lo que antes pedía la computadora, ahora desde el celular: conectar Mercado Pago, Mercado Libre y
-// Correo Argentino, crear cupones, cambiar de plan y cargar el certificado de ARCA.
+// Correo Argentino, crear cupones y cargar el certificado de ARCA.
 
 // MARK: - Conectar una cuenta (OAuth)
 
@@ -72,17 +72,6 @@ final class ConectarCuenta: NSObject, ASWebAuthenticationPresentationContextProv
             let _: Importacion = try await api.enviar("POST", "/v1/panel/importaciones/tiendanube/vuelta", V(codigo: codigo, estado: estado))
             return true
         } catch { return await arranco() }
-    }
-
-    /// Abre una página de pago (la suscripción al plan) y vuelve cuando se cierra.
-    func abrir(_ url: URL) async {
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            let s = ASWebAuthenticationSession(url: url, callbackURLScheme: "ar.com.tulocalweb.app") { _, _ in cont.resume() }
-            s.presentationContextProvider = self
-            sesion = s
-            s.start()
-        }
-        sesion = nil
     }
 }
 

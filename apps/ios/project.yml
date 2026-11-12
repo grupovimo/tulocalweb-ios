@@ -23,7 +23,11 @@ targets:
       Release: Config/TuLocalWeb.xcconfig
     sources:
       - path: TuLocalWeb
+        excludes: [PrivacyInfo.xcprivacy]
       - path: Compartido
+      # El manifiesto de privacidad, como recurso (App Store lo exige desde mayo de 2024).
+      - path: TuLocalWeb/PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - target: TuLocalWebWidgets
     entitlements:
@@ -107,7 +111,10 @@ targets:
       Release: Config/TuLocalWeb.xcconfig
     sources:
       - path: TuLocalWebWidgets
+        excludes: [PrivacyInfo.xcprivacy]
       - path: Compartido
+      - path: TuLocalWebWidgets/PrivacyInfo.xcprivacy
+        buildPhase: resources
     entitlements:
       path: TuLocalWebWidgets/TuLocalWebWidgets.entitlements
       properties:

@@ -67,10 +67,27 @@ final class PantallasTests: XCTestCase {
     func testPantallaListaPedidos() { montar(ListaPedidos()) }
     func testPantallaListaProductos() { montar(ListaProductos()) }
     func testPantallaTinchoChat() { montar(TinchoChat()) }
+    /// «Reportar respuesta»: el mail a seguridad@ lleva la pregunta y la respuesta, bien codificadas.
+    func testReportarRespuestaDeTincho() throws {
+        let cuerpo = TinchoChat.cuerpoReporte(pregunta: "¿Cómo vengo?", respuesta: "Vas 50 % & bien = ok", tienda: "t1")
+        XCTAssertTrue(cuerpo.contains("Pregunta: ¿Cómo vengo?"))
+        XCTAssertTrue(cuerpo.contains("Tienda: t1"))
+        let url = try XCTUnwrap(TinchoChat.mailReporte(cuerpo))
+        XCTAssertEqual(url.scheme, "mailto")
+        XCTAssertTrue(url.absoluteString.hasPrefix("mailto:seguridad@tulocalweb.com.ar?subject="))
+        XCTAssertFalse(url.absoluteString.contains("& bien"))
+    }
     func testPantallaMas() { montar(Mas()) }
     func testPantallaDetallePedido() { montar(DetallePedido(numero: 1048)) }
     func testPantallaAvisos() { montar(Avisos()) }
     func testPantallaCuenta() { montar(Cuenta()) }
+    /// Borrar la cuenta (guía 5.1.1(v)): la hoja se arma y sólo habilita con el mail de la persona.
+    func testHojaBorrarCuenta() {
+        montar(HojaBorrarCuenta())
+        XCTAssertTrue(HojaBorrarCuenta.coincide(" Ana@Lumbre.com ", "ana@lumbre.com"))
+        XCTAssertFalse(HojaBorrarCuenta.coincide("ana@lumbre", "ana@lumbre.com"))
+        XCTAssertFalse(HojaBorrarCuenta.coincide("", ""))
+    }
     func testPantallaClientes() { montar(Clientes()) }
     func testPantallaCajaDelDia() { montar(CajaDelDia()) }
     func testPantallaCarritosAbandonados() { montar(CarritosAbandonados()) }
@@ -87,6 +104,11 @@ final class PantallasTests: XCTestCase {
         XCTAssertEqual(d.cotizacion("pro", "mes")?.hoy, 14516)
         XCTAssertEqual(d.cotizacion("gratis", "anio")?.tipo, "gratis") // el gratis se cotiza con el ciclo vigente
         XCTAssertEqual(Formato.diaMes("2026-11-20T00:00:00Z").isEmpty, false)
+        // Guía 3.1.1: desde la app no se pasa a un plan pago; sólo a Gratis o quedarse con el actual.
+        XCTAssertFalse(HojaPlan.permitido(d, "pro"))
+        XCTAssertFalse(HojaPlan.permitido(d, "negocio"))
+        XCTAssertTrue(HojaPlan.permitido(d, "gratis"))
+        XCTAssertTrue(HojaPlan.permitido(d, "emprende"))
         montar(HojaPlan(datos: d, preelegido: "pro") {})
         montar(HojaPlan(datos: d, preelegido: "gratis") {})
         // El descuento para quedarse (§57): mitad del débito mientras queden cobros.

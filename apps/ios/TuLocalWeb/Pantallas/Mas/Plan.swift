@@ -1,8 +1,9 @@
 import SwiftUI
 
-// El plan de Tu Local Web (§56), igual que Plan y facturación del panel: elegir un plan no cobra nada; el
-// resumen muestra qué se paga hoy (línea por línea), desde cuándo rige y cuánto se cobra después, y
-// recién «Confirmar» pasa por Mercado Pago. Las cuentas vienen hechas de la API (abono.Cotizar).
+// El plan de Tu Local Web (§56). En la app de la tienda (App Store, guía 3.1.1) el plan sólo se mira: el
+// plan actual, su uso, el medio de pago y las facturas. Desde acá se puede pasar a Gratis, cancelar o
+// deshacer un cambio programado, que no cobran nada; cambiar a un plan pago no se ofrece ni se enlaza.
+// Las cuentas vienen hechas de la API (abono.Cotizar).
 
 /// Los planes (apps/web/src/lib/panel/planes.ts): nombre, para quién y qué incluye. Los precios salen de
 /// las cotizaciones de la API.
@@ -102,6 +103,10 @@ struct PlanCuenta: View {
             let ciclo = d.actual == "gratis" ? "" : (d.ciclo == "anio" ? " anual" : " mensual")
             TarjetaHeroe(etiqueta: d.enPrueba ? "Estás probando gratis" : "Tu plan", valor: "Plan \(nombre)\(ciclo)",
                          detalle: detalleHeroe(d), tincho: .celebrando)
+                // La hoja cuelga de algo que siempre está: la abren «Pasar a Gratis» y «Deshacer».
+                .sheet(item: Binding(get: { hoja.map { Elegido(id: $0) } }, set: { hoja = $0?.id })) { e in
+                    HojaPlan(datos: d, preelegido: e.id) { await actualizar() }.hojaTLW([.large])
+                }
             if let p = d.abono?.programado {
                 AvisoProgramado(programado: p, actual: nombre) { hoja = d.actual }
             }
@@ -137,11 +142,11 @@ struct PlanCuenta: View {
                     FilaDato(etiqueta: f.fecha.map { "\(f.detalle) · \(Formato.diaMes($0))" } ?? f.detalle, valor: Formato.pesos(f.total))
                 }
             }
-            Button("Cambiar de plan") { hoja = d.actual }
-                .buttonStyle(BotonPrincipal(alto: 48)).padding(.top, 6)
-                .sheet(item: Binding(get: { hoja.map { Elegido(id: $0) } }, set: { hoja = $0?.id })) { e in
-                    HojaPlan(datos: d, preelegido: e.id) { await actualizar() }.hojaTLW([.large])
-                }
+            // Sólo pasar a Gratis (sin cobros): elegir un plan pago no está en la app.
+            if d.actual != "gratis" && d.abono?.programado == nil, HojaPlan.permitido(d, "gratis") {
+                Button("Pasar a Gratis") { hoja = "gratis" }
+                    .buttonStyle(BotonTexto(alto: 48)).padding(.top, 6)
+            }
             if d.actual != "gratis" && d.abono?.programado?.plan != "gratis" {
                 Button("Cancelar plan") { cancelar = true }
                     .buttonStyle(BotonTexto(alto: 44, color: C.errorTinta))
@@ -188,40 +193,52 @@ private struct AvisoProgramado: View {
     }
 }
 
-// MARK: - Elegir y confirmar
+// MARK: - Pasar a Gratis o deshacer
 
+/// La hoja del cambio sin cobro: pasar a Gratis o quedarse con el plan actual (deshacer lo programado).
+/// Nunca ofrece un plan que pase por un pago.
 struct HojaPlan: View {
     var datos: PlanCuenta.Datos
     var listo: () async -> Void
     @Environment(Estado.self) private var estado
     @Environment(\.dismiss) private var cerrar
     @State private var plan: String
-    @State private var ciclo: String
     @State private var enviando = false
+    /// El ciclo no se cambia desde la app (pasar a anual es un pago).
+    private var ciclo: String { datos.ciclo }
 
     init(datos: PlanCuenta.Datos, preelegido: String? = nil, listo: @escaping () async -> Void) {
         self.datos = datos
         self.listo = listo
-        _plan = State(initialValue: preelegido ?? datos.actual)
-        _ciclo = State(initialValue: datos.ciclo)
+        // Un plan pago nunca queda elegido: si llega uno, se muestra el actual.
+        let elegido = preelegido.flatMap { HojaPlan.permitido(datos, $0) ? $0 : nil }
+        _plan = State(initialValue: elegido ?? datos.actual)
     }
 
     private var cot: CotizacionPlan? { datos.cotizacion(plan, ciclo) }
-    private var hayCambio: Bool { cot.map { !$0.sinCambio } ?? false }
+    private var hayCambio: Bool { cot.map { !$0.sinCambio && !$0.pasaPorMercadoPago } ?? false }
+
+    /// Se puede elegir en la app: Gratis o el plan actual, cotizado y sin pago de por medio.
+    static func permitido(_ d: PlanCuenta.Datos, _ id: String) -> Bool {
+        guard id == "gratis" || id == d.actual, let c = d.cotizacion(id, d.ciclo) else { return false }
+        return !c.pasaPorMercadoPago
+    }
+    private var opciones: [CatalogoPlanes.Plan] {
+        CatalogoPlanes.todos.filter { $0.id == datos.actual || $0.id == "gratis" }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             Grabber()
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Elegí tu plan").estilo(.tituloHojaChico).foregroundStyle(C.texto)
-                    Text(Formato.sinViudas("Nada se cobra hasta que confirmes. Precios en pesos, con IVA incluido y sin permanencia."))
+                    Text("Tu plan").estilo(.tituloHojaChico).foregroundStyle(C.texto)
+                    Text(Formato.sinViudas("Pasar al plan Gratis no tiene costo. Tus productos y pedidos quedan guardados."))
                         .estilo(.subhead).foregroundStyle(C.texto2)
-                    Segmentado(opciones: [("mes", "Por mes"), ("anio", "Por año · −25 %")], elegido: $ciclo)
-                    ForEach(CatalogoPlanes.todos) { p in
+                    ForEach(opciones) { p in
                         TarjetaPlan(plan: p, anual: ciclo == "anio", elegido: plan == p.id, actual: datos.actual == p.id,
-                                    permitido: datos.cotizacion(p.id, ciclo) != nil) {
-                            if datos.cotizacion(p.id, ciclo) == nil {
+                                    permitido: Self.permitido(datos, p.id)) {
+                            if !Self.permitido(datos, p.id) {
                                 estado.avisar("Tenés un cambio programado: deshacelo para elegir otro plan.", ok: false)
                                 return
                             }
@@ -245,8 +262,6 @@ struct HojaPlan: View {
     }
 
     private func boton(_ c: CotizacionPlan) -> String {
-        if c.pago == "diferencia" || (c.pago == "suscripcion" && c.hoy > 0) { return "Pagar con Mercado Pago" }
-        if c.pago == "suscripcion" { return "Seguir a Mercado Pago" }
         if c.tipo == "mantener" { return "Deshacer el cambio" }
         return c.plan == "gratis" ? "Pasar a Gratis" : "Confirmar el cambio"
     }
@@ -254,25 +269,19 @@ struct HojaPlan: View {
     private func confirmar(_ c: CotizacionPlan) async {
         struct S: Encodable { var plan: String; var ciclo: String }
         struct U: Decodable { var url: String }
+        // Lo que pasa por un pago no se hace desde la app (la hoja tampoco lo ofrece).
+        guard !c.pasaPorMercadoPago else { return }
         enviando = true
         defer { enviando = false }
         do {
-            let u: U = try await estado.api.enviar("POST", "/v1/panel/cuenta/abono", S(plan: c.plan, ciclo: c.ciclo))
+            let _: U = try await estado.api.enviar("POST", "/v1/panel/cuenta/abono", S(plan: c.plan, ciclo: c.ciclo))
             let nombre = CatalogoPlanes.de(c.plan).nombre
-            if let url = URL(string: u.url), !u.url.isEmpty {
-                // Mercado Pago: cargar la tarjeta del débito o pagar la diferencia. El plan cambia cuando avisa.
-                await ConectarCuenta.compartido.abrir(url)
-                await listo()
-                estado.avisar("Si completaste el pago, en unos segundos tenés \(nombre).")
-            } else {
-                await listo()
-                Haptico.exito()
-                switch c.tipo {
-                case "baja": estado.avisar("Pasás a \(nombre) el \(Formato.diaMes(c.rige)). Hasta ahí seguís con lo que pagaste.")
-                case "gratis": estado.avisar(c.hasta.map { "Pasás a Gratis el \(Formato.diaMes($0)). No te cobramos más." } ?? "Pasaste al plan Gratis.")
-                case "mantener": estado.avisar("Seguís con \(CatalogoPlanes.de(datos.actual).nombre).")
-                default: estado.avisar("Ya tenés el plan \(nombre).")
-                }
+            await listo()
+            Haptico.exito()
+            switch c.tipo {
+            case "gratis": estado.avisar(c.hasta.map { "Pasás a Gratis el \(Formato.diaMes($0)). No te cobramos más." } ?? "Pasaste al plan Gratis.")
+            case "mantener": estado.avisar("Seguís con \(CatalogoPlanes.de(datos.actual).nombre).")
+            default: estado.avisar("Listo, tenés el plan \(nombre).")
             }
             cerrar()
         } catch let e as ErrorApi {
@@ -407,7 +416,7 @@ private struct ResumenCambio: View {
             Dato(simbolo: "clock", texto: cuandoRige(nuevo.nombre))
             if !como.isEmpty {
                 HStack(spacing: 10) {
-                    Image(systemName: c.pasaPorMercadoPago ? "creditcard.fill" : "checkmark.shield.fill")
+                    Image(systemName: "checkmark.shield.fill")
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(C.okTinta)
                         .frame(width: 30, height: 30).background(C.okFondo, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     Text(Formato.sinViudas(como)).estilo(.footnote).foregroundStyle(C.texto2)
@@ -415,7 +424,6 @@ private struct ResumenCambio: View {
                 .padding(12)
                 .background(C.crema2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            Text("Tu Local Web nunca ve tu tarjeta.").estilo(.footnote).foregroundStyle(C.texto3)
         }
     }
 
@@ -459,8 +467,6 @@ private struct ResumenCambio: View {
 
     private var como: String {
         switch c.pago {
-        case "suscripcion": return "Cargás la tarjeta en Mercado Pago y queda el débito automático. Lo das de baja cuando quieras."
-        case "diferencia": return "Pagás la diferencia en Mercado Pago (tarjeta, dinero en cuenta o efectivo). Tu débito se actualiza solo."
         case "actualizar": return "Actualizamos el monto de tu débito de Mercado Pago. No tenés que cargar nada."
         case "cancelar": return "Damos de baja tu débito de Mercado Pago: no te cobramos más."
         default: return ""
@@ -492,10 +498,7 @@ private struct BarraConfirmar: View {
                 Text(Formato.pesos(c.hoy)).estilo(.total).monospacedDigit().foregroundStyle(C.texto)
             }
             Button(action: accion) {
-                HStack(spacing: 6) {
-                    if c.pasaPorMercadoPago { Image(systemName: "lock.fill").font(.system(size: 13, weight: .bold)) }
-                    Text(enviando ? "Un momento…" : boton)
-                }
+                Text(enviando ? "Un momento…" : boton)
             }
             .buttonStyle(BotonPrincipal(alto: 52))
             .disabled(enviando)

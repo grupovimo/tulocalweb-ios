@@ -158,6 +158,11 @@ struct TinchoChat: View {
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(C.superficie, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 6, bottomTrailingRadius: 20, topTrailingRadius: 20, style: .continuous))
                         .overlay(UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 6, bottomTrailingRadius: 20, topTrailingRadius: 20, style: .continuous).strokeBorder(C.anillo, lineWidth: 1))
+                        .contextMenu {
+                            if m.respuesta != nil {
+                                Button("Reportar respuesta", systemImage: "flag") { reportar(m) }
+                            }
+                        }
                     Spacer(minLength: 24)
                 }
             }
@@ -180,10 +185,50 @@ struct TinchoChat: View {
                             }
                         }
                     }
+                    // Las respuestas son de IA: cualquiera se puede reportar (políticas de Apple y Google).
+                    Button { reportar(m) } label: {
+                        Label("Reportar respuesta", systemImage: "flag")
+                            .estilo(.footnote).foregroundStyle(C.texto3)
+                            .padding(.vertical, 4).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.leading, 36)
             }
         }
+    }
+
+    /// Manda la pregunta y la respuesta a seguridad@ por mail (la API no tiene dónde recibirlo). Sin
+    /// app de mail, se copia para pegarlo donde sea.
+    private func reportar(_ m: Mensaje) {
+        Haptico.seleccion()
+        let i = mensajes.firstIndex(where: { $0.id == m.id }) ?? mensajes.count
+        let pregunta = mensajes[..<i].last(where: { !$0.deTincho })?.texto ?? ""
+        let cuerpo = Self.cuerpoReporte(pregunta: pregunta, respuesta: m.respuesta?.texto ?? m.texto, tienda: estado.tienda?.id)
+        guard let url = Self.mailReporte(cuerpo) else { return }
+        Task {
+            if await !UIApplication.shared.open(url) {
+                UIPasteboard.general.string = cuerpo
+                estado.avisar("Copiamos la respuesta. Mandala a \(Self.casillaReporte) para que la revisemos.")
+            }
+        }
+    }
+
+    static let casillaReporte = "seguridad@tulocalweb.com.ar"
+
+    static func cuerpoReporte(pregunta: String, respuesta: String, tienda: String?) -> String {
+        var t = "Quiero reportar esta respuesta de Tincho.\n\nMotivo: \n\n"
+        if !pregunta.isEmpty { t += "Pregunta: \(pregunta.prefix(500))\n\n" }
+        t += "Respuesta: \(respuesta.prefix(1500))"
+        if let tienda { t += "\n\nTienda: \(tienda)" }
+        return t
+    }
+
+    static func mailReporte(_ cuerpo: String) -> URL? {
+        var permitidos = CharacterSet.alphanumerics
+        permitidos.insert(charactersIn: "-._~")
+        func cod(_ s: String) -> String { s.addingPercentEncoding(withAllowedCharacters: permitidos) ?? "" }
+        return URL(string: "mailto:\(casillaReporte)?subject=\(cod("Reporte de una respuesta de Tincho"))&body=\(cod(cuerpo))")
     }
 
     /// El texto de Tincho; el de la respuesta nueva, hasta donde va, con el cursor accent.

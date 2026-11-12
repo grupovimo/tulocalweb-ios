@@ -122,15 +122,23 @@ final class Estado {
             fase = .adentro
             await refrescarResumen()
             await pedirTokenPushSiCorresponde()
-        } catch let e as ErrorApi where e.sinConexion {
-            // Sin internet se entra igual con lo guardado (handoff 5a).
+        } catch let e as ErrorApi where e.estado == 401 {
+            // Sólo un 401 dice que la sesión ya no vale.
+            olvidarSesion()
+            fase = .afuera
+        } catch {
+            // Sin internet, un 500, un 429 o un deploy a mitad: se entra igual con lo guardado (handoff 5a)
+            // y la sesión queda, para que la próxima vez cargue bien.
             datos = Guardado.leer(DatosSesion.self, clave: "sesion")?.0
             acceso = Guardado.leer(Acceso.self, clave: "acceso")?.0
             if conFaceID { bloqueada = true }
             fase = datos == nil ? .afuera : .adentro
-        } catch {
-            olvidarSesion()
-            fase = .afuera
+            let sinRed = (error as? ErrorApi)?.sinConexion == true
+            if datos == nil {
+                avisar(sinRed ? ErrorApi.sinRed.detalle : "No pudimos conectar con Tu Local Web. Probá de nuevo en un rato.", ok: false)
+            } else if !sinRed {
+                avisar("No pudimos actualizar tu tienda. Ves lo último guardado.", ok: false)
+            }
         }
     }
 
@@ -271,6 +279,25 @@ final class Estado {
         }
     }
 
+    /// Un aviso de otra tienda (push con `tienda`): primero se pasa a esa tienda y después se abre la
+    /// ruta. Si la app arranca desde el aviso, espera a que termine de cargar la sesión. Devuelve si se
+    /// puede seguir.
+    func pasarATiendaDelAviso(_ id: String?) async -> Bool {
+        for _ in 0..<100 where fase == .arrancando {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        guard let id, !id.isEmpty, let a = acceso, id != a.tiendaId else { return true }
+        // Una tienda a la que ya no tiene acceso: se abre en la actual, como antes.
+        guard a.tiendas.contains(where: { $0.id == id }) else { return true }
+        do {
+            try await elegirTienda(id)
+            return true
+        } catch let e as ErrorApi {
+            avisar(e.detalle, ok: false)
+        } catch {}
+        return false
+    }
+
     // MARK: Salir
 
     func salir() async {
@@ -278,6 +305,19 @@ final class Estado {
         try? await api.hacer("POST", "/v1/auth/salir")
         olvidarSesion()
         fase = .afuera
+    }
+
+    /// Borrar la cuenta de la persona (DELETE /v1/auth/cuenta): la API borra al usuario y sus datos y
+    /// cierra las tiendas donde es la única dueña. La confirmación es su mail, tal cual. Después la app
+    /// olvida la sesión y vuelve a Ingresar.
+    func borrarCuenta(confirmacion: String) async throws {
+        struct Cuerpo: Encodable { var confirmacion: String }
+        try await api.hacer("DELETE", "/v1/auth/cuenta", Cuerpo(confirmacion: confirmacion))
+        olvidarSesion()
+        permisosVistos = false
+        conFaceID = false
+        fase = .afuera
+        avisar("Borramos tu cuenta y tus datos.")
     }
 
     private func sesionPerdida() {
