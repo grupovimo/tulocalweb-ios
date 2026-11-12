@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -204,23 +205,35 @@ private fun DrawScope.textoEje(m: TextMeasurer, s: String, color: Color, x: Floa
 
 // MARK: - Ventas
 
+/** Los colores del gráfico de ventas: los de siempre, o los de encima del color de la tienda (la vidriera del Inicio:
+ *  línea y punto en «sobre», relleno en velo, guías en el borde del vidrio). `relleno` null: el degradé de la línea;
+ *  `guia` null: la del tema. */
+data class ColoresGrafico(
+    val linea: Color = C.acento,
+    val anterior: Color = hex(0x8A7364),
+    val relleno: Color? = null,
+    val guia: Color? = null,
+    val bordePunto: Color = Color.White,
+)
+
 /** El gráfico de ventas de 2a: el período en `accent` (3 pt, relleno degradé 22 % → 0 y punto final de 9 con borde
  *  blanco de 3) y el anterior punteado (`#8A7364`, 2 pt, 4/5), con tres guías. Arrastrando se ve cuánto se vendió en
  *  cada punto y cuánto en el mismo punto del período anterior. */
 @Composable
-fun GraficoVentas(actual: List<Double>, anterior: List<Double>, alto: Dp = 130.dp, etiqueta: ((Int) -> String)? = null) {
+fun GraficoVentas(actual: List<Double>, anterior: List<Double>, alto: Dp = 130.dp, etiqueta: ((Int) -> String)? = null,
+                  colores: ColoresGrafico = ColoresGrafico(), descripcion: String? = null) {
     var elegido by remember { mutableStateOf<Int?>(null) }
     val factor = crecer()
     val f by animateFloatAsState(1f, Mov.crecer(), label = "datos")
     val tope = maxOf(actual.maxOrNull() ?: 0.0, anterior.maxOrNull() ?: 0.0, 1.0) * 1.08
     val largo = maxOf(actual.size, anterior.size, 2)
-    val guia = tema(0x3A1D12, 0xFBF7F2, alfa = 0.07f).actual
-    val acento = C.acento; val linea2 = C.linea2
+    val guia = colores.guia ?: tema(0x3A1D12, 0xFBF7F2, alfa = 0.07f).actual
+    val acento = colores.linea; val linea2 = C.linea2
     var ancho by remember { mutableStateOf(0f) }
     BoxWithConstraints(
         Modifier.fillMaxWidth().height(alto).onSizeChanged { ancho = it.width.toFloat() }
             .seleccionX(actual.size, { ancho }) { if (it != elegido) { elegido = it; if (it != null) Haptico.seleccion() } }
-            .semantics { contentDescription = "Gráfico de ventas"; stateDescription = actual.lastOrNull()?.let { "Último punto: ${Formato.pesos(it)}" } ?: "" },
+            .semantics { contentDescription = descripcion ?: "Gráfico de ventas"; stateDescription = actual.lastOrNull()?.let { "Último punto: ${Formato.pesos(it)}" } ?: "" },
     ) {
         Canvas(Modifier.fillMaxWidth().height(alto)) {
             fun px(i: Int) = size.width * i / (largo - 1)
@@ -230,20 +243,21 @@ fun GraficoVentas(actual: List<Double>, anterior: List<Double>, alto: Dp = 130.d
                 drawLine(guia, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
             }
             if (anterior.size > 1) {
-                drawPath(curva(anterior.mapIndexed { i, v -> Offset(px(i), py(v)) }), hex(0x8A7364),
+                drawPath(curva(anterior.mapIndexed { i, v -> Offset(px(i), py(v)) }), colores.anterior,
                     style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 5.dp.toPx()))))
             }
             if (actual.isNotEmpty()) {
                 val pts = actual.mapIndexed { i, v -> Offset(px(i), py(v)) }
                 val area = curva(pts).apply { lineTo(pts.last().x, size.height); lineTo(pts.first().x, size.height); close() }
-                drawPath(area, Brush.verticalGradient(listOf(acento.copy(alpha = 0.22f), acento.copy(alpha = 0f))))
+                val relleno = colores.relleno
+                drawPath(area, if (relleno != null) SolidColor(relleno) else Brush.verticalGradient(listOf(acento.copy(alpha = 0.22f), acento.copy(alpha = 0f))))
                 drawPath(curva(pts), acento, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
                 val e = elegido
                 val punto = if (e != null && e in actual.indices) {
                     drawLine(linea2, Offset(px(e), 0f), Offset(px(e), size.height), 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx())))
                     pts[e]
                 } else pts.last()
-                drawCircle(Color.White, 6.dp.toPx(), punto)
+                drawCircle(colores.bordePunto, 6.dp.toPx(), punto)
                 drawCircle(acento, 4.5.dp.toPx(), punto)
             }
         }

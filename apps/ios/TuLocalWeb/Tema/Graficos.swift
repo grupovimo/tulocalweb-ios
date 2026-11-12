@@ -79,6 +79,18 @@ private let fitDentro = AnnotationOverflowResolution(x: .fit(to: .chart), y: .fi
 
 // MARK: - Ventas
 
+/// Los colores del gráfico de ventas: los de siempre, o los de encima del color de la tienda (la
+/// vidriera del Inicio: línea y punto en «sobre», relleno en velo, guías en el borde del vidrio).
+struct ColoresGrafico {
+    var linea: Color = C.acento
+    var anterior: Color = Color(hex: 0x8A7364)
+    /// nil: el degradé de la línea (22 % → 0).
+    var relleno: Color? = nil
+    var guia: Color = Color.tema(0x3A1D12, 0xFBF7F2, alfa: 0.07)
+    var bordePunto: Color = .white
+    static let estandar = ColoresGrafico()
+}
+
 /// El gráfico de ventas de 2a: el período en `accent` (3 pt, relleno degradé 22 % → 0 y punto final
 /// de 9 con borde blanco de 3) y el anterior punteado (`#8A7364`, 2 pt, 4/5), con tres guías.
 /// Arrastrando se ve cuánto se vendió en cada punto y cuánto en el mismo punto del período anterior.
@@ -88,6 +100,9 @@ struct GraficoVentas: View {
     var alto: CGFloat = 130
     /// El nombre de cada punto al tocarlo (el día o la hora); nil: sin título.
     var etiqueta: ((Int) -> String)? = nil
+    var colores: ColoresGrafico = .estandar
+    /// Lo que dice VoiceOver del gráfico (nil: «Gráfico de ventas»).
+    var descripcion: String? = nil
 
     @State private var elegido: Int?
     @State private var factor = 0.0
@@ -98,17 +113,17 @@ struct GraficoVentas: View {
         Chart {
             ForEach(Array(anterior.enumerated()), id: \.offset) { i, v in
                 LineMark(x: .value("Punto", i), y: .value("Monto", v * factor), series: .value("Serie", "Anterior"))
-                    .foregroundStyle(Color(hex: 0x8A7364))
+                    .foregroundStyle(colores.anterior)
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
                     .interpolationMethod(.catmullRom)
             }
             ForEach(Array(actual.enumerated()), id: \.offset) { i, v in
                 AreaMark(x: .value("Punto", i), y: .value("Monto", v * factor))
-                    .foregroundStyle(LinearGradient(colors: [C.acento.opacity(0.22), C.acento.opacity(0)],
+                    .foregroundStyle(LinearGradient(colors: colores.relleno.map { [$0, $0] } ?? [colores.linea.opacity(0.22), colores.linea.opacity(0)],
                                                     startPoint: .top, endPoint: .bottom))
                     .interpolationMethod(.catmullRom)
                 LineMark(x: .value("Punto", i), y: .value("Monto", v * factor), series: .value("Serie", "Actual"))
-                    .foregroundStyle(C.acento)
+                    .foregroundStyle(colores.linea)
                     .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                     .interpolationMethod(.catmullRom)
             }
@@ -129,7 +144,7 @@ struct GraficoVentas: View {
         .chartXAxis(.hidden)
         .chartYAxis {
             AxisMarks(values: [tope * 0.15, tope * 0.55, tope * 0.95]) { _ in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(Color.tema(0x3A1D12, 0xFBF7F2, alfa: 0.07))
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(colores.guia)
             }
         }
         .chartLegend(.hidden)
@@ -139,13 +154,13 @@ struct GraficoVentas: View {
         .crecer($factor)
         .animation(Mov.crecer, value: actual)
         .accessibilityElement()
-        .accessibilityLabel("Gráfico de ventas")
+        .accessibilityLabel(descripcion ?? "Gráfico de ventas")
         .accessibilityValue(actual.last.map { "Último punto: \(Formato.pesos($0))" } ?? "")
     }
 
     private var punto: some View {
-        Circle().fill(C.acento).frame(width: 9, height: 9)
-            .overlay(Circle().stroke(.white, lineWidth: 3))
+        Circle().fill(colores.linea).frame(width: 9, height: 9)
+            .overlay(Circle().stroke(colores.bordePunto, lineWidth: 3))
     }
 
     private func globo(_ i: Int) -> some View {

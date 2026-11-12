@@ -9,6 +9,7 @@ Ingreso/Permisos.swift
 Inicio/EditarMeta.swift
 Inicio/Inicio.swift
 Inicio/InicioMas.swift
+Inicio/Vidriera.swift
 Mas/Ajustes.swift
 Mas/Altas.swift
 Mas/Ayuda.swift

@@ -121,6 +121,8 @@ struct Estilo {
     static let tituloHoja = Estilo(tamano: 24, peso: .bold, tracking: -0.02, relativo: .title2)
     static let tituloHojaChico = Estilo(tamano: 22, peso: .bold, tracking: -0.02, relativo: .title2)
     static let tituloSeccion = Estilo(tamano: 21, peso: .bold, tracking: -0.02, relativo: .title3)
+    /// Las secciones del Inicio «La vidriera» (22/700).
+    static let seccion = Estilo(tamano: 22, peso: .bold, tracking: -0.018, relativo: .title2)
     static let indicador = Estilo(tamano: 22, peso: .bold, tracking: -0.02, relativo: .title3)
     static let nombreTienda = Estilo(tamano: 18, peso: .bold, relativo: .headline)
     static let total = Estilo(tamano: 18, peso: .bold, relativo: .headline)

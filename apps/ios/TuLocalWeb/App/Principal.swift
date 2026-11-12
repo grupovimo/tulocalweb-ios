@@ -109,8 +109,8 @@ final class Navegacion {
     }
 }
 
-/// El panel: 5 pestañas con su barra (la del handoff, no la del sistema), el «+» en Inicio y
-/// Productos, y los toasts arriba de la barra.
+/// El panel: 5 pestañas con su barra (la del handoff, no la del sistema), el «+» en Productos y los
+/// toasts arriba de la barra.
 struct Principal: View {
     @Environment(Estado.self) private var estado
     @State private var nav = Navegacion()
@@ -130,7 +130,8 @@ struct Principal: View {
                 pestana(.mas) { pila($nav.mas) { Mas() } }
             }
 
-            if enRaiz && (nav.pestana == .inicio || nav.pestana == .productos) {
+            // En Inicio no va: «Vender ahora» ya está en la vidriera.
+            if enRaiz && nav.pestana == .productos {
                 BotonMas { nav.crear = true }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.trailing, 20)

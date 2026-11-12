@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inicio A4 · Vidriera plegada al bajar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#B0441D}a:hover{color:#8E3A16}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #F7F1EA; color: #2A140C; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;">
+
+  <div style="padding: 130px 20px 120px; display: flex; flex-direction: column; gap: 22px;">
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;"><h2 style="margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.4px;">Para hacer hoy</h2><span style="font-size: 14px; color: #6B5244;">3 cosas</span></div>
+      <div style="background: #FFFFFF; border-radius: 22px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 0 #E3D6C8, 0 10px 22px rgba(42,20,12,0.08); overflow: hidden;">
+        <sc-for list="{{pendientes}}" as="p" hint-placeholder-count="3">
+          <a href="#" style="display: flex; align-items: center; gap: 14px; padding: 13px 16px; text-decoration: none; color: #2A140C; border-bottom: 1px solid #EFE6DC;">
+            <span style="width: 40px; height: 40px; border-radius: 13px; background: {{p.fondo}}; color: {{p.tinta}}; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{p.n}}</span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 16px; font-weight: 700;">{{p.titulo}}</span><span style="font-size: 13px; color: #6B5244;">{{p.sub}}</span></span>
+            <span style="font-size: 14px; font-weight: 700; color: {{tiendaTinta}};">{{p.accion}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><h2 style="margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.4px;">Últimos pedidos</h2><a href="#" style="font-size: 14px; font-weight: 700; color: {{tiendaTinta}}; text-decoration: none;">Ver todos</a></div>
+      <div style="background: #FFFFFF; border-radius: 22px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 0 #E3D6C8, 0 10px 22px rgba(42,20,12,0.08); overflow: hidden;">
+        <sc-for list="{{pedidos}}" as="o" hint-placeholder-count="3">
+          <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #EFE6DC; text-decoration: none; color: #2A140C;">
+            <span style="width: 40px; height: 40px; border-radius: 20px; background: {{tiendaClaro}}; color: {{tiendaTinta}}; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{o.ini}}</span>
+            <span style="flex: 1; display: flex; flex-direction: column;"><span style="font-size: 16px; font-weight: 700;">{{o.nombre}}</span><span style="font-size: 13px; color: #6B5244;">{{o.detalle}}</span></span>
+            <span style="font-size: 15px; font-weight: 800;">{{o.monto}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 0; overflow: hidden; padding: 52px 16px 14px; background: {{tienda}}; color: #FFFFFF; border-radius: 0 0 26px 26px; box-shadow: 0 10px 24px rgba(42,20,12,0.22); display: flex; align-items: center; gap: 10px;">
+    <svg aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.22; mix-blend-mode: overlay;"><filter id="granoA4"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#granoA4)"></rect></svg>
+    <span style="position: relative; width: 38px; height: 38px; border-radius: 13px; background: #FFFFFF; color: {{tienda}}; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center;">S</span>
+    <span style="position: relative; flex: 1; display: flex; flex-direction: column;"><span style="font-size: 13px; opacity: 0.9;">Sintética · hoy</span><span style="font-size: 21px; font-weight: 800; letter-spacing: -0.5px;">$ 262.600</span></span>
+    <a href="#" style="position: relative; height: 44px; padding: 0 16px; border-radius: 22px; background: #FFFFFF; color: {{tiendaTinta}}; font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; text-decoration: none; box-shadow: 0 6px 14px rgba(0,0,0,0.2);"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M8 9v6M11 9v6M14 9v6M16.5 9v6"></path></svg>Vender</a>
+  </div>
+
+  <svg aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.07; mix-blend-mode: multiply; pointer-events: none;"><filter id="granoPapel4"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix></filter><rect width="100%" height="100%" filter="url(#granoPapel4)"></rect></svg>
+
+  <nav aria-label="Secciones" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #FBF7F2; border-top: 1px solid #EADFD3; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-top: 8px; box-sizing: border-box;">
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; text-decoration: none; color: {{tiendaTinta}};"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"></path></svg>Inicio</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #6B5244;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Pedidos</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #6B5244;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"></path><path d="M4 7.5l8 4.5 8-4.5M12 12v9"></path></svg>Productos</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #6B5244;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 18l1.5-3.5A7 7 0 1 1 9.5 18z"></path></svg>Tincho</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #6B5244;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>Más</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tienda":{"editor":"color","default":"#5B6B3A","options":["#5B6B3A","#1F4E5A","#7A2E3A","#D9652F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  mezclar(hex, con, t) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(con.slice(1), 16);
+    const c = [16, 8, 0].map(s => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t));
+    return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  renderVals() {
+    const t = this.props.tienda ?? '#5B6B3A';
+    const claro = this.mezclar(t, '#FFFFFF', 0.84), tinta = this.mezclar(t, '#000000', 0.25);
+    return {
+      tienda: t, tiendaClaro: claro, tiendaTinta: tinta,
+      pendientes: [
+        { n: '13', titulo: 'Pedidos por preparar', sub: 'El más viejo entró hace 3 h', accion: 'Preparar', fondo: t, tinta: '#FFFFFF' },
+        { n: '2', titulo: 'Consultas sin responder', sub: 'WhatsApp y Mercado Libre', accion: 'Responder', fondo: claro, tinta: tinta },
+        { n: '3', titulo: 'Reseñas nuevas', sub: '3 sin responder · promedio 4,8', accion: 'Responder', fondo: '#F6EBD3', tinta: '#7A5410' }
+      ],
+      pedidos: [
+        { ini: 'LG', nombre: 'Lucía Gómez', detalle: '#1335 · 3 productos · hace 12 min', monto: '$ 24.800' },
+        { ini: 'JR', nombre: 'Julián Ruiz', detalle: '#1334 · Envío · hace 1 h', monto: '$ 41.200' },
+        { ini: 'MP', nombre: 'Martina Paz', detalle: '#1333 · Retira · hace 2 h', monto: '$ 9.500' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

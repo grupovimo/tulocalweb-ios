@@ -41,7 +41,7 @@ final class PantallasTests: XCTestCase {
         ApiFalsa.respuestas = Self.respuestas()
     }
 
-    private func montar<V: View>(_ vista: V, segundos: Double = 4) {
+    private func montar<V: View>(_ vista: V, segundos: Double = 4, oscuro: Bool = false) {
         let conf = URLSessionConfiguration.ephemeral
         conf.protocolClasses = [ApiFalsa.self]
         let estado = Estado(api: Api(base: URL(string: "https://api.prueba")!, token: "x", http: URLSession(configuration: conf)))
@@ -50,6 +50,7 @@ final class PantallasTests: XCTestCase {
             .environment(estado)
             .environment(Navegacion())
         let ventana = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        ventana.overrideUserInterfaceStyle = oscuro ? .dark : .light
         ventana.rootViewController = UIHostingController(rootView: raiz)
         ventana.makeKeyAndVisible()
         RunLoop.main.run(until: Date().addingTimeInterval(segundos))
@@ -64,6 +65,31 @@ final class PantallasTests: XCTestCase {
     }
     // Todas las pantallas de la app, en Release y con la API simulada (lo que no está, 404): un crash al abrirlas salta acá.
     func testPantallaInicio() { montar(Inicio()) }
+    /// El Inicio «La vidriera» en sus estados: lleno (arriba), el día en $0 con un acento claro, oscuro y cargando.
+    func testPantallaInicioEnCero() {
+        ApiFalsa.respuestas["/v1/panel/tablero"] = ApiFalsa.respuestas["/v1/panel/tablero#cero"]
+        montar(Inicio())
+    }
+    func testPantallaInicioOscuro() { montar(Inicio(), oscuro: true) }
+    func testPantallaInicioCargando() {
+        let paleta = PaletaTienda(acento: "#2F5D50", sobre: "#FFFFFF", oscuro: false)
+        montar(ScrollView {
+            VStack(spacing: 0) {
+                Vidriera(carga: .cargando, periodo: .constant("hoy"), sinLeer: 0, paleta: paleta, se: false)
+                EsqueletoInicio(paleta: paleta)
+            }
+        }, segundos: 1)
+    }
+    /// La paleta de la tienda: el texto encima sale de `sobreAcento` (oscuro sobre Pampa) y los tonos se mezclan como en el handoff.
+    func testPaletaTienda() {
+        XCTAssertFalse(PaletaTienda(acento: "#E6FF4D", sobre: "#111111", oscuro: false).claroEncima)
+        XCTAssertTrue(PaletaTienda(acento: "#2F5D50", sobre: "#FFFFFF", oscuro: false).claroEncima)
+        XCTAssertTrue(PaletaTienda(acento: nil, sobre: nil, oscuro: true).claroEncima)
+        XCTAssertEqual(PaletaTienda.mezclar(0x000000, 0xFFFFFF, 0.5), 0x808080)
+        XCTAssertEqual(PaletaTienda.leer("#2F5D50"), 0x2F5D50)
+        XCTAssertNil(PaletaTienda.leer("verde"))
+        XCTAssertNotNil(CodigoQR.mascara("https://almacen-lumbre.tulocalweb.com.ar"))
+    }
     func testPantallaListaPedidos() { montar(ListaPedidos()) }
     func testPantallaListaProductos() { montar(ListaProductos()) }
     func testPantallaTinchoChat() { montar(TinchoChat()) }

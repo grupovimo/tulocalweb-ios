@@ -84,6 +84,9 @@ data class Tablero(
     val hasta: FechaApi = Instant.EPOCH,
     val hola: String? = null,
     val montos: Boolean = false,
+    /** El color de la tienda (#RRGGBB: plantilla, paleta y estilo de Mi tienda) y el del texto encima. */
+    val acento: String? = null,
+    val sobreAcento: String? = null,
     val ventas: Comparado? = null,
     val serie: Serie? = null,
     val kpis: Kpis = Kpis(),

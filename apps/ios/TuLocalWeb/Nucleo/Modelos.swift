@@ -132,6 +132,9 @@ struct Tablero: Codable {
     var hasta: Date
     var hola: String?
     var montos: Bool
+    /// El color de la tienda (#RRGGBB: plantilla, paleta y estilo de Mi tienda) y el del texto encima.
+    var acento: String?
+    var sobreAcento: String?
     var ventas: Comparado?
     var serie: Serie?
     var kpis: Kpis

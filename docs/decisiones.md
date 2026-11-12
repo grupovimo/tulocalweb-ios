@@ -1386,3 +1386,27 @@ Nahuel: «el link de mi tienda debería ser minombre.tulocalweb.com.ar, no tuloc
 - **Topes**: 30 intentos por IP y 10 por persona cada 15 minutos.
 - **Demos**: `tiendas.demo` hace que la tienda online sea una vitrina, igual que la de una plantilla.
 
+
+## 59. El Inicio de las apps, «La vidriera de tu local» (sin migración, 12/11/2026)
+
+Handoff `docs/handoff/inicio-a` (aprobado por Nahuel el 12/11), en iOS y Android a la vez.
+
+- **El color de la tienda**: `GET /v1/panel/tablero` trae `acento` y `sobreAcento`. Salen del paquete Go
+  `acentos`, la tabla de `lib/tienda/acentos.ts` portada tal cual (sus tests son los de `acentos.spec.ts`):
+  manda lo pisado en Mi tienda › Estilo (`colores.acento` / `colores.sobreAcento`), después la paleta de
+  Colores y por último la plantilla. Si Estilo pisa el acento y el texto de la plantilla no llega a AA encima,
+  el texto pasa a blanco o `#111111`, el que más contraste.
+- **La paleta en la app** (`PaletaTienda`, Tema/Relieve): los tonos derivados son los del HTML (velo, borde,
+  tinta, claro, medio, meta). El texto encima sale de `sobreAcento`, no de la luminancia: Pampa (#E6FF4D) va con
+  texto oscuro. En oscuro la vidriera se apaga hacia el fondo (AOscuro). El último color queda guardado para
+  que el esqueleto ya salga con el de la tienda.
+- **Piezas compartidas** (Tema/Relieve.swift y tema/Relieve.kt): el grano (`Grano`, un PNG de ruido de 128 px en
+  mosaico: assets en iOS, `drawable-nodpi` en Android), `relieve` (la única receta de sombra en capas), `vidrio`
+  y `CodigoQR` (CoreImage en iOS, ZXing en Android, como QRTienda).
+- **Lo que el HTML no dibuja**: el tablero entero sigue estando. En vivo, caja, meta, canales, visitas y
+  liquidaciones van en «De un vistazo»; reseñas sin responder en «Para hacer hoy» y las tarjetas de más vistos,
+  reseñas, envíos e integraciones al final con el mismo estilo. La tarjeta de Tincho elige una idea (carritos,
+  stock, compartir, lo más vendido o «preguntame») y reemplaza a la barra de Tincho y a las ideas. En Inicio ya
+  no va el «+»: «Vender ahora» está en la vidriera.
+- **El día en $0** (ACero) sin barras de visitas por hora: la medición propia (§36) guarda visitas por día, no
+  por hora. Si algún día se miden por hora, van ahí.

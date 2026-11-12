@@ -5095,6 +5095,10 @@ export interface components {
             hola: string | null;
             /** @description Si vienen los montos de dinero (false: el rol no ve finanzas) */
             montos: boolean;
+            /** @description El color de marca de la tienda: el acento de la plantilla, la paleta de Mi tienda › Colores o el que se pisó en Estilo */
+            acento?: string;
+            /** @description El color del texto que va encima del acento (el de la plantilla, con contraste AA) */
+            sobreAcento?: string;
             ventas?: components["schemas"]["Comparado"];
             /** @description Ventas acumuladas en 14 tramos del período, y las del período anterior */
             serie?: {

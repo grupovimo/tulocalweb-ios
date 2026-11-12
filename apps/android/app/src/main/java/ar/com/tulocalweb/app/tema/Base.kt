@@ -91,9 +91,12 @@ fun TextoRico(
     alinear: TextAlign = TextAlign.Start,
     numeros: Boolean = false,
     escalaMinima: Float? = null,
+    /** .lineSpacing de iOS: puntos de más entre renglones. */
+    interlineado: Float = 0f,
 ) {
     val t = if (lineas > 1 && !texto.hasLinkAnnotations(0, texto.length)) AnnotatedString(sinViuda(texto.text), texto.spanStyles, texto.paragraphStyles) else texto
-    BasicText(t, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+    val ts = estilo.ts(numeros).let { if (interlineado > 0f) it.copy(lineHeight = (estilo.tamano * 1.2f + interlineado).sp) else it }
+    BasicText(t, modifier, style = ts.copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
 }
 

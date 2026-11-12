@@ -38,7 +38,9 @@ import ar.com.tulocalweb.app.pantallas.compartir.CompartirTienda
 import ar.com.tulocalweb.app.pantallas.compartir.HojaHistoria
 import ar.com.tulocalweb.app.pantallas.compartir.TarjetaHistoria
 import ar.com.tulocalweb.app.pantallas.ingreso.*
+import ar.com.tulocalweb.app.pantallas.inicio.EsqueletoInicio
 import ar.com.tulocalweb.app.pantallas.inicio.Inicio
+import ar.com.tulocalweb.app.pantallas.inicio.Vidriera
 import ar.com.tulocalweb.app.pantallas.mas.*
 import ar.com.tulocalweb.app.pantallas.pedidos.DetallePedido
 import ar.com.tulocalweb.app.pantallas.pedidos.ListaPedidos
@@ -171,7 +173,29 @@ class PantallasTest {
     @Test fun compartirTiendaSinProductos() = montar("CompartirTiendaSinProductos",
         estado(mapOf("/v1/panel/listas/productos" to """{"total": 0, "segmentos": {}, "filas": []}""", "/v1/panel/cupones" to null))) { CompartirTienda() }
     // Todas las pantallas de la app con la API simulada (lo que no está, 404): un crash al abrirlas salta acá.
+    // El Inicio «La vidriera» en sus estados: lleno (en claro y en oscuro, como toda captura), el día en $0 con un acento
+    // claro y cargando.
     @Test fun pantallaInicio() = montar("Inicio") { Inicio() }
+    @Test fun pantallaInicioEnCero() = montar("InicioEnCero", estado(mapOf("/v1/panel/tablero" to ApiFalsa.respuestas()["/v1/panel/tablero#cero"]))) { Inicio() }
+    @Test fun pantallaInicioCargando() = montar("InicioCargando", espera = 1000) {
+        val paleta = PaletaTienda(acento = "#2F5D50", sobre = "#FFFFFF", oscuro = LocalOscuro.current)
+        Column(Modifier.fillMaxSize().background(C.fondo).verticalScroll(rememberScrollState())) {
+            Vidriera(Carga.cargando, "hoy", {}, 0, paleta, false)
+            EsqueletoInicio(paleta)
+        }
+    }
+
+    /** La paleta de la tienda: el texto encima sale de `sobreAcento` (oscuro sobre Pampa) y los tonos se mezclan como en
+     *  el handoff. */
+    @Test fun paletaTienda() {
+        assertTrue(!PaletaTienda(acento = "#E6FF4D", sobre = "#111111", oscuro = false).claroEncima)
+        assertTrue(PaletaTienda(acento = "#2F5D50", sobre = "#FFFFFF", oscuro = false).claroEncima)
+        assertTrue(PaletaTienda(acento = null, sobre = null, oscuro = true).claroEncima)
+        assertEquals(0x808080L, PaletaTienda.mezclar(0x000000, 0xFFFFFF, 0.5))
+        assertEquals(0x2F5D50L, PaletaTienda.leer("#2F5D50"))
+        assertNull(PaletaTienda.leer("verde"))
+        assertNotNull(CodigoQR.mascara("https://almacen-lumbre.tulocalweb.com.ar", 0xFF000000.toInt()))
+    }
     @Test fun pantallaListaPedidos() = montar("ListaPedidos", espera = 3000) { ListaPedidos() }
     @Test fun pantallaListaProductos() = montar("ListaProductos") { ListaProductos() }
     @Test fun pantallaTinchoChat() = montar("TinchoChat", estado(mapOf("POST /panel/hornero" to respuestaTincho)), espera = 2500) { TinchoChat() }

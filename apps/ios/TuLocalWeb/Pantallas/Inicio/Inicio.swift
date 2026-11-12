@@ -1,47 +1,64 @@
 import SwiftUI
 
-/// 2a · Inicio: cómo viene el día (ventas con gráfico, indicadores), lo que hay para hacer hoy, la
-/// meta del mes, ideas de Tincho, últimos pedidos, lo más vendido y canales. Con /v1/panel/tablero.
+/// 2a · Inicio, «La vidriera de tu local» (docs/handoff/inicio-a): arriba la vidriera con el color de
+/// la tienda (cuánto se vendió, el gráfico de hoy contra ayer y «Vender ahora»), la tarjeta de Tincho
+/// montada sobre su borde, las acciones en un bento, lo que hay para hacer hoy, un vistazo de costado,
+/// los últimos pedidos, lo más vendido y el resto del tablero. Al bajar, la vidriera se pliega a una
+/// barra. Con /v1/panel/tablero.
 struct Inicio: View {
     @Environment(Estado.self) private var estado
     @Environment(Navegacion.self) private var nav
-    @Environment(\.margen) private var margen
     @Environment(\.anchoPantalla) private var ancho
+    @Environment(\.colorScheme) private var esquema
     @State private var periodo = "hoy"
     @State private var carga: Carga<Tablero> = .cargando
     @State private var masViejo: Date?
     @State private var sinLeer = 0
     @State private var editarMeta = false
     @State private var ideasOcultas: Set<String> = []
+    @State private var plegada = false
+    /// El color de la última carga («#RRGGBB|#RRGGBB»), para que el esqueleto ya salga con el de la tienda.
+    @AppStorage("inicio.colores") private var colores = ""
 
     private var se: Bool { ancho <= 375 }
 
+    private var paleta: PaletaTienda {
+        let guardados = colores.split(separator: "|").map(String.init)
+        return PaletaTienda(acento: carga.valor?.acento ?? guardados.first, sobre: carga.valor?.sobreAcento ?? guardados.last,
+                            oscuro: esquema == .dark)
+    }
+
     var body: some View {
+        let p = paleta
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                encabezado
-                VStack(alignment: .leading, spacing: 14) {
-                    accionesRapidas
-                    BarraPreguntarTincho()
-                    Segmentado(opciones: [("hoy", "Hoy"), ("7d", "7 días"), ("30d", "30 días")], elegido: $periodo)
-                    switch carga {
-                    case .cargando:
-                        esqueleto
-                    case let .error(e):
-                        EstadoError(que: "cómo viene el día", error: e) { Task { await cargar() } }
-                            .padding(.top, 30)
-                    case let .listo(t):
-                        contenido(t)
+                Vidriera(carga: carga, periodo: $periodo, sinLeer: sinLeer, paleta: p, se: se)
+                    .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY < 140 } action: { v in
+                        withAnimation(Mov.toque) { plegada = v }
                     }
+                switch carga {
+                case .cargando:
+                    EsqueletoInicio(paleta: p)
+                case let .error(e):
+                    EstadoError(que: "cómo viene el día", error: e) { Task { await cargar() } }
+                        .padding(.top, 30).margenPantalla()
+                case let .listo(t):
+                    contenido(t, p)
                 }
-                .padding(.top, 18)
-                .margenPantalla()
             }
-            .padding(.bottom, 90)
+            .padding(.bottom, 32)
         }
         .scrollIndicators(.hidden)
-        .background(C.fondo.ignoresSafeArea())
+        .background(C.fondo.overlay(Grano(opacidad: 0.06, mezcla: .multiply)).ignoresSafeArea())
+        .overlay(alignment: .top) {
+            if plegada, let t = carga.valor {
+                BarraVidriera(tablero: t, periodo: periodo, paleta: p)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .toolbar(.hidden, for: .navigationBar)
+        // La barra de estado con el color de la vidriera: íconos claros sobre un acento oscuro.
+        .toolbarColorScheme(paleta.claroEncima ? .dark : nil, for: .navigationBar)
         .navigationTitle("Inicio")
         .refreshable { await cargar() }
         .task(id: "\(periodo)-\(estado.version)") { await cargar() }
@@ -53,401 +70,62 @@ struct Inicio: View {
         }
     }
 
-    // MARK: Encabezado
-
-    /// Sin nombre cargado queda «Hola» a secas (no «Hola,» con la coma colgando).
-    private var saludo: String {
-        let nombre = (carga.valor?.hola ?? estado.datos?.nombreDePila ?? "").trimmingCharacters(in: .whitespaces)
-        return nombre.isEmpty ? "Hola" : "Hola, \(nombre)"
-    }
-
-    private var encabezado: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Formato.fechaLarga(Date())).estilo(.subhead).foregroundStyle(C.texto2)
-                Text(saludo)
-                    .estilo(se ? Estilo(tamano: 28, peso: .bold, tracking: -0.025, relativo: .title) : .saludo)
-                    .foregroundStyle(C.texto)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                    .accessibilityAddTraits(.isHeader)
-            }
-            Spacer(minLength: 8)
-            HStack(spacing: 10) {
-                BotonRedondo(simbolo: "magnifyingglass", etiqueta: "Buscar") { nav.buscar = true }
-                    .frame(width: 40, height: 40)
-                BotonRedondo(simbolo: "bell", etiqueta: sinLeer > 0 ? "Avisos, \(sinLeer) sin leer" : "Avisos", punto: sinLeer > 0) {
-                    nav.inicio.append(.avisos)
-                }
-                .frame(width: 40, height: 40)
-                Button { nav.tocar(.mas) } label: {
-                    AvatarTienda(tienda: estado.tienda, tam: 40, radio: 20)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Tu tienda, \(estado.tienda?.nombre ?? "")")
-            }
-            .padding(.bottom, 2)
-        }
-        .padding(.top, 6)
-        .margenPantalla()
-    }
-
-    // MARK: Acciones rápidas
-
-    private var accionesRapidas: some View {
-        HStack(spacing: 8) {
-            AccionRapida(simbolo: "barcode.viewfinder", texto: "Vender") { nav.venta = true }
-            AccionRapida(simbolo: "camera", texto: "Producto") { nav.inicio.append(.nuevoProducto(nil)) }
-            if estado.puede("pedidos") {
-                AccionRapida(simbolo: "link", texto: "Cobrar") { nav.inicio.append(.links) }
-            }
-            AccionRapida(simbolo: "square.and.arrow.up", texto: "Compartir") { nav.inicio.append(.compartir) }
-        }
-    }
-
     // MARK: Contenido
 
     @ViewBuilder
-    private func contenido(_ t: Tablero) -> some View {
-        if t.ultimosPedidos.isEmpty && t.masVendidos.isEmpty && (t.ventas?.actual ?? 0) == 0 && periodo == "hoy"
-            && !PrimerosPasos.ocultos(estado.tienda?.id) {
-            SinVentas()
-            TarjetaTiendaOnline(visitas: t.visitas, periodo: periodo)
-        } else {
-            conVentas(t)
+    private func contenido(_ t: Tablero, _ p: PaletaTienda) -> some View {
+        let cero = Vidriera.enCero(t)
+        if !cero, let idea = ideaPrincipal(t) {
+            TarjetaTincho(idea: idea, paleta: p)
+                .padding(.horizontal, 16).padding(.top, -28)
         }
-    }
-
-    @ViewBuilder
-    private func conVentas(_ t: Tablero) -> some View {
-        if t.montos, let v = t.ventas {
-            tarjetaVentas(t, v)
-        }
-        indicadores(t)
-        TarjetaTiendaOnline(visitas: t.visitas, periodo: periodo)
-        paraHacer(t)
-        if t.montos, let m = t.meta { meta(m) }
-        ideas(t)
-        if !t.ultimosPedidos.isEmpty { ultimos(t) }
-        if let v = t.enVivo, v.personas > 0 || v.carritos > 0 { TarjetaEnVivo(vivo: v, montos: t.montos) }
-        if t.montos, let c = t.caja, c.abierta != nil || c.total > 0 { TarjetaCajaLocal(caja: c) }
-        if t.montos, let l = t.liquidaciones, !l.isEmpty { TarjetaLiquidaciones(liquidaciones: l) }
-        if estado.puede("cuenta") { TarjetaIntegraciones() }
-        if !t.masVendidos.isEmpty { masVendidos(t) }
-        if let v = t.visitas, !v.masVistos.isEmpty { TarjetaMasVistos(visitas: v) }
-        if let r = t.resenas, !r.nuevas.isEmpty { TarjetaResenas(resenas: r) }
-        if let e = t.envios, e.paquetes > 0 || !e.retiros.isEmpty { TarjetaEnvios(envios: e) }
-        if t.montos, let canales = t.canales, !canales.isEmpty, let v = t.ventas, v.actual > 0 {
-            canalesVista(canales, total: v.actual)
-        }
-    }
-
-    private var textoComparacion: String {
-        switch periodo {
-        case "hoy": return "vs. ayer a esta hora"
-        case "7d": return "vs. los 7 días anteriores"
-        default: return "vs. los 30 días anteriores"
-        }
-    }
-
-    private func tarjetaVentas(_ t: Tablero, _ v: Comparado) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(periodo == "hoy" ? "Ventas de hoy" : (periodo == "7d" ? "Ventas de 7 días" : "Ventas de 30 días"))
-                .estilo(.subheadFuerte).foregroundStyle(C.texto2)
-            Text(Formato.pesos(v.actual))
-                .estilo(se ? Estilo(tamano: 38, peso: .bold, tracking: -0.035, relativo: .largeTitle) : .montoHeroe)
-                .monospacedDigit().foregroundStyle(C.texto)
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .contentTransition(.numericText())
-                .animation(Mov.toque, value: v.actual)
-            HStack(spacing: 8) {
-                if let d = v.variacion {
-                    Delta(variacion: d)
-                } else if v.actual > 0 {
-                    Text("Primeras ventas").estilo(.texto14).fontWeight(.bold)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(C.okFondo, in: Capsule()).foregroundStyle(C.okTinta)
-                }
-                Text(textoComparacion).estilo(.texto14).foregroundStyle(C.texto2)
-            }
-            if !se, let s = t.serie {
-                GraficoVentas(actual: s.actual, anterior: s.anterior,
-                              etiqueta: GraficoVentas.etiquetas(desde: t.desde, hasta: t.hasta, puntos: s.actual.count, porHora: periodo == "hoy"))
-                    .padding(.top, 12).padding(.horizontal, -2)
-                ejes(t)
-                HStack(spacing: 16) {
-                    HStack(spacing: 6) {
-                        Capsule().fill(C.acento).frame(width: 14, height: 3)
-                        Text(periodo == "hoy" ? "Hoy" : "Este período")
-                    }
-                    HStack(spacing: 6) {
-                        Punteado().frame(width: 14, height: 2)
-                        Text("\(periodo == "hoy" ? "Ayer" : "Anterior") · \(Formato.pesos(v.anterior))")
-                    }
-                }
-                .estilo(.footnote).foregroundStyle(C.texto2).monospacedDigit()
-                .padding(.top, 8)
-            }
-        }
-        .padding(.horizontal, 18).padding(.top, 18).padding(.bottom, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .tarjeta(radio: 22)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func ejes(_ t: Tablero) -> some View {
-        let total = t.hasta.timeIntervalSince(t.desde)
-        let marcas = (0..<4).map { i in t.desde.addingTimeInterval(total * (Double(i) * 2 + 1) / 8) }
-        return HStack {
-            ForEach(Array(marcas.enumerated()), id: \.offset) { i, f in
-                if i > 0 { Spacer() }
-                Text(periodo == "hoy" ? "\(Formato.calendario.component(.hour, from: f))\(Formato.fino)h" : diaCorto(f))
-            }
-        }
-        .estilo(.chip).fontWeight(.regular).monospacedDigit().foregroundStyle(C.texto2)
-        .padding(.horizontal, 2).padding(.top, 2)
-    }
-
-    private func diaCorto(_ f: Date) -> String {
-        let c = Formato.calendario
-        return "\(c.component(.day, from: f))/\(c.component(.month, from: f))"
-    }
-
-    private func indicadores(_ t: Tablero) -> some View {
-        let comp = periodo == "hoy" ? "vs. ayer" : "vs. antes"
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-            Indicador(titulo: "Pedidos", valor: Formato.numero(Int(t.kpis.pedidos.actual)),
-                      delta: diferencia(t.kpis.pedidos, comp), positivo: t.kpis.pedidos.actual >= t.kpis.pedidos.anterior)
-            if t.montos, let tk = t.kpis.ticket {
-                Indicador(titulo: "Ticket prom.", valor: Formato.pesos(tk.actual),
-                          delta: tk.variacion.map { porcentajeConSigno($0) }, positivo: tk.actual >= tk.anterior)
-            }
-            Indicador(titulo: "Clientes nuevos", valor: Formato.numero(Int(t.kpis.clientesNuevos.actual)),
-                      delta: diferencia(t.kpis.clientesNuevos, comp), positivo: t.kpis.clientesNuevos.actual >= t.kpis.clientesNuevos.anterior)
-        }
-    }
-
-    private func diferencia(_ c: Comparado, _ comp: String) -> String? {
-        let d = Int(c.actual - c.anterior)
-        if d == 0 { return "igual \(comp)" }
-        return "\(d > 0 ? "+" : "−")\(abs(d)) \(comp)"
-    }
-
-    private func porcentajeConSigno(_ p: Double) -> String {
-        let r = (p * 10).rounded() / 10
-        return "\(r >= 0 ? "+" : "−")\(Formato.porcentaje(abs(r)))"
-    }
-
-    // MARK: Para hacer hoy
-
-    private func filasPendientes(_ t: Tablero) -> [AnyView] {
-        let ph = t.paraHacer
-        var filas: [AnyView] = []
-        if ph.preparar > 0 {
-            filas.append(AnyView(FilaPendiente(n: ph.preparar, fondo: C.avisoFondo, tinta: C.avisoTinta,
-                                               titulo: "Pedidos por preparar",
-                                               detalle: masViejo.map { "El más viejo entró \(Formato.hace($0))" } ?? "Tocá para verlos") {
-                nav.filtroPedidos = "Para preparar"
-                nav.tocar(.pedidos)
-            }))
-        }
-        if ph.transferencias > 0 {
-            filas.append(AnyView(FilaPendiente(n: ph.transferencias, fondo: C.crema, tinta: C.primarioTinta,
-                                               titulo: "Transferencias por confirmar",
-                                               detalle: ph.transferenciasMonto.map { "\(Formato.pesos($0)) en total" } ?? "Revisá que hayan llegado") {
-                nav.filtroPedidos = "Sin pagar"
-                nav.tocar(.pedidos)
-            }))
-        }
-        if ph.sinStock > 0 {
-            filas.append(AnyView(FilaPendiente(n: ph.sinStock, fondo: C.errorFondo, tinta: C.errorTinta,
-                                               titulo: "Productos sin stock",
-                                               detalle: "Siguen visibles en la tienda") {
-                nav.segmentoProductos = "out"
-                nav.tocar(.productos)
-            }))
-        }
-        if let n = t.resenas?.nuevas.count, n > 0, estado.puede("clientes") {
-            filas.append(AnyView(FilaPendiente(n: n, fondo: C.crema, tinta: C.primarioTinta,
-                                               titulo: n == 1 ? "Reseña sin responder" : "Reseñas sin responder",
-                                               detalle: "Contestarlas suma confianza") {
-                nav.inicio.append(.resenas)
-            }))
-        }
-        return filas
-    }
-
-    /// La fila de compartir cuando no hay nada urgente o la tienda no tuvo visitas hoy: «Para hacer»
-    /// nunca queda en «Todo al día» sin una acción.
-    private func filaCompartir(_ t: Tablero) -> some View {
-        let hoy = Int(t.visitas?.hoy.actual ?? 0)
-        return Button { nav.inicio.append(.compartir) } label: {
-            HStack(spacing: 13) {
-                Image(systemName: "square.and.arrow.up").font(.system(size: 16, weight: .semibold)).foregroundStyle(C.primarioTexto)
-                    .frame(width: 40, height: 40).background(C.crema, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Compartí tu tienda").estilo(.fila).foregroundStyle(C.texto)
-                    Text(hoy == 0 ? "Hoy todavía no tuvo visitas" : "Más visitas, más ventas").estilo(.footnote).foregroundStyle(C.texto2)
-                }
-                Spacer(minLength: 4)
-                Chevron()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 13)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private func paraHacer(_ t: Tablero) -> some View {
-        let filas = filasPendientes(t)
-        let compartir = filas.isEmpty || Int(t.visitas?.hoy.actual ?? 0) == 0
-        TituloSeccion(texto: "Para hacer hoy").padding(.top, 14)
-        VStack(spacing: 0) {
-            if filas.isEmpty {
-                HStack(spacing: 13) {
-                    Image(systemName: "checkmark").font(.system(size: 16, weight: .bold)).foregroundStyle(C.okTinta)
-                        .frame(width: 40, height: 40).background(C.okFondo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Todo al día").estilo(.fila).foregroundStyle(C.texto)
-                        Text("No hay pedidos ni transferencias esperando.").estilo(.footnote).foregroundStyle(C.texto2)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+        VStack(alignment: .leading, spacing: 32) {
+            if cero {
+                AccionesCero(paleta: p)
+                if !PrimerosPasos.ocultos(estado.tienda?.id) { PasosPrimeraVenta(paleta: p) }
             } else {
-                ForEach(Array(filas.enumerated()), id: \.offset) { i, f in
-                    if i > 0 { Separador(inset: 69) }
-                    f
-                }
+                AccionesInicio(tablero: t, paleta: p)
             }
-            if compartir {
-                Separador(inset: 69)
-                filaCompartir(t)
-            }
+            ParaHacerHoy(tablero: t, masViejo: masViejo, paleta: p, cero: cero)
+            DeUnVistazo(tablero: t, periodo: periodo, paleta: p) { editarMeta = true }
+            if !t.ultimosPedidos.isEmpty { UltimosPedidos(tablero: t, paleta: p) }
+            if !t.masVendidos.isEmpty { LoMasVendido(tablero: t) }
+            if let v = t.visitas, !v.masVistos.isEmpty { TarjetaMasVistos(visitas: v, paleta: p) }
+            if let r = t.resenas, !r.nuevas.isEmpty { TarjetaResenas(resenas: r, paleta: p) }
+            if let e = t.envios, e.paquetes > 0 || !e.retiros.isEmpty { TarjetaEnvios(envios: e, paleta: p) }
+            if estado.puede("cuenta") { TarjetaIntegraciones(paleta: p) }
         }
-        .tarjeta()
+        .padding(.top, 24)
+        .margenPantalla()
     }
 
-    // MARK: Meta
+    // MARK: Tincho
 
-    private func meta(_ m: Tablero.Meta) -> some View {
-        let hoy = Date()
-        let c = Formato.calendario
-        let diasMes = c.range(of: .day, in: .month, for: hoy)?.count ?? 30
-        let quedan = diasMes - c.component(.day, from: hoy) + 1
-        let pct = m.objetivo > 0 ? Double(m.actual) / Double(m.objetivo) : 0
-        let proy = m.objetivo > 0 ? Double(m.proyeccion) / Double(m.objetivo) : 0
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Meta de \(Formato.mesDe(hoy))").estilo(.subheadFuerte).foregroundStyle(C.texto2)
-                Spacer()
-                Button(m.objetivo > 0 ? "Editar" : "Ponerla") { editarMeta = true }
-                    .estilo(.subheadFuerte).foregroundStyle(C.primarioTexto)
-            }
-            if m.objetivo > 0 {
-                (Text(Formato.pesos(m.actual)).estiloTexto(.montoMeta).foregroundColor(C.texto)
-                    + Text("  de \(Formato.pesos(m.objetivo))").estiloTexto(.subhead).foregroundColor(C.texto2))
-                    .monospacedDigit()
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                GeometryReader { g in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(C.pistaMeta)
-                        RayadoMeta().frame(width: g.size.width * min(1, proy))
-                        Capsule().fill(LinearGradient(colors: [C.acento, Color(hex: 0xB0441D)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: max(12, g.size.width * min(1, pct)))
-                    }
-                    .clipShape(Capsule())
-                }
-                .frame(height: 12)
-                HStack {
-                    (Text(Formato.porcentaje((pct * 100).rounded())).fontWeight(.bold).foregroundColor(C.texto) + Text(" vendido"))
-                    Spacer()
-                    Text(quedan == 1 ? "Queda 1 día" : "Quedan \(quedan) días")
-                }
-                .estilo(.footnote).foregroundStyle(C.texto2).monospacedDigit()
-                (Text("Al ritmo de estos días cerrás el mes en ")
-                    + Text(Formato.pesos(m.proyeccion)).fontWeight(.bold).foregroundColor(C.texto) + Text("."))
-                    .estilo(.texto14).foregroundStyle(C.texto2).lineSpacing(2)
-            } else {
-                Text(Formato.sinViudas("Poné cuánto querés vender este mes y te decimos cómo venís cada día."))
-                    .estilo(.texto14).foregroundStyle(C.texto2)
-            }
-        }
-        .padding(18)
-        .tarjeta(radio: 22)
-        .padding(.top, 6)
-    }
-
-    // MARK: Ideas de Tincho
-
-    @ViewBuilder
-    private func ideas(_ t: Tablero) -> some View {
-        let lista = ideasDe(t).filter { !ideasOcultas.contains($0.id) }
-        if !lista.isEmpty {
-            HStack(spacing: 8) {
-                Image(Tincho.avatar.imagen).resizable().scaledToFill().frame(width: 28, height: 28)
-                    .background(C.crema).clipShape(Circle())
-                Text("Ideas de Tincho").estilo(.tituloSeccion).foregroundStyle(C.texto)
-            }
-            .padding(.top, 14)
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
-                    ForEach(lista) { idea in
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(idea.texto).estilo(.tarjetaTincho).foregroundStyle(C.texto).lineSpacing(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 0)
-                            HStack(spacing: 8) {
-                                Button(idea.boton) { Task { await idea.accion() } }
-                                    .font(Estilo.subheadFuerte.font).foregroundStyle(.white)
-                                    .padding(.horizontal, 16).frame(height: 38)
-                                    .background(C.primario, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                                Button("Ahora no") { withAnimation { _ = ideasOcultas.insert(idea.id) } }
-                                    .font(Estilo.subheadFuerte.font).foregroundStyle(C.primarioTexto)
-                                    .padding(.horizontal, 12).frame(height: 38)
-                            }
-                        }
-                        .padding(16)
-                        .frame(width: min(300, ancho - 2 * margen - 30), alignment: .leading)
-                        .frame(maxHeight: .infinity, alignment: .top)
-                        .background(C.crema2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Color(hex: 0xB0441D, alfa: 0.16), lineWidth: 1))
-                    }
-                }
-                .padding(.horizontal, margen)
-            }
-            .scrollIndicators(.hidden)
-            .padding(.horizontal, -margen)
-        }
-    }
-
-    private struct Idea: Identifiable {
-        var id: String
-        var texto: AttributedString
-        var boton: String
-        var accion: () async -> Void
-    }
-
-    private func ideasDe(_ t: Tablero) -> [Idea] {
-        var r: [Idea] = []
+    /// La idea más relevante de Tincho: carritos por recordar, después stock, después compartir; si no
+    /// hay ninguna, lo más vendido o una invitación a preguntarle.
+    private func ideaPrincipal(_ t: Tablero) -> IdeaTincho? {
+        var r: [IdeaTincho] = []
+        let negrita = Estilo(tamano: 16, peso: .bold, relativo: .body).font
         // Ya recordados: el mail salió y no se repite antes de 24 h, así que la idea no vuelve.
         if t.hornero.carritos > 0, !t.hornero.ideasHechas.contains("carritos"), t.hornero.recordados != true {
             var s = AttributedString(t.hornero.carritos == 1 ? "Hay 1 carrito abandonado" : "Hay \(t.hornero.carritos) carritos abandonados")
             if let m = t.hornero.carritosMonto, t.montos {
                 s += AttributedString(" por ")
                 var monto = AttributedString(Formato.pesos(m))
-                monto.font = Estilo(tamano: 16, peso: .bold, relativo: .body).font
+                monto.font = negrita
                 s += monto
             }
-            s += AttributedString(". ¿Les mando un mail para recordarles lo que dejaron?")
-            r.append(Idea(id: "carritos", texto: s, boton: "Sí, mandales") { await recordarCarritos() })
+            s += AttributedString(Formato.sinViudas(". ¿Les mando un mail para recordarles lo que dejaron?"))
+            r.append(IdeaTincho(id: "carritos", texto: s, boton: "Sí, mandales", pregunta: "¿Qué dejaron en los carritos abandonados?") {
+                await recordarCarritos()
+            })
         }
         if t.paraHacer.sinStock > 0, !t.hornero.ideasHechas.contains("stock") {
             let n = t.paraHacer.sinStock
-            let s = AttributedString(n == 1
+            let s = AttributedString(Formato.sinViudas(n == 1
                 ? "Un producto se quedó sin stock y sigue visible en la tienda. ¿Le cargás un ingreso?"
-                : "\(n) productos se quedaron sin stock y siguen visibles en la tienda. ¿Les cargás un ingreso?")
-            r.append(Idea(id: "stock", texto: s, boton: "Cargar") {
+                : "\(n) productos se quedaron sin stock y siguen visibles en la tienda. ¿Les cargás un ingreso?"))
+            r.append(IdeaTincho(id: "stock", texto: s, boton: "Reponer", pregunta: "¿Qué productos tengo que reponer?") {
                 nav.segmentoProductos = "out"
                 nav.tocar(.productos)
             })
@@ -455,13 +133,25 @@ struct Inicio: View {
         if let v = t.visitas, !t.hornero.ideasHechas.contains("compartir") {
             let n = Int(v.dias7.actual)
             if v.desde == nil || n < 30 {
-                let s = AttributedString(v.desde == nil || n == 0
+                let s = AttributedString(Formato.sinViudas(v.desde == nil || n == 0
                     ? "Tu tienda todavía no tuvo visitas. ¿Te armo una imagen con el QR para tus estados de WhatsApp?"
-                    : "En 7 días te visitaron \(n == 1 ? "1 persona" : "\(n) personas"). Con una historia o un estado llegás a muchas más. ¿La armamos?")
-                r.append(Idea(id: "compartir", texto: s, boton: "Armarla") { nav.inicio.append(.compartir) })
+                    : "En 7 días te visitaron \(n == 1 ? "1 persona" : "\(n) personas"). Con una historia o un estado llegás a muchas más. ¿La armamos?"))
+                r.append(IdeaTincho(id: "compartir", texto: s, boton: "Armarla", pregunta: "¿Cómo consigo más visitas en mi tienda?") {
+                    nav.inicio.append(.compartir)
+                })
             }
         }
-        return r
+        if let p = t.masVendidos.first {
+            var s = AttributedString(p.nombre)
+            s.font = negrita
+            s += AttributedString(Formato.sinViudas(" es lo que más sale: \(Formato.cantidad(p.unidades, "unidad", "unidades")). Compartilo para que llegue a más gente."))
+            r.append(IdeaTincho(id: "estrella", texto: s, boton: "Compartir", pregunta: "¿Cómo viene \(p.nombre)?") {
+                nav.inicio.append(.compartir)
+            })
+        }
+        r.append(IdeaTincho(id: "preguntar", texto: AttributedString(Formato.sinViudas("Preguntame lo que quieras de tu negocio: cuánto vendiste, qué reponer o cómo vienen tus clientes.")),
+                            boton: nil, pregunta: "¿Cómo vengo esta semana?") {})
+        return r.first { !ideasOcultas.contains($0.id) }
     }
 
     private func recordarCarritos() async {
@@ -482,128 +172,6 @@ struct Inicio: View {
         } catch {}
     }
 
-    // MARK: Últimos pedidos
-
-    private func ultimos(_ t: Tablero) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            TituloSeccion(texto: "Últimos pedidos", accion: "Ver todos") {
-                nav.filtroPedidos = nil
-                nav.tocar(.pedidos)
-            }
-            .padding(.top, 14)
-            VStack(spacing: 0) {
-                ForEach(Array(t.ultimosPedidos.prefix(5).enumerated()), id: \.element.id) { i, p in
-                    if i > 0 { Separador(inset: 68) }
-                    Button {
-                        nav.pestana = .pedidos
-                        nav.pedidos = [.pedido(p.numero)]
-                    } label: {
-                        HStack(spacing: 12) {
-                            Miniatura(foto: p.foto, tam: 42, radio: 11)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(p.cliente).estilo(.fila).foregroundStyle(C.texto).lineLimit(1)
-                                Text("#\(p.numero) · \(Marcas.canalCorto(p.canal)) · \(Formato.horaDe(p.creado))")
-                                    .estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
-                            }
-                            Spacer(minLength: 4)
-                            VStack(alignment: .trailing, spacing: 4) {
-                                if let total = p.total {
-                                    Text(Formato.pesos(total)).estilo(.fila).monospacedDigit().foregroundStyle(C.texto)
-                                }
-                                ChipEstado(estado: p.estado)
-                            }
-                        }
-                        .padding(.horizontal, 14).padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .tarjeta()
-        }
-    }
-
-    // MARK: Lo más vendido
-
-    private func masVendidos(_ t: Tablero) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Lo más vendido").estilo(.tituloSeccion).foregroundStyle(C.texto)
-                Spacer()
-                Text("Esta semana").estilo(.subhead).foregroundStyle(C.texto2)
-            }
-            .padding(.top, 14)
-            ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: 10) {
-                    ForEach(t.masVendidos) { p in
-                        VStack(alignment: .leading, spacing: 7) {
-                            Miniatura(foto: p.foto, tam: 136, alto: 120, radio: 16)
-                            Text(p.nombre).estilo(Estilo(tamano: 14, peso: .semibold, relativo: .footnote))
-                                .foregroundStyle(C.texto).lineLimit(2).lineSpacing(1)
-                            Text(Formato.cantidad(p.unidades, "unidad", "unidades")).estilo(.footnote).monospacedDigit().foregroundStyle(C.texto2)
-                        }
-                        .frame(width: 136, alignment: .leading)
-                    }
-                }
-                .padding(.horizontal, margen)
-            }
-            .scrollIndicators(.hidden)
-            .padding(.horizontal, -margen)
-        }
-    }
-
-    // MARK: Canales
-
-    private func canalesVista(_ canales: [Tablero.Canal], total: Double) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Canales").estilo(.tituloSeccion).foregroundStyle(C.texto).padding(.top, 14)
-            VStack(alignment: .leading, spacing: 14) {
-                GeometryReader { g in
-                    HStack(spacing: 2) {
-                        ForEach(canales, id: \.canal) { c in
-                            Rectangle().fill(Marcas.colorCanal(c.canal))
-                                .frame(width: max(2, (g.size.width - CGFloat(canales.count - 1) * 2) * c.parte))
-                        }
-                    }
-                }
-                .frame(height: 14)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                VStack(spacing: 9) {
-                    ForEach(canales, id: \.canal) { c in
-                        HStack(spacing: 9) {
-                            RoundedRectangle(cornerRadius: 3).fill(Marcas.colorCanal(c.canal)).frame(width: 10, height: 10)
-                            Text(Marcas.canal(c.canal)).frame(maxWidth: .infinity, alignment: .leading)
-                            Text(Formato.pesos(total * c.parte)).foregroundStyle(C.texto2)
-                            Text(Formato.porcentaje((c.parte * 100).rounded())).fontWeight(.bold).frame(width: 52, alignment: .trailing)
-                        }
-                        .estilo(.subhead).monospacedDigit().foregroundStyle(C.texto)
-                    }
-                }
-            }
-            .padding(16)
-            .tarjeta()
-        }
-    }
-
-    // MARK: Cargando (2c)
-
-    private var esqueleto: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                Esqueleto(ancho: 110, alto: 14)
-                Esqueleto(ancho: 220, alto: 42, radio: 10)
-                Esqueleto(ancho: 160, alto: 20)
-                Esqueleto(alto: 130, radio: 14, suave: true)
-            }
-            .padding(18).tarjeta(radio: 22)
-            HStack(spacing: 10) {
-                ForEach(0..<3, id: \.self) { _ in Color.clear.frame(height: 84).tarjeta(radio: 18) }
-            }
-            Esqueleto(ancho: 150, alto: 20).padding(.top, 14)
-            EsqueletoFilas(filas: 2, miniatura: 40)
-        }
-    }
-
     // MARK: Datos
 
     private func cargar() async {
@@ -611,6 +179,7 @@ struct Inicio: View {
             let t: Tablero = try await estado.api.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: periodo)])
             carga = .listo(t)
             Guardado.guardar(t, clave: "tablero-\(periodo)")
+            if let a = t.acento, let s = t.sobreAcento { colores = "\(a)|\(s)" }
             if t.paraHacer.preparar > 0 {
                 let l: PaginaPedidos? = try? await estado.api.get("/v1/panel/pedidos", query: [
                     URLQueryItem(name: "estado", value: "Para preparar"), URLQueryItem(name: "orden", value: "viejos"),
@@ -633,22 +202,8 @@ struct Inicio: View {
     }
 }
 
-/// Chip de variación: `ok-bg` «▲ 12,4 %» o `error-bg` «▼ 3 %».
-struct Delta: View {
-    var variacion: Double
-    var body: some View {
-        let sube = variacion >= 0
-        let r = (abs(variacion) * 10).rounded() / 10
-        Text("\(sube ? "▲" : "▼") \(Formato.porcentaje(r))")
-            .estilo(.texto14).fontWeight(.bold).monospacedDigit()
-            .foregroundStyle(sube ? C.okTinta : C.errorTinta)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(sube ? C.okFondo : C.errorFondo, in: Capsule())
-            .accessibilityLabel(sube ? "Subió \(Formato.porcentaje(r))" : "Bajó \(Formato.porcentaje(r))")
-    }
-}
-
-/// Indicador chico (radio 18): título 13, valor 22/700 y delta 12/600 coloreado.
+/// Indicador chico (radio 18): título 13, valor 22/700 y delta 12/600 coloreado. Lo usan Clientes y las
+/// secciones de Más.
 struct Indicador: View {
     var titulo: String
     var valor: String
@@ -669,164 +224,6 @@ struct Indicador: View {
         .accessibilityElement(children: .combine)
     }
 }
-
-/// Fila de «Para hacer hoy» con el cuadro numérico de 40.
-struct FilaPendiente: View {
-    var n: Int
-    var fondo: Color
-    var tinta: Color
-    var titulo: String
-    var detalle: String
-    var accion: () -> Void
-    var body: some View {
-        Button(action: accion) {
-            HStack(spacing: 13) {
-                Text("\(n)").font(Estilo(tamano: 18, peso: .bold, relativo: .headline).font).monospacedDigit()
-                    .foregroundStyle(tinta)
-                    .frame(width: 40, height: 40)
-                    .background(fondo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(titulo).estilo(.fila).foregroundStyle(C.texto)
-                    Text(detalle).estilo(.footnote).monospacedDigit().foregroundStyle(C.texto2)
-                }
-                Spacer(minLength: 4)
-                Chevron()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 13)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-/// Línea punteada de la leyenda.
-struct Punteado: View {
-    var body: some View {
-        Canvas { ctx, tam in
-            var p = Path()
-            p.move(to: CGPoint(x: 0, y: tam.height / 2))
-            p.addLine(to: CGPoint(x: tam.width, y: tam.height / 2))
-            ctx.stroke(p, with: .color(Color(hex: 0x8A7364)), style: StrokeStyle(lineWidth: 2, dash: [3, 2]))
-        }
-    }
-}
-
-/// La proyección rayada detrás de la barra de la meta.
-struct RayadoMeta: View {
-    var body: some View {
-        Canvas { ctx, tam in
-            ctx.fill(Path(CGRect(origin: .zero, size: tam)), with: .color(C.acento.opacity(0.15)))
-            var x: CGFloat = -tam.height
-            while x < tam.width {
-                var p = Path()
-                p.move(to: CGPoint(x: x, y: tam.height))
-                p.addLine(to: CGPoint(x: x + tam.height, y: 0))
-                p.addLine(to: CGPoint(x: x + tam.height + 4, y: 0))
-                p.addLine(to: CGPoint(x: x + 4, y: tam.height))
-                p.closeSubpath()
-                ctx.fill(p, with: .color(C.acento.opacity(0.35)))
-                x += 8 * 1.4142
-            }
-        }
-    }
-}
-
-/// 2d · Sin ventas todavía: Tincho saludando, «Tu tienda ya está online» y los pasos (el hecho
-/// tachado con check verde; el siguiente con «Cargar»).
-struct SinVentas: View {
-    @Environment(Estado.self) private var estado
-    @Environment(Navegacion.self) private var nav
-    @State private var conProductos: Bool?
-    @State private var mpConectada = false
-    @AppStorage(PrimerosPasos.claveCompartido) private var compartidos = ""
-    @AppStorage(PrimerosPasos.claveOcultos) private var ocultos = ""
-
-    var body: some View {
-        let mp = mpConectada || (estado.resumen?.canales?.contains("mp") ?? false)
-        let url = URL(string: "https://\(estado.tienda?.direccion ?? "tulocalweb.com.ar")")!
-        let id = estado.tienda?.id ?? ""
-        let compartio = PrimerosPasos.contiene(compartidos, id)
-        VStack(spacing: 8) {
-            Image(Tincho.saludo.imagen).resizable().scaledToFit().frame(width: 150, height: 150).accessibilityHidden(true)
-            Text("Tu tienda ya está online").estilo(.tituloHoja).foregroundStyle(C.texto).multilineTextAlignment(.center)
-            Text(Formato.sinViudas("Falta la primera venta. Con estos pasos, la tenés cerca."))
-                .estilo(.subhead).foregroundStyle(C.texto2).multilineTextAlignment(.center)
-            VStack(spacing: 0) {
-                paso(1, "Creaste la tienda", nil, hecho: true, boton: nil) {}
-                Separador(inset: 57)
-                paso(2, "Cargá tu primer producto", "Con una foto alcanza", hecho: conProductos == true,
-                     boton: conProductos == false ? "Cargar" : nil) { nav.inicio.append(.nuevoProducto(nil)) }
-                Separador(inset: 57)
-                paso(3, "Conectá Mercado Pago", "Para cobrar con tarjeta y QR", hecho: mp,
-                     boton: conProductos == true && !mp ? "Conectar" : nil) {
-                    nav.inicio.append(.integraciones)
-                }
-                Separador(inset: 57)
-                ShareLink(item: url) {
-                    filaPaso(4, "Compartí el link", "Por WhatsApp o en tus redes", hecho: compartio, boton: nil)
-                }
-                .buttonStyle(.plain)
-                // Tocar «Compartir» alcanza para darlo por hecho (iOS no avisa si se mandó).
-                .simultaneousGesture(TapGesture().onEnded { compartidos = PrimerosPasos.sumar(compartidos, id) })
-            }
-            .tarjeta()
-            .padding(.top, 8)
-            // Ningún paso es obligatorio: la tarjeta se puede cerrar y no vuelve.
-            Button((conProductos == true && mp) || compartio ? "Listo, ir al tablero" : "Ocultar estos pasos") {
-                withAnimation { ocultos = PrimerosPasos.sumar(ocultos, id) }
-                estado.version += 1
-            }
-            .buttonStyle(BotonTexto()).padding(.top, 4)
-        }
-        .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 18)
-        .background(C.crema2, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color(hex: 0xB0441D, alfa: 0.14), lineWidth: 1))
-        .task(id: estado.version) {
-            struct MP: Decodable { var conectada: Bool? }
-            if let m: MP = try? await estado.api.get("/v1/panel/integraciones/mercadopago") { mpConectada = m.conectada ?? false }
-            if let l: PaginaProductos = try? await estado.api.get("/v1/panel/listas/productos", query: [URLQueryItem(name: "cuantos", value: "1")]) {
-                conProductos = l.total > 0
-            }
-        }
-    }
-
-    private func paso(_ n: Int, _ t: String, _ d: String?, hecho: Bool, boton: String?, _ accion: @escaping () -> Void) -> some View {
-        Button(action: accion) { filaPaso(n, t, d, hecho: hecho, boton: boton) }
-            .buttonStyle(.plain).disabled(hecho)
-    }
-
-    private func filaPaso(_ n: Int, _ t: String, _ d: String?, hecho: Bool, boton: String?) -> some View {
-        HStack(spacing: 13) {
-            ZStack {
-                if hecho {
-                    Circle().fill(C.ok)
-                    Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white)
-                } else {
-                    Circle().strokeBorder(Color.tema(0x3A1D12, 0xFBF7F2, alfa: 0.2), lineWidth: 2)
-                    Text("\(n)").font(Estilo(tamano: 13, peso: .bold, relativo: .footnote).font).foregroundStyle(C.texto2)
-                }
-            }
-            .frame(width: 28, height: 28)
-            VStack(alignment: .leading, spacing: 1) {
-                if hecho {
-                    Text(t).estilo(.body16).strikethrough().foregroundStyle(C.texto2)
-                } else {
-                    Text(t).estilo(.fila).foregroundStyle(C.texto)
-                    if let d { Text(d).estilo(.footnote).foregroundStyle(C.texto2) }
-                }
-            }
-            Spacer(minLength: 0)
-            if let boton {
-                Text(boton).estilo(.label).foregroundStyle(.white)
-                    .padding(.horizontal, 14).frame(height: 34)
-                    .background(C.primario, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-        .contentShape(Rectangle())
-    }
-}
-
 
 /// Los primeros pasos de Inicio: qué tiendas ya compartieron el link o cerraron la tarjeta (en el
 /// teléfono, por tienda).

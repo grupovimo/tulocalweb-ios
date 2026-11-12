@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/tiendas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db/pruebadb"
@@ -120,5 +122,35 @@ func TestTableroConVentas(t *testing.T) {
 	c = tiendas.ContextoSinMontos(c)
 	if j, _ := json.Marshal(c); strings.Contains(string(j), `"ventas"`) || !strings.Contains(string(j), `"canal":"web","pedidos":1`) {
 		t.Fatalf("contexto sin montos: %s", j)
+	}
+}
+
+// El color de la tienda: el de la plantilla, la paleta elegida en Mi tienda y lo pisado en Estilo.
+func TestTableroConElAcentoDeLaTienda(t *testing.T) {
+	ctx := context.Background()
+	b := pruebadb.Nueva(t)
+	id, _ := tiendas.Crear(ctx, b.App, "acento", "Acento", "moda")
+	poner := func(plantilla, diseno string) tiendas.Tablero {
+		t.Helper()
+		if err := b.App.EnTienda(ctx, id, func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `UPDATE tiendas SET plantilla = $2, diseno_publicado = $3::jsonb WHERE id = $1`, id, plantilla, diseno)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		tb, err := tiendas.ObtenerTablero(ctx, b.App, id, "hoy", time.Now())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return tb
+	}
+	if tb := poner("pampa", `{"secciones": [], "paleta": 0}`); tb.Acento != "#E6FF4D" || tb.SobreAcento != "#111111" {
+		t.Fatalf("pampa: %s / %s", tb.Acento, tb.SobreAcento)
+	}
+	if tb := poner("yerbal", `{"secciones": [], "paleta": 1}`); tb.Acento != "#B0441D" || tb.SobreAcento != "#FFFFFF" {
+		t.Fatalf("yerbal 1: %s / %s", tb.Acento, tb.SobreAcento)
+	}
+	if tb := poner("yerbal", `{"secciones": [], "paleta": 1, "estilo": {"colores": {"acento": "#123456"}}}`); tb.Acento != "#123456" {
+		t.Fatalf("estilo: %s", tb.Acento)
 	}
 }

@@ -248,7 +248,7 @@ private fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
     }
 }
 
-/** El panel: 5 pestañas con su barra (la del handoff, no la del sistema), el «+» en Inicio y Productos, y los toasts
+/** El panel: 5 pestañas con su barra (la del handoff, no la del sistema), el «+» en Productos y los toasts
  *  arriba de la barra. */
 @Composable
 fun Principal() {
@@ -271,7 +271,8 @@ fun Principal() {
             }
             BackHandler(nav.caminoActual.isNotEmpty()) { nav.volver() }
 
-            AnimatedVisibility(enRaiz && (nav.pestana == Pestana.inicio || nav.pestana == Pestana.productos),
+            // En Inicio no va: «Vender ahora» ya está en la vidriera.
+            AnimatedVisibility(enRaiz && nav.pestana == Pestana.productos,
                 Modifier.align(Alignment.BottomEnd).zIndex(2f).navigationBarsPadding().padding(end = 20.dp, bottom = M.tabBar + 16.dp),
                 enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
                 BotonMas { nav.crear = true }
@@ -319,7 +320,8 @@ private fun Pila(nav: Navegacion, p: Pestana) {
         else slideInHorizontally { -it / 3 } togetherWith slideOutHorizontally { it }
     }, label = "pila") { (n, arriba) ->
         if (arriba == null) {
-            Box(Modifier.fillMaxSize().background(C.fondo).statusBarsPadding()) {
+            // El Inicio lleva la vidriera hasta arriba de todo, debajo de la barra de estado (como en iOS).
+            Box(Modifier.fillMaxSize().background(C.fondo).then(if (p == Pestana.inicio) Modifier else Modifier.statusBarsPadding())) {
                 // La raíz deja lugar para la barra de pestañas (safeAreaInset).
                 Box(Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = M.tabBar)) {
                     when (p) {

@@ -5281,6 +5281,8 @@ components:
         hasta: { type: string, format: date-time }
         hola: { type: [string, 'null'], description: 'Nombre de pila de quien entra' }
         montos: { type: boolean, description: 'Si vienen los montos de dinero (false: el rol no ve finanzas)' }
+        acento: { type: string, pattern: '^#[0-9A-F]{6}$', description: 'El color de marca de la tienda: el acento de la plantilla, la paleta de Mi tienda › Colores o el que se pisó en Estilo' }
+        sobreAcento: { type: string, pattern: '^#[0-9A-F]{6}$', description: 'El color del texto que va encima del acento (el de la plantilla, con contraste AA)' }
         ventas: { $ref: '#/components/schemas/Comparado' }
         serie:
           type: object

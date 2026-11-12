@@ -180,6 +180,8 @@ data class Estilo(val tamano: Float, val peso: Peso, val tracking: Float = 0f) {
         val tituloHoja = Estilo(24f, Peso.bold, -0.02f)
         val tituloHojaChico = Estilo(22f, Peso.bold, -0.02f)
         val tituloSeccion = Estilo(21f, Peso.bold, -0.02f)
+        /** Las secciones del Inicio «La vidriera» (22/700). */
+        val seccion = Estilo(22f, Peso.bold, -0.018f)
         val indicador = Estilo(22f, Peso.bold, -0.02f)
         val nombreTienda = Estilo(18f, Peso.bold)
         val total = Estilo(18f, Peso.bold)

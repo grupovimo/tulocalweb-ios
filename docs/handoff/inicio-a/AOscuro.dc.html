@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inicio A3 · Modo oscuro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#F3A57E}a:hover{color:#FBF7F2}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #22140D; color: #FBF7F2; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;">
+
+  <div style="position: relative; overflow: hidden; padding: 58px 20px 24px; background: linear-gradient(160deg, {{tiendaNoche}} 0%, {{tiendaHondo}} 100%); border-radius: 0 0 34px 34px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 16px;">
+    <svg aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.18; mix-blend-mode: overlay;"><filter id="granoA3"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#granoA3)"></rect></svg>
+    <div aria-hidden="true" style="position: absolute; right: -70px; top: -50px; width: 260px; height: 260px; border-radius: 130px; background: {{tienda}}; opacity: 0.28;"></div>
+
+    <div style="position: relative; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 48px; height: 48px; border-radius: 16px; background: {{tienda}}; color: #FFFFFF; font-size: 22px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,0.35);">L</span>
+      <span style="flex: 1; display: flex; flex-direction: column;">
+        <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.4px;">Lumbre</span>
+        <span style="font-size: 14px; color: #CDB8A8; display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #6FD0A0;"></span>Abierta · 312 visitas hoy</span>
+      </span>
+      <button aria-label="Avisos, 1 sin leer" style="position: relative; width: 42px; height: 42px; border-radius: 21px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: #FBF7F2; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 21h4"></path></svg><span style="position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 4px; background: {{tiendaLuz}};"></span></button>
+    </div>
+
+    <div style="position: relative; display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 15px; color: #CDB8A8;">Hola, Nahuel. Hoy vendiste</span>
+      <span style="font-size: 42px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05;">$ 184.350</span>
+      <span style="font-size: 14px; color: #6FD0A0; font-weight: 600;">▲ 12,4 % vs. ayer a esta hora · 14 pedidos</span>
+    </div>
+
+    <div role="img" aria-label="Ventas de hoy por hora, por encima de ayer" style="position: relative;">
+      <svg aria-hidden="true" width="100%" height="60" viewBox="0 0 350 60" preserveAspectRatio="none" fill="none">
+        <path d="M0 56 C30 55, 50 52, 80 46 S130 32, 170 26 S230 14, 262 9 L262 60 L0 60 Z" fill="{{tiendaVelo}}"></path>
+        <path d="M0 56 C30 55, 50 52, 80 46 S130 32, 170 26 S230 14, 262 9" stroke="{{tiendaLuz}}" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M0 57 C40 56, 70 53, 110 46 S190 34, 240 26 S310 18, 350 14" stroke="rgba(251,247,242,0.35)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"></path>
+        <circle cx="262" cy="9" r="5" fill="{{tiendaLuz}}"></circle>
+      </svg>
+    </div>
+
+    <a href="#" style="position: relative; height: 58px; border-radius: 20px; background: {{tienda}}; color: #FFFFFF; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; box-shadow: 0 10px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M8 9v6M11 9v6M14 9v6M16.5 9v6"></path></svg>Vender ahora</a>
+  </div>
+
+  <div style="padding: 18px 20px 120px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{acciones}}" as="a" hint-placeholder-count="3">
+        <a href="#" style="border-radius: 20px; padding: 12px; height: 92px; box-sizing: border-box; background: #2E1B12; border: 1px solid rgba(255,255,255,0.06); text-decoration: none; color: #FBF7F2; display: flex; flex-direction: column; justify-content: space-between;">
+          <span style="width: 36px; height: 36px; border-radius: 12px; background: {{tiendaVelo}}; color: {{tiendaLuz}}; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{a.icono}}"></path></svg></span>
+          <span style="display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 800;">{{a.titulo}}</span><span style="font-size: 12px; color: #CDB8A8;">{{a.sub}}</span></span>
+        </a>
+      </sc-for>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.4px;">Para hacer hoy</h2>
+      <div style="background: #2E1B12; border: 1px solid rgba(255,255,255,0.06); border-radius: 22px; overflow: hidden;">
+        <a href="#" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; text-decoration: none; color: #FBF7F2; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <span style="width: 40px; height: 40px; border-radius: 13px; background: {{tienda}}; color: #FFFFFF; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;">4</span>
+          <span style="flex: 1; display: flex; flex-direction: column;"><span style="font-size: 17px; font-weight: 700;">Pedidos por preparar</span><span style="font-size: 14px; color: #CDB8A8;">El más viejo entró hace 3 h</span></span>
+          <span style="font-size: 15px; font-weight: 700; color: {{tiendaLuz}};">Preparar</span>
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; text-decoration: none; color: #FBF7F2;">
+          <span style="width: 40px; height: 40px; border-radius: 13px; background: {{tiendaVelo}}; color: {{tiendaLuz}}; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;">2</span>
+          <span style="flex: 1; display: flex; flex-direction: column;"><span style="font-size: 17px; font-weight: 700;">Consultas sin responder</span><span style="font-size: 14px; color: #CDB8A8;">WhatsApp y Mercado Libre</span></span>
+          <span style="font-size: 15px; font-weight: 700; color: {{tiendaLuz}};">Responder</span>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <nav aria-label="Secciones" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #1B0F09; border-top: 1px solid rgba(255,255,255,0.06); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-top: 8px; box-sizing: border-box;">
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; text-decoration: none; color: {{tiendaLuz}};"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"></path></svg>Inicio</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #CDB8A8;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Pedidos</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #CDB8A8;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"></path><path d="M4 7.5l8 4.5 8-4.5M12 12v9"></path></svg>Productos</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #CDB8A8;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 18l1.5-3.5A7 7 0 1 1 9.5 18z"></path></svg>Tincho</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: #CDB8A8;"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>Más</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tienda":{"editor":"color","default":"#5B6B3A","options":["#5B6B3A","#1F4E5A","#7A2E3A","#D9652F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  mezclar(hex, con, t) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(con.slice(1), 16);
+    const c = [16, 8, 0].map(s => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t));
+    return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  renderVals() {
+    const t = this.props.tienda ?? '#5B6B3A';
+    return {
+      tienda: t,
+      tiendaNoche: this.mezclar(t, '#22140D', 0.55),
+      tiendaHondo: this.mezclar(t, '#22140D', 0.82),
+      tiendaLuz: this.mezclar(t, '#FFFFFF', 0.5),
+      tiendaVelo: this.mezclar(t, '#2E1B12', 0.6),
+      acciones: [
+        { titulo: 'Producto', sub: 'Sacale una foto', icono: 'M4 8h3l1.5-2h7L17 8h3v11H4z M12 9.5a3.5 3.5 0 1 1 0 7a3.5 3.5 0 1 1 0-7' },
+        { titulo: 'Cobrar', sub: 'Link o QR', icono: 'M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1 M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1' },
+        { titulo: 'Compartir', sub: 'Tu vidriera', icono: 'M12 15V4M8 8l4-4 4 4 M6 12v7h12v-7' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

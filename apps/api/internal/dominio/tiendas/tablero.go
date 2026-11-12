@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/acentos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/roles"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/visitas"
@@ -39,14 +40,18 @@ type comparado struct {
 // transferencias, carritos y últimos pedidos) sólo van si Montos es true: a quien no tiene
 // roles.Finanzas (Ventas y Local) no le llegan, ni en cero (ver SinMontos).
 type Tablero struct {
-	Periodo string     `json:"periodo"`
-	Desde   time.Time  `json:"desde"`
-	Hasta   time.Time  `json:"hasta"`
-	Hola    *string    `json:"hola"`
-	Montos  bool       `json:"montos"`
-	Ventas  *comparado `json:"ventas,omitempty"`
-	Serie   *serie     `json:"serie,omitempty"`
-	Kpis    struct {
+	Periodo string    `json:"periodo"`
+	Desde   time.Time `json:"desde"`
+	Hasta   time.Time `json:"hasta"`
+	Hola    *string   `json:"hola"`
+	Montos  bool      `json:"montos"`
+	// Acento: el color de marca de la tienda (#RRGGBB: plantilla, paleta y estilo de Mi tienda) y
+	// SobreAcento, el del texto que va encima (paquete acentos).
+	Acento      string     `json:"acento"`
+	SobreAcento string     `json:"sobreAcento"`
+	Ventas      *comparado `json:"ventas,omitempty"`
+	Serie       *serie     `json:"serie,omitempty"`
+	Kpis        struct {
 		Pedidos        comparado  `json:"pedidos"`
 		Ticket         *comparado `json:"ticket,omitempty"`
 		Conversion     comparado  `json:"conversion"`
@@ -182,9 +187,14 @@ func ObtenerTablero(ctx context.Context, pool interface {
 	t.Resenas.Nuevas, t.Envios.Retiros = []any{}, []any{}
 	t.Hornero.CostoMensaje, t.Hornero.IdeasHechas = 120, []string{}
 	err = pool.EnTienda(ctx, tiendaID, func(tx pgx.Tx) error {
-		if err := tx.QueryRow(ctx, `SELECT meta_mensual FROM tiendas WHERE id = $1`, tiendaID).Scan(&t.Meta.Objetivo); err != nil {
+		var plantilla, estiloAcento, estiloSobre string
+		var paleta int
+		if err := tx.QueryRow(ctx, `SELECT meta_mensual, plantilla, coalesce((diseno_publicado->>'paleta')::int, 0),
+				coalesce(diseno_publicado->'estilo'->'colores'->>'acento', ''), coalesce(diseno_publicado->'estilo'->'colores'->>'sobreAcento', '')
+			FROM tiendas WHERE id = $1`, tiendaID).Scan(&t.Meta.Objetivo, &plantilla, &paleta, &estiloAcento, &estiloSobre); err != nil {
 			return err
 		}
+		t.Acento, t.SobreAcento = acentos.DeLaTienda(plantilla, paleta, estiloAcento, estiloSobre)
 		if err := llenarVentas(ctx, tx, tiendaID, &t, desde, hasta, ahora); err != nil {
 			return err
 		}

@@ -1,7 +1,257 @@
 {
- "_leeme": "Respuestas de la API simulada, compartidas por iOS (TuLocalWebTests/PantallasTests.swift) y Android (app/src/test PantallasTest). Clave: «MÉTODO ruta» o sólo la ruta para GET. Lo que no está: GET → 404, lo demás → 200 con {}. Cada prueba puede pisar o quitar rutas.",
+ "_leeme": "Respuestas de la API simulada, compartidas por iOS (TuLocalWebTests/PantallasTests.swift) y Android (app/src/test PantallasTest). Clave: «MÉTODO ruta» o sólo la ruta para GET. Lo que no está: GET → 404, lo demás → 200 con {}. Cada prueba puede pisar o quitar rutas. «/v1/panel/tablero#cero» es el Inicio del día en $0 (con el acento claro de Pampa): las pruebas lo ponen en lugar de /v1/panel/tablero.",
  "/v1/panel/tablero": {
-  "periodo": "7d",
+  "periodo": "hoy",
+  "desde": "2026-11-12T03:00:00Z",
+  "hasta": "2026-11-12T19:00:00Z",
+  "hola": "Martina",
+  "montos": true,
+  "acento": "#2F5D50",
+  "sobreAcento": "#FFFFFF",
+  "ventas": {
+   "actual": 262600,
+   "anterior": 317200
+  },
+  "serie": {
+   "actual": [
+    0,
+    0,
+    0,
+    8000,
+    8000,
+    31400,
+    52000,
+    98200,
+    121000,
+    160300,
+    198700,
+    231400,
+    262600,
+    262600
+   ],
+   "anterior": [
+    0,
+    0,
+    0,
+    4000,
+    12000,
+    40000,
+    73000,
+    110500,
+    150000,
+    190000,
+    232000,
+    270000,
+    301000,
+    317200
+   ]
+  },
+  "kpis": {
+   "pedidos": {
+    "actual": 11,
+    "anterior": 13
+   },
+   "ticket": {
+    "actual": 23873,
+    "anterior": 24400
+   },
+   "conversion": {
+    "actual": 3.4,
+    "anterior": 2.9
+   },
+   "clientesNuevos": {
+    "actual": 4,
+    "anterior": 2
+   }
+  },
+  "canales": [
+   {
+    "canal": "web",
+    "parte": 0.42
+   },
+   {
+    "canal": "pos",
+    "parte": 0.34
+   },
+   {
+    "canal": "whatsapp",
+    "parte": 0.14
+   },
+   {
+    "canal": "ml",
+    "parte": 0.1
+   }
+  ],
+  "meta": {
+   "objetivo": 3230000,
+   "actual": 2070000,
+   "proyeccion": 3410000
+  },
+  "ultimosPedidos": [
+   {
+    "numero": 1335,
+    "cliente": "Lucía Gómez",
+    "canal": "web",
+    "estado": "Para preparar",
+    "total": 24800,
+    "creado": "2026-11-12T18:48:00Z"
+   },
+   {
+    "numero": 1334,
+    "cliente": "Julián Ruiz",
+    "canal": "whatsapp",
+    "estado": "Listo para despachar",
+    "total": 41200,
+    "creado": "2026-11-12T18:00:00Z"
+   },
+   {
+    "numero": 1333,
+    "cliente": "Martina Paz",
+    "canal": "pos",
+    "estado": "Entregado",
+    "total": 9500,
+    "creado": "2026-11-12T17:00:00Z"
+   }
+  ],
+  "paraHacer": {
+   "preparar": 13,
+   "chats": 0,
+   "chatMasViejoMin": 0,
+   "transferencias": 2,
+   "transferenciasMonto": 48300,
+   "sinStock": 1,
+   "sinStockEnMl": 0
+  },
+  "enVivo": {
+   "personas": 3,
+   "paginas": [
+    {
+     "nombre": "Mate imperial",
+     "personas": 2
+    }
+   ],
+   "carritos": 1,
+   "carritosMonto": 12400
+  },
+  "caja": {
+   "abierta": null,
+   "total": 96400,
+   "medios": [
+    {
+     "medio": "efectivo",
+     "monto": 61400
+    },
+    {
+     "medio": "mp",
+     "monto": 35000
+    }
+   ]
+  },
+  "liquidaciones": [
+   {
+    "medio": "mp",
+    "fecha": "2026-11-14",
+    "monto": 148300
+   }
+  ],
+  "hornero": {
+   "chatsHoy": 0,
+   "ideas": 0,
+   "carritos": 2,
+   "carritosMonto": 41200,
+   "costoMensaje": 120,
+   "recordados": false,
+   "audiencia": 0,
+   "ideasHechas": []
+  },
+  "bandeja": [],
+  "integraciones": [],
+  "masVendidos": [
+   {
+    "productoId": "p1",
+    "nombre": "Mate imperial",
+    "foto": null,
+    "unidades": 23
+   },
+   {
+    "productoId": "p2",
+    "nombre": "Alfajores x 12",
+    "foto": null,
+    "unidades": 41
+   },
+   {
+    "productoId": "p3",
+    "nombre": "Poncho tejido",
+    "foto": null,
+    "unidades": 9
+   }
+  ],
+  "resenas": {
+   "promedio": 4.8,
+   "nuevas": [
+    {
+     "texto": "Llegó rapidísimo y súper bien embalado.",
+     "autor": "Carla",
+     "producto": "Mate imperial",
+     "canal": "web",
+     "estrellas": 5
+    }
+   ]
+  },
+  "envios": {
+   "paquetes": 4,
+   "retiros": [
+    {
+     "hora": "17:30",
+     "transporte": "correo",
+     "paquetes": 4,
+     "ciudad": "Mar del Plata",
+     "proximo": true
+    }
+   ]
+  },
+  "visitas": {
+   "desde": "2026-10-01",
+   "hoy": {
+    "actual": 265,
+    "anterior": 240
+   },
+   "dias7": {
+    "actual": 1480,
+    "anterior": 1300
+   },
+   "dias30": {
+    "actual": 5200,
+    "anterior": 4800
+   },
+   "visitantes": {
+    "actual": 265,
+    "anterior": 240
+   },
+   "vistas": {
+    "actual": 812,
+    "anterior": 700
+   },
+   "masVistos": [
+    {
+     "productoId": "p1",
+     "nombre": "Mate imperial",
+     "foto": null,
+     "vistas": 120,
+     "visitantes": 98
+    },
+    {
+     "productoId": "p3",
+     "nombre": "Poncho tejido",
+     "foto": null,
+     "vistas": 64,
+     "visitantes": 50
+    }
+   ]
+  }
+ },
+ "/v1/panel/tablero#cero": {
+  "periodo": "hoy",
   "desde": "2026-10-25T00:00:00Z",
   "hasta": "2026-11-01T00:00:00Z",
   "montos": true,
@@ -30,8 +280,8 @@
   "visitas": {
    "desde": "2026-10-01",
    "hoy": {
-    "actual": 12,
-    "anterior": 4
+    "actual": 23,
+    "anterior": 12
    },
    "dias7": {
     "actual": 12,
@@ -50,7 +300,9 @@
     "anterior": 4
    },
    "masVistos": []
-  }
+  },
+  "acento": "#E6FF4D",
+  "sobreAcento": "#111111"
  },
  "/v1/panel/listas/productos": {
   "total": 2,
