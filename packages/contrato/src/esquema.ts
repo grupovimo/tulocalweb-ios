@@ -2758,7 +2758,7 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["frenarBorrado"];
-        /** Programa el borrado de los clientes sin compras en 3 años (7 días para frenarlo). */
+        /** Programa el borrado de los clientes sin compras en 3 años (7 días para frenarlo; lo hace el worker como una supresión). */
         delete: operations["borrarInactivos"];
         options?: never;
         head?: never;
@@ -7698,7 +7698,7 @@ export interface operations {
                 "application/json": {
                     ids: string[];
                     accion: string;
-                    /** @description Lo que la acción necesite (ajuste de stock, publicado…). Facturación: emitir lleva {cliente, tipo, cuit, concepto, total}; reintentar y anular (nota de crédito) usan ids. */
+                    /** @description Lo que la acción necesite (ajuste de stock, publicado…). Facturación: emitir lleva {cliente, tipo, cuit, concepto, total}; reintentar y anular (nota de crédito) usan ids. Clientes: editar (un id) lleva {nombre, email, telefono} y corrige su ficha, sus pedidos y lo importado; suprimir (pedido de supresión) borra su ficha y su contacto y deja sus pedidos como «Consumidor final» (409 en_curso si tiene un pedido, turno, suscripción o devolución en curso; 409 email_en_uso al editar). */
                     valor?: unknown;
                 };
             };

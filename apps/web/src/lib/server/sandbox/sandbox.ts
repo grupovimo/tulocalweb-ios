@@ -174,6 +174,7 @@ import {
 	claveStock,
 	slugProducto,
 	type CambioCliente,
+	type RegCliente,
 	type CambioFactura,
 	type CambioProducto,
 	type FacturaManual,
@@ -852,8 +853,21 @@ export class DatosSandbox implements Datos {
 		]);
 		const ahora = Date.now();
 		const regs = registrosClientes(d, this.sb.creadoEn, ahora, cambios);
-		if (!fichas.length && !historial.length) return regs;
-		return unirClientes(regs, this.emailsClientes(d, cambios), fichas, historial, ahora);
+		const emails = this.emailsClientes(d, cambios);
+		const todos =
+			fichas.length || historial.length
+				? unirClientes(regs, emails, fichas, historial, ahora)
+				: regs;
+		// Como la API: los suprimidos no están y los rectificados muestran lo corregido.
+		return todos
+			.filter((c) => !cambios.get(c.id)?.borrado)
+			.map((c): RegCliente => {
+				const e = cambios.get(c.id)?.editado;
+				const email = emails.get(c.id) ?? (c.id.includes('@') ? c.id : null);
+				return e
+					? { ...c, nombre: e.nombre, email: e.email, telefono: e.telefono, wa: !!e.telefono }
+					: { ...c, email };
+			});
 	}
 	/** El email de cada cliente de la lista (los de ejemplo y los cargados en el panel), por id. */
 	private emailsClientes(d: Demo, cambios: Map<string, CambioCliente>) {
@@ -1051,6 +1065,38 @@ export class DatosSandbox implements Datos {
 						etiquetas: [...new Set([...(cambios.get(c.id)?.etiquetas ?? []), e])]
 					});
 				return elegidos.length;
+			}
+			if (accion === 'editar' && elegidos.length === 1) {
+				const v = valor as { nombre?: unknown; email?: unknown; telefono?: unknown } | null;
+				const texto = (x: unknown, max: number) =>
+					typeof x === 'string' && x.trim() ? x.trim().slice(0, max) : null;
+				const nombre = texto(v?.nombre, 80) ?? '';
+				const email = texto(v?.email, 120)?.toLowerCase() ?? null;
+				if (nombre.length < 2 || (email && !email.includes('@')))
+					error(400, 'Revisá el nombre (de 2 a 80 letras), el email y el WhatsApp.');
+				if (email && todos.some((c) => c.id !== elegidos[0].id && c.email === email))
+					error(409, { message: 'Ese email ya es de otro cliente.', code: 'email_en_uso' });
+				await guardar(elegidos[0].id, {
+					editado: { nombre, email, telefono: texto(v?.telefono, 30) }
+				});
+				return 1;
+			}
+			if (accion === 'suprimir') {
+				// Como la API: con un pedido sin entregar, no (la demo no tiene turnos ni suscripciones).
+				const d = await this.demo();
+				const enCurso = (id: string) =>
+					d.pedidos.some(
+						(p) => p.clienteId === id && p.estado !== 'Entregado' && p.estado !== 'Cancelado'
+					);
+				const libres = elegidos.filter((c) => !enCurso(c.id));
+				if (elegidos.length && !libres.length)
+					error(409, {
+						message:
+							'Tiene un pedido, un turno, una suscripción o una devolución en curso: terminalo o cancelalo primero.',
+						code: 'en_curso'
+					});
+				for (const c of libres) await guardar(c.id, { borrado: ahora });
+				return libres.length;
 			}
 			if (accion === 'crear') {
 				const v = valor as {

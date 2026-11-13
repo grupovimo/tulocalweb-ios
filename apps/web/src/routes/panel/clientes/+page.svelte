@@ -62,6 +62,74 @@
 		alta = false;
 	}
 
+	// ---- Corregir sus datos y el pedido de supresión ----
+	let corrigiendo = $state(false);
+	let borrando = $state(false);
+	let cNombre = $state('');
+	let cEmail = $state('');
+	let cTel = $state('');
+	let errorDatos = $state<string | null>(null);
+	let enviando = $state(false);
+	function abrirCorregir(c: Cliente) {
+		elegido = c;
+		cNombre = c.nombre;
+		cEmail = c.email ?? '';
+		cTel = c.telefono ?? '';
+		errorDatos = null;
+		corrigiendo = true;
+	}
+	function abrirBorrar(c: Cliente) {
+		elegido = c;
+		errorDatos = null;
+		borrando = true;
+	}
+	/** La acción sobre un cliente, con el mensaje de la API si no se pudo. */
+	async function sobreCliente(accion: 'editar' | 'suprimir', valor?: unknown) {
+		if (!elegido || enviando) return false;
+		enviando = true;
+		try {
+			const r = await fetch('/panel/listas/clientes', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ ids: [elegido.id], accion, valor })
+			});
+			if (!r.ok) {
+				const p = (await r.json().catch(() => null)) as { message?: string } | null;
+				errorDatos = p?.message ?? 'No pudimos guardarlo. Probá de nuevo.';
+				return false;
+			}
+			await invalidateAll();
+			return true;
+		} finally {
+			enviando = false;
+		}
+	}
+	async function corregir(e: SubmitEvent) {
+		e.preventDefault();
+		if (cNombre.trim().length < 2) {
+			errorDatos = 'Poné el nombre del cliente.';
+			return;
+		}
+		if (cTel && cTel.replace(/\D/g, '').length < 8) {
+			errorDatos = 'El WhatsApp tiene que tener la característica: 11 5555-1234.';
+			return;
+		}
+		if (!(await sobreCliente('editar', { nombre: cNombre, email: cEmail, telefono: cTel }))) return;
+		ui.toast({ k: 'ok', title: 'Datos corregidos', desc: 'En su ficha y en sus pedidos' });
+		corrigiendo = false;
+		ficha = false;
+	}
+	async function suprimir() {
+		if (!(await sobreCliente('suprimir'))) return;
+		ui.toast({
+			k: 'ok',
+			title: 'Datos borrados',
+			desc: 'Sus ventas quedan como «Consumidor final»'
+		});
+		borrando = false;
+		ficha = false;
+	}
+
 	let etiqueta = $state('');
 	async function aplicarEtiqueta(e: SubmitEvent) {
 		e.preventDefault();
@@ -104,7 +172,67 @@
 			desc: 'Enviado por WhatsApp · vence en 7 días'
 		});
 	}}
+	editar={abrirCorregir}
+	suprimir={abrirBorrar}
 />
+
+<Modal bind:open={corrigiendo} titulo="Corregir datos" ancho={460}>
+	<form onsubmit={corregir}>
+		<div class="m-ico"><Icon icon={I.phPencilSimpleFill} size={24} /></div>
+		<div class="m-t">Corregir datos</div>
+		<div class="m-d">
+			Se corrigen en su ficha y en sus pedidos. Las facturas ya emitidas no cambian.
+		</div>
+		<div class="m-campos">
+			<label class="field"
+				>Nombre y apellido<input
+					class="input"
+					bind:value={cNombre}
+					maxlength="80"
+					autocomplete="off"
+				/></label
+			>
+			<label class="field"
+				>WhatsApp<input
+					class="input"
+					bind:value={cTel}
+					inputmode="tel"
+					placeholder="11 5555-1234"
+					maxlength="30"
+				/></label
+			>
+			<label class="field"
+				>Email<input class="input" bind:value={cEmail} type="email" maxlength="120" /></label
+			>
+		</div>
+		{#if errorDatos}<div class="m-error" role="alert">{errorDatos}</div>{/if}
+		<div class="m-acc">
+			<button type="button" class="btn btn-secondary" onclick={() => (corrigiendo = false)}
+				>Cancelar</button
+			>
+			<button class="btn btn-primary" disabled={enviando}>Guardar</button>
+		</div>
+	</form>
+</Modal>
+
+<Modal bind:open={borrando} titulo="Borrar sus datos" ancho={460}>
+	<div class="m-ico rojo"><Icon icon={I.phTrashFill} size={24} /></div>
+	<div class="m-t">¿Borrar los datos de {elegido?.nombre ?? 'este cliente'}?</div>
+	<div class="m-d">
+		Es para cuando te lo pide. Borramos su ficha y su contacto, y sus pedidos quedan como venta a
+		«Consumidor&nbsp;final». Las facturas emitidas se guardan como salieron, porque la ley lo pide.
+		No se puede deshacer.
+	</div>
+	{#if errorDatos}<div class="m-error" role="alert">{errorDatos}</div>{/if}
+	<div class="m-acc">
+		<button type="button" class="btn btn-secondary" onclick={() => (borrando = false)}
+			>Cancelar</button
+		>
+		<button type="button" class="btn btn-danger" disabled={enviando} onclick={suprimir}
+			>Borrar sus datos</button
+		>
+	</div>
+</Modal>
 
 <Modal bind:open={alta} titulo="Nuevo cliente" ancho={460}>
 	<form onsubmit={crear}>
@@ -182,6 +310,10 @@
 		border-radius: 15px;
 		background: rgba(210, 88, 47, 0.12);
 		color: #b0441d;
+	}
+	.m-ico.rojo {
+		background: rgba(184, 58, 46, 0.12);
+		color: #b83a2e;
 	}
 	.m-ico.violeta {
 		background: rgba(106, 79, 160, 0.12);

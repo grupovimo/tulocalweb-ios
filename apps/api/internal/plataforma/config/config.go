@@ -62,6 +62,12 @@ type Config struct {
 	// Tiempo real (docs/decisiones.md §44): orígenes extra que pueden abrir el WebSocket del panel,
 	// además de MOSTRADOR_SITIO (separados por coma; admiten comodines como https://*.ejemplo.com).
 	TiempoRealOrigenes []string
+	// Borrado de las tiendas cerradas hace más de 90 días (MOSTRADOR_PURGA_TIENDAS=1). Apagado por
+	// defecto: `mostradorctl purga-tiendas --listar` muestra antes qué borraría.
+	PurgaTiendas bool
+	// La carpeta de archivos de la web (su DATOS_DIR/archivos, montada en el worker): de ahí se borran
+	// las fotos de las tiendas purgadas (fotos/<tienda>/). Vacía: las fotos no se tocan.
+	DirArchivos string
 }
 
 // Desarrollo dice si se está corriendo en local.
@@ -112,6 +118,8 @@ func Leer() (Config, error) {
 		VAPIDPrivada:       os.Getenv("MOSTRADOR_VAPID_PRIVADA"),
 		VAPIDSujeto:        os.Getenv("MOSTRADOR_VAPID_SUJETO"),
 		TiempoRealOrigenes: lista(os.Getenv("MOSTRADOR_TIEMPO_REAL_ORIGENES")),
+		PurgaTiendas:       os.Getenv("MOSTRADOR_PURGA_TIENDAS") == "1",
+		DirArchivos:        os.Getenv("MOSTRADOR_DIR_ARCHIVOS"),
 	}
 	switch c.Entorno {
 	case "desarrollo", "staging", "produccion":

@@ -9,6 +9,8 @@ import type { ConfigLista, Opcion } from './tipos.ts';
 export type Cliente = {
 	id: string;
 	nombre: string;
+	/** Cuando lo hay (es su id en la lista). */
+	email?: string | null;
 	foto: string | null;
 	ini: number;
 	ciudad: string;

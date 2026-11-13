@@ -34,6 +34,23 @@ export type Legal = {
 	cierre: { titulo: string; texto: string };
 };
 
+/**
+ * Los proveedores que hoy tratan datos para prestar el servicio (los subencargados del Acuerdo de
+ * tratamiento). Una sola lista: la usan la Política de privacidad y el Acuerdo.
+ */
+const SUBENCARGADOS = [
+	'Hostinger (Brasil): el servidor donde corren Tu Local Web, la base de datos, las fotos de los productos y el correo.',
+	'Cloudflare (Estados Unidos): el DNS y el proxy por el que pasa todo el tráfico del sitio, y Workers AI, que procesa los textos de Tincho, el asistente.',
+	'Clerk (Estados Unidos): el ingreso con Google, Apple y otras cuentas.',
+	'Google (Firebase Cloud Messaging) y Apple (Apple Push Notification service): los avisos al celular.',
+	'GitHub (Estados Unidos): guarda las copias de seguridad diarias de las bases, que salen cifradas de nuestro servidor.',
+	'Meta (WhatsApp Cloud API): los links para entrar a tu cuenta, cuando los pedís por WhatsApp.',
+	'Mercado Pago: los cobros de las tiendas y el abono de Tu Local Web.',
+	'ARCA: las facturas electrónicas que emitís desde el panel.',
+	'Correo Argentino y Mercado Libre: los envíos y las ventas, si conectás tu cuenta.',
+	'Telegram: el aviso de cada venta, si vinculás tu Telegram.'
+];
+
 export const LEGALES: Legal[] = [
 	{
 		slug: 'terminos',
@@ -205,7 +222,7 @@ export const LEGALES: Legal[] = [
 		corto: 'Política de privacidad',
 		miga: 'Privacidad',
 		descripcion: 'Legales de Tu Local Web, claros y sin letra chica.',
-		chips: ['Vigente desde el 30 de octubre de 2026', 'Versión 2.5', '2 min de lectura'],
+		chips: ['Vigente desde el 12 de noviembre de 2026', 'Versión 2.6', '3 min de lectura'],
 		ilustracion: 'portapapeles',
 		indice: [
 			['s1', '1. Responsable'],
@@ -251,7 +268,8 @@ export const LEGALES: Legal[] = [
 					},
 					{
 						ul: [
-							'De tu cuenta: nombre, email, teléfono, CUIT y datos de facturación.',
+							'De tu cuenta: nombre, email, teléfono, CUIT y datos de facturación; el CBU, el alias y el titular de la cuenta donde cobrás por transferencia (los ve quien te compra); la foto de tu perfil de Google o Apple, si entrás con ellos; y la dirección IP y la ubicación aproximada de cada ingreso, para que veas desde dónde está abierta tu cuenta.',
+							'Si usás el botón de arrepentimiento: tu nombre, tu email, tu DNI y el motivo, para tramitar la baja.',
 							'De uso: páginas del panel que visitás, dispositivo y dirección IP, para seguridad y para mejorar el producto.',
 							'De tus clientes: los que vos cargás o recibís en tus ventas. Ahí sos el responsable y Tu Local Web actúa como encargado (ver Tratamiento de datos).',
 							'De quienes visitan las tiendas: sólo cuántas veces se vio cada página, sin cookies y sin guardar la IP ni el navegador (ver Visitas a las tiendas).'
@@ -266,7 +284,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Visitas a las tiendas',
 				cuerpo: [
 					{
-						p: 'Para que cada comercio sepa cuánta gente entra a su tienda, Tu Local Web cuenta las páginas vistas desde su propio servidor, sin cookies, sin guardar nada en el navegador y sin servicios de terceros.'
+						p: 'Para que cada comercio sepa cuánta gente entra a su tienda, Tu Local Web cuenta las páginas vistas desde su propio servidor, sin cookies, sin guardar nada en el navegador y sin servicios de medición de terceros. Como el resto del sitio, esas visitas pasan por Cloudflare, nuestro proxy.'
 					},
 					{
 						ul: [
@@ -296,8 +314,9 @@ export const LEGALES: Legal[] = [
 				titulo: 'Con quién los compartimos',
 				cuerpo: [
 					{
-						p: 'Con proveedores que nos ayudan a operar (alojamiento en la nube, envío de emails, procesamiento de pagos), con las integraciones que vos activás, y con autoridades cuando una ley o un juez lo exige. Todos firman acuerdos de confidencialidad.'
-					}
+						p: 'Con los proveedores que nos ayudan a operar, con las integraciones que vos activás y con autoridades cuando una ley o un juez lo exige. Hoy son estos:'
+					},
+					{ ul: SUBENCARGADOS }
 				]
 			},
 			{
@@ -307,7 +326,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Transferencias internacionales',
 				cuerpo: [
 					{
-						p: 'Algunos proveedores alojan datos fuera de la Argentina, principalmente en Brasil y Estados Unidos. En esos casos usamos cláusulas contractuales que garantizan un nivel de protección adecuado.'
+						p: 'Algunos proveedores alojan datos fuera de la Argentina, principalmente en Brasil (Hostinger) y en Estados Unidos (Cloudflare, Clerk y GitHub). En esos casos usamos cláusulas contractuales que garantizan un nivel de protección adecuado.'
 					}
 				]
 			},
@@ -332,7 +351,13 @@ export const LEGALES: Legal[] = [
 				titulo: 'Cuánto tiempo los guardamos',
 				cuerpo: [
 					{
-						p: 'Mientras tu cuenta esté activa. Si la cerrás, borramos tu tienda a los 90 días, salvo la información contable que la ley nos obliga a conservar durante 10 años.'
+						p: 'Mientras tu cuenta esté activa. Si la cerrás, borramos tu tienda a los 90 días con todo lo que tiene: productos, fotos, pedidos, clientes y turnos. Sólo queda la información contable que la ley nos obliga a conservar durante 10 años: los comprobantes emitidos y los cobros del abono, sin los datos de quien compró.'
+					},
+					{
+						p: 'Desde Mis datos podés borrar a los clientes sin compras en 3 años, y desde la ficha de cada cliente, corregir o borrar sus datos cuando te lo pida. Sus ventas quedan como «Consumidor final».'
+					},
+					{
+						p: 'Lo que borramos sale de la base en el momento. Las copias de seguridad cifradas que ya estaban hechas se guardan sólo para recuperar el servicio ante una falla.'
 					}
 				]
 			},
@@ -343,7 +368,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Seguridad',
 				cuerpo: [
 					{
-						p: 'Ciframos los datos en tránsito y en reposo, hacemos copias de seguridad diarias y limitamos el acceso interno. Más detalle en la página de Seguridad.'
+						p: 'Todo viaja cifrado (HTTPS). En la base guardamos cifrados los tokens de las integraciones, la clave del certificado de ARCA y el secreto de la verificación en dos pasos, y las contraseñas, sólo como hash. Hacemos copias de seguridad diarias y cifradas, y limitamos el acceso interno. Más detalle en la página de Seguridad.'
 					}
 				]
 			},
@@ -354,7 +379,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Inteligencia artificial',
 				cuerpo: [
 					{
-						p: 'Cuando Tincho responde un mensaje, el texto se procesa solo para generar esa respuesta. Trabajamos con proveedores de IA que no retienen ni usan esos datos para entrenar sus modelos.'
+						p: 'Cuando Tincho responde un mensaje, el texto se procesa solo para generar esa respuesta, con Workers AI de Cloudflare, que no usa esos datos para entrenar sus modelos.'
 					}
 				]
 			},
@@ -382,7 +407,7 @@ export const LEGALES: Legal[] = [
 		corto: 'Política de cookies',
 		miga: 'Cookies',
 		descripcion: 'Legales de Tu Local Web, claros y sin letra chica.',
-		chips: ['Vigente desde el 30 de octubre de 2026', 'Versión 1.4', '2 min de lectura'],
+		chips: ['Vigente desde el 12 de noviembre de 2026', 'Versión 1.5', '2 min de lectura'],
 		ilustracion: 'portapapeles',
 		indice: [
 			['s1', '1. Qué son las cookies'],
@@ -395,9 +420,9 @@ export const LEGALES: Legal[] = [
 			{
 				t: 'resumen',
 				items: [
-					'Usamos cookies necesarias para que el sitio funcione; esas no se pueden apagar.',
-					'Las analíticas y de marketing solo se activan si las aceptás.',
-					'Podés cambiar tu elección cuando quieras desde el botón de abajo o el pie de la página.',
+					'En el sitio de Tu Local Web sólo usamos cookies propias, para que funcione y para recordar tus preferencias.',
+					'No usamos cookies analíticas ni de marketing de terceros en el sitio.',
+					'En cada tienda, la medición de Google o Meta del comercio sólo se activa si la aceptás.',
 					'Las visitas a las tiendas las contamos sin cookies: no hace falta aceptar nada.'
 				]
 			},
@@ -408,7 +433,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Qué son las cookies',
 				cuerpo: [
 					{
-						p: 'Son pequeños archivos que el navegador guarda cuando visitás un sitio. Sirven para recordar tu sesión, tus preferencias y, si lo permitís, para medir cómo se usa Tu Local Web.'
+						p: 'Son pequeños archivos que el navegador guarda cuando visitás un sitio. Sirven para recordar tu sesión y tus preferencias.'
 					}
 				]
 			},
@@ -419,7 +444,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Qué cookies usamos',
 				cuerpo: [
 					{
-						p: 'Las agrupamos en tres categorías. La tabla de abajo detalla cada una.'
+						p: 'Todas son propias de Tu Local Web. Tu elección del aviso de cookies no es una cookie: queda guardada en tu navegador (tlw-cookies) hasta que la cambies o la borres.'
 					}
 				]
 			},
@@ -431,42 +456,63 @@ export const LEGALES: Legal[] = [
 						color: '#2F8F63',
 						tipo: 'Necesaria',
 						para: 'Mantiene tu sesión iniciada',
-						dura: '12 meses'
+						dura: '12 horas, o 1 año con «Recordarme»'
 					},
 					{
-						nombre: 'tlw-cookies',
+						nombre: '__Host-tlw_desafio',
 						color: '#2F8F63',
 						tipo: 'Necesaria',
-						para: 'Guarda tu elección de cookies',
+						para: 'El paso entre tu contraseña y el código de la verificación en dos pasos',
+						dura: 'Hasta que entrás (el código vence a los 10 minutos)'
+					},
+					{
+						nombre: 'tlw_invitacion',
+						color: '#2F8F63',
+						tipo: 'Necesaria',
+						para: 'La invitación al equipo de una tienda mientras te creás la cuenta',
+						dura: '1 hora'
+					},
+					{
+						nombre: 'tlw_volver · mostrador-volver',
+						color: '#2F8F63',
+						tipo: 'Necesaria',
+						para: 'A qué pantalla volver después de ingresar o de conectar Mercado Pago',
+						dura: '10 a 15 minutos'
+					},
+					{
+						nombre: 'mostrador_demo',
+						color: '#2F8F63',
+						tipo: 'Necesaria',
+						para: 'Tu demo del panel, que se borra sola',
+						dura: '24 horas'
+					},
+					{
+						nombre: 'panel_tema · panel_modo',
+						color: '#6A4FA0',
+						tipo: 'Preferencia',
+						para: 'El tema claro u oscuro y el modo del panel',
 						dura: '12 meses'
 					},
 					{
-						nombre: '_ga',
-						color: '#3E6BFD',
-						tipo: 'Analítica',
-						para: 'Google Analytics: visitas agregadas',
-						dura: '13 meses'
+						nombre: 'mostrador-origen',
+						color: '#6A4FA0',
+						tipo: 'Preferencia',
+						para: 'El link o el cupón de partner con el que llegaste, para aplicarlo al crear tu tienda',
+						dura: '90 días'
 					},
 					{
-						nombre: 'ph_*',
-						color: '#3E6BFD',
-						tipo: 'Analítica',
-						para: 'Uso anónimo del panel',
+						nombre: 'cupon-<tienda>',
+						color: '#C24E25',
+						tipo: 'De la tienda',
+						para: 'El cupón del link que te mandó la tienda',
+						dura: '7 días'
+					},
+					{
+						nombre: 'tlw-medir-<tienda>',
+						color: '#C24E25',
+						tipo: 'De la tienda',
+						para: 'Si aceptaste la medición de esa tienda',
 						dura: '12 meses'
-					},
-					{
-						nombre: '_fbp',
-						color: '#C24E25',
-						tipo: 'Marketing',
-						para: 'Meta: medir campañas',
-						dura: '3 meses'
-					},
-					{
-						nombre: '_gcl_au',
-						color: '#C24E25',
-						tipo: 'Marketing',
-						para: 'Google Ads: conversiones',
-						dura: '3 meses'
 					}
 				]
 			},
@@ -480,7 +526,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Cómo gestionarlas',
 				cuerpo: [
 					{
-						p: 'Podés aceptar o rechazar las analíticas y de marketing desde el panel de cookies. También podés borrarlas o bloquearlas desde la configuración de tu navegador; si bloqueás las necesarias, algunas partes del sitio pueden dejar de funcionar.'
+						p: 'Podés borrarlas o bloquearlas desde la configuración de tu navegador; si bloqueás las necesarias, no vas a poder entrar al panel. En las tiendas, la medición la aceptás o la rechazás desde su aviso de cookies.'
 					}
 				]
 			},
@@ -491,7 +537,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Cookies en las tiendas',
 				cuerpo: [
 					{
-						p: 'Cada tienda creada con Tu Local Web puede sumar sus propios píxeles (por ejemplo, de Meta o Google) para medir sus campañas. En ese caso el responsable es el comercio. Tu Local Web incluye en todas las tiendas un aviso de cookies configurable para que cumplan la normativa.'
+						p: 'Cada tienda creada con Tu Local Web puede sumar su cuenta de Google Analytics o su píxel de Meta para medir sus campañas, con sus cookies (_ga y _fbp, entre otras). Sólo se cargan si aceptás la medición en el aviso de cookies de esa tienda, y el responsable es el comercio.'
 					}
 				]
 			},
@@ -696,7 +742,7 @@ export const LEGALES: Legal[] = [
 		corto: 'Tratamiento de datos (para tiendas)',
 		miga: 'Tratamiento de datos',
 		descripcion: 'Legales de Tu Local Web, claros y sin letra chica.',
-		chips: ['Vigente desde el 1 de octubre de 2026', 'Versión 1.2', '2 min de lectura'],
+		chips: ['Vigente desde el 12 de noviembre de 2026', 'Versión 1.3', '2 min de lectura'],
 		ilustracion: 'portapapeles',
 		indice: [
 			['s1', '1. Roles'],
@@ -773,10 +819,12 @@ export const LEGALES: Legal[] = [
 					},
 					{
 						ul: [
-							'Cifrado TLS en tránsito y AES-256 en reposo.',
-							'Verificación en dos pasos obligatoria para el equipo de Tu Local Web.',
-							'Copias de seguridad diarias con retención de 14 días.',
-							'Registro de accesos y revisión trimestral de permisos.'
+							'Cifrado TLS en tránsito.',
+							'En la base, AES-256-GCM para los tokens de las integraciones, la clave del certificado de ARCA y el secreto de la verificación en dos pasos; las contraseñas, sólo como hash.',
+							'Verificación en dos pasos disponible para todas las cuentas de las tiendas.',
+							'El equipo de Tu Local Web entra con usuario propio, y cada vez que mira o cambia algo de tu tienda queda registrado.',
+							'Copias de seguridad diarias de las bases, cifradas antes de salir del servidor.',
+							'Registro de la actividad de cada tienda: quién cambió qué y cuándo.'
 						]
 					}
 				]
@@ -788,8 +836,9 @@ export const LEGALES: Legal[] = [
 				titulo: 'Subencargados',
 				cuerpo: [
 					{
-						p: 'Usamos proveedores para alojamiento en la nube, envío de emails y mensajes de WhatsApp, y procesamiento con IA sin retención. Publicamos la lista vigente y te avisamos con 30 días de anticipación si sumamos uno nuevo; podés oponerte por motivos fundados.'
+						p: 'Estos son los proveedores que hoy tratan datos para prestar el servicio. Te avisamos con 30 días de anticipación si sumamos uno nuevo; podés oponerte por motivos fundados.'
 					},
+					{ ul: SUBENCARGADOS },
 					{
 						p: 'Para mostrarte desde dónde está abierta cada sesión de tu cuenta, la ubicación aproximada sale de la dirección IP con la base IP Geolocation by DB-IP (db-ip.com, licencia CC BY 4.0), que corre en nuestros servidores: tu IP no se manda a nadie.'
 					}
@@ -813,7 +862,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Fin del servicio',
 				cuerpo: [
 					{
-						p: 'Cuando cerrás tu cuenta podés exportar todos tus datos. A los 90 días los borramos de nuestros sistemas, salvo lo que la ley nos obligue a conservar.'
+						p: 'Cuando cerrás tu cuenta podés exportar todos tus datos. A los 90 días los borramos de nuestros sistemas, salvo lo que la ley nos obligue a conservar: los comprobantes emitidos, durante 10 años y sin los datos de tus compradores.'
 					}
 				]
 			},

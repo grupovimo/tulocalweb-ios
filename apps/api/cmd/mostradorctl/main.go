@@ -14,6 +14,9 @@
 //	                         escribe el SQL de las tres tiendas de demostración (dominio/demo) para la
 //	                         cuenta de ese email, o el que las borra. Se corre como superusuario:
 //	                         mostradorctl demo-tiendas x@y.com | psql -U postgres -d mostrador
+//	mostradorctl purga-tiendas --listar
+//	                         las tiendas cerradas hace más de 90 días que el worker borraría con
+//	                         MOSTRADOR_PURGA_TIENDAS=1 (id, nombre y cuándo se cerró). No borra nada.
 //
 // Las claves de los roles salen de MOSTRADOR_CLAVE_<ROL> (vacías en desarrollo).
 package main
@@ -28,6 +31,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/demo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/partners"
@@ -136,6 +140,14 @@ func correr(cmd string) error {
 			return err
 		}
 		return dominio(ctx, cfg.BaseMigrador, os.Args[2:])
+	case "purga-tiendas":
+		if len(os.Args) != 3 || os.Args[2] != "--listar" {
+			return fmt.Errorf("uso: mostradorctl purga-tiendas --listar (el borrado lo hace el worker con MOSTRADOR_PURGA_TIENDAS=1)")
+		}
+		if err := cfg.Exigir("BaseMigrador"); err != nil {
+			return err
+		}
+		return listarPurga(ctx, cfg.BaseMigrador)
 	default:
 		return fmt.Errorf("comando desconocido %q", cmd)
 	}
@@ -166,4 +178,26 @@ func altaEquipo(ctx context.Context, url, email, nombre, rol, clave string) erro
 		fmt.Println("listo:", email, "es", rol)
 	}
 	return err
+}
+
+// listarPurga muestra las tiendas que el worker borraría hoy, sin tocar nada.
+func listarPurga(ctx context.Context, url string) error {
+	pool, err := db.Abrir(ctx, url)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	l, err := configuracion.ParaPurgar(ctx, pool, 10000)
+	if err != nil {
+		return err
+	}
+	if len(l) == 0 {
+		fmt.Printf("ninguna tienda cerrada hace más de %d días\n", configuracion.DiasParaPurgar)
+		return nil
+	}
+	for _, t := range l {
+		fmt.Printf("%s\t%s\t%s\n", t.ID, t.Nombre, t.CerradaEn.Format(time.RFC3339))
+	}
+	fmt.Printf("%d tiendas para borrar\n", len(l))
+	return nil
 }

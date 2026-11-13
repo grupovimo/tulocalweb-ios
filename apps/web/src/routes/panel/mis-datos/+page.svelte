@@ -310,7 +310,7 @@
 	<div class="m-d">
 		Tu cuenta se desactiva ahora y tus datos personales se borran a los 30 días. Las tiendas donde
 		sos la única dueña se cierran. En esos 30 días la recuperás escribiendo a
-		<b>hola@tulocalweb.com.ar</b>; después no se puede deshacer.
+		<b>privacidad@tulocalweb.com.ar</b>; después no se puede deshacer.
 	</div>
 	<div class="m-c">Escribí <b>{email}</b> para confirmar</div>
 	<input class="m-in" bind:value={confirmaEmail} placeholder={email} aria-label="Tu email" />

@@ -10,7 +10,7 @@
 		'En la app de Tu Local Web: Más › Cuenta › Borrar mi cuenta.',
 		'En la web: entrá a tu panel, andá a Configuración › Mis datos y tocá «Borrar mi cuenta».',
 		'Escribí tu email para confirmar. La cuenta se desactiva en el momento.',
-		'Si no podés entrar, escribinos a hola@tulocalweb.com.ar desde el email de tu cuenta y la borramos nosotros.'
+		'Si no podés entrar, escribinos a privacidad@tulocalweb.com.ar desde el email de tu cuenta y la borramos nosotros.'
 	];
 </script>
 
@@ -44,8 +44,8 @@
 				y los ingresos con Google o Apple.
 			</li>
 			<li>
-				<b>Durante esos 30 días</b> la podés recuperar escribiendo a hola@tulocalweb.com.ar. Después no
-				se puede deshacer.
+				<b>Durante esos 30 días</b> la podés recuperar escribiendo a privacidad@tulocalweb.com.ar. Después
+				no se puede deshacer.
 			</li>
 		</ul>
 

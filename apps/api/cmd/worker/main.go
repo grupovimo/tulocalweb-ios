@@ -11,6 +11,7 @@ import (
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/avisos"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/equipo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/facturacion"
@@ -202,6 +203,35 @@ func correr() error {
 		for {
 			if _, err := cs.PurgarBorradas(ctx); err != nil && ctx.Err() == nil {
 				slog.Error("cuentas: purgar borradas", "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
+	// Clientes inactivos: el borrado que la tienda programó desde Mis datos (7 días para frenarlo).
+	// Y, con MOSTRADOR_PURGA_TIENDAS=1, las tiendas cerradas hace más de 90 días: se borran con sus
+	// fotos y lo contable queda 10 años en archivo_contable, sin datos de quien compró. Una vez por día.
+	if !cfg.PurgaTiendas {
+		slog.Info("purga de tiendas cerradas apagada (MOSTRADOR_PURGA_TIENDAS=1 la prende)")
+	}
+	go func() {
+		t := time.NewTicker(24 * time.Hour)
+		defer t.Stop()
+		for {
+			if n, err := configuracion.BorrarInactivosProgramados(ctx, app); err != nil && ctx.Err() == nil {
+				slog.Error("clientes: borrar inactivos", "error", err)
+			} else if n > 0 {
+				slog.Info("clientes: inactivos borrados", "clientes", n)
+			}
+			if cfg.PurgaTiendas {
+				if n, err := configuracion.PurgarCerradas(ctx, app, cfg.DirArchivos); err != nil && ctx.Err() == nil {
+					slog.Error("tiendas: purgar cerradas", "error", err)
+				} else if n > 0 {
+					slog.Info("tiendas: cerradas borradas", "tiendas", n)
+				}
 			}
 			select {
 			case <-ctx.Done():

@@ -97,6 +97,8 @@ const semilla = (s: string) => {
 export type RegCliente = {
 	id: string;
 	nombre: string;
+	/** Para corregirlo desde la ficha (la API lo manda cuando es la clave). */
+	email?: string | null;
 	foto: string | null;
 	/** Color de las iniciales (0–4). */
 	ini: number;
@@ -120,6 +122,10 @@ export type RegCliente = {
 export type CambioCliente = {
 	cupon?: number;
 	etiquetas?: string[];
+	/** Rectificado desde la ficha: nombre, email y WhatsApp. */
+	editado?: { nombre: string; email: string | null; telefono: string | null };
+	/** Suprimido (pedido de supresión o inactivo): sale de la lista. */
+	borrado?: number;
 	nuevo?: {
 		nombre: string;
 		telefono: string | null;

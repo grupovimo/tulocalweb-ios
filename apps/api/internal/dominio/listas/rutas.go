@@ -171,6 +171,22 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string, fact 
 		if r.PathValue("lista") == "clientes" && c.Accion == "crear" {
 			n, err = CrearCliente(r.Context(), pool, id, c.Valor)
 		}
+		// Rectificar (sus datos) y suprimir (el pedido de supresión de quien compró).
+		if r.PathValue("lista") == "clientes" && (c.Accion == "editar" || c.Accion == "suprimir") {
+			if c.Accion == "editar" && len(c.IDs) == 1 {
+				n, err = EditarCliente(r.Context(), pool, id, c.IDs[0], c.Valor)
+			} else if c.Accion == "suprimir" {
+				n, err = SuprimirClientes(r.Context(), pool, id, c.IDs)
+			}
+			switch {
+			case errors.Is(err, ErrEnCurso):
+				problema.Escribir(w, problema.Conflicto("en_curso", "Tiene un pedido, un turno, una suscripción o una devolución en curso: terminalo o cancelalo primero."))
+				return
+			case errors.Is(err, ErrEmailEnUso):
+				problema.Escribir(w, problema.Conflicto("email_en_uso", "Ese email ya es de otro cliente."))
+				return
+			}
+		}
 		// Etiquetas de clientes y mensajes llegan con WhatsApp: hasta entonces, 0.
 		if err != nil {
 			problema.Escribir(w, problema.Invalido(err.Error()))

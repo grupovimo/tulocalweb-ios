@@ -163,8 +163,13 @@ func Clientes(ctx context.Context, pool tx, tiendaID string, ahora time.Time) ([
 		}
 		h := fnv.New32a()
 		_, _ = h.Write([]byte(c.clave))
+		// El email es la clave cuando la hay (para corregirlo desde la ficha).
+		var email *string
+		if strings.Contains(c.clave, "@") {
+			email = &c.clave
+		}
 		regs = append(regs, Registro{
-			"id": c.clave, "nombre": c.nombre, "foto": c.foto, "ini": int(h.Sum32() % 5), "ciudad": c.ciudad,
+			"id": c.clave, "nombre": c.nombre, "email": email, "foto": c.foto, "ini": int(h.Sum32() % 5), "ciudad": c.ciudad,
 			"canal": c.canal, "telefono": c.tel, "pedidos": c.pedidos, "ultima": dias, "gastado": c.gastado,
 			"seg": segmento(c.pedidos, dias), "meses": meses, "cuit": c.mayorista, "wa": c.tel != nil && *c.tel != "",
 			"cupon": false, "etiquetas": []string{},

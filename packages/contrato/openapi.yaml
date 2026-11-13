@@ -788,7 +788,7 @@ paths:
               properties:
                 ids: { type: array, maxItems: 500, items: { type: string } }
                 accion: { type: string }
-                valor: { description: 'Lo que la acción necesite (ajuste de stock, publicado…). Facturación: emitir lleva {cliente, tipo, cuit, concepto, total}; reintentar y anular (nota de crédito) usan ids.' }
+                valor: { description: 'Lo que la acción necesite (ajuste de stock, publicado…). Facturación: emitir lleva {cliente, tipo, cuit, concepto, total}; reintentar y anular (nota de crédito) usan ids. Clientes: editar (un id) lleva {nombre, email, telefono} y corrige su ficha, sus pedidos y lo importado; suprimir (pedido de supresión) borra su ficha y su contacto y deja sus pedidos como «Consumidor final» (409 en_curso si tiene un pedido, turno, suscripción o devolución en curso; 409 email_en_uso al editar).' }
       responses:
         '200':
           description: Cuántas filas cambiaron
@@ -2786,7 +2786,7 @@ paths:
   /v1/panel/datos/inactivos:
     delete:
       operationId: borrarInactivos
-      summary: Programa el borrado de los clientes sin compras en 3 años (7 días para frenarlo).
+      summary: Programa el borrado de los clientes sin compras en 3 años (7 días para frenarlo; lo hace el worker como una supresión).
       responses:
         '200':
           description: Programado

@@ -16,12 +16,18 @@
 		open = $bindable(false),
 		cliente,
 		escribir,
-		cupon
+		cupon,
+		editar,
+		suprimir
 	}: {
 		open?: boolean;
 		cliente: Cliente | null;
 		escribir: (c: Cliente) => void;
 		cupon: (c: Cliente) => void;
+		/** Corregir su nombre, email y WhatsApp. */
+		editar: (c: Cliente) => void;
+		/** El pedido de supresión: borrar sus datos. */
+		suprimir: (c: Cliente) => void;
 	} = $props();
 
 	const SEG: Record<string, [string, string, string]> = {
@@ -171,12 +177,30 @@
 						<span class="d-t"><span>Facturación</span><b>Con CUIT · factura A</b></span>
 					</div>
 				{/if}
+				{#if cliente.email}
+					<div class="dato">
+						<span class="d-ico"><Icon icon={I.phEnvelopeSimpleFill} size={16} /></span>
+						<span class="d-t"><span>Email</span><b>{cliente.email}</b></span>
+					</div>
+				{/if}
 				{#if cliente.etiquetas.length}
 					<div class="etiquetas">
 						{#each cliente.etiquetas as e (e)}<span><Icon icon={I.phTagFill} size={12} />{e}</span
 							>{/each}
 					</div>
 				{/if}
+			</div>
+
+			<div class="tarjeta">
+				<div class="t">Sus datos</div>
+				<div class="datos-acc">
+					<button type="button" class="chico" onclick={() => editar(cliente!)}
+						><Icon icon={I.phPencilSimpleFill} size={14} />Corregir</button
+					>
+					<button type="button" class="chico peligro" onclick={() => suprimir(cliente!)}
+						><Icon icon={I.phTrashFill} size={14} />Borrar sus datos</button
+					>
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -368,6 +392,28 @@
 		border-radius: 999px;
 		background: #e9f8ee;
 		color: #1f6f4a;
+	}
+	.datos-acc {
+		margin-top: 10px;
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+	.chico {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 0 14px;
+		border-radius: 999px;
+		border: 1px solid var(--ln2);
+		background: none;
+		color: var(--tx);
+		font-size: 13.5px;
+		font-weight: 600;
+	}
+	.chico.peligro {
+		color: #b83a2e;
 	}
 	.etiquetas {
 		margin-top: 12px;

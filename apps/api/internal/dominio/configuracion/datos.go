@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/auditoria"
 )
 
@@ -258,6 +259,8 @@ func Exportar(ctx context.Context, pool tx, tiendaID, tipo string) ([][]any, err
 func MisDatos(ctx context.Context, pool tx, tiendaID string) (map[string]any, error) {
 	c := map[string]int{}
 	var recientes []Exportacion
+	var inactivos int
+	var programado *time.Time
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var p, cl, pe, f, r int
 		if err := t.QueryRow(ctx, `SELECT (SELECT count(*) FROM productos WHERE tienda_id = $1),
@@ -270,12 +273,21 @@ func MisDatos(ctx context.Context, pool tx, tiendaID string) (map[string]any, er
 			return err
 		}
 		c = map[string]int{"productos": p, "clientes": cl, "pedidos": pe, "facturas": f, "resenas": r, "conversaciones": 0}
-		return t.QueryRow(ctx, `SELECT coalesce(preferencias->'exportaciones', '[]') FROM tiendas WHERE id = $1`, tiendaID).Scan(&recientes)
+		var err error
+		if inactivos, err = listas.ContarInactivos(ctx, t, tiendaID); err != nil {
+			return err
+		}
+		return t.QueryRow(ctx, `SELECT coalesce(preferencias->'exportaciones', '[]'), borrado_inactivos FROM tiendas WHERE id = $1`,
+			tiendaID).Scan(&recientes, &programado)
 	})
 	if recientes == nil {
 		recientes = []Exportacion{}
 	}
-	return map[string]any{"conteos": c, "recientes": recientes, "inactivos": 0, "borrado": nil}, err
+	var borrado any
+	if programado != nil && inactivos > 0 {
+		borrado = map[string]any{"clientes": inactivos, "el": programado.UTC()}
+	}
+	return map[string]any{"conteos": c, "recientes": recientes, "inactivos": inactivos, "borrado": borrado}, err
 }
 
 // Exportacion es una descarga de Mis datos ("Exportaciones recientes").
@@ -407,11 +419,16 @@ func rutasDatos(mux *http.ServeMux, pool tx, sitio string, con func(func(http.Re
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
-	// Borrar inactivos: el job que borra de verdad llega con el worker de mantenimiento.
-	mux.HandleFunc("DELETE /v1/panel/datos/inactivos", con(func(w http.ResponseWriter, _ *http.Request, _ string, _ Quien) {
-		escribir(w, map[string]int{"clientes": 0}, nil)
+	// Borrar los clientes inactivos: queda programado a 7 días (lo hace el worker); POST lo frena.
+	mux.HandleFunc("DELETE /v1/panel/datos/inactivos", con(func(w http.ResponseWriter, r *http.Request, id string, _ Quien) {
+		n, err := ProgramarBorradoInactivos(r.Context(), pool, id)
+		escribir(w, map[string]int{"clientes": n}, err)
 	}))
-	mux.HandleFunc("POST /v1/panel/datos/inactivos", con(func(w http.ResponseWriter, _ *http.Request, _ string, _ Quien) {
+	mux.HandleFunc("POST /v1/panel/datos/inactivos", con(func(w http.ResponseWriter, r *http.Request, id string, _ Quien) {
+		if err := FrenarBorradoInactivos(r.Context(), pool, id); err != nil {
+			errorDe(w, err)
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	mux.HandleFunc("DELETE /v1/panel/cuenta", con(func(w http.ResponseWriter, r *http.Request, id string, _ Quien) {
