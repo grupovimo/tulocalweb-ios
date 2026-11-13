@@ -115,6 +115,20 @@ final class PantallasTests: XCTestCase {
         XCTAssertFalse(HojaBorrarCuenta.coincide("", ""))
     }
     func testPantallaClientes() { montar(Clientes()) }
+    private var martina: ClienteFila {
+        ClienteFila(id: "c1", nombre: "Martina Gómez", telefono: "+5492235551234", email: "martina@correo.com",
+                    ciudad: "Mar del Plata", gastado: 96500, pedidos: 4, ultima: 3)
+    }
+    func testPantallaFichaCliente() { montar(FichaCliente(cliente: martina)) }
+    func testHojaCorregirCliente() { montar(HojaCorregirCliente(cliente: martina) {}) }
+    func testHojaBorrarCliente() { montar(HojaBorrarCliente(cliente: martina) {}) }
+    /// Corregir un cliente: las mismas validaciones que la web antes de mandar «editar».
+    func testCorregirClienteValida() {
+        XCTAssertEqual(errorDatosCliente(nombre: " a ", telefono: ""), "Poné el nombre del cliente.")
+        XCTAssertEqual(errorDatosCliente(nombre: "Martina", telefono: "5551"), "El WhatsApp tiene que tener la característica: 11 5555-1234.")
+        XCTAssertNil(errorDatosCliente(nombre: "Martina Gómez", telefono: ""))
+        XCTAssertNil(errorDatosCliente(nombre: "Martina Gómez", telefono: "11 5555-1234"))
+    }
     func testPantallaCajaDelDia() { montar(CajaDelDia()) }
     func testPantallaCarritosAbandonados() { montar(CarritosAbandonados()) }
     func testPantallaResenasYPreguntas() { montar(ResenasYPreguntas()) }

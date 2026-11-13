@@ -140,7 +140,10 @@ struct FichaCliente: View {
     var cliente: ClienteFila
     @Environment(Estado.self) private var estado
     @Environment(\.openURL) private var abrir
+    @Environment(\.dismiss) private var volver
     @State private var pedidos: [PedidoFila] = []
+    @State private var corregir = false
+    @State private var borrar = false
 
     var body: some View {
         let (fondo, tinta) = coloresAvatar(cliente.nombre)
@@ -204,6 +207,14 @@ struct FichaCliente: View {
                     }
                     .tarjeta()
                 }
+                // Lo que pide la ley de datos personales: corregirlos o borrarlos cuando el cliente lo pide (como la web).
+                EtiquetaSeccion(texto: "Sus datos").padding(.horizontal, 4).padding(.top, 4)
+                VStack(spacing: 0) {
+                    filaDatos("square.and.pencil", "Corregir", color: C.texto) { corregir = true }
+                    Separador()
+                    filaDatos("trash", "Borrar sus datos", color: C.errorTinta) { borrar = true }
+                }
+                .tarjeta()
             }
             .padding(.top, 4)
             .margenPantalla()
@@ -211,6 +222,12 @@ struct FichaCliente: View {
         }
         .background(C.fondo.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $corregir) {
+            HojaCorregirCliente(cliente: cliente) { volver() }.hojaTLW([.large])
+        }
+        .sheet(isPresented: $borrar) {
+            HojaBorrarCliente(cliente: cliente) { volver() }.hojaTLW([.large])
+        }
         .task {
             if let l: PaginaPedidos = try? await estado.api.get("/v1/panel/pedidos", query: [
                 URLQueryItem(name: "q", value: cliente.nombre), URLQueryItem(name: "cuantos", value: "50"),
@@ -218,6 +235,20 @@ struct FichaCliente: View {
                 pedidos = l.filas.filter { $0.cliente == cliente.nombre }
             }
         }
+    }
+
+    private func filaDatos(_ simbolo: String, _ texto: String, color: Color, accion: @escaping () -> Void) -> some View {
+        Button(action: accion) {
+            HStack(spacing: 10) {
+                Image(systemName: simbolo).font(.system(size: 16)).foregroundStyle(color)
+                Text(texto).estilo(.body16).foregroundStyle(color)
+                Spacer()
+                Chevron(ancho: 8)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func accion(_ simbolo: String, _ texto: String, url: URL?) -> some View {
@@ -231,5 +262,152 @@ struct FichaCliente: View {
         }
         .buttonStyle(.plain)
         .disabled(url == nil).opacity(url == nil ? 0.45 : 1)
+    }
+}
+
+/// POST /v1/panel/listas/clientes/acciones con un solo cliente (editar o suprimir).
+private struct AccionCliente: Encodable { var ids: [String]; var accion: String; var valor: DatosCliente? }
+struct DatosCliente: Codable, Equatable { var nombre: String; var email: String; var telefono: String }
+private struct Hechos: Decodable { var hechos: Int }
+
+/// Lo que se escribió para corregir: nil si está bien, o el mismo aviso que la web.
+func errorDatosCliente(nombre: String, telefono: String) -> String? {
+    if nombre.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 { return "Poné el nombre del cliente." }
+    if !telefono.trimmingCharacters(in: .whitespaces).isEmpty && telefono.filter(\.isNumber).count < 8 {
+        return "El WhatsApp tiene que tener la característica: 11 5555-1234."
+    }
+    return nil
+}
+
+/// Corregir datos: se corrigen en su ficha y en sus pedidos (accion «editar»).
+struct HojaCorregirCliente: View {
+    var cliente: ClienteFila
+    var alTerminar: () -> Void
+    @Environment(Estado.self) private var estado
+    @Environment(\.dismiss) private var cerrar
+    @State private var nombre = ""
+    @State private var telefono = ""
+    @State private var email = ""
+    @State private var enviando = false
+    @State private var error: String?
+
+    init(cliente: ClienteFila, alTerminar: @escaping () -> Void) {
+        self.cliente = cliente
+        self.alTerminar = alTerminar
+        _nombre = State(initialValue: cliente.nombre)
+        _telefono = State(initialValue: cliente.telefono ?? "")
+        _email = State(initialValue: cliente.email ?? "")
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Grabber()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Image(systemName: "square.and.pencil").font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(C.primarioTinta)
+                        .frame(width: 60, height: 60).background(C.crema, in: Circle())
+                    Text("Corregir datos").estilo(.tituloHojaChico).foregroundStyle(C.texto)
+                    Text(Formato.sinViudas("Se corrigen en su ficha y en sus pedidos. Las facturas ya emitidas no cambian."))
+                        .estilo(.texto14).foregroundStyle(C.texto2)
+                    CampoTexto(titulo: "Nombre y apellido", texto: $nombre)
+                    CampoTexto(titulo: "WhatsApp", texto: $telefono, teclado: .phonePad)
+                    CampoTexto(titulo: "Email", texto: $email, teclado: .emailAddress)
+                    if let error { MensajeError(texto: error) }
+                }
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            VStack(spacing: 4) {
+                Button(enviando ? "Un momento…" : "Guardar") { Task { await guardar() } }
+                    .buttonStyle(BotonPrincipal())
+                    .disabled(enviando)
+                Button("Cancelar") { cerrar() }.buttonStyle(BotonTexto(alto: 44))
+            }
+            .padding(.horizontal, 20).padding(.bottom, 12)
+        }
+        .onChange(of: nombre) { if nombre.count > 80 { nombre = String(nombre.prefix(80)) } }
+        .onChange(of: telefono) { if telefono.count > 30 { telefono = String(telefono.prefix(30)) } }
+        .onChange(of: email) { if email.count > 120 { email = String(email.prefix(120)) } }
+    }
+
+    private func guardar() async {
+        error = errorDatosCliente(nombre: nombre, telefono: telefono)
+        guard error == nil else { return }
+        enviando = true
+        defer { enviando = false }
+        let limpio = { (s: String) in s.trimmingCharacters(in: .whitespacesAndNewlines) }
+        do {
+            let _: Hechos = try await estado.api.enviar("POST", "/v1/panel/listas/clientes/acciones",
+                AccionCliente(ids: [cliente.id], accion: "editar", valor: DatosCliente(nombre: limpio(nombre), email: limpio(email), telefono: limpio(telefono))))
+            Haptico.exito()
+            cerrar()
+            estado.avisar("Datos corregidos en su ficha y en sus pedidos")
+            estado.version += 1
+            alTerminar()
+        } catch let e as ErrorApi {
+            Haptico.error()
+            error = e.detalle
+        } catch is CancellationError {
+        } catch {
+            self.error = ErrorApi.desconocido.detalle
+        }
+    }
+}
+
+/// Borrar sus datos (accion «suprimir»): la ficha y el contacto se borran, y sus pedidos quedan como venta a
+/// «Consumidor final».
+struct HojaBorrarCliente: View {
+    var cliente: ClienteFila
+    var alTerminar: () -> Void
+    @Environment(Estado.self) private var estado
+    @Environment(\.dismiss) private var cerrar
+    @State private var enviando = false
+    @State private var error: String?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Grabber()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Image(systemName: "trash").font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(C.errorTinta)
+                        .frame(width: 60, height: 60).background(C.errorFondo, in: Circle())
+                    Text(Formato.sinViudas("¿Borrar los datos de \(cliente.nombre)?")).estilo(.tituloHojaChico).foregroundStyle(C.texto)
+                    Text(Formato.sinViudas("Es para cuando te lo pide. Borramos su ficha y su contacto, y sus pedidos quedan como venta a «Consumidor final». Las facturas emitidas se guardan como salieron, porque la ley lo pide. No se puede deshacer."))
+                        .estilo(.texto14).foregroundStyle(C.texto)
+                    if let error { MensajeError(texto: error) }
+                }
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
+            }
+            VStack(spacing: 4) {
+                Button(enviando ? "Un momento…" : "Borrar sus datos") { Task { await borrar() } }
+                    .buttonStyle(BotonDestructivo())
+                    .disabled(enviando)
+                Button("Cancelar") { cerrar() }.buttonStyle(BotonTexto(alto: 44))
+            }
+            .padding(.horizontal, 20).padding(.bottom, 12)
+        }
+    }
+
+    private func borrar() async {
+        enviando = true
+        error = nil
+        defer { enviando = false }
+        do {
+            let _: Hechos = try await estado.api.enviar("POST", "/v1/panel/listas/clientes/acciones",
+                AccionCliente(ids: [cliente.id], accion: "suprimir", valor: nil))
+            Haptico.exito()
+            cerrar()
+            estado.avisar("Datos borrados: sus ventas quedan como «Consumidor final»")
+            estado.version += 1
+            alTerminar()
+        } catch let e as ErrorApi {
+            Haptico.error()
+            error = e.detalle
+        } catch is CancellationError {
+        } catch {
+            self.error = ErrorApi.desconocido.detalle
+        }
     }
 }
