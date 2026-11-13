@@ -21,7 +21,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import ar.com.tulocalweb.app.pantallas.mas.CampoTexto
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -157,6 +165,8 @@ fun FichaCliente(cliente: ClienteFila) {
     val nav = LocalNavegacion.current
     val ctx = LocalContext.current
     var pedidos by remember { mutableStateOf<List<PedidoFila>>(emptyList()) }
+    var corregir by remember { mutableStateOf(false) }
+    var borrar by remember { mutableStateOf(false) }
     val (fondo, tinta) = coloresAvatar(cliente.nombre)
 
     LaunchedEffect(Unit) {
@@ -223,6 +233,130 @@ fun FichaCliente(cliente: ClienteFila) {
                     }
                 }
             }
+        }
+        // Lo que pide la ley de datos personales: corregirlos o borrarlos cuando el cliente lo pide (como la web).
+        EtiquetaSeccion("Sus datos", Modifier.padding(horizontal = 4.dp).padding(top = 4.dp))
+        Column(Modifier.fillMaxWidth().tarjeta()) {
+            FilaDatos("square.and.pencil", "Corregir", C.texto) { corregir = true }
+            Separador()
+            FilaDatos("trash", "Borrar sus datos", C.errorTinta) { borrar = true }
+        }
+    }
+    Hoja(corregir, { corregir = false }) { HojaCorregirCliente(cliente) { nav.volver() } }
+    Hoja(borrar, { borrar = false }) { HojaBorrarCliente(cliente) { nav.volver() } }
+}
+
+@Composable
+private fun FilaDatos(simbolo: String, texto: String, color: Color, accion: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = accion).padding(horizontal = 16.dp, vertical = 13.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icono(simbolo, 16f, color)
+        Texto(texto, Estilo.body16, color, Modifier.weight(1f))
+        Chevron(8f)
+    }
+}
+
+/** POST /v1/panel/listas/clientes/acciones con un solo cliente (editar o suprimir). */
+@Serializable private data class AccionCliente(val ids: List<String>, val accion: String, val valor: DatosCliente? = null)
+@Serializable data class DatosCliente(val nombre: String, val email: String, val telefono: String)
+@Serializable private data class Hechos(val hechos: Int = 0)
+
+/** Lo que se escribió para corregir: null si está bien, o el mismo aviso que la web. */
+fun errorDatosCliente(nombre: String, telefono: String): String? = when {
+    nombre.trim().length < 2 -> "Poné el nombre del cliente."
+    telefono.isNotBlank() && telefono.count { it.isDigit() } < 8 -> "El WhatsApp tiene que tener la característica: 11 5555-1234."
+    else -> null
+}
+
+/** Corregir datos: se corrigen en su ficha y en sus pedidos (accion «editar»). */
+@Composable
+fun HojaCorregirCliente(cliente: ClienteFila, alTerminar: () -> Unit) {
+    val estado = LocalEstado.current
+    val cerrar = LocalCerrarHoja.current
+    val alcance = rememberCoroutineScope()
+    var nombre by remember { mutableStateOf(cliente.nombre) }
+    var telefono by remember { mutableStateOf(cliente.telefono.orEmpty()) }
+    var email by remember { mutableStateOf(cliente.email.orEmpty()) }
+    var enviando by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    suspend fun guardar() {
+        error = errorDatosCliente(nombre, telefono)
+        if (error != null) return
+        enviando = true
+        try {
+            estado.api.enviar<Hechos, AccionCliente>("POST", "/v1/panel/listas/clientes/acciones",
+                AccionCliente(listOf(cliente.id), "editar", DatosCliente(nombre.trim(), email.trim(), telefono.trim())))
+            Haptico.exito()
+            cerrar()
+            estado.avisar("Datos corregidos en su ficha y en sus pedidos")
+            estado.version += 1
+            alTerminar()
+        } catch (e: ErrorApi) {
+            Haptico.error()
+            error = e.detalle
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            error = ErrorApi.desconocido.detalle
+        } finally { enviando = false }
+    }
+
+    Column(Modifier.fillMaxSize().imePadding()) {
+        Grabber()
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(60.dp).clip(CircleShape).background(C.crema), contentAlignment = Alignment.Center) { Icono("square.and.pencil", 26f, C.primarioTinta) }
+            Texto("Corregir datos", Estilo.tituloHojaChico, C.texto)
+            Texto(Formato.sinViudas("Se corrigen en su ficha y en sus pedidos. Las facturas ya emitidas no cambian."), Estilo.texto14, C.texto2)
+            CampoTexto("Nombre y apellido", nombre, { nombre = it.take(80) })
+            CampoTexto("WhatsApp", telefono, { telefono = it.take(30) }, teclado = KeyboardType.Phone)
+            CampoTexto("Email", email, { email = it.take(120) }, teclado = KeyboardType.Email)
+            error?.let { MensajeError(it) }
+        }
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BotonPrincipal("Guardar", { alcance.launch { guardar() } }, habilitado = !enviando, cargando = enviando)
+            BotonTexto("Cancelar", { cerrar() }, alto = 44.dp)
+        }
+    }
+}
+
+/** Borrar sus datos (accion «suprimir»): la ficha y el contacto se borran, y sus pedidos quedan como venta a
+ *  «Consumidor final». */
+@Composable
+fun HojaBorrarCliente(cliente: ClienteFila, alTerminar: () -> Unit) {
+    val estado = LocalEstado.current
+    val cerrar = LocalCerrarHoja.current
+    val alcance = rememberCoroutineScope()
+    var enviando by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    suspend fun borrar() {
+        enviando = true
+        error = null
+        try {
+            estado.api.enviar<Hechos, AccionCliente>("POST", "/v1/panel/listas/clientes/acciones", AccionCliente(listOf(cliente.id), "suprimir"))
+            Haptico.exito()
+            cerrar()
+            estado.avisar("Datos borrados: sus ventas quedan como «Consumidor final»")
+            estado.version += 1
+            alTerminar()
+        } catch (e: ErrorApi) {
+            Haptico.error()
+            error = e.detalle
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            error = ErrorApi.desconocido.detalle
+        } finally { enviando = false }
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        Grabber()
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(60.dp).clip(CircleShape).background(C.errorFondo), contentAlignment = Alignment.Center) { Icono("trash", 26f, C.errorTinta) }
+            Texto(Formato.sinViudas("¿Borrar los datos de ${cliente.nombre}?"), Estilo.tituloHojaChico, C.texto)
+            Texto(Formato.sinViudas("Es para cuando te lo pide. Borramos su ficha y su contacto, y sus pedidos quedan como venta a «Consumidor final». Las facturas emitidas se guardan como salieron, porque la ley lo pide. No se puede deshacer."),
+                Estilo.texto14, C.texto)
+            error?.let { MensajeError(it) }
+        }
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BotonDestructivo(if (enviando) "Un momento…" else "Borrar sus datos", { alcance.launch { borrar() } }, habilitado = !enviando)
+            BotonTexto("Cancelar", { cerrar() }, alto = 44.dp)
         }
     }
 }

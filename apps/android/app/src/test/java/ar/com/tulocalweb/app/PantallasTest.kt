@@ -33,7 +33,12 @@ import ar.com.tulocalweb.app.nucleo.TipoProducto
 import ar.com.tulocalweb.app.nucleo.AtributoProducto
 import ar.com.tulocalweb.app.pantallas.avisos.Avisos
 import ar.com.tulocalweb.app.pantallas.buscar.Buscar
+import ar.com.tulocalweb.app.pantallas.clientes.ClienteFila
 import ar.com.tulocalweb.app.pantallas.clientes.Clientes
+import ar.com.tulocalweb.app.pantallas.clientes.FichaCliente
+import ar.com.tulocalweb.app.pantallas.clientes.HojaBorrarCliente
+import ar.com.tulocalweb.app.pantallas.clientes.HojaCorregirCliente
+import ar.com.tulocalweb.app.pantallas.clientes.errorDatosCliente
 import ar.com.tulocalweb.app.pantallas.compartir.CompartirTienda
 import ar.com.tulocalweb.app.pantallas.compartir.HojaHistoria
 import ar.com.tulocalweb.app.pantallas.compartir.TarjetaHistoria
@@ -232,6 +237,18 @@ class PantallasTest {
         assertTrue(m.startsWith("mailto:seguridad@tulocalweb.com.ar?subject=") && !m.contains(" "))
     }
     @Test fun pantallaClientes() = montar("Clientes") { Clientes() }
+    private val martina = ClienteFila("c1", "Martina Gómez", "+5492235551234", "martina@correo.com", "Mar del Plata", 96500, 4, 3.0)
+    @Test fun pantallaFichaCliente() = montar("FichaCliente") { FichaCliente(martina) }
+    @Test fun hojaCorregirCliente() = montar("HojaCorregirCliente") { ComoHoja { HojaCorregirCliente(martina) {} } }
+    @Test fun hojaBorrarCliente() = montar("HojaBorrarCliente") { ComoHoja { HojaBorrarCliente(martina) {} } }
+
+    /** Corregir un cliente: las mismas validaciones que la web antes de mandar «editar». */
+    @Test fun corregirClienteValida() {
+        assertEquals("Poné el nombre del cliente.", errorDatosCliente(" a ", ""))
+        assertEquals("El WhatsApp tiene que tener la característica: 11 5555-1234.", errorDatosCliente("Martina", "5551"))
+        assertNull(errorDatosCliente("Martina Gómez", ""))
+        assertNull(errorDatosCliente("Martina Gómez", "11 5555-1234"))
+    }
     @Test fun pantallaCajaDelDia() = montar("CajaDelDia") { CajaDelDia() }
     @Test fun pantallaCarritosAbandonados() = montar("CarritosAbandonados") { CarritosAbandonados() }
     @Test fun pantallaResenasYPreguntas() = montar("ResenasYPreguntas") { ResenasYPreguntas() }

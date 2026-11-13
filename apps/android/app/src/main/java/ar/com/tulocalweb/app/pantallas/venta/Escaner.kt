@@ -19,9 +19,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import ar.com.tulocalweb.app.app.LocalEstado
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -44,6 +44,9 @@ fun Escaner(linterna: Boolean, modifier: Modifier = Modifier.fillMaxSize(), alLe
     var camara by remember { mutableStateOf<Camera?>(null) }
     val vista = remember { PreviewView(ctx).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
     val hilo = remember { Executors.newSingleThreadExecutor() }
+
+    // El hilo del análisis se cierra al salir del escáner.
+    DisposableEffect(Unit) { onDispose { hilo.shutdown() } }
 
     LaunchedEffect(Unit) { if (!permiso) permiso = estado.alPedirPermiso(Manifest.permission.CAMERA) }
 

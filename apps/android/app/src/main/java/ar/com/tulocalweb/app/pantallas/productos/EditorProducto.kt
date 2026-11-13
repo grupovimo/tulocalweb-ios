@@ -352,7 +352,7 @@ fun EditorProducto(id: String?, sku: String? = null) {
                                 }
                             }
                         }
-                        BotonFoto("photo.on.rectangle", "Galería") { galeria.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                        BotonFoto("photo.on.rectangle", "Galería") { estado.abrioOtraApp = true; galeria.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                     }
                 }
                 Campo("Nombre") { Entrada(nombre, { nombre = it }, ejemploNombre(tipo), estilo = Estilo.body16) }

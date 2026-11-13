@@ -777,6 +777,9 @@
   ],
   "codigo": "k3f9a2"
  },
+ "POST /v1/panel/listas/clientes/acciones": {
+  "hechos": 1
+ },
  "/v1/panel/listas/clientes": {
   "total": 4,
   "filas": [

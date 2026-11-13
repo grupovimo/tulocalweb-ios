@@ -265,14 +265,14 @@ fun MiTiendaEditor() {
                     CampoTexto("Título (vacío: el nombre de la tienda)", titulo, { titulo = it })
                     CampoTexto("Lema", lema, { lema = it })
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SelectorFoto("Foto de portada", portada, Modifier.weight(1f)) { elegirPortada.launch(soloImagenes) }
-                        SelectorFoto("Logo", logo, Modifier.weight(1f)) { elegirLogo.launch(soloImagenes) }
+                        SelectorFoto("Foto de portada", portada, Modifier.weight(1f)) { elegirPortada.launch(soloImagenes); estado.abrioOtraApp = true }
+                        SelectorFoto("Logo", logo, Modifier.weight(1f)) { elegirLogo.launch(soloImagenes); estado.abrioOtraApp = true }
                     }
                 }
                 TarjetaSeccion("Logos", "seal") {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SelectorFoto("Logo para fondos oscuros", estilo.logoOscuro ?: "", Modifier.weight(1f), oscuro = true) { elegirLogoOscuro.launch(soloImagenes) }
-                        SelectorFoto("Ícono de la pestaña", estilo.icono ?: "", Modifier.weight(1f)) { elegirIcono.launch(soloImagenes) }
+                        SelectorFoto("Logo para fondos oscuros", estilo.logoOscuro ?: "", Modifier.weight(1f), oscuro = true) { elegirLogoOscuro.launch(soloImagenes); estado.abrioOtraApp = true }
+                        SelectorFoto("Ícono de la pestaña", estilo.icono ?: "", Modifier.weight(1f)) { elegirIcono.launch(soloImagenes); estado.abrioOtraApp = true }
                     }
                     if (logo.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

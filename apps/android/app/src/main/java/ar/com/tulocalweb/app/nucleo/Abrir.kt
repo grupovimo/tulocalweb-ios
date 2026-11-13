@@ -29,6 +29,7 @@ fun abrirUrl(ctx: Context, url: String) {
 fun compartirTexto(ctx: Context, texto: String, asunto: String? = null) {
     val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, texto)
     asunto?.let { i.putExtra(Intent.EXTRA_SUBJECT, it) }
+    seComparte()
     runCatching { ctx.startActivity(Intent.createChooser(i, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
 
@@ -40,7 +41,14 @@ fun compartirArchivo(ctx: Context, archivo: File, tipo: String, texto: String? =
     val uri = FileProvider.getUriForFile(ctx, "ar.com.tulocalweb.app.archivos", archivo)
     val i = Intent(Intent.ACTION_SEND).setType(tipo).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     texto?.let { i.putExtra(Intent.EXTRA_TEXT, it) }
+    seComparte()
     runCatching { ctx.startActivity(Intent.createChooser(i, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+/** La hoja de compartir y el selector de fotos son pantallas del sistema, pero en iOS no sacan la app de adelante:
+ *  a la vuelta no se pide la huella (MainActivity.onStart). */
+fun seComparte() {
+    runCatching { ar.com.tulocalweb.app.app.TuLocalWebApp.estado.abrioOtraApp = true }
 }
 
 /** UIPasteboard.general.string = … */
