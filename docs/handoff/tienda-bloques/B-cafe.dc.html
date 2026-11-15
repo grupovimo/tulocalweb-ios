@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mostrador · Portada café</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E1E13}a:hover{color:#7A4A0C}
+.vB{font-family:'Instrument Sans',system-ui,sans-serif;color:#2E1E13;background:#FBF4E8}
+.vB *{box-sizing:border-box}
+.dB{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;letter-spacing:-0.03em;margin:0}
+.card{background:#FFFFFF;border-radius:20px;box-shadow:0 1px 2px rgba(46,30,19,.06),0 8px 24px -12px rgba(46,30,19,.2)}
+.btnB{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 26px;border-radius:999px;font:700 15px 'Instrument Sans',sans-serif;text-decoration:none;border:0;cursor:pointer}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700}
+</style>
+</helmet>
+<div class="vB" style="width:1440px">
+  <header style="height:80px;padding:0 40px;display:flex;align-items:center;gap:32px;background:#FBF4E8">
+    <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none"><span style="width:40px;height:40px;border-radius:12px;background:#2E1E13;color:#F2B544;display:flex;align-items:center;justify-content:center;font:800 20px 'Bricolage Grotesque'">B</span><span class="dB" style="font-size:24px">Café Bruma</span></a>
+    <nav style="display:flex;gap:6px;font-size:15px;font-weight:600" aria-label="Principal">
+      <a href="#" style="text-decoration:none;background:#2E1E13;color:#FFFFFF;border-radius:999px;padding:10px 16px">Menú</a><a href="#" style="text-decoration:none;padding:10px 16px">Café en grano</a><a href="#" style="text-decoration:none;padding:10px 16px">Combos</a><a href="#" style="text-decoration:none;padding:10px 16px">El local</a>
+    </nav>
+    <div style="margin-left:auto;display:flex;gap:14px;align-items:center">
+      <span class="chip" style="background:#DDEBD6;color:#24502A;height:36px;padding:0 14px;font-size:14px">● Abierto · retirás en 15 min</span>
+      <a href="#" class="btnB" style="background:#2E1E13;color:#FFFFFF;height:44px">Pedido · $ 0</a>
+    </div>
+  </header>
+
+  <section style="padding:8px 40px 0;display:grid;grid-template-columns:5fr 4fr 3fr;grid-template-rows:280px 280px;gap:16px">
+    <div style="grid-row:1 / span 2;border-radius:28px;background:#2E1E13;color:#FBF4E8;padding:48px;display:flex;flex-direction:column;justify-content:space-between">
+      <span class="chip" style="background:#F2B544;color:#2E1E13;align-self:flex-start">Tostado esta semana</span>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <h1 class="dB" style="font-size:72px;line-height:.92">Café de especialidad en&nbsp;Palermo</h1>
+        <p style="margin:0;font-size:17px;color:#E0D1BD;max-width:420px">Pedí desde acá y pasá a buscarlo. Te avisamos por WhatsApp cuando está listo.</p>
+        <div style="display:flex;gap:10px"><a href="#" class="btnB" style="background:#F2B544;color:#2E1E13">Pedir para retirar</a><a href="#" class="btnB" style="background:transparent;color:#FBF4E8;box-shadow:inset 0 0 0 1.5px #FBF4E8">Ver el menú</a></div>
+      </div>
+    </div>
+    <img src="/_blob/f84ad2c55e8ee8ae32a4782df1822ae3" alt="Cafés con arte latte" style="grid-row:1 / span 2;width:100%;height:100%;object-fit:cover;border-radius:28px;display:block">
+    <img src="/_blob/457d32b37c1a7b1c2abef7b77b4fb348" alt="Cold brew" style="width:100%;height:100%;object-fit:cover;border-radius:28px;display:block">
+    <div style="border-radius:28px;background:#F2B544;padding:28px;display:flex;flex-direction:column;justify-content:space-between">
+      <span aria-hidden="true" style="font-size:22px;letter-spacing:2px">★★★★★</span>
+      <div><p class="dB" style="font-size:64px;line-height:1">4,6</p><p style="margin:4px 0 0;font-size:15px;font-weight:600">312 reseñas en el barrio</p></div>
+    </div>
+  </section>
+
+  <section style="padding:56px 40px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 class="dB" style="font-size:40px">Combos de la mañana</h2><span style="font-size:15px;color:#6E5A48">Hasta las 12 · todos los días</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+      <sc-for list="{{combos}}" as="c" hint-placeholder-count="3">
+        <article class="card" style="display:grid;grid-template-columns:140px 1fr;gap:18px;padding:14px;align-items:center">
+          <img src="{{c.foto}}" alt="" style="width:140px;height:140px;border-radius:14px;object-fit:cover;display:block">
+          <div style="display:flex;flex-direction:column;gap:6px"><p style="margin:0;font-size:18px;font-weight:700">{{c.n}}</p><p style="margin:0;font-size:14px;color:#6E5A48">{{c.d}}</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span><b style="font-size:20px">{{c.precio}}</b> <s style="font-size:13px;color:#8C7A68">{{c.antes}}</s></span><button type="button" aria-label="Agregar {{c.n}}" style="width:44px;height:44px;border-radius:50%;border:0;background:#2E1E13;color:#FFFFFF;font-size:22px;cursor:pointer">+</button></div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:56px 40px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 class="dB" style="font-size:40px">Lo que más sale</h2><a href="#" style="font-weight:700;font-size:15px">Ver el menú completo</a></div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+      <sc-for list="{{prods}}" as="p" hint-placeholder-count="4">
+        <article class="card" style="padding:12px;display:flex;flex-direction:column;gap:10px">
+          <img src="{{p.foto}}" alt="{{p.n}}" style="width:100%;aspect-ratio:1;border-radius:14px;object-fit:cover;display:block">
+          <div style="padding:0 6px 6px;display:flex;flex-direction:column;gap:4px"><p style="margin:0;font-size:17px;font-weight:700">{{p.n}}</p><p style="margin:0;font-size:14px;color:#6E5A48">{{p.d}}</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b style="font-size:19px">{{p.precio}}</b><button type="button" aria-label="Agregar {{p.n}}" style="width:44px;height:44px;border-radius:50%;border:0;background:#F2B544;color:#2E1E13;font-size:22px;font-weight:700;cursor:pointer">+</button></div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="margin:56px 40px 0;border-radius:28px;background:#FFFFFF;display:grid;grid-template-columns:1fr 1fr;overflow:hidden" class="card">
+    <img src="/_blob/c2c9773024fa44ab53e5c172620a4d11" alt="Bolsa de café en grano" style="width:100%;height:520px;object-fit:cover;display:block">
+    <div style="padding:56px;display:flex;flex-direction:column;justify-content:center;gap:18px">
+      <span class="chip" style="background:#FBEBC8;color:#6B4208;align-self:flex-start">Suscripción</span>
+      <h2 class="dB" style="font-size:48px;line-height:.98">Café en grano en tu casa, cada 15 días</h2>
+      <p style="margin:0;font-size:16px;color:#6E5A48">Elegí el origen y la molienda. Pausás o cancelás cuando quieras.</p>
+      <div style="display:flex;gap:10px">
+        <label style="flex:1;border-radius:16px;padding:16px;box-shadow:inset 0 0 0 2px #2E1E13;display:flex;flex-direction:column;gap:4px;cursor:pointer"><span style="font-size:14px;font-weight:600">Cada 15 días</span><b style="font-size:20px">$ 15.750</b><span style="font-size:13px;color:#24502A;font-weight:700">10 % off</span></label>
+        <label style="flex:1;border-radius:16px;padding:16px;box-shadow:inset 0 0 0 1px #E3D6C2;display:flex;flex-direction:column;gap:4px;cursor:pointer"><span style="font-size:14px;font-weight:600">Una vez</span><b style="font-size:20px">$ 17.500</b><span style="font-size:13px;color:#6E5A48">250 g</span></label>
+      </div>
+      <a href="#" class="btnB" style="background:#2E1E13;color:#FFFFFF;align-self:flex-start">Suscribirme</a>
+    </div>
+  </section>
+
+  <section style="padding:56px 40px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+    <sc-for list="{{resenas}}" as="r" hint-placeholder-count="3">
+      <figure class="card" style="margin:0;padding:24px;display:flex;flex-direction:column;gap:12px"><span aria-hidden="true" style="color:#C98A12;letter-spacing:2px">{{r.e}}</span><blockquote style="margin:0;font-size:17px;line-height:1.5;font-weight:500">“{{r.t}}”</blockquote><figcaption style="font-size:14px;color:#6E5A48;margin-top:auto"><b style="color:#2E1E13">{{r.a}}</b> · compra verificada</figcaption></figure>
+    </sc-for>
+  </section>
+
+  <section style="margin:56px 40px 0;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="card" style="padding:40px;display:flex;flex-direction:column;gap:16px">
+      <h2 class="dB" style="font-size:36px">Thames 1622, Palermo</h2>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 24px;font-size:16px"><span style="color:#6E5A48">Lun a vie</span><b>8 a 20</b><span style="color:#6E5A48">Sábados</span><b>9 a 20</b><span style="color:#6E5A48">Domingos</span><b>10 a 18</b></div>
+      <div style="display:flex;gap:10px;margin-top:8px"><a href="#" class="btnB" style="background:#2E1E13;color:#FFFFFF">Cómo llegar</a><a href="#" class="btnB" style="background:#25D366;color:#0B3B1E">WhatsApp</a></div>
+    </div>
+    <div class="card" style="padding:40px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="dB" style="font-size:36px">Preguntas frecuentes</h2>
+      <details open style="border-bottom:1px solid #EFE4D3;padding:14px 0"><summary style="font-weight:700;cursor:pointer">¿Muelen el café para mi cafetera?</summary><p style="margin:8px 0 0;color:#6E5A48">Sí: moka, filtro, prensa, espresso o en grano.</p></details>
+      <details style="border-bottom:1px solid #EFE4D3;padding:14px 0"><summary style="font-weight:700;cursor:pointer">¿Hacen envíos?</summary></details>
+      <details style="padding:14px 0"><summary style="font-weight:700;cursor:pointer">¿Tienen opciones sin TACC?</summary></details>
+    </div>
+  </section>
+
+  <footer style="margin:56px 40px 0;padding:40px 0;border-top:1px solid #EAD9C0;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6E5A48">
+    <div style="display:flex;gap:20px"><a href="#" style="font-weight:700">Botón de arrepentimiento</a><a href="#" style="color:#6E5A48">Términos</a><a href="#" style="color:#6E5A48">Privacidad</a></div>
+    <div style="display:flex;gap:6px"><span class="chip" style="background:#FFFFFF">Mercado Pago</span><span class="chip" style="background:#FFFFFF">Efectivo al retirar</span><span class="chip" style="background:#FFFFFF">Transferencia</span></div>
+    <span>Hecha con Tu Local Web</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      combos: [
+        { n: 'Desayuno Bruma', d: 'Flat white + 2 medialunas', precio: '$ 5.900', antes: '$ 6.800', foto: '/_blob/d22837819322aa3cb0ffda4d114aafbf' },
+        { n: 'Brunch', d: 'Avocado toast + jugo + café', precio: '$ 15.400', antes: '$ 18.600', foto: '/_blob/8063dda0692091a5760faea116d17dde' },
+        { n: 'Merienda', d: 'Capuccino + budín de limón', precio: '$ 9.200', antes: '$ 10.800', foto: '/_blob/1b415178f195bd3c411702a4c3b18549' }
+      ],
+      prods: [
+        { n: 'Flat white', d: 'Doble ristretto y leche', precio: '$ 4.200', foto: '/_blob/fd64e92c2dff4d4f6c2b809064abf760' },
+        { n: 'Cold brew', d: '18 horas en frío', precio: '$ 4.800', foto: '/_blob/457d32b37c1a7b1c2abef7b77b4fb348' },
+        { n: 'Capuccino', d: 'Con canela o cacao', precio: '$ 3.900', foto: '/_blob/f336190b91e22b072c1f4a5b03488051' },
+        { n: 'Tostado en masa madre', d: 'Jamón cocido y queso', precio: '$ 8.900', foto: '/_blob/60949fb5eb4a600a173eca5cf2ba905a' }
+      ],
+      resenas: [
+        { e: '★★★★★', t: 'El mejor flat white de Palermo, sin exagerar.', a: 'Florencia O.' },
+        { e: '★★★★★', t: 'Pedí para retirar y estaba listo cuando llegué.', a: 'Martín R.' },
+        { e: '★★★★☆', t: 'El café en grano llegó recién tostado.', a: 'Sofía R.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

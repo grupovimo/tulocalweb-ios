@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vidriera · Ficha moda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#16150F}a:hover{color:#B4532A}
+.vA{font-family:'Figtree',system-ui,sans-serif;color:#16150F;background:#F6F3EE}
+.vA *{box-sizing:border-box}
+.dA{font-family:'Fraunces',Georgia,serif;font-weight:400;letter-spacing:-0.02em;margin:0}
+.eA{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:0}
+</style>
+</helmet>
+<div class="vA" style="width:1440px;padding-bottom:120px">
+  <header style="height:84px;padding:0 56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #DDD6CB">
+    <nav style="display:flex;gap:32px;font-size:15px;font-weight:500" aria-label="Principal"><a href="#" style="text-decoration:none">Nuevo</a><a href="#" style="text-decoration:none">Abrigos</a><a href="#" style="text-decoration:none">Básicos</a><a href="#" style="text-decoration:none">Accesorios</a></nav>
+    <a href="#" class="dA" style="font-size:34px;text-decoration:none">Lumbre</a>
+    <div style="display:flex;gap:28px;justify-content:flex-end;font-size:15px;font-weight:500"><a href="#" style="text-decoration:none">Buscar</a><a href="#" style="text-decoration:none">Bolsa (2)</a></div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:7fr 5fr;gap:64px;padding:32px 56px 0">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start">
+      <img src="/_blob/e2383757a60e47bf8a1147e9e957776c" alt="Tapado merino, vista frontal" style="grid-column:1 / span 2;width:100%;aspect-ratio:4/5;object-fit:cover;display:block">
+      <img src="/_blob/aea9668fed61147740d52448d2f3efd2" alt="Tapado puesto" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">
+      <img src="/_blob/6a41cd6f496ee31a4275b9374dacf146" alt="Detalle de la tela" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:28px;align-self:start;padding-top:24px">
+      <p style="margin:0;font-size:14px;color:#6B665C"><a href="#" style="color:#6B665C">Inicio</a> / <a href="#" style="color:#6B665C">Abrigos</a></p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h1 class="dA" style="font-size:52px;line-height:1">Tapado merino Ceibo</h1>
+        <a href="#resenas" style="font-size:14px;color:#4A463E;display:flex;gap:8px;align-items:center;text-decoration:none"><span aria-hidden="true" style="color:#8A4A2B;letter-spacing:2px">★★★★★</span> 4,9 · 37 reseñas</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <p style="margin:0;font-size:30px;font-weight:600">$ 186.000 <s style="font-size:18px;font-weight:400;color:#8C877D">$ 248.000</s></p>
+        <p style="margin:0;font-size:15px;color:#4A463E">3 cuotas sin interés de $ 62.000 · <b style="color:#2F6B3E">$ 167.400 con transferencia</b></p>
+      </div>
+
+      <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:12px">
+        <legend style="font-size:15px;margin-bottom:12px"><b>Color:</b> Camel</legend>
+        <div style="display:flex;gap:10px">
+          <sc-for list="{{colores}}" as="c" hint-placeholder-count="3">
+            <button type="button" aria-label="{{c.n}}" style="width:44px;height:44px;border-radius:50%;border:{{c.borde}};background:#F6F3EE;padding:4px;cursor:pointer"><span style="display:block;width:100%;height:100%;border-radius:50%;background:{{c.hex}}"></span></button>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-size:15px;margin-bottom:12px;width:100%;display:flex;justify-content:space-between"><span><b>Talle:</b> M</span><a href="#" style="font-size:14px">Guía de talles</a></legend>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px">
+          <sc-for list="{{talles}}" as="t" hint-placeholder-count="5">
+            <button type="button" style="height:52px;border:{{t.borde}};background:{{t.fondo}};color:{{t.color}};font:600 15px 'Figtree';cursor:pointer;text-decoration:{{t.tachado}}">{{t.n}}</button>
+          </sc-for>
+        </div>
+        <p style="margin:12px 0 0;font-size:14px;color:#8A4A2B">Queda 1 en talle M</p>
+      </fieldset>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button type="button" style="height:60px;background:#16150F;color:#F6F3EE;border:0;font:600 16px 'Figtree';cursor:pointer">Agregar a la bolsa · $ 186.000</button>
+        <a href="#" style="height:56px;border:1px solid #16150F;display:flex;align-items:center;justify-content:center;gap:10px;font:600 15px 'Figtree';text-decoration:none">Consultar por WhatsApp</a>
+      </div>
+
+      <div style="border:1px solid #DDD6CB;padding:20px;display:flex;flex-direction:column;gap:12px;background:#FBF9F5">
+        <label for="cpA" style="font-size:15px;font-weight:600">Calculá el envío</label>
+        <div style="display:flex;gap:8px"><input id="cpA" value="1414" style="flex:1;height:44px;border:1px solid #C9C1B3;padding:0 14px;font:15px 'Figtree'"><button type="button" style="height:44px;padding:0 18px;border:1px solid #16150F;background:transparent;font:600 14px 'Figtree';cursor:pointer">Calcular</button></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px"><span>Correo Argentino a domicilio · 3 a 5 días</span><b>Gratis</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px"><span>Retiro en Gurruchaga 1840 · mañana</span><b>Gratis</b></div>
+      </div>
+
+      <div>
+        <details open style="border-top:1px solid #DDD6CB;padding:20px 0"><summary style="font-weight:600;font-size:16px;cursor:pointer">Descripción</summary><p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#4A463E">Lana merino 80 % con forrería de viscosa. Corte recto, largo a la rodilla, bolsillos ocultos. Serie de 20 prendas cortada en Villa Crespo.</p></details>
+        <details style="border-top:1px solid #DDD6CB;padding:20px 0"><summary style="font-weight:600;font-size:16px;cursor:pointer">Medidas y calce</summary></details>
+        <details style="border-top:1px solid #DDD6CB;border-bottom:1px solid #DDD6CB;padding:20px 0"><summary style="font-weight:600;font-size:16px;cursor:pointer">Cambios y devoluciones</summary></details>
+      </div>
+    </div>
+  </div>
+
+  <section style="padding:120px 56px 0">
+    <h2 class="dA" style="font-size:44px;line-height:1;margin-bottom:32px">Completá el look</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-items:end">
+      <sc-for list="{{look}}" as="p" hint-placeholder-count="3">
+        <a href="#" style="text-decoration:none;display:flex;flex-direction:column;gap:12px"><img src="{{p.foto}}" alt="{{p.n}}" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block"><span style="font-size:16px;font-weight:500">{{p.n}}</span><b style="font-size:16px;font-weight:600">{{p.precio}}</b></a>
+      </sc-for>
+      <div style="border:1px solid #16150F;padding:32px;display:flex;flex-direction:column;gap:14px;aspect-ratio:3/4;justify-content:flex-end">
+        <p class="eA" style="color:#8A4A2B">Los tres juntos</p>
+        <p class="dA" style="font-size:36px;line-height:1">$ 286.200</p>
+        <p style="margin:0;font-size:15px;color:#4A463E">Ahorrás $ 31.800 (10 %)</p>
+        <button type="button" style="height:52px;background:#16150F;color:#F6F3EE;border:0;font:600 15px 'Figtree';cursor:pointer">Agregar los tres</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="resenas" style="padding:120px 56px 0;display:grid;grid-template-columns:4fr 8fr;gap:72px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="dA" style="font-size:44px;line-height:1">Reseñas</h2>
+      <p class="dA" style="font-size:80px;line-height:1">4,9</p>
+      <p style="margin:0;font-size:15px;color:#4A463E">37 reseñas · 92 % dice que el talle es el de siempre</p>
+      <button type="button" style="align-self:start;height:48px;padding:0 22px;border:1px solid #16150F;background:transparent;font:600 15px 'Figtree';cursor:pointer;margin-top:8px">Preguntale a la tienda</button>
+    </div>
+    <div>
+      <sc-for list="{{resenas}}" as="r" hint-placeholder-count="2">
+        <article style="border-top:1px solid #DDD6CB;padding:28px 0;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#6B665C"><span><b style="color:#16150F">{{r.autor}}</b> · Talle {{r.talle}} · compra verificada</span><span>{{r.cuando}}</span></div>
+          <span aria-hidden="true" style="color:#8A4A2B;letter-spacing:2px">★★★★★</span>
+          <p style="margin:0;font-size:17px;line-height:1.6">{{r.texto}}</p>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      colores: [{ n: 'Camel', hex: '#B07A4F', borde: '2px solid #16150F' }, { n: 'Negro', hex: '#1C1B19', borde: '1px solid #DDD6CB' }, { n: 'Gris topo', hex: '#8A8279', borde: '1px solid #DDD6CB' }],
+      talles: [
+        { n: 'XS', borde: '1px solid #DDD6CB', fondo: 'transparent', color: '#A8A196', tachado: 'line-through' },
+        { n: 'S', borde: '1px solid #C9C1B3', fondo: 'transparent', color: '#16150F', tachado: 'none' },
+        { n: 'M', borde: '2px solid #16150F', fondo: '#16150F', color: '#F6F3EE', tachado: 'none' },
+        { n: 'L', borde: '1px solid #C9C1B3', fondo: 'transparent', color: '#16150F', tachado: 'none' },
+        { n: 'XL', borde: '1px solid #C9C1B3', fondo: 'transparent', color: '#16150F', tachado: 'none' }
+      ],
+      look: [
+        { n: 'Remera básica', precio: '$ 28.500', foto: '/_blob/a123f40f1d61cee9fe62dd4464c33d17' },
+        { n: 'Jean recto Delta', precio: '$ 79.500', foto: '/_blob/9eaa2e74af3746fa6bf9bab2510530eb' },
+        { n: 'Tote de cuero', precio: '$ 96.000', foto: '/_blob/c29694357bf8e54e846f99922395cf6b' }
+      ],
+      resenas: [
+        { autor: 'Lucía M.', talle: 'M', cuando: 'hace 2 semanas', texto: 'Abriga en serio y no pica. Mido 1,65 y me llega justo arriba de la rodilla.' },
+        { autor: 'Paula G.', talle: 'S', cuando: 'hace 1 mes', texto: 'Las terminaciones son impecables. Lo pedí el lunes y el miércoles lo tenía en Rosario.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

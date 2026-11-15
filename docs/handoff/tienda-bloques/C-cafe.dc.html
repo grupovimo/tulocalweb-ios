@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedido · Menú café</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1C140E}a:hover{color:#8A5410}
+.vC{font-family:'Geist',system-ui,sans-serif;color:#1C140E;background:#FAF7F2;font-size:15px}
+.vC *{box-sizing:border-box}
+.hC{font-weight:700;letter-spacing:-0.025em;margin:0}
+.bx{background:#FFFFFF;border:1px solid #ECE5DA;border-radius:12px}
+.btnC{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:10px;font:600 15px 'Geist',sans-serif;text-decoration:none;border:0;cursor:pointer}
+.add{width:36px;height:36px;border-radius:10px;border:0;background:#1C140E;color:#FFFFFF;font-size:20px;cursor:pointer;position:absolute;right:8px;bottom:8px}
+</style>
+</helmet>
+<div class="vC" style="width:1440px;padding-bottom:64px">
+  <div style="position:relative;height:220px"><img src="/_blob/f84ad2c55e8ee8ae32a4782df1822ae3" alt="" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:rgba(28,20,14,.35)"></div></div>
+  <div style="padding:0 32px;display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start">
+    <div>
+      <section class="bx" style="margin-top:-64px;position:relative;padding:24px;display:flex;gap:20px;align-items:center">
+        <span style="width:88px;height:88px;border-radius:20px;background:#1C140E;color:#F2B544;display:flex;align-items:center;justify-content:center;font:700 40px 'Geist';flex:none">B</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <h1 class="hC" style="font-size:32px">Café Bruma</h1>
+          <p style="margin:0;color:#5E5044">Café de especialidad y panadería · Thames 1622, Palermo</p>
+          <div style="display:flex;gap:16px;font-size:14px;margin-top:4px"><span style="color:#2F7A45;font-weight:600">● Abierto hasta las 20</span><span><b>4,6 ★</b> (312)</span><span>Retiro en 10–15 min</span><span>Envío desde $ 1.500</span></div>
+        </div>
+        <div role="tablist" aria-label="Cómo lo recibís" style="display:flex;background:#F2ECE3;border-radius:12px;padding:4px"><button type="button" role="tab" aria-selected="true" class="btnC" style="background:#FFFFFF;color:#1C140E;box-shadow:0 1px 2px rgba(0,0,0,.08)">Retiro</button><button type="button" role="tab" aria-selected="false" class="btnC" style="background:transparent;color:#5E5044">Envío</button></div>
+      </section>
+
+      <nav aria-label="Secciones del menú" style="position:sticky;top:0;background:#FAF7F2;padding:16px 0;display:flex;gap:8px;border-bottom:1px solid #ECE5DA">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><a href="#" style="height:38px;padding:0 14px;border-radius:999px;display:flex;align-items:center;text-decoration:none;font-weight:600;font-size:14px;background:{{t.f}};color:{{t.c}}">{{t.n}}</a></sc-for>
+        <div style="margin-left:auto;height:38px;width:260px;border-radius:999px;background:#FFFFFF;border:1px solid #ECE5DA;display:flex;align-items:center;padding:0 14px;color:#7A6B5D;font-size:14px">Buscar en el menú</div>
+      </nav>
+
+      <sc-for list="{{secciones}}" as="s" hint-placeholder-count="3">
+        <section style="padding-top:28px">
+          <h2 class="hC" style="font-size:22px;margin-bottom:4px">{{s.n}}</h2>
+          <p style="margin:0 0 14px;font-size:14px;color:#7A6B5D">{{s.d}}</p>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+            <sc-for list="{{s.items}}" as="m" hint-placeholder-count="4">
+              <article class="bx" style="padding:14px;display:grid;grid-template-columns:1fr 112px;gap:14px;min-height:136px">
+                <div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:16px">{{m.n}}</b><span style="font-size:14px;color:#5E5044;line-height:1.4">{{m.d}}</span><span style="margin-top:auto;font-weight:600">{{m.p}}</span></div>
+                <div style="position:relative"><img src="{{m.f}}" alt="{{m.n}}" style="width:112px;height:108px;border-radius:10px;object-fit:cover;display:block"><button type="button" class="add" aria-label="Agregar {{m.n}}" style="right:-4px;bottom:-4px">+</button></div>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+      </sc-for>
+    </div>
+
+    <aside class="bx" style="position:sticky;top:24px;margin-top:24px;padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="hC" style="font-size:20px">Tu pedido</h2>
+      <p style="margin:0;font-size:13px;color:#5E5044">Retirás en Thames 1622 · listo en 10–15 min</p>
+      <sc-for list="{{pedido}}" as="i" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px"><span style="width:28px;height:28px;border-radius:8px;background:#F2ECE3;display:flex;align-items:center;justify-content:center;font-weight:700">{{i.k}}</span><span>{{i.n}}</span><b>{{i.p}}</b></div></sc-for>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Aclaraciones<textarea style="height:64px;border-radius:10px;border:1px solid #ECE5DA;padding:10px;font:14px 'Geist';resize:none">Leche de almendras en el flat white</textarea></label>
+      <div style="border-top:1px solid #ECE5DA;padding-top:12px;display:flex;justify-content:space-between;font-size:17px"><span>Total</span><b>$ 13.600</b></div>
+      <button type="button" class="btnC" style="background:#1C140E;color:#FFFFFF;height:52px">Confirmar pedido</button>
+      <p style="margin:0;font-size:12px;color:#7A6B5D;text-align:center">Pagás con Mercado Pago o al retirar</p>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = { f: '#1C140E', c: '#FFFFFF' }, off = { f: '#FFFFFF', c: '#1C140E' };
+    return {
+      tabs: [{ n: 'Combos', ...on }, { n: 'Cafés', ...off }, { n: 'Panadería', ...off }, { n: 'Salado', ...off }, { n: 'Café en grano', ...off }],
+      secciones: [
+        { n: 'Combos', d: 'Hasta las 12, todos los días', items: [
+          { n: 'Desayuno Bruma', d: 'Flat white + 2 medialunas de manteca', p: '$ 5.900', f: '/_blob/d22837819322aa3cb0ffda4d114aafbf' },
+          { n: 'Merienda', d: 'Capuccino + budín de limón', p: '$ 9.200', f: '/_blob/1b415178f195bd3c411702a4c3b18549' } ] },
+        { n: 'Cafés', d: 'Con leche de vaca, avena o almendras', items: [
+          { n: 'Flat white', d: 'Doble ristretto y leche texturizada', p: '$ 4.200', f: '/_blob/fd64e92c2dff4d4f6c2b809064abf760' },
+          { n: 'Cold brew', d: '18 horas en frío, con o sin leche', p: '$ 4.800', f: '/_blob/457d32b37c1a7b1c2abef7b77b4fb348' },
+          { n: 'Capuccino', d: 'Con canela o cacao, vos elegís', p: '$ 3.900', f: '/_blob/f336190b91e22b072c1f4a5b03488051' },
+          { n: 'Espresso', d: 'Blend de la casa: Brasil y Colombia', p: '$ 2.600', f: '/_blob/5b9bcdd0f6e99c3261f6f9a17de93622' } ] },
+        { n: 'Salado', d: 'Pan de masa madre de Panadería Lado', items: [
+          { n: 'Avocado toast', d: 'Palta, huevo poché y semillas', p: '$ 9.800', f: '/_blob/8063dda0692091a5760faea116d17dde' },
+          { n: 'Tostado en masa madre', d: 'Jamón cocido natural y queso tybo', p: '$ 8.900', f: '/_blob/60949fb5eb4a600a173eca5cf2ba905a' } ] }
+      ],
+      pedido: [{ k: 2, n: 'Flat white', p: '$ 8.400' }, { k: 2, n: 'Medialunas', p: '$ 5.200' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

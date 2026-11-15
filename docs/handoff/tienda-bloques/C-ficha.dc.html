@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedido · Ficha moda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#141414}a:hover{color:#9A4220}
+.vC{font-family:'Geist',system-ui,sans-serif;color:#141414;background:#FAFAF8;font-size:15px}
+.vC *{box-sizing:border-box}
+.hC{font-weight:700;letter-spacing:-0.025em;margin:0}
+.bx{background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px}
+.btnC{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 18px;border-radius:10px;font:600 15px 'Geist',sans-serif;text-decoration:none;border:0;cursor:pointer}
+</style>
+</helmet>
+<div class="vC" style="width:1440px;padding-bottom:64px">
+  <header style="height:64px;padding:0 32px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border-bottom:1px solid #E6E5E0">
+    <a href="#" class="hC" style="font-size:22px;text-decoration:none">Lumbre</a>
+    <nav style="display:flex;gap:4px;font-size:14px;font-weight:500"><a href="#" style="text-decoration:none;padding:8px 12px">Ofertas</a><a href="#" style="text-decoration:none;padding:8px 12px;background:#EFEEEA;border-radius:8px">Abrigos</a><a href="#" style="text-decoration:none;padding:8px 12px">Básicos</a><a href="#" style="text-decoration:none;padding:8px 12px">Accesorios</a></nav>
+    <a href="#" class="btnC" style="margin-left:auto;height:40px;background:#141414;color:#FFFFFF">Bolsa · 2</a>
+  </header>
+  <div style="display:grid;grid-template-columns:1fr 1fr 440px;gap:12px;padding:20px 32px 0;align-items:start">
+    <img src="/_blob/e2383757a60e47bf8a1147e9e957776c" alt="Tapado merino, frente" style="width:100%;aspect-ratio:3/4;border-radius:12px;object-fit:cover;display:block">
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:12px;aspect-ratio:3/4"><img src="/_blob/aea9668fed61147740d52448d2f3efd2" alt="Puesto" style="width:100%;height:100%;border-radius:12px;object-fit:cover;display:block"><img src="/_blob/6a41cd6f496ee31a4275b9374dacf146" alt="Detalle" style="width:100%;height:100%;border-radius:12px;object-fit:cover;display:block"></div>
+    <div class="bx" style="padding:24px;display:flex;flex-direction:column;gap:16px;position:sticky;top:20px">
+      <p style="margin:0;font-size:13px;color:#6B6A64">Abrigos · 4,9 ★ (37)</p>
+      <h1 class="hC" style="font-size:30px;line-height:1.1">Tapado merino Ceibo</h1>
+      <div><div style="display:flex;gap:10px;align-items:baseline"><b style="font-size:26px">$ 186.000</b><s style="color:#8C8B85">$ 248.000</s><span style="background:#141414;color:#FFFFFF;border-radius:6px;padding:2px 7px;font-size:12px;font-weight:600">−25 %</span></div><p style="margin:6px 0 0;font-size:14px;color:#4C4B46">6 cuotas de $ 31.000 · $ 167.400 con transferencia</p></div>
+      <div><p style="margin:0 0 8px;font-size:14px;font-weight:600">Color</p><div style="display:flex;gap:6px"><button type="button" style="height:40px;padding:0 12px;border-radius:10px;border:2px solid #141414;background:#FFFFFF;font:600 14px 'Geist';display:flex;gap:8px;align-items:center"><span style="width:16px;height:16px;border-radius:50%;background:#B07A4F"></span>Camel</button><button type="button" style="height:40px;padding:0 12px;border-radius:10px;border:1px solid #E6E5E0;background:#FFFFFF;font:500 14px 'Geist';display:flex;gap:8px;align-items:center"><span style="width:16px;height:16px;border-radius:50%;background:#1C1B19"></span>Negro</button></div></div>
+      <div><p style="margin:0 0 8px;font-size:14px;font-weight:600;display:flex;justify-content:space-between">Talle <a href="#" style="font-weight:500">Guía de talles</a></p>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px"><sc-for list="{{talles}}" as="t" hint-placeholder-count="5"><button type="button" style="height:44px;border-radius:10px;border:{{t.b}};background:{{t.f}};color:{{t.c}};font:600 14px 'Geist';text-decoration:{{t.x}}">{{t.n}}</button></sc-for></div>
+        <p style="margin:8px 0 0;font-size:13px;color:#9A4220;font-weight:600">Queda 1 en M</p></div>
+      <button type="button" class="btnC" style="background:#141414;color:#FFFFFF;height:52px">Agregar a la bolsa</button>
+      <button type="button" class="btnC" style="background:#F1F0EC;color:#141414">Comprar ahora con Mercado Pago</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px"><div style="background:#F6F6F3;border-radius:10px;padding:10px"><b style="display:block">Envío gratis</b><span style="color:#4C4B46">Llega el jueves a 1414</span></div><div style="background:#F6F6F3;border-radius:10px;padding:10px"><b style="display:block">Retiro hoy</b><span style="color:#4C4B46">Palermo, desde las 16</span></div></div>
+      <details open style="border-top:1px solid #E6E5E0;padding-top:12px"><summary style="font-weight:600;cursor:pointer">Detalles</summary><ul style="margin:8px 0 0;padding-left:18px;color:#4C4B46;line-height:1.7;font-size:14px"><li>Lana merino 80 %, forrería de viscosa</li><li>Largo a la rodilla, bolsillos ocultos</li><li>Serie de 20 prendas</li></ul></details>
+    </div>
+  </div>
+  <section style="padding:40px 32px 0">
+    <h2 class="hC" style="font-size:22px;margin-bottom:14px">Te puede gustar</h2>
+    <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px">
+      <sc-for list="{{rel}}" as="p" hint-placeholder-count="6"><article style="display:flex;flex-direction:column;gap:6px"><img src="{{p.f}}" alt="{{p.n}}" style="width:100%;aspect-ratio:4/5;border-radius:12px;object-fit:cover;display:block"><span style="font-weight:500;font-size:14px">{{p.n}}</span><b style="font-size:14px">{{p.p}}</b></article></sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const off = '1px solid #E6E5E0';
+    return {
+      talles: [
+        { n: 'XS', b: off, f: '#F6F6F3', c: '#A3A29C', x: 'line-through' }, { n: 'S', b: off, f: '#FFFFFF', c: '#141414', x: 'none' },
+        { n: 'M', b: '2px solid #141414', f: '#141414', c: '#FFFFFF', x: 'none' }, { n: 'L', b: off, f: '#FFFFFF', c: '#141414', x: 'none' }, { n: 'XL', b: off, f: '#FFFFFF', c: '#141414', x: 'none' }
+      ],
+      rel: [
+        { n: 'Remera básica', p: '$ 28.500', f: '/_blob/a123f40f1d61cee9fe62dd4464c33d17' }, { n: 'Jean recto', p: '$ 79.500', f: '/_blob/9eaa2e74af3746fa6bf9bab2510530eb' },
+        { n: 'Tote de cuero', p: '$ 96.000', f: '/_blob/c29694357bf8e54e846f99922395cf6b' }, { n: 'Blazer Lumbre', p: '$ 168.000', f: '/_blob/70c4c0feac74c8da34f1fce7aa160534' },
+        { n: 'Campera de cuero', p: '$ 312.000', f: '/_blob/70f9c769953961dad530cda1f09b00e1' }, { n: 'Stiletto Noche', p: '$ 112.000', f: '/_blob/e58d2549d359741171e2cbe9403c450b' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

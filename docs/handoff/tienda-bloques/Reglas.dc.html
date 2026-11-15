@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reglas del sistema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,300;9..144,400&amp;family=Bricolage+Grotesque:opsz,wght@12..96,800&amp;family=Instrument+Sans:wght@400;600;700&amp;family=Figtree:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.rg{font-family:'Geist',system-ui,sans-serif;color:#1A1A18;background:#F4F2EE}
+.rg *{box-sizing:border-box}
+</style>
+</helmet>
+<div class="rg" style="width:1440px;padding:56px;display:flex;flex-direction:column;gap:48px">
+  <div><h1 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-0.03em">Lo mismo en las tres direcciones</h1><p style="margin:10px 0 0;font-size:17px;color:#55534D">Cambia el carácter, no las reglas. El dueño personaliza dentro de estos límites y la tienda no se puede romper.</p></div>
+
+  <section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+    <div style="background:#F6F3EE;border-radius:4px;padding:28px;display:flex;flex-direction:column;gap:14px;border:1px solid #DDD6CB">
+      <p style="margin:0;font:600 12px 'Figtree';letter-spacing:.14em;text-transform:uppercase;color:#8A4A2B">A · Vidriera</p>
+      <p style="margin:0;font:300 56px/1 'Fraunces';letter-spacing:-0.02em">Aa</p>
+      <p style="margin:0;font:15px/1.5 'Figtree';color:#4A463E">Fraunces + Figtree · escala 84 / 52 / 30 / 19 / 16 · radio 0 · bordes de 1 px · botón rectangular · mucho aire (120 px entre bloques)</p>
+      <div style="display:flex;gap:8px"><span style="height:44px;padding:0 20px;background:#16150F;color:#F6F3EE;display:inline-flex;align-items:center;font:600 14px 'Figtree'">Primario</span><span style="height:44px;padding:0 20px;border:1px solid #16150F;display:inline-flex;align-items:center;font:600 14px 'Figtree'">Secundario</span></div>
+    </div>
+    <div style="background:#F3EEE7;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 24px -12px rgba(32,26,20,.2)">
+      <p style="margin:0;font:700 12px 'Instrument Sans';letter-spacing:.08em;text-transform:uppercase;color:#9A4220">B · Mostrador</p>
+      <p style="margin:0;font:800 56px/1 'Bricolage Grotesque';letter-spacing:-0.03em">Aa</p>
+      <p style="margin:0;font:15px/1.5 'Instrument Sans';color:#5A4E43">Bricolage + Instrument Sans · escala 72 / 40 / 28 / 17 / 15 · radio 16–28 · tarjetas con sombra · botón píldora · cuotas y precio con transferencia siempre a la vista</p>
+      <div style="display:flex;gap:8px"><span style="height:44px;padding:0 20px;border-radius:999px;background:#B4532A;color:#FFFFFF;display:inline-flex;align-items:center;font:700 14px 'Instrument Sans'">Primario</span><span style="height:44px;padding:0 20px;border-radius:999px;background:#FFFFFF;display:inline-flex;align-items:center;font:700 14px 'Instrument Sans'">Secundario</span></div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:14px;border:1px solid #E6E5E0">
+      <p style="margin:0;font:600 12px 'Geist';letter-spacing:.06em;text-transform:uppercase;color:#4C4B46">C · Pedido</p>
+      <p style="margin:0;font:700 56px/1 'Geist';letter-spacing:-0.03em">Aa</p>
+      <p style="margin:0;font:15px/1.5 'Geist';color:#4C4B46">Geist · escala 44 / 22 / 17 / 15 / 13 · radio 10–12 · bordes suaves · el pedido o la bolsa siempre visibles · agregar en un toque, sin entrar a la ficha</p>
+      <div style="display:flex;gap:8px"><span style="height:44px;padding:0 18px;border-radius:10px;background:#141414;color:#FFFFFF;display:inline-flex;align-items:center;font:600 14px 'Geist'">Primario</span><span style="height:44px;padding:0 18px;border-radius:10px;background:#F1F0EC;display:inline-flex;align-items:center;font:600 14px 'Geist'">Secundario</span></div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div>
+      <h2 style="margin:0 0 16px;font-size:24px;font-weight:700">Reglas que no se negocian</h2>
+      <ol style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.5">
+        <sc-for list="{{reglas}}" as="r" hint-placeholder-count="8"><li><b>{{r.t}}</b> {{r.d}}</li></sc-for>
+      </ol>
+    </div>
+    <div>
+      <h2 style="margin:0 0 16px;font-size:24px;font-weight:700">Lo que elige el dueño</h2>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 20px;font-size:15px;line-height:1.45">
+        <sc-for list="{{opciones}}" as="o" hint-placeholder-count="10"><b>{{o.t}}</b><span style="color:#55534D">{{o.d}}</span></sc-for>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      reglas: [
+        { t: 'Nada vacío.', d: 'Un bloque sin datos no se dibuja; una tienda con un producto se ve armada, no rota.' },
+        { t: 'Grillas llenas.', d: 'Con 1, 2 o 3 productos cambia el armado; nunca queda media fila vacía.' },
+        { t: 'Sin fotos grises.', d: 'Un producto sin foto lleva la inicial y la textura del color de la marca.' },
+        { t: 'Contraste AA siempre.', d: 'Si el color elegido no se lee, el sistema ajusta el texto encima. Texto sobre foto, siempre con velo.' },
+        { t: 'Un botón principal por pantalla.', d: 'Nunca gris si se puede tocar; deshabilitado sólo cuando de verdad no se puede.' },
+        { t: 'Escala tipográfica fija.', d: 'Cinco tamaños por dirección; cuerpo de 15 px como mínimo, 13 px sólo para datos secundarios.' },
+        { t: 'Sin renglones viudos.', d: 'Los títulos se parten para no dejar una palabra sola.' },
+        { t: 'Lo flotante no tapa.', d: 'WhatsApp y la barra del pedido dejan su espacio libre.' },
+        { t: 'Números bien escritos.', d: '$ 186.000, 4,8 de 5, 3 cuotas de $ 62.000: formato argentino, un decimal en promedios.' }
+      ],
+      opciones: [
+        { t: 'Dirección', d: 'Vidriera, Mostrador o Pedido (y se puede cambiar sin perder contenido).' },
+        { t: 'Punto de partida', d: 'Las 17 plantillas de hoy, rediseñadas como combinaciones de bloques.' },
+        { t: 'Colores', d: 'Fondo, tarjetas, texto, acento, encabezado y pie, con combinaciones listas.' },
+        { t: 'Tipografía', d: 'Pares de títulos y texto probados juntos.' },
+        { t: 'Forma', d: 'Botones rectos, redondeados o píldora; radio de tarjetas y fotos.' },
+        { t: 'Densidad', d: 'Aireada, normal o compacta; ancho máximo de la página.' },
+        { t: 'Fotos', d: 'Proporción de las fotos de producto: cuadrada, vertical o apaisada.' },
+        { t: 'Encabezado', d: 'Logo centrado o a la izquierda, con buscador o sin, menú propio.' },
+        { t: 'Pie', d: 'Simple, con columnas o con el nombre en grande; redes y medios de pago.' },
+        { t: 'Bloques', d: 'Agregar, ordenar, ocultar, duplicar y elegir la variante de cada uno, en cada página.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

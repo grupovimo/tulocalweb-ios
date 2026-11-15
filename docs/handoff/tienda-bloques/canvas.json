@@ -1,0 +1,45 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-14T15:00:00Z"},
+  "title": "Tiendas TLW · 3 direcciones",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 3900, "title": "A · Vidriera — Portada · moda"},
+    "A-cafe.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 3300, "title": "A · Vidriera — Portada · café"},
+    "A-catalogo.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 2300, "title": "A · Vidriera — Catálogo y búsqueda · almacén"},
+    "A-ficha.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 2300, "title": "A · Vidriera — Ficha · moda"},
+    "A-celular.dc.html": {"x": 6080, "y": 0, "w": 1760, "h": 1000, "title": "A · Vidriera — Celular: portada, ficha, carrito, checkout"},
+    "A-vacia.dc.html": {"x": 7920, "y": 0, "w": 1900, "h": 1500, "title": "A · Vidriera — Tienda recién abierta"},
+
+    "B-moda.dc.html": {"x": 0, "y": 4400, "w": 1440, "h": 3900, "title": "B · Mostrador — Portada · moda"},
+    "B-cafe.dc.html": {"x": 1520, "y": 4400, "w": 1440, "h": 3300, "title": "B · Mostrador — Portada · café"},
+    "B-catalogo.dc.html": {"x": 3040, "y": 4400, "w": 1440, "h": 2300, "title": "B · Mostrador — Catálogo y búsqueda · almacén"},
+    "B-ficha.dc.html": {"x": 4560, "y": 4400, "w": 1440, "h": 2300, "title": "B · Mostrador — Ficha · moda"},
+    "B-celular.dc.html": {"x": 6080, "y": 4400, "w": 1760, "h": 1000, "title": "B · Mostrador — Celular: portada, ficha, carrito, checkout"},
+    "B-vacia.dc.html": {"x": 7920, "y": 4400, "w": 1900, "h": 1500, "title": "B · Mostrador — Tienda recién abierta"},
+
+    "C-moda.dc.html": {"x": 0, "y": 8800, "w": 1440, "h": 3300, "title": "C · Pedido — Portada · moda"},
+    "C-cafe.dc.html": {"x": 1520, "y": 8800, "w": 1440, "h": 3300, "title": "C · Pedido — Portada y menú · café"},
+    "C-catalogo.dc.html": {"x": 3040, "y": 8800, "w": 1440, "h": 2300, "title": "C · Pedido — Catálogo y búsqueda · almacén"},
+    "C-ficha.dc.html": {"x": 4560, "y": 8800, "w": 1440, "h": 2300, "title": "C · Pedido — Ficha · moda"},
+    "C-celular.dc.html": {"x": 6080, "y": 8800, "w": 1760, "h": 1000, "title": "C · Pedido — Celular: portada, ficha, carrito, checkout"},
+    "C-vacia.dc.html": {"x": 7920, "y": 8800, "w": 1900, "h": 1500, "title": "C · Pedido — Tienda recién abierta"},
+
+    "Bloques.dc.html": {"x": 0, "y": 12700, "w": 1440, "h": 4200, "title": "Biblioteca de bloques y variantes"},
+    "Reglas.dc.html": {"x": 1520, "y": 12700, "w": 1440, "h": 1800, "title": "Reglas del sistema (valen para las tres)"}
+  },
+  "order": [
+    "Main.dc.html", "A-cafe.dc.html", "A-catalogo.dc.html", "A-ficha.dc.html", "A-celular.dc.html", "A-vacia.dc.html",
+    "B-moda.dc.html", "B-cafe.dc.html", "B-catalogo.dc.html", "B-ficha.dc.html", "B-celular.dc.html", "B-vacia.dc.html",
+    "C-moda.dc.html", "C-cafe.dc.html", "C-catalogo.dc.html", "C-ficha.dc.html", "C-celular.dc.html", "C-vacia.dc.html",
+    "Bloques.dc.html", "Reglas.dc.html"
+  ],
+  "notes": {
+    "tA": {"x": 0, "y": -300, "text": "A · Vidriera — editorial, de autor: la foto manda, mucho aire, tipografía con carácter", "kind": "title1", "maxW": 9820},
+    "tB": {"x": 0, "y": 4100, "text": "B · Mostrador — cálida y vendedora: cuotas, envío y ofertas a la vista, tarjetas con relieve", "kind": "title1", "maxW": 9820},
+    "tC": {"x": 0, "y": 8500, "text": "C · Pedido — rápida, tipo app: listas compactas, agregar en un toque, el pedido siempre a mano", "kind": "title1", "maxW": 9820},
+    "tL": {"x": 0, "y": 12400, "text": "Bloques que se combinan en cualquier dirección", "kind": "title1", "maxW": 2960}
+  },
+  "designSystems": []
+}

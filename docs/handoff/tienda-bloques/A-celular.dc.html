@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vidriera · Celular</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit}
+.vA{font-family:'Figtree',system-ui,sans-serif}
+.vA *{box-sizing:border-box}
+.dA{font-family:'Fraunces',Georgia,serif;font-weight:400;letter-spacing:-0.02em;margin:0}
+.eA{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:0}
+.tel{width:375px;height:812px;overflow:hidden;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.04),0 24px 48px -24px rgba(30,25,15,.35);border-radius:28px}
+.rot{font:600 13px 'Figtree';color:#6B665C;margin:0 0 14px 8px}
+</style>
+</helmet>
+<div class="vA" style="width:1760px;height:1000px;background:#E7E3DC;padding:56px 58px;display:flex;gap:48px;align-items:flex-start">
+
+  <div>
+    <p class="rot">Portada · almacén</p>
+    <div class="tel" style="background:#F4F3EE;color:#1E2A22">
+      <div style="height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #DAD8CE">
+        <button type="button" aria-label="Menú" style="width:44px;height:44px;border:0;background:transparent;display:flex;align-items:center;justify-content:flex-start;padding:0"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E2A22" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+        <span class="dA" style="font-size:22px">Almacén Verde</span>
+        <a href="#" aria-label="Pedido, 3 productos" style="width:44px;height:44px;display:flex;align-items:center;justify-content:flex-end;font-weight:600;text-decoration:none">(3)</a>
+      </div>
+      <div style="padding:12px 16px"><div style="height:44px;border:1px solid #1E2A22;background:#FFFFFF;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:15px;color:#5E6A61"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Buscá entre 64 productos</div></div>
+      <div style="position:relative;height:300px">
+        <img src="/_blob/03eb1a709abc37495893a200fafbddc8" alt="Verduras frescas en el almacén" style="width:100%;height:100%;object-fit:cover;display:block">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,28,22,.85) 0%,rgba(18,28,22,.2) 70%)"></div>
+        <div style="position:absolute;left:16px;right:16px;bottom:20px;color:#F4F3EE;display:flex;flex-direction:column;gap:12px">
+          <h1 class="dA" style="font-size:36px;line-height:1">Natural, a granel y de productores&nbsp;locales.</h1>
+          <a href="#" style="height:48px;background:#F4F3EE;color:#1E2A22;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;text-decoration:none">Ver ofertas de la semana</a>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;padding:16px;overflow:hidden">
+        <sc-for list="{{chips}}" as="c" hint-placeholder-count="4"><span style="flex:none;height:36px;padding:0 14px;border:1px solid #1E2A22;display:flex;align-items:center;font-size:14px;font-weight:500">{{c}}</span></sc-for>
+      </div>
+      <div style="padding:0 16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><h2 class="dA" style="font-size:26px">Lo más pedido</h2><a href="#" style="font-size:14px;font-weight:600">Ver todo</a></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 12px">
+          <sc-for list="{{prods}}" as="p" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:8px"><img src="{{p.foto}}" alt="{{p.n}}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block"><span style="font-size:15px;font-weight:500;line-height:1.3">{{p.n}}</span><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">{{p.precio}}</b><button type="button" aria-label="Agregar {{p.n}}" style="width:40px;height:40px;border:1px solid #1E2A22;background:transparent;font-size:20px;color:#1E2A22">+</button></div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="rot">Ficha · moda</p>
+    <div class="tel" style="background:#F6F3EE;color:#16150F">
+      <div style="height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between">
+        <a href="#" aria-label="Volver" style="width:44px;height:44px;display:flex;align-items:center"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16150F" stroke-width="1.6"><path d="M15 5l-7 7 7 7"></path></svg></a>
+        <span class="dA" style="font-size:24px">Lumbre</span>
+        <a href="#" style="width:44px;height:44px;display:flex;align-items:center;justify-content:flex-end;font-weight:600;text-decoration:none">(2)</a>
+      </div>
+      <div style="position:relative"><img src="/_blob/e2383757a60e47bf8a1147e9e957776c" alt="Tapado merino" style="width:100%;height:400px;object-fit:cover;display:block">
+        <div style="position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px"><span style="width:20px;height:3px;background:#16150F"></span><span style="width:20px;height:3px;background:rgba(22,21,15,.3)"></span><span style="width:20px;height:3px;background:rgba(22,21,15,.3)"></span></div>
+      </div>
+      <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px">
+        <h1 class="dA" style="font-size:32px;line-height:1.05">Tapado merino Ceibo</h1>
+        <p style="margin:0;font-size:22px;font-weight:600">$ 186.000 <s style="font-size:15px;font-weight:400;color:#8C877D">$ 248.000</s></p>
+        <p style="margin:0;font-size:14px;color:#4A463E">3 cuotas sin interés de $ 62.000</p>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">
+          <sc-for list="{{talles}}" as="t" hint-placeholder-count="5"><span style="height:44px;display:flex;align-items:center;justify-content:center;border:{{t.b}};background:{{t.f}};color:{{t.c}};font-weight:600;font-size:14px">{{t.n}}</span></sc-for>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 24px;background:#F6F3EE;border-top:1px solid #DDD6CB"><button type="button" style="width:100%;height:54px;background:#16150F;color:#F6F3EE;border:0;font:600 16px 'Figtree'">Agregar a la bolsa</button></div>
+    </div>
+  </div>
+
+  <div>
+    <p class="rot">Bolsa</p>
+    <div class="tel" style="background:#F6F3EE;color:#16150F">
+      <div style="height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #DDD6CB"><span class="dA" style="font-size:24px">Tu bolsa</span><button type="button" aria-label="Cerrar" style="width:44px;height:44px;border:0;background:transparent;font-size:24px">×</button></div>
+      <div style="margin:16px;padding:14px;background:#E9E3D9;font-size:14px;line-height:1.4">Te faltan <b>$ 4.500</b> para el envío gratis.<div style="height:4px;background:#D4CBBE;margin-top:10px"><div style="width:94%;height:100%;background:#16150F"></div></div></div>
+      <div style="padding:0 16px">
+        <sc-for list="{{bolsa}}" as="b" hint-placeholder-count="2">
+          <div style="display:grid;grid-template-columns:84px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid #DDD6CB">
+            <img src="{{b.foto}}" alt="{{b.n}}" style="width:84px;height:110px;object-fit:cover;display:block">
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:600">{{b.n}}</span><span style="font-size:14px;color:#6B665C">{{b.v}}</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto"><div style="display:flex;border:1px solid #C9C1B3;height:40px;align-items:center"><button type="button" aria-label="Quitar uno" style="width:40px;height:38px;border:0;background:transparent;font-size:18px">−</button><span style="width:28px;text-align:center;font-weight:600">1</span><button type="button" aria-label="Sumar uno" style="width:40px;height:38px;border:0;background:transparent;font-size:18px">+</button></div><b>{{b.precio}}</b></div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="padding:16px 0;display:flex;gap:8px"><input aria-label="Cupón" placeholder="Cupón de descuento" style="flex:1;height:44px;border:1px solid #C9C1B3;background:#FFFFFF;padding:0 12px;font:15px 'Figtree'"><button type="button" style="height:44px;padding:0 16px;border:1px solid #16150F;background:transparent;font:600 14px 'Figtree'">Aplicar</button></div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:16px 16px 24px;background:#F6F3EE;border-top:1px solid #DDD6CB;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;font-size:15px"><span>Subtotal</span><b>$ 214.500</b></div>
+        <p style="margin:0;font-size:13px;color:#4A463E">o 3 cuotas de $ 71.500 · $ 193.050 con transferencia</p>
+        <button type="button" style="width:100%;height:54px;background:#16150F;color:#F6F3EE;border:0;font:600 16px 'Figtree'">Iniciar compra</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="rot">Checkout · pago</p>
+    <div class="tel" style="background:#F6F3EE;color:#16150F">
+      <div style="height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #DDD6CB"><span class="dA" style="font-size:24px">Lumbre</span><span style="font-size:13px;color:#4A463E;display:flex;gap:6px;align-items:center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>Compra protegida</span></div>
+      <ol style="list-style:none;margin:0;padding:14px 16px;display:flex;gap:8px;font-size:13px;font-weight:600"><li style="color:#6B665C">1 Datos ✓</li><li style="color:#6B665C">2 Entrega ✓</li><li>3 Pago</li></ol>
+      <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
+        <h1 class="dA" style="font-size:28px;margin:4px 0 6px">¿Cómo pagás?</h1>
+        <label style="border:2px solid #16150F;padding:14px;display:flex;gap:12px;align-items:flex-start;background:#FFFFFF"><input type="radio" name="pa" checked style="margin-top:3px;accent-color:#16150F"><span><b style="display:block;font-size:15px">Mercado Pago</b><span style="font-size:13px;color:#4A463E">Tarjetas, hasta 3 cuotas sin interés</span></span></label>
+        <label style="border:1px solid #C9C1B3;padding:14px;display:flex;gap:12px;align-items:flex-start;background:#FFFFFF"><input type="radio" name="pa" style="margin-top:3px"><span><b style="display:block;font-size:15px">Transferencia · 10 % off</b><span style="font-size:13px;color:#4A463E">Te mostramos el alias al confirmar</span></span></label>
+        <label style="border:1px solid #C9C1B3;padding:14px;display:flex;gap:12px;align-items:flex-start;background:#FFFFFF"><input type="radio" name="pa" style="margin-top:3px"><span><b style="display:block;font-size:15px">En el local</b><span style="font-size:13px;color:#4A463E">Pagás al retirar</span></span></label>
+        <div style="margin-top:8px;padding:14px;border:1px solid #DDD6CB;display:flex;flex-direction:column;gap:8px;font-size:14px">
+          <div style="display:flex;justify-content:space-between"><span>2 productos</span><span>$ 214.500</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Envío · Correo Argentino</span><span>Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:600;padding-top:8px;border-top:1px solid #DDD6CB"><span>Total</span><span>$ 214.500</span></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 24px;background:#F6F3EE;border-top:1px solid #DDD6CB"><button type="button" style="width:100%;height:54px;background:#16150F;color:#F6F3EE;border:0;font:600 16px 'Figtree'">Pagar $ 214.500</button></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1760,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      chips: ['Frutos secos', 'Almacén', 'Orgánicos', 'Aceites'],
+      prods: [
+        { n: 'Almendras Non Pareil 500 g', precio: '$ 9.400', foto: '/_blob/99cbe4b99f40f1bc13236f90a41fe800' },
+        { n: 'Aceite de oliva 500 ml', precio: '$ 14.800', foto: '/_blob/055fa183366ce2923490f5ce910de5ba' }
+      ],
+      talles: [
+        { n: 'XS', b: '1px solid #DDD6CB', f: 'transparent', c: '#A8A196' },
+        { n: 'S', b: '1px solid #C9C1B3', f: 'transparent', c: '#16150F' },
+        { n: 'M', b: '2px solid #16150F', f: '#16150F', c: '#F6F3EE' },
+        { n: 'L', b: '1px solid #C9C1B3', f: 'transparent', c: '#16150F' },
+        { n: 'XL', b: '1px solid #C9C1B3', f: 'transparent', c: '#16150F' }
+      ],
+      bolsa: [
+        { n: 'Tapado merino Ceibo', v: 'Camel · M', precio: '$ 186.000', foto: '/_blob/e2383757a60e47bf8a1147e9e957776c' },
+        { n: 'Remera básica', v: 'Negro · S', precio: '$ 28.500', foto: '/_blob/a123f40f1d61cee9fe62dd4464c33d17' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

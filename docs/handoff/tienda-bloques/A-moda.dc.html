@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vidriera · Portada moda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#16150F}a:hover{color:#B4532A}
+.vA{font-family:'Figtree',system-ui,sans-serif;color:#16150F;background:#F6F3EE}
+.vA *{box-sizing:border-box}
+.dA{font-family:'Fraunces',Georgia,serif;font-weight:400;letter-spacing:-0.02em;margin:0}
+.eA{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:0}
+.bA{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 28px;font:600 15px 'Figtree',sans-serif;text-decoration:none;border:1px solid #16150F}
+.navA a{text-decoration:none;font-size:15px;font-weight:500}
+</style>
+</helmet>
+<div class="vA" style="width:1440px">
+
+  <div style="background:#16150F;color:#F6F3EE;height:40px;display:flex;align-items:center;justify-content:center;gap:40px;font-size:13px;font-weight:500">
+    <span>Envío gratis desde $ 80.000</span><span style="opacity:.5">·</span><span>3 cuotas sin interés</span><span style="opacity:.5">·</span><span>Cambios dentro de los 30 días</span>
+  </div>
+
+  <header style="height:84px;padding:0 56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #DDD6CB">
+    <nav class="navA" style="display:flex;gap:32px" aria-label="Principal">
+      <a href="#">Nuevo</a><a href="#">Abrigos</a><a href="#">Básicos</a><a href="#">Accesorios</a>
+    </nav>
+    <a href="#" class="dA" style="font-size:34px;text-decoration:none">Lumbre</a>
+    <div style="display:flex;gap:28px;justify-content:flex-end;align-items:center;font-size:15px;font-weight:500">
+      <a href="#" style="text-decoration:none;display:flex;gap:8px;align-items:center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Buscar</a>
+      <a href="#" style="text-decoration:none">Nosotros</a>
+      <a href="#" style="text-decoration:none;display:flex;gap:8px;align-items:center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8h14l-1 12H6L5 8z"></path><path d="M9 8V6a3 3 0 016 0v2"></path></svg>Bolsa (2)</a>
+    </div>
+  </header>
+
+  <section style="display:grid;grid-template-columns:5fr 7fr;min-height:760px">
+    <div style="padding:96px 56px 72px;display:flex;flex-direction:column;justify-content:space-between">
+      <p class="eA" style="color:#8A4A2B">Otoño–invierno 2026</p>
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <h1 class="dA" style="font-size:84px;line-height:.98;font-weight:300">Ropa de autor, hecha para&nbsp;durar.</h1>
+        <p style="margin:0;font-size:19px;line-height:1.55;max-width:440px;color:#4A463E">Lana merino, cuero curtido en Argentina y series cortas cosidas en nuestro taller de Villa&nbsp;Crespo.</p>
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <a href="#" class="bA" style="background:#16150F;color:#F6F3EE">Ver la colección</a>
+          <a href="#" class="bA" style="background:transparent;color:#16150F">Abrigos</a>
+        </div>
+      </div>
+      <p style="margin:0;font-size:14px;color:#6B665C">Retiro sin cargo en Gurruchaga 1840 · lunes a sábado de 11 a 20</p>
+    </div>
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:8px;padding:0 0 0 0">
+      <img src="/_blob/aea9668fed61147740d52448d2f3efd2" alt="Conjunto tejido de la colección" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div style="display:grid;grid-template-rows:1fr 1fr;gap:8px">
+        <img src="/_blob/e2383757a60e47bf8a1147e9e957776c" alt="Tapado merino" style="width:100%;height:100%;object-fit:cover;display:block">
+        <img src="/_blob/6a41cd6f496ee31a4275b9374dacf146" alt="Vestido de lino" style="width:100%;height:100%;object-fit:cover;display:block">
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #DDD6CB;border-bottom:1px solid #DDD6CB">
+    <sc-for list="{{beneficios}}" as="b" hint-placeholder-count="4">
+      <div style="padding:28px 40px;display:flex;gap:16px;align-items:center;border-right:1px solid #DDD6CB">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8A4A2B" stroke-width="1.5"><path d="{{b.icono}}"></path></svg>
+        <div><p style="margin:0;font-weight:600;font-size:15px">{{b.t}}</p><p style="margin:2px 0 0;font-size:14px;color:#6B665C">{{b.s}}</p></div>
+      </div>
+    </sc-for>
+  </section>
+
+  <section style="padding:120px 56px 0">
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:40px">
+      <h2 class="dA" style="font-size:52px;line-height:1">Comprá por categoría</h2>
+      <a href="#" style="font-size:15px;font-weight:600">Ver todo</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+      <sc-for list="{{categorias}}" as="c" hint-placeholder-count="3">
+        <a href="#" style="text-decoration:none;display:flex;flex-direction:column;gap:16px">
+          <img src="{{c.foto}}" alt="{{c.nombre}}" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span class="dA" style="font-size:30px">{{c.nombre}}</span><span style="font-size:14px;color:#6B665C">{{c.cant}}</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0">
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:40px">
+      <div><p class="eA" style="color:#8A4A2B;margin-bottom:14px">Lo más elegido</p><h2 class="dA" style="font-size:52px;line-height:1">Los que vuelven a pedirnos</h2></div>
+      <a href="#" style="font-size:15px;font-weight:600">Ver los 24 productos</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px">
+      <sc-for list="{{productos}}" as="p" hint-placeholder-count="4">
+        <a href="#" style="text-decoration:none;display:flex;flex-direction:column;gap:14px">
+          <div style="position:relative">
+            <img src="{{p.foto}}" alt="{{p.nombre}}" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#E9E3D9">
+            <sc-if value="{{p.etiqueta}}" hint-placeholder-val="{{true}}"><span style="position:absolute;top:12px;left:12px;background:#F6F3EE;color:#16150F;font-size:12px;font-weight:600;padding:6px 10px;letter-spacing:.04em">{{p.etiqueta}}</span></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:16px;font-weight:500">{{p.nombre}}</span>
+            <span style="font-size:16px"><b style="font-weight:600">{{p.precio}}</b> <s style="color:#8C877D;font-size:14px">{{p.antes}}</s></span>
+            <span style="font-size:13px;color:#6B665C">{{p.cuotas}}</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="margin:120px 56px 0;display:grid;grid-template-columns:1fr 1fr;background:#E9E3D9">
+    <img src="/_blob/a123f40f1d61cee9fe62dd4464c33d17" alt="Clienta con remera de la marca" style="width:100%;height:640px;object-fit:cover;display:block">
+    <div style="padding:80px;display:flex;flex-direction:column;justify-content:center;gap:24px">
+      <p class="eA" style="color:#8A4A2B">El taller</p>
+      <h2 class="dA" style="font-size:48px;line-height:1.05">Cortamos de a veinte prendas. Cuando se terminan, no&nbsp;vuelven.</h2>
+      <p style="margin:0;font-size:18px;line-height:1.6;color:#4A463E">Somos cuatro personas cosiendo en Villa Crespo desde 2014. Elegimos telas que aguantan años de uso y las terminamos a mano.</p>
+      <a href="#" style="font-weight:600;font-size:15px">Conocé el taller</a>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0">
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:40px">
+      <h2 class="dA" style="font-size:52px;line-height:1">Lo que dicen</h2>
+      <p style="margin:0;font-size:16px"><b>4,8</b> de 5 · 214 reseñas con compra verificada</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+      <sc-for list="{{resenas}}" as="r" hint-placeholder-count="3">
+        <figure style="margin:0;padding:36px;border:1px solid #DDD6CB;display:flex;flex-direction:column;gap:20px;background:#FBF9F5">
+          <span aria-label="5 de 5 estrellas" style="color:#8A4A2B;letter-spacing:3px;font-size:15px">★★★★★</span>
+          <blockquote class="dA" style="margin:0;font-size:24px;line-height:1.3">“{{r.texto}}”</blockquote>
+          <figcaption style="display:flex;gap:12px;align-items:center;margin-top:auto">
+            <img src="{{r.foto}}" alt="" style="width:48px;height:48px;object-fit:cover">
+            <span style="font-size:14px;color:#4A463E"><b style="color:#16150F">{{r.autor}}</b> compró {{r.producto}}</span>
+          </figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0">
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:32px">
+      <h2 class="dA" style="font-size:40px;line-height:1">Usado de verdad</h2>
+      <a href="#" style="font-size:15px;font-weight:600">@lumbre.taller</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+      <sc-for list="{{ig}}" as="f" hint-placeholder-count="6"><img src="{{f}}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;display:block"></sc-for>
+    </div>
+  </section>
+
+  <footer style="margin-top:120px;background:#16150F;color:#F6F3EE;padding:96px 56px 40px">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px">
+      <div style="display:flex;flex-direction:column;gap:20px;max-width:420px">
+        <p class="dA" style="font-size:44px">Lumbre</p>
+        <p style="margin:0;font-size:16px;line-height:1.55;color:#CFC8BB">Te avisamos cuando sale una serie nueva. Un mail por mes, nada más.</p>
+        <form style="display:flex;border-bottom:1px solid #6B665C">
+          <label for="mailA" style="position:absolute;left:-9999px">Tu email</label>
+          <input id="mailA" placeholder="Tu email" style="flex:1;background:transparent;border:0;color:#F6F3EE;font:16px 'Figtree';padding:14px 0;outline:none">
+          <button type="button" style="background:transparent;border:0;color:#F6F3EE;font:600 15px 'Figtree';cursor:pointer">Suscribirme</button>
+        </form>
+      </div>
+      <nav aria-label="Tienda" style="display:flex;flex-direction:column;gap:12px;font-size:15px"><p class="eA" style="color:#A39C8F;margin-bottom:8px">Tienda</p><a href="#" style="color:#F6F3EE;text-decoration:none">Abrigos</a><a href="#" style="color:#F6F3EE;text-decoration:none">Básicos</a><a href="#" style="color:#F6F3EE;text-decoration:none">Accesorios</a></nav>
+      <nav aria-label="Ayuda" style="display:flex;flex-direction:column;gap:12px;font-size:15px"><p class="eA" style="color:#A39C8F;margin-bottom:8px">Ayuda</p><a href="#" style="color:#F6F3EE;text-decoration:none">Envíos</a><a href="#" style="color:#F6F3EE;text-decoration:none">Cambios y devoluciones</a><a href="#" style="color:#F6F3EE;text-decoration:none">Guía de talles</a></nav>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:15px;color:#CFC8BB"><p class="eA" style="color:#A39C8F;margin-bottom:8px">El local</p><span>Gurruchaga 1840, Palermo</span><span>Lun a sáb · 11 a 20</span><a href="#" style="color:#F6F3EE">WhatsApp 11 5555-0182</a></div>
+    </div>
+    <div style="margin-top:72px;padding-top:24px;border-top:1px solid #3A372F;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#A39C8F">
+      <div style="display:flex;gap:20px"><a href="#" style="color:#F6F3EE;font-weight:600">Botón de arrepentimiento</a><a href="#" style="color:#A39C8F">Términos</a><a href="#" style="color:#A39C8F">Privacidad</a><a href="#" style="color:#A39C8F">Defensa del consumidor</a></div>
+      <span>Visa · Mastercard · Mercado Pago · Transferencia</span>
+      <span>Hecha con Tu Local Web</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      beneficios: [
+        { t: 'Envío a todo el país', s: 'Gratis desde $ 80.000', icono: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z' },
+        { t: '3 cuotas sin interés', s: 'Con todas las tarjetas', icono: 'M3 6h18v12H3zM3 10h18M7 15h4' },
+        { t: 'Cambios en 30 días', s: 'También en el local', icono: 'M4 12a8 8 0 0114-5l2 2M20 12a8 8 0 01-14 5l-2-2M18 4v5h-5M6 20v-5h5' },
+        { t: 'Retiro sin cargo', s: 'Palermo, en 24 h', icono: 'M4 10l2-5h12l2 5M4 10v9h16v-9M4 10h16M10 19v-5h4v5' }
+      ],
+      categorias: [
+        { nombre: 'Abrigos', cant: '8 productos', foto: '/_blob/e2383757a60e47bf8a1147e9e957776c' },
+        { nombre: 'Básicos', cant: '11 productos', foto: '/_blob/a123f40f1d61cee9fe62dd4464c33d17' },
+        { nombre: 'Accesorios', cant: '5 productos', foto: '/_blob/c29694357bf8e54e846f99922395cf6b' }
+      ],
+      productos: [
+        { nombre: 'Blazer Lumbre', precio: '$ 168.000', antes: '$ 224.000', cuotas: '3 cuotas de $ 56.000', etiqueta: '−25 %', foto: '/_blob/70c4c0feac74c8da34f1fce7aa160534' },
+        { nombre: 'Campera de cuero Sur', precio: '$ 312.000', antes: '', cuotas: '3 cuotas de $ 104.000', etiqueta: '', foto: '/_blob/70f9c769953961dad530cda1f09b00e1' },
+        { nombre: 'Jean recto Delta', precio: '$ 79.500', antes: '', cuotas: '3 cuotas de $ 26.500', etiqueta: 'Nuevo', foto: '/_blob/9eaa2e74af3746fa6bf9bab2510530eb' },
+        { nombre: 'Pantalón oversize', precio: '$ 52.600', antes: '', cuotas: '3 cuotas de $ 17.533', etiqueta: '', foto: '/_blob/a7df64ff9a560789a0890f7a7663946a' }
+      ],
+      resenas: [
+        { texto: 'Me ayudaron por WhatsApp con el talle y acertaron. Llegó en dos días.', autor: 'Rocío A.', producto: 'el Blazer', foto: '/_blob/70c4c0feac74c8da34f1fce7aa160534' },
+        { texto: 'La tela se nota al tacto. Lo lavé varias veces y quedó igual.', autor: 'Belén M.', producto: 'el Jean recto', foto: '/_blob/9eaa2e74af3746fa6bf9bab2510530eb' },
+        { texto: 'Lo cambié por otro talle en el local, sin vueltas. Atención de diez.', autor: 'Lucía M.', producto: 'el Tapado', foto: '/_blob/e2383757a60e47bf8a1147e9e957776c' }
+      ],
+      ig: ['/_blob/aea9668fed61147740d52448d2f3efd2', '/_blob/a123f40f1d61cee9fe62dd4464c33d17', '/_blob/c29694357bf8e54e846f99922395cf6b', '/_blob/6a41cd6f496ee31a4275b9374dacf146', '/_blob/e58d2549d359741171e2cbe9403c450b', '/_blob/70f9c769953961dad530cda1f09b00e1']
+    };
+  }
+}
+</script>
+</body>
+</html>

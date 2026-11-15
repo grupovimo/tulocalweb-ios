@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedido · Catálogo almacén</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#14231A}a:hover{color:#1F6B45}
+.vC{font-family:'Geist',system-ui,sans-serif;color:#14231A;background:#F7F8F5;font-size:15px}
+.vC *{box-sizing:border-box}
+.hC{font-weight:700;letter-spacing:-0.025em;margin:0}
+.bx{background:#FFFFFF;border:1px solid #E2E6DF;border-radius:12px}
+.btnC{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;font:600 14px 'Geist',sans-serif;text-decoration:none;border:0;cursor:pointer}
+</style>
+</helmet>
+<div class="vC" style="width:1440px;padding-bottom:64px">
+  <header style="height:64px;padding:0 32px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border-bottom:1px solid #E2E6DF">
+    <a href="#" class="hC" style="font-size:22px;text-decoration:none">Almacén Verde</a>
+    <form role="search" style="flex:1;height:44px;border-radius:10px;border:2px solid #1F6B45;display:flex;align-items:center;gap:8px;padding:0 14px;background:#FFFFFF"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><label for="qC" style="position:absolute;left:-9999px">Buscar</label><input id="qC" value="sin tacc" style="flex:1;border:0;font:15px 'Geist';outline:none"></form>
+    <span style="font-size:13px;color:#46564B">Reparto hoy 17 a 20 h</span>
+  </header>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;padding:20px 32px 0;align-items:start">
+    <main>
+      <div style="display:flex;justify-content:space-between;align-items:center"><h1 class="hC" style="font-size:24px">8 resultados para «sin tacc»</h1>
+        <div style="display:flex;gap:8px"><button type="button" class="btnC" style="background:#14231A;color:#FFFFFF">Orgánicos ×</button><button type="button" class="btnC" style="background:#FFFFFF;color:#14231A;border:1px solid #E2E6DF">En oferta</button><button type="button" class="btnC" style="background:#FFFFFF;color:#14231A;border:1px solid #E2E6DF">Precio ▾</button><button type="button" class="btnC" style="background:#FFFFFF;color:#14231A;border:1px solid #E2E6DF">Más vendidos ▾</button></div></div>
+      <div class="bx" style="margin-top:16px;overflow:hidden">
+        <sc-for list="{{prods}}" as="p" hint-placeholder-count="8">
+          <article style="display:grid;grid-template-columns:72px 1fr 160px 150px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid #EEF1EC">
+            <img src="{{p.f}}" alt="{{p.n}}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;display:block">
+            <div><a href="#" style="font-weight:600;text-decoration:none">{{p.n}}</a><p style="margin:2px 0 0;font-size:13px;color:#5B6B60">{{p.d}}</p></div>
+            <div style="text-align:right"><b style="font-size:16px">{{p.p}}</b><p style="margin:2px 0 0;font-size:12px;color:#5B6B60">{{p.k}}</p></div>
+            <div style="display:flex;justify-content:flex-end">
+              <sc-if value="{{p.q}}" hint-placeholder-val="{{false}}"><div style="display:flex;align-items:center;border-radius:10px;background:#1F6B45;color:#FFFFFF;height:40px"><button type="button" aria-label="Quitar uno" style="width:40px;height:40px;border:0;background:transparent;color:#FFFFFF;font-size:18px">−</button><b style="width:28px;text-align:center">{{p.q}}</b><button type="button" aria-label="Sumar uno" style="width:40px;height:40px;border:0;background:transparent;color:#FFFFFF;font-size:18px">+</button></div></sc-if>
+              <sc-if value="{{p.libre}}" hint-placeholder-val="{{true}}"><button type="button" class="btnC" style="background:#E7F1EA;color:#14472E;width:120px">Agregar</button></sc-if>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </main>
+    <aside class="bx" style="position:sticky;top:20px;padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="hC" style="font-size:20px">Tu pedido</h2>
+      <div style="padding:10px 12px;border-radius:10px;background:#E7F1EA;font-size:13px;color:#14472E">Te faltan <b>$ 11.800</b> para el envío gratis<div style="height:4px;border-radius:2px;background:#C5DCCB;margin-top:8px"><div style="width:61%;height:100%;border-radius:2px;background:#1F6B45"></div></div></div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;font-size:14px;align-items:center"><b>2×</b><span>Almendras 500 g</span><b>$ 18.800</b><b>1×</b><span>Aceite de oliva</span><b>$ 14.800</b></div>
+      <div style="border-top:1px solid #E2E6DF;padding-top:12px;display:flex;justify-content:space-between;font-size:17px"><span>Total</span><b>$ 33.600</b></div>
+      <button type="button" class="btnC" style="background:#14231A;color:#FFFFFF;height:48px;font-size:15px">Hacer el pedido</button>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = (n, d, p, k, f, q) => ({ n, d, p, k, f, q, libre: !q });
+    return {
+      prods: [
+        P('Almendras Non Pareil', '500 g · peladas', '$ 9.400', '$ 18.800 el kg', '/_blob/99cbe4b99f40f1bc13236f90a41fe800', 2),
+        P('Aceite de oliva extra virgen', '500 ml · Mendoza', '$ 14.800', '$ 29.600 el litro', '/_blob/055fa183366ce2923490f5ce910de5ba', 1),
+        P('Harina integral agroecológica', '1 kg · molino de piedra · −15 %', '$ 2.900', '$ 2.900 el kg', '/_blob/b471b62c89fab9b8f86694407bcbb4de', 0),
+        P('Arroz yamaní', '1 kg · orgánico', '$ 3.600', '$ 3.600 el kg', '/_blob/c19c15babc2046c733d48a38619419a5', 0),
+        P('Garbanzos', '1 kg · a granel', '$ 3.200', '$ 3.200 el kg', '/_blob/d3261b4694d823c8ad552d0adf32d7d6', 0),
+        P('Avena arrollada', '1 kg · gruesa', '$ 2.400', '$ 2.400 el kg', '/_blob/62dd14b5785df07ed227175c3b856a9f', 0),
+        P('Maní tostado sin sal', '500 g · −10 %', '$ 2.100', '$ 4.200 el kg', '/_blob/011aea524ccecc45d277e4db67594859', 0),
+        P('Yerba orgánica misionera', '1 kg · con palo', '$ 6.900', '$ 6.900 el kg', '/_blob/48a313fae55814c6dc1cb566aa92bf16', 0)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

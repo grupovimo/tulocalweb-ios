@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vidriera · Portada café</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2B1D14}a:hover{color:#8F5A12}
+.vA{font-family:'Figtree',system-ui,sans-serif;color:#2B1D14;background:#F7F1E8}
+.vA *{box-sizing:border-box}
+.dA{font-family:'Fraunces',Georgia,serif;font-weight:400;letter-spacing:-0.02em;margin:0}
+.eA{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:0}
+.bA{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 28px;font:600 15px 'Figtree',sans-serif;text-decoration:none;border:1px solid currentColor}
+</style>
+</helmet>
+<div class="vA" style="width:1440px">
+
+  <header style="height:84px;padding:0 56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #E2D6C4">
+    <nav style="display:flex;gap:32px;font-size:15px;font-weight:500" aria-label="Principal">
+      <a href="#" style="text-decoration:none">Menú</a><a href="#" style="text-decoration:none">Café en grano</a><a href="#" style="text-decoration:none">Panadería</a><a href="#" style="text-decoration:none">El local</a>
+    </nav>
+    <a href="#" class="dA" style="font-size:32px;text-decoration:none;font-style:italic">Café Bruma</a>
+    <div style="display:flex;gap:24px;justify-content:flex-end;align-items:center;font-size:15px;font-weight:500">
+      <span style="display:flex;align-items:center;gap:8px;color:#3F6B3A"><span style="width:8px;height:8px;border-radius:50%;background:#3F6B3A"></span>Abierto hasta las 20</span>
+      <a href="#" style="text-decoration:none">Pedido (0)</a>
+    </div>
+  </header>
+
+  <section style="position:relative;height:720px">
+    <img src="/_blob/f84ad2c55e8ee8ae32a4782df1822ae3" alt="Dos cafés con arte latte" style="width:100%;height:100%;object-fit:cover;display:block">
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(28,18,11,.82) 0%,rgba(28,18,11,.55) 45%,rgba(28,18,11,0) 75%)"></div>
+    <div style="position:absolute;left:56px;bottom:88px;max-width:620px;color:#F7F1E8;display:flex;flex-direction:column;gap:24px">
+      <p class="eA" style="color:#E8C27A">Tostado esta semana en Palermo</p>
+      <h1 class="dA" style="font-size:88px;line-height:.96;font-weight:300">Café de especialidad, a la vuelta de&nbsp;casa.</h1>
+      <div style="display:flex;gap:12px">
+        <a href="#" class="bA" style="background:#F7F1E8;color:#2B1D14;border-color:#F7F1E8">Pedir para retirar</a>
+        <a href="#" class="bA" style="color:#F7F1E8">Comprar café en grano</a>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:112px 56px 0;display:grid;grid-template-columns:4fr 8fr;gap:72px">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <p class="eA" style="color:#8F5A12">Para hoy</p>
+      <h2 class="dA" style="font-size:52px;line-height:1">Lo que más sale de la barra</h2>
+      <p style="margin:0;font-size:17px;line-height:1.6;color:#5A4A3C">Pedilo acá y pasá a buscarlo: te avisamos por WhatsApp cuando está listo, en 10 a 15 minutos.</p>
+      <a href="#" style="font-weight:600;font-size:15px">Ver el menú completo</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px">
+      <sc-for list="{{menu}}" as="m" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:88px 1fr auto;gap:20px;align-items:center;padding:20px 0;border-bottom:1px solid #E2D6C4">
+          <img src="{{m.foto}}" alt="{{m.nombre}}" style="width:88px;height:88px;object-fit:cover;display:block">
+          <div><p style="margin:0;font-size:17px;font-weight:600">{{m.nombre}}</p><p style="margin:4px 0 0;font-size:14px;color:#6E5D4E">{{m.detalle}}</p></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px"><span style="font-size:16px;font-weight:600">{{m.precio}}</span><button type="button" aria-label="Agregar {{m.nombre}}" style="width:36px;height:36px;border:1px solid #2B1D14;background:transparent;font-size:20px;line-height:1;cursor:pointer;color:#2B1D14">+</button></div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="margin:120px 56px 0;display:grid;grid-template-columns:7fr 5fr;gap:0;background:#2B1D14;color:#F7F1E8">
+    <img src="/_blob/c2c9773024fa44ab53e5c172620a4d11" alt="Bolsa de café Finca La Esperanza" style="width:100%;height:600px;object-fit:cover;display:block">
+    <div style="padding:72px;display:flex;flex-direction:column;justify-content:center;gap:22px">
+      <p class="eA" style="color:#E8C27A">Café del mes</p>
+      <h2 class="dA" style="font-size:52px;line-height:1">Finca La Esperanza, Colombia</h2>
+      <p style="margin:0;font-size:17px;line-height:1.6;color:#D9CBB8">Lavado, tueste medio. Notas a panela, durazno y cacao. Lo molemos para tu cafetera o va en grano.</p>
+      <p style="margin:0;font-size:28px;font-weight:600">desde $ 17.500 <span style="font-size:15px;font-weight:400;color:#D9CBB8">· 250 g</span></p>
+      <div style="display:flex;gap:12px"><a href="#" class="bA" style="background:#E8C27A;color:#2B1D14;border-color:#E8C27A">Elegir molienda</a></div>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0">
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:40px">
+      <h2 class="dA" style="font-size:52px;line-height:1">Dicen en el barrio</h2>
+      <p style="margin:0;font-size:16px"><b>4,6</b> de 5 · 312 reseñas</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+      <sc-for list="{{resenas}}" as="r" hint-placeholder-count="3">
+        <figure style="margin:0;padding:36px;border:1px solid #E2D6C4;background:#FBF7F0;display:flex;flex-direction:column;gap:18px">
+          <span aria-label="{{r.e}} de 5 estrellas" style="color:#8F5A12;letter-spacing:3px">{{r.estrellas}}</span>
+          <blockquote class="dA" style="margin:0;font-size:24px;line-height:1.3">“{{r.texto}}”</blockquote>
+          <figcaption style="font-size:14px;color:#5A4A3C;margin-top:auto"><b style="color:#2B1D14">{{r.autor}}</b> · compra verificada</figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0;display:grid;grid-template-columns:5fr 7fr;gap:72px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <p class="eA" style="color:#8F5A12">El local</p>
+      <h2 class="dA" style="font-size:52px;line-height:1">Thames 1622, Palermo</h2>
+      <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:12px 32px;font-size:16px">
+        <dt style="color:#6E5D4E">Lunes a viernes</dt><dd style="margin:0;font-weight:600">8 a 20</dd>
+        <dt style="color:#6E5D4E">Sábados</dt><dd style="margin:0;font-weight:600">9 a 20</dd>
+        <dt style="color:#6E5D4E">Domingos</dt><dd style="margin:0;font-weight:600">10 a 18</dd>
+      </dl>
+      <div style="display:flex;gap:12px"><a href="#" class="bA" style="background:#2B1D14;color:#F7F1E8;border-color:#2B1D14">Cómo llegar</a><a href="#" class="bA">WhatsApp</a></div>
+    </div>
+    <div style="height:420px;background:#E7DCCB;position:relative;overflow:hidden" role="img" aria-label="Mapa del local">
+      <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid slice"><g stroke="#D6C7B1" stroke-width="14" fill="none"><path d="M-20 90 L720 140"></path><path d="M-20 300 L720 250"></path><path d="M160 -20 L220 440"></path><path d="M470 -20 L420 440"></path></g><g stroke="#F7F1E8" stroke-width="4" fill="none"><path d="M-20 200 L720 190"></path><path d="M320 -20 L330 440"></path></g></svg>
+      <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);background:#2B1D14;color:#F7F1E8;padding:10px 16px;font-size:14px;font-weight:600">Café Bruma</div>
+    </div>
+  </section>
+
+  <section style="padding:120px 56px 0;display:grid;grid-template-columns:4fr 8fr;gap:72px">
+    <h2 class="dA" style="font-size:44px;line-height:1.05">Preguntas que nos hacen</h2>
+    <div>
+      <sc-for list="{{faq}}" as="q" hint-placeholder-count="4">
+        <details style="border-bottom:1px solid #E2D6C4;padding:22px 0" open="{{q.abierta}}">
+          <summary style="font-size:18px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between">{{q.p}}<span aria-hidden="true">+</span></summary>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.6;color:#5A4A3C;max-width:640px">{{q.r}}</p>
+        </details>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer style="margin-top:120px;background:#2B1D14;color:#F7F1E8;padding:80px 56px 40px">
+    <div style="display:flex;justify-content:space-between;align-items:end">
+      <p class="dA" style="font-size:72px;font-style:italic;font-weight:300">Café Bruma</p>
+      <div style="display:flex;gap:40px;font-size:15px"><a href="#" style="color:#F7F1E8;text-decoration:none">Menú</a><a href="#" style="color:#F7F1E8;text-decoration:none">Café en grano</a><a href="#" style="color:#F7F1E8;text-decoration:none">Envíos</a><a href="#" style="color:#F7F1E8;text-decoration:none">Instagram</a></div>
+    </div>
+    <div style="margin-top:56px;padding-top:24px;border-top:1px solid #4A382B;display:flex;justify-content:space-between;font-size:13px;color:#BCA990">
+      <div style="display:flex;gap:20px"><a href="#" style="color:#F7F1E8;font-weight:600">Botón de arrepentimiento</a><a href="#" style="color:#BCA990">Términos</a><a href="#" style="color:#BCA990">Privacidad</a></div>
+      <span>Hecha con Tu Local Web</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = (n) => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
+    return {
+      menu: [
+        { nombre: 'Flat white', detalle: 'Doble ristretto y leche texturizada', precio: '$ 4.200', foto: '/_blob/fd64e92c2dff4d4f6c2b809064abf760' },
+        { nombre: 'Cold brew', detalle: '18 horas en frío, con o sin leche', precio: '$ 4.800', foto: '/_blob/457d32b37c1a7b1c2abef7b77b4fb348' },
+        { nombre: 'Medialunas de manteca', detalle: '2 × 1 hasta las 11', precio: '$ 2.600', foto: '/_blob/d22837819322aa3cb0ffda4d114aafbf' },
+        { nombre: 'Avocado toast', detalle: 'Palta, huevo poché y semillas', precio: '$ 9.800', foto: '/_blob/8063dda0692091a5760faea116d17dde' },
+        { nombre: 'Budín de limón', detalle: 'Con glaseado y amapola', precio: '$ 6.900', foto: '/_blob/1b415178f195bd3c411702a4c3b18549' },
+        { nombre: 'Tostado en masa madre', detalle: 'Jamón cocido natural y queso', precio: '$ 8.900', foto: '/_blob/60949fb5eb4a600a173eca5cf2ba905a' }
+      ],
+      resenas: [
+        { e: 5, estrellas: s(5), texto: 'El mejor flat white de Palermo, sin exagerar.', autor: 'Florencia O.' },
+        { e: 5, estrellas: s(5), texto: 'Pedí para retirar y estaba listo cuando llegué.', autor: 'Martín R.' },
+        { e: 4, estrellas: s(4), texto: 'El café en grano llegó recién tostado. Lo vuelvo a pedir.', autor: 'Sofía R.' }
+      ],
+      faq: [
+        { p: '¿Muelen el café para mi cafetera?', r: 'Sí. Al comprarlo elegís moka, filtro, prensa francesa, espresso o en grano.', abierta: true },
+        { p: '¿Hacen envíos?', r: 'Por moto en CABA de martes a sábado. El café en grano también va por correo a todo el país.', abierta: false },
+        { p: '¿Tienen opciones sin TACC?', r: 'Los alfajores de maicena y, los fines de semana, un budín sin TACC.', abierta: false },
+        { p: '¿Puedo pagar en el local?', r: 'Sí: pedís acá, pagás al retirar con efectivo, tarjeta o QR.', abierta: false }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mostrador · Catálogo almacén</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Instrument+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#17301F}a:hover{color:#1F6B45}
+.vB{font-family:'Instrument Sans',system-ui,sans-serif;color:#17301F;background:#EEF1EA}
+.vB *{box-sizing:border-box}
+.dB{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;letter-spacing:-0.03em;margin:0}
+.card{background:#FFFFFF;border-radius:16px;box-shadow:0 1px 2px rgba(23,48,31,.06),0 8px 24px -12px rgba(23,48,31,.2)}
+.btnB{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 22px;border-radius:999px;font:700 15px 'Instrument Sans',sans-serif;text-decoration:none;border:0;cursor:pointer}
+.fil{height:40px;padding:0 16px;border-radius:999px;border:0;font:600 14px 'Instrument Sans';cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+</style>
+</helmet>
+<div class="vB" style="width:1440px;padding-bottom:96px">
+  <header style="background:#17301F;color:#FFFFFF;height:80px;padding:0 40px;display:flex;align-items:center;gap:28px">
+    <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:#FFFFFF"><span style="width:40px;height:40px;border-radius:12px;background:#F2C94C;color:#17301F;display:flex;align-items:center;justify-content:center;font:800 20px 'Bricolage Grotesque'">A</span><span class="dB" style="font-size:24px">Almacén Verde</span></a>
+    <form role="search" style="flex:1;height:48px;border-radius:999px;background:#FFFFFF;display:flex;align-items:center;gap:10px;padding:0 20px;color:#17301F">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <label for="qB2" style="position:absolute;left:-9999px">Buscar</label><input id="qB2" value="sin tacc" style="flex:1;border:0;font:15px 'Instrument Sans';outline:none">
+    </form>
+    <a href="#" class="btnB" style="background:#F2C94C;color:#17301F">Pedido · 3 · $ 18.200</a>
+  </header>
+
+  <div style="padding:32px 40px 0">
+    <p style="margin:0;font-size:14px;color:#4E6355">Inicio › Buscar</p>
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-top:12px"><h1 class="dB" style="font-size:44px">8 productos para «sin tacc»</h1>
+      <label style="display:flex;gap:10px;align-items:center;font-size:15px;font-weight:600">Ordenar <select style="height:44px;border-radius:999px;border:0;padding:0 16px;font:600 15px 'Instrument Sans';background:#FFFFFF;color:#17301F"><option>Más vendidos</option></select></label></div>
+    <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap">
+      <button type="button" class="fil" style="background:#17301F;color:#FFFFFF">Orgánicos ×</button>
+      <button type="button" class="fil" style="background:#17301F;color:#FFFFFF">Con stock ×</button>
+      <button type="button" class="fil" style="background:#FFFFFF;color:#17301F">Frutos secos</button>
+      <button type="button" class="fil" style="background:#FFFFFF;color:#17301F">Almacén</button>
+      <button type="button" class="fil" style="background:#FFFFFF;color:#17301F">En oferta</button>
+      <button type="button" class="fil" style="background:#FFFFFF;color:#17301F">Precio ▾</button>
+      <button type="button" class="fil" style="background:#FFFFFF;color:#17301F">Por mayor</button>
+    </div>
+  </div>
+
+  <div style="padding:28px 40px 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+    <sc-for list="{{prods}}" as="p" hint-placeholder-count="7">
+      <article class="card" style="padding:12px;display:flex;flex-direction:column;gap:10px">
+        <div style="position:relative"><img src="{{p.foto}}" alt="{{p.n}}" style="width:100%;aspect-ratio:4/3;border-radius:12px;object-fit:cover;display:block">
+          <sc-if value="{{p.off}}" hint-placeholder-val="{{false}}"><span style="position:absolute;top:10px;left:10px;background:#F2C94C;color:#17301F;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800">{{p.off}}</span></sc-if></div>
+        <div style="padding:0 4px;display:flex;flex-direction:column;gap:8px">
+          <a href="#" style="font-size:16px;font-weight:700;text-decoration:none">{{p.n}}</a>
+          <div role="radiogroup" aria-label="Presentación" style="display:flex;gap:6px">
+            <sc-for list="{{p.pres}}" as="o" hint-placeholder-count="3"><span style="height:32px;padding:0 10px;border-radius:999px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;background:{{o.f}};color:{{o.c}}">{{o.t}}</span></sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <div><b style="font-size:20px">{{p.precio}}</b><p style="margin:2px 0 0;font-size:12px;color:#4E6355">{{p.kilo}}</p></div>
+            <sc-if value="{{p.enPedido}}" hint-placeholder-val="{{false}}">
+              <div style="display:flex;align-items:center;background:#1F6B45;color:#FFFFFF;border-radius:999px;height:44px"><button type="button" aria-label="Quitar uno" style="width:44px;height:44px;border:0;background:transparent;color:#FFFFFF;font-size:18px">−</button><b style="width:20px;text-align:center">2</b><button type="button" aria-label="Sumar uno" style="width:44px;height:44px;border:0;background:transparent;color:#FFFFFF;font-size:18px">+</button></div>
+            </sc-if>
+            <sc-if value="{{p.libre}}" hint-placeholder-val="{{true}}"><button type="button" class="btnB" style="height:44px;background:#1F6B45;color:#FFFFFF;font-size:14px">Agregar</button></sc-if>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+    <aside class="card" style="padding:28px;background:#17301F;color:#FFFFFF;display:flex;flex-direction:column;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:10px"><h2 class="dB" style="font-size:30px;line-height:1">¿No encontraste lo que buscabas?</h2><p style="margin:0;font-size:15px;color:#C8D6CC">Escribinos y te lo conseguimos para el próximo reparto.</p></div>
+      <a href="#" class="btnB" style="background:#25D366;color:#0B3B1E">Pedir por WhatsApp</a>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const pres = (sel, ...ts) => ts.map((t, i) => ({ t, f: i === sel ? '#17301F' : '#EEF1EA', c: i === sel ? '#FFFFFF' : '#17301F' }));
+    const P = (n, foto, precio, kilo, off, ts, sel, enPedido) => ({ n, foto, precio, kilo, off, pres: pres(sel, ...ts), enPedido, libre: !enPedido });
+    return {
+      prods: [
+        P('Almendras Non Pareil', '/_blob/99cbe4b99f40f1bc13236f90a41fe800', '$ 9.400', '$ 18.800 el kg', '', ['250 g', '500 g', '1 kg'], 1, true),
+        P('Harina integral', '/_blob/b471b62c89fab9b8f86694407bcbb4de', '$ 2.900', '$ 2.900 el kg', '−15 %', ['1 kg', '5 kg'], 0, false),
+        P('Arroz yamaní', '/_blob/c19c15babc2046c733d48a38619419a5', '$ 3.600', '$ 3.600 el kg', '', ['500 g', '1 kg'], 1, false),
+        P('Garbanzos', '/_blob/d3261b4694d823c8ad552d0adf32d7d6', '$ 3.200', '$ 3.200 el kg', '', ['500 g', '1 kg'], 1, false),
+        P('Avena arrollada', '/_blob/62dd14b5785df07ed227175c3b856a9f', '$ 2.400', '$ 2.400 el kg', '', ['1 kg', '3 kg'], 0, false),
+        P('Aceite de oliva', '/_blob/055fa183366ce2923490f5ce910de5ba', '$ 14.800', '$ 29.600 el litro', '', ['500 ml', '1 l'], 0, false),
+        P('Yerba orgánica', '/_blob/48a313fae55814c6dc1cb566aa92bf16', '$ 6.900', '$ 6.900 el kg', '−10 %', ['500 g', '1 kg'], 1, false)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

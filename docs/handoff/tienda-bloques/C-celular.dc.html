@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedido · Celular</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit}
+.vC{font-family:'Geist',system-ui,sans-serif;font-size:15px}
+.vC *{box-sizing:border-box}
+.hC{font-weight:700;letter-spacing:-0.025em;margin:0}
+.bx{background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px}
+.tel{width:375px;height:812px;overflow:hidden;position:relative;border-radius:28px;box-shadow:0 24px 48px -24px rgba(30,25,15,.35)}
+.rot{font:600 13px 'Geist';color:#5C5B55;margin:0 0 14px 8px}
+.barra{position:absolute;left:12px;right:12px;bottom:20px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-weight:600;text-decoration:none}
+</style>
+</helmet>
+<div class="vC" style="width:1760px;height:1000px;background:#E7E3DC;padding:56px 58px;display:flex;gap:48px;align-items:flex-start">
+
+  <div><p class="rot">Menú · café</p>
+    <div class="tel" style="background:#FAF7F2;color:#1C140E">
+      <div style="position:relative;height:120px"><img src="/_blob/f84ad2c55e8ee8ae32a4782df1822ae3" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+      <div class="bx" style="margin:-36px 12px 0;position:relative;padding:14px;display:flex;gap:12px;align-items:center"><span style="width:52px;height:52px;border-radius:14px;background:#1C140E;color:#F2B544;display:flex;align-items:center;justify-content:center;font:700 24px 'Geist'">B</span><div><h1 class="hC" style="font-size:20px">Café Bruma</h1><p style="margin:2px 0 0;font-size:13px;color:#2F7A45;font-weight:600">Abierto · retiro en 10–15 min</p></div></div>
+      <div style="display:flex;gap:6px;padding:14px 12px;overflow:hidden;border-bottom:1px solid #ECE5DA"><span style="flex:none;height:34px;padding:0 12px;border-radius:999px;background:#1C140E;color:#FFFFFF;display:flex;align-items:center;font-size:14px;font-weight:600">Combos</span><span style="flex:none;height:34px;padding:0 12px;border-radius:999px;background:#FFFFFF;border:1px solid #ECE5DA;display:flex;align-items:center;font-size:14px;font-weight:600">Cafés</span><span style="flex:none;height:34px;padding:0 12px;border-radius:999px;background:#FFFFFF;border:1px solid #ECE5DA;display:flex;align-items:center;font-size:14px;font-weight:600">Panadería</span><span style="flex:none;height:34px;padding:0 12px;border-radius:999px;background:#FFFFFF;border:1px solid #ECE5DA;display:flex;align-items:center;font-size:14px;font-weight:600">Salado</span></div>
+      <div style="padding:0 12px">
+        <sc-for list="{{menu}}" as="m" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:1fr 88px;gap:12px;padding:14px 0;border-bottom:1px solid #ECE5DA"><div style="display:flex;flex-direction:column;gap:3px"><b>{{m.n}}</b><span style="font-size:13px;color:#5E5044">{{m.d}}</span><span style="font-weight:600;margin-top:4px">{{m.p}}</span></div><div style="position:relative"><img src="{{m.f}}" alt="{{m.n}}" style="width:88px;height:88px;border-radius:10px;object-fit:cover;display:block"><span aria-hidden="true" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px;border-radius:9px;background:#1C140E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:18px">+</span></div></div></sc-for>
+      </div>
+      <a href="#" class="barra" style="background:#1C140E;color:#FFFFFF"><span style="background:rgba(255,255,255,.18);border-radius:8px;padding:3px 9px">4</span>Ver pedido<span>$ 13.600</span></a>
+    </div></div>
+
+  <div><p class="rot">Ficha · moda</p>
+    <div class="tel" style="background:#FAFAF8;color:#141414">
+      <img src="/_blob/e2383757a60e47bf8a1147e9e957776c" alt="Tapado merino" style="width:100%;height:420px;object-fit:cover;display:block">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h1 class="hC" style="font-size:22px">Tapado merino Ceibo</h1><span style="font-size:13px;color:#6B6A64">4,9 ★</span></div>
+        <div style="display:flex;gap:8px;align-items:baseline"><b style="font-size:22px">$ 186.000</b><s style="color:#8C8B85">$ 248.000</s></div>
+        <p style="margin:0;font-size:13px;color:#4C4B46">6 cuotas de $ 31.000 · envío gratis</p>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px"><span style="height:44px;border-radius:10px;background:#F6F6F3;color:#A3A29C;display:flex;align-items:center;justify-content:center;font-weight:600;text-decoration:line-through">XS</span><span style="height:44px;border-radius:10px;border:1px solid #E6E5E0;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600">S</span><span style="height:44px;border-radius:10px;background:#141414;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600">M</span><span style="height:44px;border-radius:10px;border:1px solid #E6E5E0;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600">L</span><span style="height:44px;border-radius:10px;border:1px solid #E6E5E0;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600">XL</span></div>
+      </div>
+      <a href="#" class="barra" style="background:#141414;color:#FFFFFF;justify-content:center">Agregar a la bolsa · M</a>
+    </div></div>
+
+  <div><p class="rot">Pedido · café</p>
+    <div class="tel" style="background:#FAF7F2;color:#1C140E">
+      <div style="height:60px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ECE5DA"><h1 class="hC" style="font-size:20px">Tu pedido</h1><span style="font-size:14px;color:#5E5044">Café Bruma</span></div>
+      <div style="margin:12px 16px;display:flex;background:#F2ECE3;border-radius:12px;padding:4px"><span style="flex:1;height:40px;border-radius:9px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:600">Retiro</span><span style="flex:1;height:40px;display:flex;align-items:center;justify-content:center;font-weight:600;color:#5E5044">Envío</span></div>
+      <div style="padding:0 16px">
+        <sc-for list="{{pedido}}" as="i" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 0;border-bottom:1px solid #ECE5DA;align-items:center"><div><b>{{i.n}}</b><p style="margin:2px 0 0;font-size:13px;color:#5E5044">{{i.v}}</p></div><div style="display:flex;align-items:center;gap:10px"><div style="display:flex;align-items:center;border:1px solid #ECE5DA;border-radius:10px;height:36px;background:#FFFFFF"><button type="button" aria-label="Quitar uno" style="width:34px;height:34px;border:0;background:transparent">−</button><b>{{i.k}}</b><button type="button" aria-label="Sumar uno" style="width:34px;height:34px;border:0;background:transparent">+</button></div><b style="width:64px;text-align:right">{{i.p}}</b></div></div></sc-for>
+        <p style="margin:14px 0 6px;font-size:13px;font-weight:600">¿Para cuándo?</p>
+        <div style="display:flex;gap:6px"><span style="height:38px;padding:0 12px;border-radius:10px;background:#1C140E;color:#FFFFFF;display:flex;align-items:center;font-size:14px;font-weight:600">Lo antes posible</span><span style="height:38px;padding:0 12px;border-radius:10px;border:1px solid #ECE5DA;background:#FFFFFF;display:flex;align-items:center;font-size:14px">Programar</span></div>
+      </div>
+      <a href="#" class="barra" style="background:#1C140E;color:#FFFFFF">Continuar<span>$ 13.600</span></a>
+    </div></div>
+
+  <div><p class="rot">Pago · café</p>
+    <div class="tel" style="background:#FAF7F2;color:#1C140E">
+      <div style="height:60px;padding:0 16px;display:flex;align-items:center;border-bottom:1px solid #ECE5DA"><h1 class="hC" style="font-size:20px">Confirmá y pagá</h1></div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">Tu nombre<input value="Martina" style="height:46px;border-radius:10px;border:1px solid #ECE5DA;padding:0 12px;font:15px 'Geist'"></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600">WhatsApp, para avisarte cuando esté<input value="11 5555-0143" style="height:46px;border-radius:10px;border:1px solid #ECE5DA;padding:0 12px;font:15px 'Geist'"></label>
+        <p style="margin:6px 0 0;font-size:13px;font-weight:600">Pago</p>
+        <label class="bx" style="padding:12px;display:flex;gap:10px;border:2px solid #1C140E"><input type="radio" name="pc" checked style="accent-color:#1C140E"><span><b style="display:block">Mercado Pago</b><span style="font-size:13px;color:#5E5044">Tarjeta, dinero en cuenta o QR</span></span></label>
+        <label class="bx" style="padding:12px;display:flex;gap:10px"><input type="radio" name="pc"><span><b style="display:block">Al retirar</b><span style="font-size:13px;color:#5E5044">Efectivo, tarjeta o QR en el local</span></span></label>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding-top:10px;border-top:1px solid #ECE5DA"><span>Total</span><b>$ 13.600</b></div>
+      </div>
+      <a href="#" class="barra" style="background:#1C140E;color:#FFFFFF;justify-content:center">Pagar y confirmar</a>
+    </div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1760,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      menu: [
+        { n: 'Desayuno Bruma', d: 'Flat white + 2 medialunas', p: '$ 5.900', f: '/_blob/d22837819322aa3cb0ffda4d114aafbf' },
+        { n: 'Flat white', d: 'Doble ristretto y leche', p: '$ 4.200', f: '/_blob/fd64e92c2dff4d4f6c2b809064abf760' },
+        { n: 'Cold brew', d: '18 horas en frío', p: '$ 4.800', f: '/_blob/457d32b37c1a7b1c2abef7b77b4fb348' },
+        { n: 'Avocado toast', d: 'Palta, huevo poché y semillas', p: '$ 9.800', f: '/_blob/8063dda0692091a5760faea116d17dde' }
+      ],
+      pedido: [{ n: 'Flat white', v: 'Leche de almendras', k: 2, p: '$ 8.400' }, { n: 'Medialunas de manteca', v: '2 × 1 hasta las 11', k: 2, p: '$ 5.200' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

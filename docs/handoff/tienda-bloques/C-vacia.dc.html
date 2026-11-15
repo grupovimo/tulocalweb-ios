@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pedido · Tienda recién abierta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2A211B}
+.vC{font-family:'Geist',system-ui,sans-serif;color:#2A211B;font-size:15px}
+.vC *{box-sizing:border-box}
+.hC{font-weight:700;letter-spacing:-0.025em;margin:0}
+.bx{background:#FFFFFF;border:1px solid #E9E2D9;border-radius:12px}
+.btnC{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 18px;border-radius:10px;font:600 15px 'Geist',sans-serif;text-decoration:none;border:0;cursor:pointer}
+.ph{background-color:#EADBCD;background-image:linear-gradient(45deg,rgba(156,91,59,.10) 25%,transparent 25%,transparent 75%,rgba(156,91,59,.10) 75%),linear-gradient(45deg,rgba(156,91,59,.10) 25%,transparent 25%,transparent 75%,rgba(156,91,59,.10) 75%);background-size:20px 20px;background-position:0 0,10px 10px;display:flex;align-items:center;justify-content:center;color:#9C5B3B}
+</style>
+</helmet>
+<div class="vC" style="width:1900px;height:1500px;background:#E7E3DC;padding:48px 0 0;display:flex;gap:40px;align-items:flex-start">
+  <div style="width:1440px;background:#FBF8F4;padding-bottom:48px;box-shadow:0 24px 48px -24px rgba(30,25,15,.35)">
+    <header style="height:64px;padding:0 32px;display:flex;align-items:center;gap:16px;background:#FFFFFF;border-bottom:1px solid #E9E2D9"><span class="hC" style="font-size:22px">Cerámica Duna</span><span style="font-size:13px;color:#5E5044">Mar del Plata · envíos a todo el país</span><a href="#" class="btnC" style="margin-left:auto;height:40px;background:#2A211B;color:#FFFFFF">Bolsa · 0</a></header>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;padding:24px 32px 0;align-items:start">
+      <main style="display:flex;flex-direction:column;gap:20px">
+        <section class="bx" style="padding:28px;display:flex;gap:24px;align-items:center">
+          <span style="width:96px;height:96px;border-radius:22px;background:#9C5B3B;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font:700 44px 'Geist';flex:none">D</span>
+          <div style="display:flex;flex-direction:column;gap:6px"><h1 class="hC" style="font-size:34px">Gres hecho a mano, de a una pieza</h1><p style="margin:0;color:#5E5044">Recién abrimos la tienda: estamos subiendo la primera horneada. Si buscás algo puntual, escribinos.</p></div>
+          <a href="#" class="btnC" style="margin-left:auto;background:#25D366;color:#0B3B1E;flex:none">Escribinos</a>
+        </section>
+        <section>
+          <h2 class="hC" style="font-size:20px;margin-bottom:12px">Disponible ahora</h2>
+          <article class="bx" style="padding:14px;display:grid;grid-template-columns:240px 1fr auto;gap:24px;align-items:center">
+            <div class="ph" style="height:240px;border-radius:10px" role="img" aria-label="Taza de gres, todavía sin foto"><span style="font:700 80px 'Geist'">D</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:20px">Taza de gres esmaltada</b><span style="color:#5E5044">350 ml · apta lavavajillas · cada una sale distinta</span><b style="font-size:22px;margin-top:8px">$ 18.000</b></div>
+            <button type="button" class="btnC" style="background:#2A211B;color:#FFFFFF">Agregar a la bolsa</button>
+          </article>
+        </section>
+        <section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+          <div class="bx" style="padding:16px"><b>Retiro en el taller</b><p style="margin:4px 0 0;font-size:14px;color:#5E5044">Güemes 2830 · jue y vie 15 a 19</p></div>
+          <div class="bx" style="padding:16px"><b>Envíos</b><p style="margin:4px 0 0;font-size:14px;color:#5E5044">Correo Argentino, bien embalado</p></div>
+          <div class="bx" style="padding:16px"><b>Próxima horneada</b><p style="margin:4px 0 0;font-size:14px;color:#5E5044">Dejá tu email y te avisamos</p></div>
+        </section>
+      </main>
+      <aside class="bx" style="padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+        <h2 class="hC" style="font-size:20px;align-self:flex-start">Tu bolsa</h2>
+        <p style="margin:16px 0;color:#5E5044;font-size:14px">Todavía está vacía.</p>
+      </aside>
+    </div>
+  </div>
+  <div style="width:375px;height:812px;overflow:hidden;border-radius:28px;background:#FBF8F4;box-shadow:0 24px 48px -24px rgba(30,25,15,.35);position:relative">
+    <div style="padding:16px;display:flex;gap:12px;align-items:center;background:#FFFFFF;border-bottom:1px solid #E9E2D9"><span style="width:48px;height:48px;border-radius:12px;background:#9C5B3B;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font:700 22px 'Geist'">D</span><div><b style="font-size:17px">Cerámica Duna</b><p style="margin:2px 0 0;font-size:13px;color:#5E5044">Recién abierta · Mar del Plata</p></div></div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <article class="bx" style="padding:10px;display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center"><div class="ph" style="height:96px;border-radius:8px" role="img" aria-label="Sin foto"><span style="font:700 36px 'Geist'">D</span></div><div><b>Taza de gres esmaltada</b><p style="margin:2px 0 6px;font-size:13px;color:#5E5044">350 ml</p><b>$ 18.000</b></div></article>
+      <div class="bx" style="padding:14px;font-size:14px;color:#5E5044">Estamos subiendo la primera horneada. ¿Buscás algo puntual?</div>
+    </div>
+    <a href="#" style="position:absolute;left:12px;right:12px;bottom:20px;height:56px;border-radius:14px;background:#25D366;color:#0B3B1E;display:flex;align-items:center;justify-content:center;font-weight:700;text-decoration:none">Escribinos por WhatsApp</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1900,"height":1500}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>
