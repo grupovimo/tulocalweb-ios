@@ -22,6 +22,18 @@ export const FUENTES: Record<string, Fuente> = {
 		google: 'Instrument+Sans:wght@400;500;600;700',
 		tipo: 'sans'
 	},
+	figtree: {
+		nombre: 'Figtree',
+		css: "'Figtree',sans-serif",
+		google: 'Figtree:wght@400;500;600;700',
+		tipo: 'sans'
+	},
+	geist: {
+		nombre: 'Geist',
+		css: "'Geist',sans-serif",
+		google: 'Geist:wght@400;500;600;700',
+		tipo: 'sans'
+	},
 	'dm-sans': {
 		nombre: 'DM Sans',
 		css: "'DM Sans',sans-serif",
@@ -67,7 +79,7 @@ export const FUENTES: Record<string, Fuente> = {
 	bricolage: {
 		nombre: 'Bricolage Grotesque',
 		css: "'Bricolage Grotesque',sans-serif",
-		google: 'Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800',
+		google: 'Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800',
 		tipo: 'display'
 	},
 	'archivo-black': {
@@ -91,7 +103,7 @@ export const FUENTES: Record<string, Fuente> = {
 	fraunces: {
 		nombre: 'Fraunces',
 		css: "'Fraunces',serif",
-		google: 'Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400',
+		google: 'Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,300;1,9..144,400',
 		tipo: 'serif'
 	},
 	'dm-serif': {

@@ -6,6 +6,8 @@
     "./esquema": "./src/esquema.ts",
     "./rubros.json": "./rubros.json",
     "./direccion.json": "./direccion.json",
+    "./bloques.json": "./bloques.json",
+    "./presets.json": "./presets.json",
     "./casos/*": "./casos/*"
   },
   "scripts": {

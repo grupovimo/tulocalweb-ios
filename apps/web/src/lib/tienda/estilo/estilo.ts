@@ -52,6 +52,22 @@ export type EstiloTienda = {
 	redes?: Redes;
 	/** Las pestañas del menú (vacío: las de la plantilla). lib/tienda/estilo/menu.ts. */
 	menu?: ItemMenu[];
+	// ---- Diseño v2 (docs/especificaciones/tienda-bloques.md). Vacío: lo de la dirección y el preset.
+	direccion?: 'vidriera' | 'mostrador' | 'pedido';
+	forma?: 'recta' | 'redondeada' | 'pildora';
+	densidad?: 'aireada' | 'normal' | 'compacta';
+	ancho?: 'normal' | 'amplio';
+	fotoProducto?: 'cuadrada' | 'vertical' | 'apaisada';
+	encabezado?: 'izquierda' | 'centrado' | 'buscador';
+	pie?: 'simple' | 'columnas' | 'grande';
+	/** La barra de anuncios de arriba de todo (en v1 era `anuncio` y `anuncioLink`). */
+	barra?: {
+		variante: 'fija' | 'rotativa';
+		mensajes: { texto: string; link?: string }[];
+		fondo?: 'normal' | 'superficie' | 'acento' | 'oscuro';
+	};
+	/** false: sin el botón flotante de WhatsApp (la sección «wa» oculta de v1). */
+	whatsappFlotante?: boolean;
 };
 
 /** El título de una sección: el propio o el de la plantilla. */
