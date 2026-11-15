@@ -2,7 +2,8 @@
  * «Avisame cuando salga» y la reserva o el encargo con seña de la tienda online (§52), en
  * /t/[tienda]/aviso y /t/[tienda]/sena. Con la API, Go valida, pone el tope por IP, calcula la seña
  * y arma el pago con la cuenta de Mercado Pago de la tienda. En la demo se guarda en el sandbox y
- * la seña se da por pagada (la demo no cobra).
+ * la seña se da por pagada (la demo no cobra). También «Avisame cuando vuelva» (§60), en
+ * /t/[tienda]/aviso-stock, con el mismo tope.
  */
 import { env } from 'cloudflare:workers';
 import { json, type RequestEvent } from '@sveltejs/kit';
@@ -12,7 +13,7 @@ import { usaSandbox, vidrieraDe } from '../datos/index.ts';
 import { golpe } from '../limite.ts';
 import { COOKIE, dbSandbox } from '../sandbox/sandbox.ts';
 import { codigoPedido } from './pedido.ts';
-import { NuevaSena, NuevoAviso } from './esquemas.ts';
+import { NuevaSena, NuevoAviso, NuevoAvisoStock } from './esquemas.ts';
 import { resolverTienda } from './publica.ts';
 
 type Evento = RequestEvent<{ tienda: string }>;
@@ -61,6 +62,25 @@ export async function avisar(event: Evento) {
 	}
 	try {
 		await vidrieraDe(event).aviso(r.tienda.slug, datos.productoId, datos.email);
+		return json({ ok: true }, { status: 201 });
+	} catch (e) {
+		return deLaApi(e);
+	}
+}
+
+export async function avisarStock(event: Evento) {
+	const p = await preparar(event, 'aviso-stock', NuevoAvisoStock);
+	if (p instanceof Response) return p;
+	const { r, datos } = p;
+	if (r.datos) {
+		const res = await r.datos.avisarStock(datos);
+		if (res === 'no-existe') return error(404, 'Ese producto ya no está publicado.');
+		if (res === 'hay-stock') return error(409, 'Ya hay stock: lo podés comprar.');
+		if (res === 'lleno') return error(409, 'No podemos anotar más avisos para este producto.');
+		return json({ ok: true }, { status: 201 });
+	}
+	try {
+		await vidrieraDe(event).avisoStock(r.tienda.slug, datos);
 		return json({ ok: true }, { status: 201 });
 	} catch (e) {
 		return deLaApi(e);

@@ -1441,6 +1441,32 @@ paths:
         '404': { $ref: '#/components/responses/Problema' }
         '409': { $ref: '#/components/responses/Problema' }
         '429': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/productos/{id}/aviso-stock:
+    post:
+      operationId: avisoStock
+      summary: '«Avisame cuando vuelva» (§60): anota el email (y el WhatsApp, si lo deja) de quien espera un producto o una variante sin stock, con su consentimiento. Repetido no suma. Cuando el stock pasa de 0 a más, el worker manda un mail con la marca de la tienda, una sola vez. 409 hay_stock si ya se puede comprar. Tope de 10 por hora por IP y 20.000 por producto.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, consentimiento]
+              properties:
+                varianteId: { type: [string, 'null'], description: 'La variante sin stock (null: el producto)' }
+                email: { type: string, maxLength: 200 }
+                whatsapp: { type: string, maxLength: 24 }
+                consentimiento: { type: boolean, const: true }
+      responses:
+        '204': { description: Anotado }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/resenas:
     post:
       operationId: dejarResena

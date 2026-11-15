@@ -174,6 +174,7 @@ import {
 	registrosFacturacion,
 	registrosInventario,
 	registrosProductos,
+	semilla,
 	claveStock,
 	slugProducto,
 	type CambioCliente,
@@ -1019,10 +1020,14 @@ export class DatosSandbox implements Datos {
 	async listar(lista: NombreLista, f: FiltrosLista): Promise<ListaGenerica> {
 		if (lista === 'clientes') return listarGenerico(await this.regClientes(), DEF_CLIENTES, f);
 		if (lista === 'productos') {
-			const l = listarGenerico(await this.regProductos(), DEF_PRODUCTOS, f);
-			// Como la API Go: cada fila trae el resumen de sus variantes (las inactivas también).
+			const regs = await this.regProductos();
+			const l = listarGenerico(regs, DEF_PRODUCTOS, f);
+			const esperan = await this.esperanStock(regs);
+			// Como la API Go: cada fila trae el resumen de sus variantes (las inactivas también) y
+			// cuántos esperan que vuelva (§60).
 			const filas = (l.filas as unknown as RegProducto[]).map((r) => ({
 				...r,
+				esperan: esperan.get(r.id) ?? 0,
 				variantes: r.variantes.map((v) => ({
 					id: v.id,
 					texto: textoVariante(r.opciones, v.valores),
@@ -3429,6 +3434,57 @@ export class DatosSandbox implements Datos {
 			{
 				en: Date.now()
 			}
+		);
+		return 'ok';
+	}
+
+	// ---------------------------------------------------------------- Avisame cuando vuelva (§60)
+
+	/**
+	 * Cuántos esperan cada producto: los de ejemplo (los productos agotados del catálogo traen unos
+	 * pocos, para que se vea) y los que anotó el visitante. La demo no manda mails: cuando vuelve el
+	 * stock, todos cuentan como avisados y dejan de esperar.
+	 */
+	private async esperanStock(regs: RegProducto[]) {
+		const avisos = await cambiosDe(this.db, this.sb.id, 'aviso-stock');
+		const porId = new Map(regs.map((r) => [r.id, r]));
+		const sinStock = (r: RegProducto, variante: string) =>
+			variante ? (r.variantes.find((v) => v.id === variante)?.stock ?? 0) === 0 : r.stock === 0;
+		const out = new Map<string, number>();
+		for (const r of regs)
+			if (r.publicado && r.stock === 0 && !r.id.startsWith('n'))
+				out.set(r.id, 1 + Math.floor(semilla(r.id + 'avisame') * 6));
+		for (const [k, v] of avisos) {
+			if (!v) continue;
+			const [id, variante] = k.split(':');
+			const r = porId.get(id);
+			if (r && sinStock(r, variante)) out.set(id, (out.get(id) ?? 0) + 1);
+		}
+		return out;
+	}
+
+	/** «Avisame cuando vuelva» en la demo: se anota (no sale ningún mail). Como Go. */
+	async avisarStock(a: {
+		productoId: string;
+		varianteId: string | null;
+		email: string;
+		whatsapp: string;
+	}): Promise<'ok' | 'no-existe' | 'hay-stock' | 'lleno'> {
+		const t = await this.tiendaPublica(false);
+		const p = t.productos.find((x) => x.id === a.productoId);
+		if (!p) return 'no-existe';
+		const v =
+			p.opciones.length && a.varianteId ? p.variantes.find((x) => x.id === a.varianteId) : null;
+		if (p.opciones.length && a.varianteId && !v) return 'no-existe';
+		if ((v ? v.stock : p.stock) > 0) return 'hay-stock';
+		const avisos = await cambiosDe(this.db, this.sb.id, 'aviso-stock');
+		if ([...avisos.keys()].filter((k) => k.startsWith(`${p.id}:`)).length >= 200) return 'lleno';
+		await guardarCambio(
+			this.db,
+			this.sb.id,
+			'aviso-stock',
+			`${p.id}:${v?.id ?? ''}:${a.email.toLowerCase()}`,
+			{ en: Date.now(), whatsapp: a.whatsapp || null }
 		);
 		return 'ok';
 	}

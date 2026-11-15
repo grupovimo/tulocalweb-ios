@@ -11,6 +11,7 @@ import (
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/abono"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/avisos"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/avisostock"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/equipo"
@@ -138,8 +139,10 @@ func correr() error {
 	ps := push.Nuevo(app, cliAPNs, slog.Default()).ConFCM(cliFCM).ConWeb(cliWeb)
 	// Lanzamientos (§52): «Ya salió» a quienes pidieron aviso, de a tandas.
 	lz := &lanzamientos.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
+	// «Avisame cuando vuelva» (§60): el mail a quienes esperaban el stock.
+	as := &avisostock.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	for _, ms := range []map[string]outbox.Manejador{mp.Manejadores(), ml.Manejadores(), av.Manejadores(), mc.Manejadores(), tg.Manejadores(), equipo.Manejadores(mails), imp.Manejadores(),
-		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores(), lz.Manejadores(), nl.Manejadores(), pr.Manejadores()} {
+		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores(), lz.Manejadores(), nl.Manejadores(), pr.Manejadores(), as.Manejadores()} {
 		for tipo, m := range ms {
 			w.Manejadores[tipo] = m
 		}

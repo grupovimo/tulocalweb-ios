@@ -86,7 +86,7 @@ export function listarGenerico<R extends { id: string }>(
 }
 
 /** Número estable a partir de un texto (para datos de ejemplo que no cambian entre pedidos). */
-const semilla = (s: string) => {
+export const semilla = (s: string) => {
 	let h = 2166136261;
 	for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
 	return (h >>> 0) / 4294967296;

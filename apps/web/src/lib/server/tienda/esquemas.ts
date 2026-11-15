@@ -59,6 +59,28 @@ export const NuevoAviso = v.object({
 	)
 });
 
+/** «Avisame cuando vuelva» (§60): el producto o la variante sin stock, con el consentimiento. */
+export const NuevoAvisoStock = v.object({
+	productoId: v.pipe(v.string(), v.minLength(1), v.maxLength(80)),
+	varianteId: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(80))), null),
+	email: v.pipe(
+		v.string(),
+		v.trim(),
+		v.toLowerCase(),
+		v.email('Revisá el email.'),
+		v.maxLength(200)
+	),
+	whatsapp: v.optional(
+		v.pipe(
+			v.string(),
+			v.trim(),
+			v.check((s) => s === '' || /^\+?[0-9 ()-]{6,24}$/.test(s), 'Revisá el WhatsApp.')
+		),
+		''
+	),
+	consentimiento: v.literal(true, 'Marcá que querés que te escribamos.')
+});
+
 /** Reservar un lanzamiento o encargar con seña (§52): precio y seña los calcula el servidor. */
 export const NuevaSena = v.object({
 	productoId: v.pipe(v.string(), v.minLength(1), v.maxLength(80)),

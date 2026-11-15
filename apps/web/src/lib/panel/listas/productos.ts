@@ -26,6 +26,8 @@ export type ProductoFila = {
 	estado: 'active' | 'out' | 'paused' | 'draft';
 	lowm: boolean;
 	star: boolean;
+	/** Cuántos pidieron «Avisame cuando vuelva» y todavía esperan (§60). */
+	esperan?: number;
 };
 
 /** Ícono de cada canal en la fila (handoff `CHI`). */
@@ -140,9 +142,12 @@ export function configProductos(
 					h: Math.max(3, (x / mx) * 22),
 					c: x ? '#D2582F' : 'var(--sf3)'
 				})),
-				vL: `${p.vendidos30} vendidos en 30 días`,
-				vC: 'var(--mu)',
-				vI: p.star ? I.phFireFill : undefined,
+				// Sin stock y con gente esperando, eso es lo que importa: se avisa sola al reponer.
+				vL: p.esperan
+					? `${p.esperan} ${p.esperan === 1 ? 'espera' : 'esperan'} que vuelva`
+					: `${p.vendidos30} vendidos en 30 días`,
+				vC: p.esperan ? '#B83A2E' : 'var(--mu)',
+				vI: p.esperan ? I.phBellRingingFill : p.star ? I.phFireFill : undefined,
 				chip: e ? { t: e[0], bg: e[1], fg: e[2] } : undefined,
 				v: pesos(p.precio),
 				vs: 'precio',

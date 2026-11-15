@@ -1,6 +1,6 @@
 import type * as v from 'valibot';
 import { ClienteBff } from '../bff.ts';
-import type { NuevaPregunta, NuevaResena, NuevaSena } from './esquemas.ts';
+import type { NuevaPregunta, NuevaResena, NuevaSena, NuevoAvisoStock } from './esquemas.ts';
 
 /** Las operaciones públicas en la API Go (con la IP del visitante: Go pone el tope). */
 export class VidrieraApi extends ClienteBff {
@@ -16,6 +16,19 @@ export class VidrieraApi extends ClienteBff {
 			'POST',
 			`/v1/publico/tiendas/${slug}/productos/${encodeURIComponent(productoId)}/aviso`,
 			{ email }
+		);
+	}
+	/** «Avisame cuando vuelva» (§60). */
+	avisoStock(slug: string, a: v.InferOutput<typeof NuevoAvisoStock>) {
+		return this.pedir<void>(
+			'POST',
+			`/v1/publico/tiendas/${slug}/productos/${encodeURIComponent(a.productoId)}/aviso-stock`,
+			{
+				varianteId: a.varianteId,
+				email: a.email,
+				whatsapp: a.whatsapp,
+				consentimiento: a.consentimiento
+			}
 		);
 	}
 	/** Reservar o encargar con seña (§52): el pedido y adónde pagar la seña. */

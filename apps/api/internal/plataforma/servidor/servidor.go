@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/arrepentimiento"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/avisostock"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/crecer"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
@@ -253,6 +254,8 @@ func Nuevo(d Dependencias) http.Handler {
 		promos.Rutas(mux, d.App, tienda, ip)
 		// Lanzamientos, ofertas con fin y señas (§52): el editor, «saldado» y «Avisame cuando salga».
 		lanzamientos.Rutas(mux, d.App, tienda, ip)
+		// «Avisame cuando vuelva» (§60): el pedido de aviso de un producto sin stock.
+		avisostock.Rutas(mux, d.App, ip)
 		// Las visitas de las tiendas las manda la web por lotes, con su clave.
 		visitas.Rutas(mux, d.App, d.ClaveBFF, d.Log)
 		if d.Arrepentimiento != nil {

@@ -1357,6 +1357,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/publico/tiendas/{slug}/productos/{id}/aviso-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Avisame cuando vuelva» (§60): anota el email (y el WhatsApp, si lo deja) de quien espera un producto o una variante sin stock, con su consentimiento. Repetido no suma. Cuando el stock pasa de 0 a más, el worker manda un mail con la marca de la tienda, una sola vez. 409 hay_stock si ya se puede comprar. Tope de 10 por hora por IP y 20.000 por producto. */
+        post: operations["avisoStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/publico/tiendas/{slug}/resenas": {
         parameters: {
             query?: never;
@@ -9131,6 +9148,42 @@ export interface operations {
             content: {
                 "application/json": {
                     email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Anotado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
+    avisoStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description La variante sin stock (null: el producto) */
+                    varianteId?: string | null;
+                    email: string;
+                    whatsapp?: string;
+                    /** @constant */
+                    consentimiento: true;
                 };
             };
         };

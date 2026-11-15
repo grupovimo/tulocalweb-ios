@@ -3,6 +3,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import * as I from '#lib/icons.ts';
 	import CompartirProducto from '../../CompartirProducto.svelte';
+	import AvisoStock from '../../AvisoStock.svelte';
 	import LanzamientoFicha from '../../LanzamientoFicha.svelte';
 	import PreguntasProducto from '../../PreguntasProducto.svelte';
 	import { carritoDe } from '../../carrito.svelte.ts';
@@ -466,9 +467,7 @@
 					</p>
 				{:else if sel.stock === 0 && !sel.proximo && (!sel.conOpciones || sel.variante)}
 					<p class="tv-ficha-quedan">
-						Sin stock{sel.variante ? ` en ${sel.texto.toLowerCase()}` : ''}{wa
-							? '. Escribinos y te avisamos cuando vuelva.'
-							: '.'}
+						Sin stock{sel.variante ? ` en ${sel.texto.toLowerCase()}` : ''}.
 					</p>
 				{/if}
 
@@ -493,6 +492,7 @@
 						>
 					{/if}
 					<LanzamientoFicha {tienda} {producto} {sel} {tema} />
+					<AvisoStock {tienda} {producto} {sel} {tema} />
 					<div class="tv-ficha-extras">
 						<CompartirProducto {tienda} {producto} {tema} />
 						{#if comparador}<BotonComparar {producto} grande />{/if}

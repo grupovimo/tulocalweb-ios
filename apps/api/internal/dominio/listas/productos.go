@@ -281,6 +281,26 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 		if err != nil {
 			return err
 		}
+		// Cuántos pidieron «Avisame cuando vuelva» (§60) y todavía esperan.
+		esperan := map[string]int{}
+		ef, err := t.Query(ctx, `SELECT producto_id::text, count(*)::int FROM avisos_stock WHERE tienda_id = $1 AND avisado_en IS NULL
+			GROUP BY producto_id`, tiendaID)
+		if err != nil {
+			return err
+		}
+		for ef.Next() {
+			var id string
+			var n int
+			if err := ef.Scan(&id, &n); err != nil {
+				ef.Close()
+				return err
+			}
+			esperan[id] = n
+		}
+		ef.Close()
+		if err := ef.Err(); err != nil {
+			return err
+		}
 		filas, err := t.Query(ctx, `SELECT id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, publicado, fotos, opciones, slug,
 				precio_mayorista, tipo, atributos
 			FROM productos WHERE tienda_id = $1 ORDER BY creado_en DESC`, tiendaID)
@@ -340,6 +360,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 				"margen": margen, "stock": p.Stock,
 				"ventas": ventas, "vendidos30": p.Vendidos30d, "canales": canales, "publicado": p.Publicado,
 				"estado": estado, "lowm": lowm, "star": p.Vendidos30d > 60, "variantes": resumen, "slug": p.Slug, "_ficha": p,
+				"esperan": esperan[p.ID],
 			})
 		}
 		return filas.Err()
