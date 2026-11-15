@@ -36,6 +36,31 @@ export function combosDe(d: Pick<DisenoV2, 'inicio' | 'paginas'> | null | undefi
 	});
 }
 
+/**
+ * El combo del que forma parte un producto, para «Completá el look» en su ficha: el primero que lo
+ * incluye entre los bloques visibles de la tienda (portada, ficha y Nosotros), con o sin descuento.
+ */
+export function comboDelProducto(
+	d: Pick<DisenoV2, 'inicio' | 'paginas'> | null | undefined,
+	productoId: string
+): Bloque | null {
+	if (!d) return null;
+	const bloques: Bloque[] = [
+		...(d.inicio ?? []),
+		...(d.paginas?.producto?.bloques ?? []),
+		...(d.paginas?.nosotros?.bloques ?? [])
+	];
+	return (
+		bloques.find(
+			(b) =>
+				b.tipo === 'combo' &&
+				!b.oculto &&
+				Array.isArray(b.datos?.productos) &&
+				(b.datos.productos as unknown[]).includes(productoId)
+		) ?? null
+	);
+}
+
 /** Lo que descuenta cada combo completo del carrito y el total. */
 export function descuentoCombos(combos: Combo[], lineas: LineaCombo[]) {
 	const porCombo = combos.flatMap((c) => {

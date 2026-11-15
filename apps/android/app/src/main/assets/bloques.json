@@ -4,7 +4,10 @@
   "limites": {
     "bloquesPorPagina": 30,
     "itemsPorLista": 12,
-    "bytesDiseno": 65536
+    "bytesDiseno": 65536,
+    "filasTabla": 8,
+    "columnasTabla": 8,
+    "letrasCelda": 30
   },
   "estilo": {
     "direccion": {
@@ -197,6 +200,29 @@
           "tipo": "si",
           "nombre": "Calcular el envío en la ficha",
           "porDefecto": true
+        },
+        {
+          "id": "combos",
+          "tipo": "si",
+          "nombre": "Mostrar combos en la ficha",
+          "porDefecto": true
+        },
+        {
+          "id": "guiaTalles",
+          "tipo": "grupo",
+          "nombre": "Guía de talles",
+          "item": [
+            {
+              "id": "foto",
+              "tipo": "foto",
+              "nombre": "Foto de la guía"
+            },
+            {
+              "id": "tabla",
+              "tipo": "tabla",
+              "nombre": "O una tabla de medidas"
+            }
+          ]
         }
       ],
       "bloques": true
@@ -1075,7 +1101,8 @@
     "categoria": "nombre de una categoría",
     "categorias": "lista de nombres de categoría",
     "lista": "lista de objetos con los campos de item (min, max)",
-    "grupo": "un objeto con los campos de item"
+    "grupo": "un objeto con los campos de item",
+    "tabla": "filas × columnas de textos cortos: [[encabezado…], [celda…], …]; de 2 a limites.filasTabla filas y de 1 a limites.columnasTabla columnas, todas con las mismas columnas; cada celda hasta limites.letrasCelda letras en una línea, sin < ni > (puede quedar vacía). La primera fila es el encabezado"
   },
   "barraAnuncios": {
     "nombre": "Barra de anuncios",

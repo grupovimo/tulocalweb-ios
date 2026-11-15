@@ -19,7 +19,11 @@ data class CatalogoBloques(
     val bloques: List<Tipo> = emptyList(),
     val barraAnuncios: Barra = Barra(nombre = "Barra de anuncios", variantes = listOf("fija"), nombresVariantes = listOf("Fija")),
 ) {
-    @Serializable data class Limites(val bloquesPorPagina: Int = 30, val itemsPorLista: Int = 12, val bytesDiseno: Int = 65536)
+    @Serializable data class Limites(
+        val bloquesPorPagina: Int = 30, val itemsPorLista: Int = 12, val bytesDiseno: Int = 65536,
+        /** Los topes de un campo tabla (la guía de talles). */
+        val filasTabla: Int = 8, val columnasTabla: Int = 8, val letrasCelda: Int = 30,
+    )
     @Serializable data class Opciones(val opciones: List<String> = emptyList(), val nombres: List<String> = emptyList(), val porDefecto: String? = null)
     @Serializable data class Grupo(val id: String, val nombre: String)
 

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -179,6 +180,7 @@ fun EditorCampo(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
             Texto(campo.nombre, Estilo.subheadFuerte, C.texto)
             EditorCampos(campo.item ?: emptyList(), valor?.objeto ?: emptyMap()) { alCambiar(Valor.objeto(it)) }
         }
+        "tabla" -> EditorTabla(campo.nombre, valor, alCambiar)
         else -> {}
     }
 }
@@ -554,5 +556,59 @@ fun EditorLista(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
         }
         if (items.isEmpty()) Texto("Todavía no hay ninguno.", Estilo.footnote, C.texto2)
         if (items.size < max) BotonTonal("Sumar", { poner(items + listOf(emptyMap())) }, alto = 40.dp, simbolo = "plus")
+    }
+}
+
+// MARK: - Tabla
+
+/** Una tabla (tiposCampo › tabla; la guía de talles): filas × columnas de textos cortos, la primera fila es el
+ *  encabezado. Siempre queda pareja, con el encabezado y al menos una fila, dentro de los topes del catálogo. */
+@Composable
+fun EditorTabla(titulo: String, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Unit) {
+    val lim = CatalogoBloques.shared.limites
+    val filas = valor?.lista?.map { f -> f.lista?.map { it.texto ?: "" } ?: emptyList() } ?: emptyList()
+    val ancho = filas.firstOrNull()?.size ?: 0
+    fun poner(f: List<List<String>>?) = alCambiar(f?.let { Valor.lista(it.map { r -> Valor.lista(r.map { c -> Valor.texto(c) }) }) })
+    /** Una celda: en una línea, sin < ni >, hasta `letrasCelda` letras (como las cuenta Go). */
+    fun limpia(s: String): String {
+        val t = s.filter { it != '<' && it != '>' && it != '\n' && it != '\r' }
+        val n = lim.letrasCelda
+        return if (t.codePointCount(0, t.length) <= n) t else t.substring(0, t.offsetByCodePoints(0, n))
+    }
+    fun pista(i: Int, j: Int) = if (i == 0) (if (j == 0) "Talle" else "Medida") else (if (j == 0) "S" else "")
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Texto(titulo, Estilo.footnoteFuerte, C.texto2)
+        if (ancho == 0) {
+            BotonTonal("Armar la tabla", { poner(listOf(listOf("Talle", ""), listOf("", ""))) }, alto = 40.dp, simbolo = "square.grid.2x2")
+        } else {
+            val forma = RoundedCornerShape(12.dp)
+            Column(Modifier.horizontalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                filas.forEachIndexed { i, fila ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (j in 0 until ancho) {
+                            val rotulo = if (i == 0) "Encabezado, columna ${j + 1}" else "Fila $i, columna ${j + 1}"
+                            Entrada(fila.getOrElse(j) { "" }, { v ->
+                                poner(filas.mapIndexed { a, f -> if (a == i) f.mapIndexed { b, x -> if (b == j) limpia(v) else x } else f })
+                            }, pista(i, j),
+                                Modifier.width(92.dp).heightIn(min = 44.dp).clip(forma).background(if (i == 0) C.crema2 else C.superficie)
+                                    .border(1.dp, C.linea2, forma).padding(horizontal = 10.dp, vertical = 12.dp).semantics { contentDescription = rotulo },
+                                estilo = if (i == 0) Estilo.footnoteFuerte else Estilo.body16)
+                        }
+                        if (i > 0) {
+                            val puede = filas.size > 2
+                            Box(Modifier.size(44.dp).alpha(if (puede) 1f else 0.35f).clickable(enabled = puede) { poner(filas.filterIndexed { k, _ -> k != i }) }
+                                .semantics { contentDescription = "Quitar la fila $i" }, contentAlignment = Alignment.Center) { Icono("trash", 14f, C.primarioTexto) }
+                        }
+                    }
+                }
+            }
+            Texto("La primera fila es el encabezado. Hasta ${lim.filasTabla} filas y ${lim.columnasTabla} columnas.", Estilo.footnote, C.texto2)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BotonTonal("Fila", { poner(filas + listOf(List(ancho) { "" })) }, Modifier.semantics { contentDescription = "Sumar una fila" }, alto = 40.dp, simbolo = "plus", habilitado = filas.size < lim.filasTabla)
+                BotonTonal("Columna", { poner(filas.map { it + "" }) }, Modifier.semantics { contentDescription = "Sumar una columna" }, alto = 40.dp, simbolo = "plus", habilitado = ancho < lim.columnasTabla)
+                BotonTonal("Columna", { poner(filas.map { it.dropLast(1) }) }, Modifier.semantics { contentDescription = "Quitar la última columna" }, alto = 40.dp, simbolo = "minus", habilitado = ancho > 1)
+                BotonTonal("Borrar la tabla", { poner(null) }, alto = 40.dp, simbolo = "trash")
+            }
+        }
     }
 }

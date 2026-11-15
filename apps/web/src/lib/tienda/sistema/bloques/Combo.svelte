@@ -16,7 +16,17 @@
 	 * elegir en su ficha. Con descuento, «Ahorrás»: agregados juntos, las líneas quedan marcadas con el
 	 * combo y el checkout lo cobra mientras estén todos (combos.ts, igual que el servidor).
 	 */
-	let { bloque }: { bloque: Bloque } = $props();
+	let {
+		bloque,
+		actual = null
+	}: {
+		bloque: Bloque;
+		/**
+		 * En la ficha («Completá el look»): el producto que se está viendo. La lista muestra los otros;
+		 * el total, el ahorro y el botón siguen siendo de todo el combo.
+		 */
+		actual?: string | null;
+	} = $props();
 	const ctx = usarTienda();
 	const ui = getUi();
 	const items = $derived(comboDe(ctx.tienda, bloque));
@@ -36,14 +46,25 @@
 		});
 	}
 	const falta = $derived(items.find((p) => !sumaDirecto(ctx, p)));
+	const otros = $derived(actual ? items.filter((p) => p.id !== actual) : items);
+	// Si lo que falta elegir es el de la ficha, el botón lleva a sus opciones (arriba), no a recargarla.
+	const hrefFalta = $derived(
+		falta && falta.id === actual ? '#tv-ficha-opciones' : falta && productoHref(ctx.tienda, falta)
+	);
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
-<section class="tv-combo tv-ancho">
-	<div class="tv-cab"><h2 class="tv-h2">{textoDe(bloque, 'titulo')}</h2></div>
-	<div class="tv-combo-fila" style:--n={items.length}>
+<section
+	class="tv-combo tv-ancho"
+	class:tv-combo--ficha={!!actual}
+	aria-labelledby="tv-combo-{bloque.id}"
+>
+	<div class="tv-cab">
+		<h2 class="tv-h2" id="tv-combo-{bloque.id}">{textoDe(bloque, 'titulo')}</h2>
+	</div>
+	<div class="tv-combo-fila" style:--n={otros.length}>
 		<ul class="tv-combo-items">
-			{#each items as p (p.id)}
+			{#each otros as p (p.id)}
 				<li>
 					<a href={productoHref(ctx.tienda, p)}>
 						<Foto src={p.foto} alt="" nombre={p.nombre} ancho={500} proporcion="var(--t-foto)" />
@@ -54,7 +75,9 @@
 			{/each}
 		</ul>
 		<div class="tv-combo-precio tv-tarjeta">
-			<p class="tv-chico tv-suave">Los {items.length} juntos</p>
+			<p class="tv-chico tv-suave">
+				{actual ? `Con este, los ${items.length} juntos` : `Los ${items.length} juntos`}
+			</p>
 			<p class="tv-combo-total">
 				<b>{precio(total - ahorro)}</b>
 			</p>
@@ -62,7 +85,7 @@
 					Ahorrás {precio(ahorro)} ({pct}&nbsp;%)
 				</p>{/if}
 			{#if todosDirecto}<Boton bloque onclick={sumarTodo}>Agregar los {items.length}</Boton
-				>{:else if falta && !ctx.tienda.vitrina}<Boton bloque href={productoHref(ctx.tienda, falta)}
+				>{:else if falta && !ctx.tienda.vitrina}<Boton bloque href={hrefFalta || undefined}
 					>Elegir {falta.opciones[0]?.nombre.toLowerCase() ?? 'opción'}</Boton
 				>{/if}
 		</div>

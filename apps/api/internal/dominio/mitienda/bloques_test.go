@@ -68,6 +68,16 @@ func TestDisenoValido(t *testing.T) {
 	agregar := func(id, tipo, variante, datos string) Diseno {
 		return con(func(d *Diseno) { d.Inicio = append(d.Inicio, bloque(id, tipo, variante, datos)) })
 	}
+	// Una ficha con la guía de talles como tabla (el JSON de la tabla).
+	guia := func(tabla string) Diseno {
+		var x any
+		if err := json.Unmarshal([]byte(tabla), &x); err != nil {
+			panic(err)
+		}
+		return con(func(d *Diseno) {
+			d.Paginas = &Paginas{Producto: &PaginaProducto{GuiaTalles: map[string]any{"tabla": x}}}
+		})
+	}
 	si := true
 	casos := []struct {
 		nombre string
@@ -141,6 +151,24 @@ func TestDisenoValido(t *testing.T) {
 					Bloques: []Bloque{bloque("faqficha", "preguntas", "acordeon", `{"items":[{"p":"¿Talles?","r":"Del S al XL"}]}`)}},
 				Nosotros: &PaginaNosotros{Bloques: []Bloque{bloque("historia", "textoImagen", "izquierda", `{"titulo":"Nuestra historia"}`)}}}
 		}), true},
+		{"ficha sin combos y con guía de talles", con(func(d *Diseno) {
+			no := false
+			d.Paginas = &Paginas{Producto: &PaginaProducto{Combos: &no, GuiaTalles: map[string]any{
+				"foto":  "https://fotos.tulocalweb.com.ar/guia.jpg",
+				"tabla": [][]string{{"Talle", "Busto", "Largo"}, {"S", "88", "70"}, {"M", "", "72"}},
+			}}}
+		}), true},
+		{"guía con una sola fila", guia(`[["Talle","Busto"]]`), false},
+		{"guía de 9 filas", guia(`[` + strings.Repeat(`["a"],`, 8) + `["a"]]`), false},
+		{"guía de 9 columnas", guia(`[["1","2","3","4","5","6","7","8","9"],["1","2","3","4","5","6","7","8","9"]]`), false},
+		{"guía de 8 × 8", guia(`[` + strings.Repeat(`["1","2","3","4","5","6","7","8"],`, 7) + `["1","2","3","4","5","6","7","8"]]`), true},
+		{"guía con filas desparejas", guia(`[["Talle","Busto"],["S"]]`), false},
+		{"guía con celda larga", guia(`[["Talle"],["` + strings.Repeat("x", 31) + `"]]`), false},
+		{"guía con html", guia(`[["Talle"],["<b>S</b>"]]`), false},
+		{"guía con salto de línea", guia(`[["Talle"],["S\nM"]]`), false},
+		{"guía con un campo de más", con(func(d *Diseno) {
+			d.Paginas = &Paginas{Producto: &PaginaProducto{GuiaTalles: map[string]any{"pdf": "https://x.com/a.pdf"}}}
+		}), false},
 		{"catálogo con variante inventada", con(func(d *Diseno) { d.Paginas = &Paginas{Catalogo: &PaginaCatalogo{Variante: "mosaico"}} }), false},
 		{"catálogo con 6 columnas", con(func(d *Diseno) { d.Paginas = &Paginas{Catalogo: &PaginaCatalogo{Columnas: 6}} }), false},
 		{"filtros inventados", con(func(d *Diseno) { d.Paginas = &Paginas{Catalogo: &PaginaCatalogo{Filtros: "abajo"}} }), false},

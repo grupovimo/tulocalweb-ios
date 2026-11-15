@@ -7,7 +7,12 @@
  */
 import type { TemaOpiniones } from '../opiniones.ts';
 import type { TiendaPublica } from '../tipos.ts';
-import type { Bloque, Direccion, PaginasDiseno } from './catalogo.ts';
+import {
+	validarOpcionesPagina,
+	type Bloque,
+	type Direccion,
+	type PaginasDiseno
+} from './catalogo.ts';
 import { disenoDeTienda } from './migrar.ts';
 
 type Opciones = Required<{
@@ -18,19 +23,37 @@ type Opciones = Required<{
 const PORDEFECTO: Record<Direccion, Opciones> = {
 	vidriera: {
 		catalogo: { variante: 'grilla', filtros: 'costado', columnas: 4 },
-		producto: { variante: 'grilla', relacionados: true, calcularEnvio: true, bloques: [] },
+		producto: {
+			variante: 'grilla',
+			relacionados: true,
+			calcularEnvio: true,
+			combos: true,
+			bloques: []
+		},
 		carrito: { variante: 'pagina', envioGratisDesde: true },
 		nosotros: { bloques: [] }
 	},
 	mostrador: {
 		catalogo: { variante: 'grilla', filtros: 'arriba', columnas: 4 },
-		producto: { variante: 'miniaturas', relacionados: true, calcularEnvio: true, bloques: [] },
+		producto: {
+			variante: 'miniaturas',
+			relacionados: true,
+			calcularEnvio: true,
+			combos: true,
+			bloques: []
+		},
 		carrito: { variante: 'pagina', envioGratisDesde: true },
 		nosotros: { bloques: [] }
 	},
 	pedido: {
 		catalogo: { variante: 'lista', filtros: 'arriba', columnas: 4 },
-		producto: { variante: 'grilla', relacionados: true, calcularEnvio: true, bloques: [] },
+		producto: {
+			variante: 'grilla',
+			relacionados: true,
+			calcularEnvio: true,
+			combos: true,
+			bloques: []
+		},
 		carrito: { variante: 'pagina', envioGratisDesde: true },
 		nosotros: { bloques: [] }
 	}
@@ -41,9 +64,13 @@ export function opcionesPaginas(t: TiendaPublica, dir: Direccion): Opciones {
 	const p = disenoDeTienda(t).paginas ?? {};
 	const d = PORDEFECTO[dir];
 	return {
-		catalogo: { ...d.catalogo, ...p.catalogo },
-		producto: { ...d.producto, ...p.producto, bloques: p.producto?.bloques ?? [] },
-		carrito: { ...d.carrito, ...p.carrito },
+		catalogo: { ...d.catalogo, ...validarOpcionesPagina('catalogo', p.catalogo) },
+		producto: {
+			...d.producto,
+			...validarOpcionesPagina('producto', p.producto),
+			bloques: p.producto?.bloques ?? []
+		},
+		carrito: { ...d.carrito, ...validarOpcionesPagina('carrito', p.carrito) },
 		nosotros: { bloques: p.nosotros?.bloques ?? [] }
 	};
 }

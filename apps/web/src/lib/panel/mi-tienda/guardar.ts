@@ -117,7 +117,26 @@ export function valorCampo(c: Campo, v: unknown): unknown {
 			const o = objeto(c.item ?? [], v, false);
 			return o && Object.keys(o).length ? o : undefined;
 		}
+		case 'tabla':
+			return tablaParaGuardar(v);
 	}
+}
+
+/**
+ * Una tabla lista para guardar: celdas en una línea y recortadas, todas las filas del ancho del
+ * encabezado, sin filas vacías y con los topes del catálogo. Sin encabezado y al menos una fila, no va.
+ */
+export function tablaParaGuardar(v: unknown): string[][] | undefined {
+	if (!Array.isArray(v)) return undefined;
+	const filas = v
+		.filter((f): f is unknown[] => Array.isArray(f))
+		.map((f) => f.map((x) => linea(x, LIMITES.letrasCelda)));
+	const ancho = Math.min(filas[0]?.length ?? 0, LIMITES.columnasTabla);
+	if (!ancho) return undefined;
+	const parejas = filas.map((f) => Array.from({ length: ancho }, (_, j) => f[j] ?? ''));
+	const [cab, ...cuerpo] = parejas;
+	const r = [cab, ...cuerpo.filter((f) => f.some(Boolean))].slice(0, LIMITES.filasTabla);
+	return r.length >= 2 ? r : undefined;
 }
 
 /**

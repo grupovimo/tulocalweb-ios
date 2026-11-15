@@ -28,7 +28,8 @@ export type TipoCampo =
 	| 'categoria'
 	| 'categorias'
 	| 'lista'
-	| 'grupo';
+	| 'grupo'
+	| 'tabla';
 
 export type Campo = {
 	id: string;
@@ -129,11 +130,17 @@ export type PaginasDiseno = {
 		variante: 'grilla' | 'miniaturas' | 'carrusel';
 		relacionados: boolean;
 		calcularEnvio: boolean;
+		/** Mostrar en la ficha el combo del que forma parte el producto («Completá el look»). */
+		combos?: boolean;
+		/** La guía de talles: una foto, una tabla (la primera fila es el encabezado) o las dos. */
+		guiaTalles?: GuiaTalles;
 		bloques: Bloque[];
 	};
 	carrito?: { variante: 'pagina' | 'panel'; envioGratisDesde: boolean };
 	nosotros?: { bloques: Bloque[] };
 };
+
+export type GuiaTalles = { foto?: string; tabla?: string[][] };
 
 /** El diseño de la tienda, versión 2: la portada en bloques y el estilo ampliado. */
 export type DisenoV2 = {
@@ -226,8 +233,21 @@ function esquemaCampo(c: Campo): v.GenericSchema {
 			);
 		case 'grupo':
 			return objeto(c.item ?? []);
+		case 'tabla':
+			return tabla;
 	}
 }
+
+// Una tabla (la guía de talles): de 2 a filasTabla filas y de 1 a columnasTabla columnas, todas del
+// mismo ancho; las celdas, textos cortos en una línea (pueden quedar vacías). Como Go (tablaValida).
+const tabla = v.pipe(
+	v.array(
+		v.pipe(v.array(texto(LIMITES.letrasCelda)), v.minLength(1), v.maxLength(LIMITES.columnasTabla))
+	),
+	v.minLength(2),
+	v.maxLength(LIMITES.filasTabla),
+	v.check((f) => f.every((x) => x.length === f[0].length))
+);
 
 /**
  * Un objeto con esos campos (los desconocidos se rechazan): los requeridos tienen que venir, y no
@@ -250,6 +270,40 @@ const DATOS: Record<TipoBloque, v.GenericSchema> = Object.fromEntries(
 ) as unknown as Record<TipoBloque, v.GenericSchema>;
 
 const ID_BLOQUE = /^[a-z0-9]{6,16}$/;
+
+type PaginaConCampos = 'catalogo' | 'producto' | 'carrito';
+const CAMPOS_PAGINA = CATALOGO.paginas as unknown as Record<
+	PaginaConCampos,
+	{ variantes: string[]; campos: Campo[] }
+>;
+
+/**
+ * Las opciones de una página (paginas.catalogo, .producto o .carrito) que valen según el catálogo:
+ * la variante y cada campo con sus límites, como Go (Paginas.valido). Lo que no vale se descarta
+ * (toma lo de por defecto) en vez de romper la página; los bloques se validan aparte.
+ */
+export function validarOpcionesPagina(
+	pagina: PaginaConCampos,
+	x: unknown
+): Record<string, unknown> {
+	if (!x || typeof x !== 'object') return {};
+	const o = x as Record<string, unknown>;
+	const def = CAMPOS_PAGINA[pagina];
+	const r: Record<string, unknown> = {};
+	if (typeof o.variante === 'string' && def.variantes.includes(o.variante)) r.variante = o.variante;
+	for (const c of def.campos) {
+		if (o[c.id] === undefined) continue;
+		const ok = v.safeParse(esquemaCampo(c), o[c.id]);
+		if (ok.success) r[c.id] = ok.output;
+	}
+	return r;
+}
+
+/** Si una opción de la página vale según el catálogo (para las pruebas y el editor). */
+export function opcionValida(pagina: PaginaConCampos, idCampo: string, x: unknown): boolean {
+	const c = CAMPOS_PAGINA[pagina].campos.find((y) => y.id === idCampo);
+	return !!c && v.safeParse(esquemaCampo(c), x).success;
+}
 
 /** Un bloque válido (o null): tipo y variante del catálogo, datos con sus límites. */
 export function validarBloque(x: unknown): Bloque | null {

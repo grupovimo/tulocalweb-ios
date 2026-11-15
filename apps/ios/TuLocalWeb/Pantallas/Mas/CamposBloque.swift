@@ -154,6 +154,8 @@ struct EditorCampo: View {
                 .padding(12)
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.linea2))
             )
+        case "tabla":
+            AnyView(EditorTabla(titulo: campo.nombre, valor: $valor))
         default:
             EmptyView()
         }
@@ -681,6 +683,87 @@ struct EditorLista: View {
             if items.count < max {
                 Button { poner(items + [[:]]) } label: { Label("Sumar", systemImage: "plus") }
                     .buttonStyle(BotonTonal(alto: 40))
+            }
+        }
+    }
+}
+
+// MARK: - Tabla
+
+/// Una tabla (tiposCampo › tabla; la guía de talles): filas × columnas de textos cortos, la primera fila es el
+/// encabezado. Siempre queda pareja, con el encabezado y al menos una fila, dentro de los topes del catálogo.
+struct EditorTabla: View {
+    var titulo: String
+    @Binding var valor: ValorJSON?
+    private let lim = CatalogoBloques.shared.limites
+
+    private var filas: [[String]] { valor?.lista?.map { $0.lista?.map { $0.texto ?? "" } ?? [] } ?? [] }
+    private var ancho: Int { filas.first?.count ?? 0 }
+
+    private func poner(_ f: [[String]]?) { valor = f.map { .lista($0.map { .lista($0.map { .texto($0) }) }) } }
+
+    /// Una celda: en una línea, sin < ni >, hasta `letrasCelda` letras (como las cuenta Go).
+    private func limpia(_ s: String) -> String {
+        let t = s.filter { $0 != "<" && $0 != ">" && !$0.isNewline }
+        return String(String.UnicodeScalarView(t.unicodeScalars.prefix(lim.letrasCelda ?? 30)))
+    }
+
+    private func celda(_ i: Int, _ j: Int) -> Binding<String> {
+        Binding(get: { filas.indices.contains(i) && filas[i].indices.contains(j) ? filas[i][j] : "" }, set: { v in
+            var f = filas
+            guard f.indices.contains(i), f[i].indices.contains(j) else { return }
+            f[i][j] = limpia(v)
+            poner(f)
+        })
+    }
+
+    private func pista(_ i: Int, _ j: Int) -> String {
+        i == 0 ? (j == 0 ? "Talle" : "Medida") : (j == 0 ? "S" : "")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+            if ancho == 0 {
+                Button { poner([["Talle", ""], ["", ""]]) } label: { Label("Armar la tabla", systemImage: "square.grid.2x2") }
+                    .buttonStyle(BotonTonal(alto: 40))
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(filas.indices, id: \.self) { i in
+                            HStack(spacing: 6) {
+                                ForEach(0..<ancho, id: \.self) { j in
+                                    TextField("", text: celda(i, j), prompt: Text(pista(i, j)).foregroundStyle(C.texto3))
+                                        .estilo(i == 0 ? .footnoteFuerte : .body16).foregroundStyle(C.texto)
+                                        .accessibilityLabel(i == 0 ? "Encabezado, columna \(j + 1)" : "Fila \(i), columna \(j + 1)")
+                                        .padding(.horizontal, 10).frame(width: 92, height: 44)
+                                        .background(i == 0 ? C.crema2 : C.superficie, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(C.linea2))
+                                }
+                                if i > 0 {
+                                    Button { var f = filas; f.remove(at: i); poner(f) } label: { Image(systemName: "trash") }
+                                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(C.primarioTexto).buttonStyle(.plain)
+                                        .frame(width: 44, height: 44).disabled(filas.count <= 2).opacity(filas.count <= 2 ? 0.35 : 1)
+                                        .accessibilityLabel("Quitar la fila \(i)")
+                                }
+                            }
+                        }
+                    }
+                }
+                Text("La primera fila es el encabezado. Hasta \(lim.filasTabla ?? 8) filas y \(lim.columnasTabla ?? 8) columnas.")
+                    .estilo(.footnote).foregroundStyle(C.texto2)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button { poner(filas + [Array(repeating: "", count: ancho)]) } label: { Label("Fila", systemImage: "plus") }
+                            .disabled(filas.count >= (lim.filasTabla ?? 8)).accessibilityLabel("Sumar una fila")
+                        Button { poner(filas.map { $0 + [""] }) } label: { Label("Columna", systemImage: "plus") }
+                            .disabled(ancho >= (lim.columnasTabla ?? 8)).accessibilityLabel("Sumar una columna")
+                        Button { poner(filas.map { Array($0.dropLast()) }) } label: { Label("Columna", systemImage: "minus") }
+                            .disabled(ancho <= 1).accessibilityLabel("Quitar la última columna")
+                        Button { poner(nil) } label: { Label("Borrar la tabla", systemImage: "trash") }
+                    }
+                    .buttonStyle(BotonTonal(alto: 40))
+                }
             }
         }
     }

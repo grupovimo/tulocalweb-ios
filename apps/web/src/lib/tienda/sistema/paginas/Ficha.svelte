@@ -6,13 +6,15 @@
 	import LanzamientoFicha from '../../LanzamientoFicha.svelte';
 	import PreguntasProducto from '../../PreguntasProducto.svelte';
 	import { carritoDe } from '../../carrito.svelte.ts';
+	import { comboDelProducto } from '../../combos.ts';
 	import { envia } from '../../envio.ts';
 	import { cotizarYa, cpValido, textoEnvios } from '../../envio.svelte.ts';
 	import { lineaPorMayor } from '../../mayorista.ts';
 	import { Seleccion, tarjetaDe } from '../../seleccion.svelte.ts';
 	import type { OpcionEnvio, ProductoPublico, TiendaPublica } from '../../tipos.ts';
 	import Bloques from '../bloques/Bloques.svelte';
-	import { categoriaHref, numeroWa, productosDe, waHref } from '../datos.ts';
+	import Combo from '../bloques/Combo.svelte';
+	import { categoriaHref, comboDe, numeroWa, productosDe, waHref } from '../datos.ts';
 	import {
 		conTransferencia,
 		cuantos,
@@ -45,6 +47,9 @@
 	 *   en el celular va en la barra fija de abajo;
 	 * - WhatsApp, calcular el envío por código postal, compartir, lanzamiento, reserva y encargo
 	 *   con seña (LanzamientoFicha);
+	 * - la guía de talles junto al talle, en un panel (paginas.producto.guiaTalles: foto o tabla);
+	 * - «Completá el look»: el combo del que forma parte el producto, en cualquier página de la
+	 *   tienda (paginas.producto.combos);
 	 * - descripción, envíos y cambios; reseñas y preguntas del producto; relacionados y los bloques
 	 *   que la tienda sumó a la ficha (paginas.producto.bloques).
 	 */
@@ -196,6 +201,22 @@
 			pista.scrollTo({ left: i * pista.clientWidth });
 	});
 	const fotos = $derived(sel.fotos.length ? sel.fotos : [null]);
+
+	// «Completá el look»: el combo que incluye este producto (con al menos otro que se pueda ver).
+	const look = $derived.by(() => {
+		if (op.producto.combos === false) return null;
+		const b = comboDelProducto(diseno, producto.id);
+		return b && comboDe(tienda, b).length >= 2 ? b : null;
+	});
+	// Si el combo ya es un bloque de la ficha, no se repite abajo.
+	const bloquesFicha = $derived(op.producto.bloques.filter((b) => b.id !== look?.id));
+
+	// Guía de talles: junto a la opción de talle, si la tienda la cargó.
+	const guia = $derived(op.producto.guiaTalles);
+	const tabla = $derived(guia?.tabla && guia.tabla.length > 1 ? guia.tabla : null);
+	const hayGuia = $derived(!!(guia?.foto || tabla));
+	const esTalle = (nombre: string) => /^talles?\b/i.test(nombre.trim());
+	let dialogoGuia = $state<HTMLDialogElement>();
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
@@ -285,13 +306,24 @@
 {/snippet}
 
 {#snippet opciones()}
-	{#each sel.opciones as o (o.nombre)}
+	{#each sel.opciones as o, i (o.nombre)}
 		{@const muestras = o.valores.every((x) => x.color || x.foto)}
 		{@const falta = sel.aviso && !o.elegido}
-		<fieldset class="tv-opcion" class:tv-opcion--falta={falta}>
-			<legend
-				><b>{o.nombre}{o.elegido ? ':' : ''}</b
-				>{#if o.elegido}&nbsp;{o.elegido}{:else if falta}&nbsp;· elegí uno{/if}</legend
+		<fieldset
+			class="tv-opcion"
+			class:tv-opcion--falta={falta}
+			id={i === 0 ? 'tv-ficha-opciones' : undefined}
+		>
+			<legend class:tv-opcion-cab={hayGuia && esTalle(o.nombre)}
+				><span
+					><b>{o.nombre}{o.elegido ? ':' : ''}</b
+					>{#if o.elegido}&nbsp;{o.elegido}{:else if falta}&nbsp;· elegí uno{/if}</span
+				>{#if hayGuia && esTalle(o.nombre)}<button
+						type="button"
+						class="tv-link tv-ficha-guia"
+						aria-haspopup="dialog"
+						onclick={() => dialogoGuia?.showModal()}>Guía de talles</button
+					>{/if}</legend
 			>
 			<div class="tv-opcion-valores" class:tv-opcion-valores--muestras={muestras}>
 				{#each o.valores as x (x.valor)}
@@ -528,6 +560,12 @@
 		</section>
 	{/if}
 
+	{#if look}
+		<div class="tv-ficha-look" data-bloque={look.id}>
+			<Combo bloque={look} actual={producto.id} />
+		</div>
+	{/if}
+
 	<section
 		class="tv-ancho tv-ficha-opiniones"
 		class:tv-ficha-opiniones--sin={!prom}
@@ -576,11 +614,64 @@
 		</section>
 	{/if}
 
-	{#if op.producto.bloques.length}
+	{#if bloquesFicha.length}
 		<div class="tv-ficha-bloques">
-			<Bloques bloques={op.producto.bloques} suscripciones={false} />
+			<Bloques bloques={bloquesFicha} suscripciones={false} />
 		</div>
 	{/if}
 
 	<div class="tv-reserva-barra tv-solo-movil" aria-hidden="true"></div>
+
+	{#if hayGuia}
+		<dialog
+			bind:this={dialogoGuia}
+			class="tv-panel tv-guia"
+			aria-labelledby="tv-guia-titulo"
+			onclick={(e) => e.target === dialogoGuia && dialogoGuia.close()}
+		>
+			<div class="tv-panel-caja">
+				<div class="tv-panel-cab">
+					<h2 id="tv-guia-titulo" class="tv-h3">Guía de talles</h2>
+					<button
+						type="button"
+						class="tv-icono"
+						aria-label="Cerrar"
+						onclick={() => dialogoGuia?.close()}><Icon icon={I.phXBold} size={18} /></button
+					>
+				</div>
+				<div class="tv-panel-cuerpo">
+					{#if tabla}
+						<div class="tv-guia-tabla">
+							<table>
+								<thead>
+									<tr>
+										{#each tabla[0] as c, j (j)}<th scope="col">{c}</th>{/each}
+									</tr>
+								</thead>
+								<tbody>
+									{#each tabla.slice(1) as fila, i (i)}
+										<tr>
+											{#each fila as c, j (j)}
+												{#if j === 0}<th scope="row">{c}</th>{:else}<td>{c}</td>{/if}
+											{/each}
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+					{#if guia?.foto}
+						<img class="tv-guia-foto" src={guia.foto} alt="Guía de talles" loading="lazy" />
+					{/if}
+					{#if wa}
+						<p class="tv-chico tv-suave">
+							¿Dudás entre dos talles? <a href={wa} target="_blank" rel="noopener"
+								>Escribinos y te&nbsp;ayudamos</a
+							>
+						</p>
+					{/if}
+				</div>
+			</div>
+		</dialog>
+	{/if}
 </Tienda>

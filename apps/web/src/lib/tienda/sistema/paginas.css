@@ -932,6 +932,23 @@
 	padding: 0;
 	font-size: 15px;
 }
+.tv-opcion-cab {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+	width: 100%;
+}
+.tv-ficha-guia {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font-family: inherit;
+	font-size: 14px;
+	text-decoration: underline;
+	cursor: pointer;
+}
 .tv-opcion--falta legend {
 	color: var(--t-acento-texto);
 }
@@ -1246,6 +1263,52 @@
 	.tv-ficha-rel > h2 {
 		margin-bottom: 18px;
 	}
+	.tv-guia-tabla th,
+	.tv-guia-tabla td {
+		padding: 10px 8px;
+	}
+}
+
+/* ---- Completá el look y la guía de talles ---------------------------------------------------- */
+
+.tv-ficha-look {
+	margin-top: var(--t-ritmo);
+}
+.tv-guia-tabla {
+	overflow-x: auto;
+	border: 1px solid var(--t-borde);
+	border-radius: min(var(--t-r-tarjeta), 12px);
+}
+.tv-guia-tabla table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+}
+.tv-guia-tabla th,
+.tv-guia-tabla td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--t-borde);
+	text-align: left;
+	white-space: nowrap;
+}
+.tv-guia-tabla thead th {
+	background: var(--t-superficie);
+	font-weight: 700;
+	white-space: normal;
+	vertical-align: bottom;
+}
+.tv-guia-tabla tbody tr:last-child > * {
+	border-bottom: 0;
+}
+.tv-guia-tabla tbody th {
+	font-weight: 600;
+}
+.tv-guia-foto {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: min(var(--t-r-tarjeta), 12px);
 }
 
 /* ---- Carrito y su panel ---------------------------------------------------------------------- */

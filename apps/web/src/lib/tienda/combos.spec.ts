@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import casos from '@mostrador/contrato/casos/combos.json';
-import { combosDe, descuentoCombos, type Combo, type LineaCombo } from './combos.ts';
+import {
+	comboDelProducto,
+	combosDe,
+	descuentoCombos,
+	type Combo,
+	type LineaCombo
+} from './combos.ts';
 
 describe('combos: los casos compartidos con Go (casos/combos.json)', () => {
 	for (const c of casos.casos)
@@ -41,5 +47,21 @@ describe('combos del diseño', () => {
 			{ id: 'a', productos: ['x', 'y'], descuento: 10 },
 			{ id: 'e', productos: ['y', 'z'], descuento: 5 }
 		]);
+	});
+	it('el combo de un producto para su ficha, aunque no descuente', () => {
+		const b = (id: string, productos: string[], oculto = false) => ({
+			id,
+			tipo: 'combo' as const,
+			variante: 'tarjeta',
+			oculto,
+			datos: { productos }
+		});
+		const d = {
+			inicio: [b('oculto', ['x', 'y'], true)],
+			paginas: { nosotros: { bloques: [b('nos', ['y', 'x'])] } }
+		};
+		expect(comboDelProducto(d, 'x')?.id).toBe('nos');
+		expect(comboDelProducto(d, 'z')).toBeNull();
+		expect(comboDelProducto(null, 'x')).toBeNull();
 	});
 });

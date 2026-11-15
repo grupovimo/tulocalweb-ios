@@ -4,7 +4,15 @@ import Foundation
 /// hecha por scripts/estilo/para-ios.ts) y los puntos de partida (Recursos/presets.json). Los campos del
 /// editor salen de acá: sumar un bloque o un campo en el contrato lo suma en la app sin tocar código.
 struct CatalogoBloques: Decodable {
-    struct Limites: Decodable { var bloquesPorPagina: Int; var itemsPorLista: Int; var bytesDiseno: Int }
+    struct Limites: Decodable {
+        var bloquesPorPagina: Int
+        var itemsPorLista: Int
+        var bytesDiseno: Int
+        /// Los topes de un campo tabla (la guía de talles).
+        var filasTabla: Int?
+        var columnasTabla: Int?
+        var letrasCelda: Int?
+    }
     struct Opciones: Decodable { var opciones: [String]; var nombres: [String]; var porDefecto: String? }
     struct Grupo: Decodable, Identifiable { var id: String; var nombre: String }
 

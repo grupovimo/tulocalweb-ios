@@ -5,6 +5,7 @@
 	import Self from './CampoBloque.svelte';
 	import CampoFotos from './CampoFotos.svelte';
 	import CampoLink from './CampoLink.svelte';
+	import CampoTabla from './CampoTabla.svelte';
 	import ElegirProductos from './ElegirProductos.svelte';
 	import { fechaLocal, isoDeLocal, URL_VIDEO, type Ayuda } from './campos.ts';
 	import { FONDOS, FUENTES_PRODUCTOS, ICONOS, LIMITES, type CampoConNombres } from './catalogo.ts';
@@ -382,6 +383,8 @@
 			{/each}
 		</div>
 	</details>
+{:else if campo.tipo === 'tabla'}
+	<CampoTabla nombre={campo.nombre} {valor} onvalor={(v, c) => onvalor(v, c)} />
 {:else if campo.tipo === 'lista'}
 	<fieldset class="campo grupo-campo">
 		<legend class="rotulo">{campo.nombre}</legend>

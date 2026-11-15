@@ -293,6 +293,52 @@ describe('para guardar', () => {
 			nosotros: { bloques: [b('aaaaaaaa', 'textoImagen', { titulo: 'Somos' })] }
 		});
 	});
+
+	it('la guía de talles: la tabla pareja, sin filas vacías; sin cuerpo no va', () => {
+		const r = paraGuardar({
+			...base,
+			paginas: {
+				producto: {
+					variante: 'grilla',
+					relacionados: true,
+					calcularEnvio: true,
+					combos: false,
+					guiaTalles: {
+						tabla: [['Talle', ' Busto <cm> '], ['S', '88', 'de más'], ['', ''], ['M']]
+					},
+					bloques: []
+				}
+			}
+		});
+		expect(r.paginas?.producto).toMatchObject({
+			combos: false,
+			guiaTalles: {
+				tabla: [
+					['Talle', 'Busto cm'],
+					['S', '88'],
+					['M', '']
+				]
+			}
+		});
+		const vacia = paraGuardar({
+			...base,
+			paginas: {
+				producto: {
+					variante: 'grilla',
+					relacionados: true,
+					calcularEnvio: true,
+					guiaTalles: {
+						tabla: [
+							['Talle', ''],
+							['', '']
+						]
+					},
+					bloques: []
+				}
+			}
+		});
+		expect(vacia.paginas?.producto?.guiaTalles).toBeUndefined();
+	});
 });
 
 describe('campos', () => {

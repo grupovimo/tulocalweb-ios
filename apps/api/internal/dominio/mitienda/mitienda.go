@@ -84,10 +84,14 @@ type PaginaCatalogo struct {
 }
 
 type PaginaProducto struct {
-	Variante      string   `json:"variante,omitempty"`
-	Relacionados  *bool    `json:"relacionados,omitempty"`
-	CalcularEnvio *bool    `json:"calcularEnvio,omitempty"`
-	Bloques       []Bloque `json:"bloques"`
+	Variante      string `json:"variante,omitempty"`
+	Relacionados  *bool  `json:"relacionados,omitempty"`
+	CalcularEnvio *bool  `json:"calcularEnvio,omitempty"`
+	// Combos: mostrar en la ficha el combo del que forma parte el producto («Completá el look»).
+	Combos *bool `json:"combos,omitempty"`
+	// GuiaTalles: { foto?, tabla? } (bloques.json › paginas.producto › guiaTalles).
+	GuiaTalles map[string]any `json:"guiaTalles,omitempty"`
+	Bloques    []Bloque       `json:"bloques"`
 }
 
 type PaginaCarrito struct {

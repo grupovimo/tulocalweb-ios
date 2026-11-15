@@ -57,6 +57,9 @@ var Catalogo = func() (c struct {
 		BloquesPorPagina int `json:"bloquesPorPagina"`
 		ItemsPorLista    int `json:"itemsPorLista"`
 		BytesDiseno      int `json:"bytesDiseno"`
+		FilasTabla       int `json:"filasTabla"`
+		ColumnasTabla    int `json:"columnasTabla"`
+		LetrasCelda      int `json:"letrasCelda"`
 	} `json:"limites"`
 	Estilo           map[string]opciones       `json:"estilo"`
 	Fondos           opciones                  `json:"fondos"`
@@ -296,8 +299,35 @@ func valorValido(c campo, v any) bool {
 	case "grupo":
 		m, ok := v.(map[string]any)
 		return ok && camposValidos(c.Item, m, false)
+	case "tabla":
+		return tablaValida(v)
 	}
 	return false
+}
+
+// tablaValida: filas × columnas de textos cortos (la primera fila es el encabezado), de 2 a
+// limites.filasTabla filas y de 1 a limites.columnasTabla columnas, todas del mismo ancho; cada celda
+// hasta limites.letrasCelda letras en una línea, sin HTML (puede quedar vacía).
+func tablaValida(v any) bool {
+	l := Catalogo.Limites
+	filas, ok := lista(v)
+	if !ok || len(filas) < 2 || len(filas) > l.FilasTabla {
+		return false
+	}
+	ancho := -1
+	for _, f := range filas {
+		celdas, ok := lista(f)
+		if !ok || len(celdas) < 1 || len(celdas) > l.ColumnasTabla || (ancho >= 0 && len(celdas) != ancho) {
+			return false
+		}
+		ancho = len(celdas)
+		for _, c := range celdas {
+			if !textoValido(c, l.LetrasCelda, false) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // productosValidos: { fuente, cantidad 1–24, ids? (elegidos), categoria? }; fuente y cantidad siempre.
@@ -428,8 +458,16 @@ func (p *Paginas) valido(vistos map[string]bool) bool {
 			return false
 		}
 	}
-	if c := p.Producto; c != nil && (!varianteValida("producto", c.Variante) || !bloquesValidos(c.Bloques, vistos)) {
-		return false
+	if c := p.Producto; c != nil {
+		if !varianteValida("producto", c.Variante) || !bloquesValidos(c.Bloques, vistos) {
+			return false
+		}
+		if c.GuiaTalles != nil {
+			g, ok := normalizar(c.GuiaTalles)
+			if !ok || !valorValido(opcionDe("producto", "guiaTalles"), g) {
+				return false
+			}
+		}
 	}
 	if c := p.Carrito; c != nil && !varianteValida("carrito", c.Variante) {
 		return false

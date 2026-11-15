@@ -23,6 +23,10 @@
   buscador/ofertas de Yerbal quedaron para todas (lista con «− n +» y filtros del catálogo).
 - **Combos con descuento** de punta a punta: `lib/tienda/combos.ts` y `vidriera/combo.go` con
   `casos/combos.json`; el carrito marca las líneas y el checkout (sandbox y Go) lo cobra.
+- **Ficha: «Completá el look» y guía de talles** (`paginas.producto.combos` y `.guiaTalles`, tipo de campo nuevo
+  `tabla` hasta 8 × 8 en `bloques.json`, validado en Go y `catalogo.ts`; editor web `CampoTabla`, iOS y Android
+  `EditorTabla`). La ficha muestra el combo del producto de cualquier página y, junto al talle, la guía en un
+  panel. e2e `ficha`.
 - WhatsApp flotante: pestaña en el borde derecho en la compu (entra en el margen), sin flotante en el celular.
   Reseñas de la demo sin texto repetido; la portada ya no inventa «Desde CABA» como lema.
 - Borrado: las 17 plantillas, `estilo/mapas.ts` (los colores quedan en `roles.ts`), `scripts/estilo/generar.ts`

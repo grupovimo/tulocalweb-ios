@@ -2,7 +2,9 @@ import { describe, expect, test } from 'vitest';
 import {
 	BLOQUES,
 	campo,
+	opcionValida,
 	TIPOS,
+	validarOpcionesPagina,
 	validarBloque,
 	validarBloques,
 	type TipoBloque
@@ -60,5 +62,50 @@ describe('catálogo de bloques', () => {
 	test('los valores por defecto del catálogo', () => {
 		expect(campo(b('productos'), 'titulo')).toBe('Lo más elegido');
 		expect(campo(b('productos', { titulo: 'Mío' }), 'titulo')).toBe('Mío');
+	});
+});
+
+describe('opciones de la ficha: combos y guía de talles (como Go)', () => {
+	const fila8 = ['1', '2', '3', '4', '5', '6', '7', '8'];
+	const guia = (tabla: unknown) => opcionValida('producto', 'guiaTalles', { tabla });
+	test('la tabla: de 2 a 8 filas, de 1 a 8 columnas, parejas, celdas cortas en una línea', () => {
+		expect(
+			guia([
+				['Talle', 'Busto', 'Largo'],
+				['S', '88', '70'],
+				['M', '', '72']
+			])
+		).toBe(true);
+		expect(guia(Array.from({ length: 8 }, () => fila8))).toBe(true);
+		expect(guia([['Talle', 'Busto']])).toBe(false);
+		expect(guia(Array.from({ length: 9 }, () => ['a']))).toBe(false);
+		expect(
+			guia([
+				[...fila8, '9'],
+				[...fila8, '9']
+			])
+		).toBe(false);
+		expect(guia([['Talle', 'Busto'], ['S']])).toBe(false);
+		expect(guia([['Talle'], ['x'.repeat(31)]])).toBe(false);
+		expect(guia([['Talle'], ['<b>S</b>']])).toBe(false);
+		expect(guia([['Talle'], ['S\nM']])).toBe(false);
+	});
+	test('foto https, sin campos de más; combos es sí o no', () => {
+		expect(
+			opcionValida('producto', 'guiaTalles', { foto: 'https://fotos.tulocalweb.com.ar/g.jpg' })
+		).toBe(true);
+		expect(opcionValida('producto', 'guiaTalles', { pdf: 'https://x.com/a.pdf' })).toBe(false);
+		expect(opcionValida('producto', 'combos', false)).toBe(true);
+		expect(opcionValida('producto', 'combos', 'no')).toBe(false);
+	});
+	test('lo que no vale se descarta y toma lo de por defecto', () => {
+		expect(
+			validarOpcionesPagina('producto', {
+				variante: 'mosaico',
+				combos: false,
+				guiaTalles: { tabla: [['Talle']] },
+				relacionados: 'si'
+			})
+		).toEqual({ combos: false });
 	});
 });
