@@ -691,8 +691,11 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 	if err != nil {
 		return Resultado{}, err
 	}
-	// Compró: su carrito abandonado (si había) queda recuperado.
-	_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email, numero, int64(total)) })
+	// Compró: su carrito abandonado (si había) queda recuperado. Con Mercado Pago, recién cuando se
+	// acredita (§63): si se va sin pagar, el carrito sigue abandonado y le llegan los recordatorios.
+	if c.Pago != "mercadopago" {
+		_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email, numero, int64(total)) })
+	}
 	if c.Novedades {
 		if err := newsletter.Suscribir(ctx, pool, id, c.Email, "checkout"); err != nil {
 			slog.Warn("vidriera: no se sumó al newsletter desde el checkout", "error", err)

@@ -20,6 +20,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/vidriera"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/integraciones/mercadopago"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/cifrado"
@@ -166,8 +167,24 @@ func TestMercadoPagoSinPagarNoEsVenta(t *testing.T) {
 		return r
 	}
 
+	// Lucía había dejado el carrito: se recupera recién cuando paga.
+	if err := ventas.GuardarCarrito(ctx, b.App, luna, "lucia@ejemplo.com", "Lucía", []ventas.LineaCarrito{{ID: mate.ID, Cantidad: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	recuperado := func() bool {
+		t.Helper()
+		var ok bool
+		if err := admin.QueryRow(ctx, `SELECT recuperado_en IS NOT NULL FROM carritos WHERE email = 'lucia@ejemplo.com'`).Scan(&ok); err != nil {
+			t.Fatal(err)
+		}
+		return ok
+	}
+
 	// 1. Mercado Pago, sin pagar: nada de venta. La lista se refresca, pero no hay «Pedido nuevo».
 	r := compra("mercadopago", "UNICO10")
+	if recuperado() {
+		t.Fatal("el carrito se dio por recuperado sin pagar")
+	}
 	if c := cola(r.Numero); len(c) != 0 {
 		t.Fatalf("sin pagar ya avisó: %v", c)
 	}
@@ -216,6 +233,9 @@ func TestMercadoPagoSinPagarNoEsVenta(t *testing.T) {
 	}
 	if tr := avisosTR(r.Numero); tr["pedido.nuevo"] != 1 || tr["pago.acreditado"] != 1 {
 		t.Fatalf("tiempo real al acreditarse: %v", tr)
+	}
+	if !recuperado() {
+		t.Fatal("pagó y el carrito sigue abandonado")
 	}
 	if usos, vendio, desconto := cupon(); usos != 1 || vendio != d.Total || desconto != 1000 {
 		t.Fatalf("cupón al confirmarse: usos %d vendió %d descontó %d (total %d)", usos, vendio, desconto, d.Total)

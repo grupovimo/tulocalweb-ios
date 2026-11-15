@@ -1497,6 +1497,8 @@ comprobante).
   «sistema». No avisa a nadie: no fue una venta. La preferencia de Mercado Pago vence a la misma hora
   (`expiration_date_to`), así nadie paga un pedido ya cancelado. La seña que vence ahora también
   libera el cupón.
+- **Carrito abandonado** (§62): con Mercado Pago se da por recuperado al acreditarse, no al armar el
+  pedido; si se va sin pagar, el carrito sigue abandonado y le llegan los recordatorios.
 - **Cómo se ve**: en Pedidos del panel y de las apps el pedido dice «Esperando pago» (no «Sin pagar»),
   sin «Marcar pagado»/«Cobrado» (lo confirma Mercado Pago), y el panel tiene la vista «Esperando pago».
 - **Lo que queda igual**: el stock se reserva al crearse (lo que se vende tiene que estar), así que

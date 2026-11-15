@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 )
 
@@ -423,6 +424,9 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 					WHERE numero = $1::int`, pedido); err != nil {
 					return err
 				}
+				if err := carritoRecuperado(ctx, t, pedido); err != nil {
+					return err
+				}
 			} else if _, err := t.Exec(ctx, `UPDATE pedidos SET estado_pago = 'Devuelto' WHERE numero = $1::int`, pedido); err != nil {
 				return err
 			}
@@ -432,6 +436,23 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 		}
 		return nil
 	})
+}
+
+// carritoRecuperado: la compra de la tienda online con Mercado Pago recupera el carrito abandonado
+// de quien compró recién al acreditarse (§63), no al armar el pedido.
+func carritoRecuperado(ctx context.Context, t pgx.Tx, numero string) error {
+	var email string
+	var total int64
+	err := t.QueryRow(ctx, `SELECT coalesce(comprador->>'email', ''), total FROM pedidos
+		WHERE numero = $1::int AND canal = 'web' AND estado <> 'Cancelado'`, numero).Scan(&email, &total)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && email == "") {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	n, _ := strconv.Atoi(numero)
+	return ventas.CarritoRecuperado(ctx, t, email, n, total)
 }
 
 // aplicarSena: la seña aprobada deja el pedido «Para preparar» con el pago en «Seña» (falta el
