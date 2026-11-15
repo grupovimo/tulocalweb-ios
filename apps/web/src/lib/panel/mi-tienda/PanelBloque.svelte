@@ -6,7 +6,7 @@
 	import { conDato, type Bloque } from './bloques.ts';
 	import type { Ayuda } from './campos.ts';
 	import { defDe } from './catalogo.ts';
-	import { queFalta } from './faltan.ts';
+	import { queContradice, queFalta } from './faltan.ts';
 
 	/** El panel de un bloque: la variante con miniaturas, sus campos y lo que le falta para verse. */
 	let {
@@ -31,6 +31,7 @@
 
 	const def = $derived(defDe(bloque.tipo)!);
 	const falta = $derived(queFalta(bloque, ayuda.cx));
+	const contradice = $derived(queContradice(bloque.datos, ayuda.cx));
 </script>
 
 <div class="panel-bloque">
@@ -73,6 +74,11 @@
 	{:else if falta}
 		<p class="aviso" role="status">
 			<Icon icon={I.phWarningFill} size={15} />No se ve todavía. {falta}
+		</p>
+	{/if}
+	{#if contradice && !bloque.oculto}
+		<p class="aviso" role="status">
+			<Icon icon={I.phWarningFill} size={15} />{contradice} Cambiá el texto o tu configuración.
 		</p>
 	{/if}
 

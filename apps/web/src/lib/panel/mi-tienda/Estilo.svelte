@@ -16,6 +16,7 @@
 	import Miniatura from './Miniatura.svelte';
 	import type { Ayuda } from './campos.ts';
 	import { BARRA, OPCIONES_ESTILO, type OpcionEstilo } from './catalogo.ts';
+	import { queContradice } from './faltan.ts';
 	import type { DisenoV2, EstiloV2 } from './diseno.ts';
 
 	/**
@@ -193,6 +194,13 @@
 
 	// ── Barra de anuncios ──
 	const barra = $derived(estilo.barra ?? { variante: 'fija' as const, mensajes: [] });
+	// Un anuncio que promete lo que la tienda no ofrece (envío gratis sin monto, cuotas sin cuotas).
+	const barraContradice = $derived(
+		queContradice(
+			barra.mensajes.map((m) => m.texto),
+			ayuda.cx
+		)
+	);
 	function ponerBarra(cambios: Partial<NonNullable<EstiloV2['barra']>>, confirmar = true) {
 		const b = { ...barra, ...cambios };
 		if (!b.fondo) delete b.fondo;
@@ -435,6 +443,7 @@
 					)}
 			/>
 		{/each}
+		{#if barraContradice}<p class="aviso" role="status">{barraContradice}</p>{/if}
 	</details>
 
 	<details class="grupo">

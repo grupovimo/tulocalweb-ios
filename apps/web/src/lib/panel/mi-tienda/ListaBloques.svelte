@@ -4,7 +4,7 @@
 	import * as I from '#lib/icons.ts';
 	import type { Bloque } from './bloques.ts';
 	import { defDe, nombreVariante } from './catalogo.ts';
-	import { queFalta, type Contexto } from './faltan.ts';
+	import { queContradice, queFalta, type Contexto } from './faltan.ts';
 	import { ICONO_BLOQUE } from './iconos.ts';
 
 	/**
@@ -102,6 +102,7 @@
 <ol class="lista" class:arrastrando={!!arrastre}>
 	{#each lista as b, i (b.id)}
 		{@const falta = b.oculto ? null : queFalta(b, cx)}
+		{@const contradice = b.oculto || falta ? null : queContradice(b.datos, cx)}
 		<li>
 			<button
 				type="button"
@@ -141,6 +142,8 @@
 						<b>{nombre(b)}</b>
 						{#if falta}
 							<span class="falta"><Icon icon={I.phWarningFill} size={12} />No se ve: {falta}</span>
+						{:else if contradice}
+							<span class="falta"><Icon icon={I.phWarningFill} size={12} />{contradice}</span>
 						{:else}
 							<span class="var">{b.oculto ? 'Oculto' : nombreVariante(b.tipo, b.variante)}</span>
 						{/if}

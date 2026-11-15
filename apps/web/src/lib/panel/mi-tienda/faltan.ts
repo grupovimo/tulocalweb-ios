@@ -24,7 +24,78 @@ export type Contexto = {
 	direccion: boolean;
 	/** Fotos de productos (las que usa la galería si no tiene propias). */
 	fotos: number;
+	/** Lo que la tienda ofrece de verdad, para avisar si un texto promete otra cosa. */
+	ofrece?: Ofrece;
 };
+
+/** Lo que la configuración de la tienda ofrece al que compra (sale de envíos y cobros). */
+export type Ofrece = {
+	envioGratis: boolean;
+	todoElPais: boolean;
+	retiro: boolean;
+	mercadoPago: boolean;
+	cuotasSinInteres: boolean;
+	transferencia: boolean;
+};
+
+const PROMESAS: { re: RegExp; si: (o: Ofrece) => boolean; dice: string; falta: string }[] = [
+	{
+		re: /env[ií]os?\s+(gratis|sin\s+cargo)|gratis\s+(el\s+|tu\s+)?env[ií]o/i,
+		si: (o) => o.envioGratis,
+		dice: 'envío gratis',
+		falta: 'no tenés un monto de envío gratis (Envíos y retiro)'
+	},
+	{
+		re: /todo\s+el\s+pa[ií]s/i,
+		si: (o) => o.todoElPais,
+		dice: 'envíos a todo el país',
+		falta: 'no tenés el envío por correo (Envíos y retiro)'
+	},
+	{
+		re: /sin\s+inter[eé]s/i,
+		si: (o) => o.cuotasSinInteres,
+		dice: 'cuotas sin interés',
+		falta: 'al pagar no se ofrecen cuotas sin interés'
+	},
+	{
+		re: /cuotas/i,
+		si: (o) => o.mercadoPago,
+		dice: 'cuotas',
+		falta: 'no tenés Mercado Pago conectado para cobrar con tarjeta'
+	},
+	{
+		re: /retir(o|á|a|ás|ar)(?![a-zñáéíóú])/i,
+		si: (o) => o.retiro,
+		dice: 'retiro',
+		falta: 'no tenés el retiro en el local (Envíos y retiro)'
+	},
+	{
+		re: /\d\s*%[^.]*transferencia|transferencia[^.]*\d\s*%/i,
+		si: (o) => o.transferencia,
+		dice: 'descuento por transferencia',
+		falta: 'no tenés un descuento por transferencia (Cupones y promociones)'
+	}
+];
+
+/** Los textos de un valor cualquiera (los datos de un bloque, los mensajes de la barra). */
+function textos(v: unknown): string[] {
+	if (typeof v === 'string') return [v];
+	if (Array.isArray(v)) return v.flatMap(textos);
+	if (v && typeof v === 'object') return Object.values(v).flatMap(textos);
+	return [];
+}
+
+/**
+ * Si lo que escribió la tienda promete algo que su configuración no ofrece («3 cuotas sin interés»
+ * sin cuotas, «envío gratis» sin monto): no se toca su texto, pero el editor lo avisa.
+ */
+export function queContradice(datos: unknown, cx: Pick<Contexto, 'ofrece'>): string | null {
+	const o = cx.ofrece;
+	if (!o) return null;
+	const todo = textos(datos).join(' \n ');
+	const p = PROMESAS.find((x) => x.re.test(todo) && !x.si(o));
+	return p ? `Dice «${p.dice}», pero ${p.falta}.` : null;
+}
 
 const vacio = (v: unknown) =>
 	v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);

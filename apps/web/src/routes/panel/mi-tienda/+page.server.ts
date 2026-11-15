@@ -42,7 +42,15 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		whatsapp: !!tienda.whatsapp,
 		turnos: !!tienda.turnos,
 		direccion: !!tienda.direccion,
-		fotos: tienda.fotos.length || tienda.productos.filter((p) => p.foto).length
+		fotos: tienda.fotos.length || tienda.productos.filter((p) => p.foto).length,
+		ofrece: {
+			envioGratis: !!tienda.envios.gratisDesde,
+			todoElPais: tienda.envios.correo,
+			retiro: tienda.envios.retiro,
+			mercadoPago: tienda.cobros.mercadoPago,
+			cuotasSinInteres: tienda.cobros.mercadoPago && tienda.cobros.cuotas > 1,
+			transferencia: tienda.cobros.transferencia > 0
+		}
 	};
 	return {
 		...mi,
