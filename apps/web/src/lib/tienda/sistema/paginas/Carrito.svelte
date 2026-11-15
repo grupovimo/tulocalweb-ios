@@ -125,84 +125,95 @@
 						</section>
 					{/if}
 				</div>
-				<aside class="tv-carrito-resumen tv-tarjeta" aria-label="Resumen">
-					<h2 class="tv-h3">Resumen</h2>
-					<div class="tv-carrito-cupon">
-						<CampoCupon
-							{cupon}
-							lineas={carrito.lineas}
-							tinta="var(--t-texto)"
-							suave="var(--t-suave)"
-							borde="var(--t-borde)"
-							fondo="var(--t-fondo)"
-							acento="var(--t-texto)"
-							sobreAcento="var(--t-fondo)"
-							radio="var(--t-r-boton)"
-							fuente="var(--t-f-texto)"
-						/>
-					</div>
-					<dl class="tv-cuentas">
-						<div>
-							<dt>Subtotal</dt>
-							<dd>{precio(subtotal)}</dd>
-						</div>
-						{#if descCombo}<div class="tv-ok">
-								<dt>Combo</dt>
-								<dd>− {precio(descCombo)}</dd>
-							</div>{/if}
-						{#if descCupon}<div class="tv-ok">
-								<dt>Cupón {cupon.aplicado}</dt>
-								<dd>− {precio(descCupon)}</dd>
-							</div>{/if}
-						{#if envia(tienda.envios)}
-							<div>
-								<dt>Envío</dt>
-								<dd class:tv-suave={envio === null}>
-									{envio === null
-										? 'Se calcula al pagar'
-										: envio < 0
-											? 'No llegamos a ese código'
-											: envio === 0
-												? 'Gratis'
-												: `Desde ${precio(envio)}`}
-								</dd>
-							</div>
-						{/if}
-					</dl>
-					{#if envia(tienda.envios)}
-						<form
-							class="tv-carrito-cp"
-							onsubmit={(e) => {
-								e.preventDefault();
-								cpPedido = cp;
-							}}
-						>
-							<label for="tv-cp-carrito" class="tv-oculto">Código postal</label>
-							<input
-								id="tv-cp-carrito"
-								bind:value={cp}
-								inputmode="numeric"
-								maxlength="4"
-								autocomplete="postal-code"
-								placeholder="Tu código postal"
+				{#if !lineas.length}
+					<!-- Todo lo que tenía ya no se vende o se agotó: nada que pagar (antes quedaba
+					«Finalizar compra» por $ 0 y «Te faltan…» para el envío gratis). -->
+					<aside class="tv-carrito-resumen tv-tarjeta" aria-label="Resumen">
+						<h2 class="tv-h3">Nada para pagar</h2>
+						<p class="tv-suave">Lo que tenías guardado ya no está disponible.</p>
+						<Boton href="{base}/catalogo" bloque>Ver el catálogo</Boton>
+					</aside>
+				{:else}
+					<aside class="tv-carrito-resumen tv-tarjeta" aria-label="Resumen">
+						<h2 class="tv-h3">Resumen</h2>
+						<div class="tv-carrito-cupon">
+							<CampoCupon
+								{cupon}
+								lineas={carrito.lineas}
+								tinta="var(--t-texto)"
+								suave="var(--t-suave)"
+								borde="var(--t-borde)"
+								fondo="var(--t-fondo)"
+								acento="var(--t-texto)"
+								sobreAcento="var(--t-fondo)"
+								radio="var(--t-r-boton)"
+								fuente="var(--t-f-texto)"
 							/>
-							<button type="submit" class="tv-btn tv-btn--secundario tv-btn--chico">Calcular</button
+						</div>
+						<dl class="tv-cuentas">
+							<div>
+								<dt>Subtotal</dt>
+								<dd>{precio(subtotal)}</dd>
+							</div>
+							{#if descCombo}<div class="tv-ok">
+									<dt>Combo</dt>
+									<dd>− {precio(descCombo)}</dd>
+								</div>{/if}
+							{#if descCupon}<div class="tv-ok">
+									<dt>Cupón {cupon.aplicado}</dt>
+									<dd>− {precio(descCupon)}</dd>
+								</div>{/if}
+							{#if envia(tienda.envios)}
+								<div>
+									<dt>Envío</dt>
+									<dd class:tv-suave={envio === null}>
+										{envio === null
+											? 'Se calcula al pagar'
+											: envio < 0
+												? 'No llegamos a ese código'
+												: envio === 0
+													? 'Gratis'
+													: `Desde ${precio(envio)}`}
+									</dd>
+								</div>
+							{/if}
+						</dl>
+						{#if envia(tienda.envios)}
+							<form
+								class="tv-carrito-cp"
+								onsubmit={(e) => {
+									e.preventDefault();
+									cpPedido = cp;
+								}}
 							>
-						</form>
-					{/if}
-					<div class="tv-cuentas-total"><span>Total</span><b>{precio(total)}</b></div>
-					{#if extra.length}<p class="tv-chico tv-suave tv-carrito-extra">
-							o {extra.join(' · ')}
-						</p>{/if}
-					<div class="tv-solo-compu">
-						<Boton href="{base}/checkout" bloque>Finalizar compra</Boton>
-					</div>
-					<a class="tv-link tv-carrito-seguir" href="{base}/catalogo">Seguir comprando</a>
-					<p class="tv-chico tv-suave tv-carrito-seguro">
-						<Icon icon={I.phShieldCheck} size={16} />Compra protegida · 10 días
-						para&nbsp;arrepentirte
-					</p>
-				</aside>
+								<label for="tv-cp-carrito" class="tv-oculto">Código postal</label>
+								<input
+									id="tv-cp-carrito"
+									bind:value={cp}
+									inputmode="numeric"
+									maxlength="4"
+									autocomplete="postal-code"
+									placeholder="Tu código postal"
+								/>
+								<button type="submit" class="tv-btn tv-btn--secundario tv-btn--chico"
+									>Calcular</button
+								>
+							</form>
+						{/if}
+						<div class="tv-cuentas-total"><span>Total</span><b>{precio(total)}</b></div>
+						{#if extra.length}<p class="tv-chico tv-suave tv-carrito-extra">
+								o {extra.join(' · ')}
+							</p>{/if}
+						<div class="tv-solo-compu">
+							<Boton href="{base}/checkout" bloque>Finalizar compra</Boton>
+						</div>
+						<a class="tv-link tv-carrito-seguir" href="{base}/catalogo">Seguir comprando</a>
+						<p class="tv-chico tv-suave tv-carrito-seguro">
+							<Icon icon={I.phShieldCheck} size={16} />Compra protegida · 10 días
+							para&nbsp;arrepentirte
+						</p>
+					</aside>
+				{/if}
 			</div>
 		{/if}
 	</div>

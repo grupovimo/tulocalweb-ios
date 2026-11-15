@@ -190,9 +190,10 @@
 	order: 3;
 	flex-basis: 100%;
 }
+/* El precio a la derecha del nombre si entra; si baja a su renglón, queda a la izquierda (con
+   space-between, uno solo en el renglón va al principio) y no colgando del borde derecho. */
 .tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-pie {
 	flex: 0 1 auto;
-	margin-left: auto;
 }
 .tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-pie {
 	margin-top: 0;

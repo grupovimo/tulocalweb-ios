@@ -82,16 +82,21 @@ async function recorrer(page: Page, slug: string, id: string) {
 		.evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute('href')!))]);
 	// La primera ficha con opciones (talle, color, presentación) y la primera sin.
 	let con: string | null = null;
-	let sin: string | null = null;
+	// Las sin opciones, para el carrito: una con opciones sin elegir no se puede comprar.
+	const sinOpciones: string[] = [];
 	for (const f of fichas.slice(0, 24)) {
-		if (con && sin) break;
+		if (con && sinOpciones.length >= 2) break;
 		await page.goto(f);
 		await page.locator('html[data-listo]').waitFor({ state: 'attached' });
 		const tiene = (await page.locator('.tv-opcion').count()) > 0;
+		const agotado = (await page.locator('.tv-ficha-quedan', { hasText: 'Sin stock' }).count()) > 0;
 		if (tiene && !con) con = f;
-		if (!tiene && !sin) sin = f;
+		if (!tiene && !agotado) sinOpciones.push(f);
 	}
-	const ids = fichas.slice(0, 2).map((h) => h.split('/').pop()!);
+	const sin = sinOpciones[0] ?? null;
+	const ids = (sinOpciones.length ? sinOpciones : fichas)
+		.slice(0, 2)
+		.map((h) => h.split('/').pop()!);
 	for (const ancho of ANCHOS) {
 		await page.setViewportSize({ width: ancho, height: ancho < 760 ? 812 : 900 });
 		const n = (pag: string) => `${id}/${pag}-${ancho}`;
@@ -169,7 +174,11 @@ if (VACIA)
 						...new Set(as.map((a) => a.getAttribute('href')!.split('/').pop()!))
 					]);
 				if (ids.length <= 1) break;
-				for (const x of ids.slice(1)) await page.request.delete(`/panel/productos/${x}`);
+				// Con tipo JSON: sin Origin, el CSRF rechaza un DELETE sin tipo.
+				for (const x of ids.slice(1))
+					await page.request.delete(`/panel/productos/${x}`, {
+						headers: { 'content-type': 'application/json' }
+					});
 			}
 			await recorrer(page, slug, `vacia-${id}`);
 		});

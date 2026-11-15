@@ -1597,6 +1597,10 @@
 	.tv-benef-lista {
 		grid-template-columns: repeat(min(var(--cols), 2), minmax(0, 1fr));
 	}
+	/* Grillas llenas (regla 2): con 3 beneficios en dos columnas, el último va a lo ancho. */
+	.tv-benef-lista > .tv-benef-item:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
 	.tv-benef[data-variante='fila'] .tv-benef-item + .tv-benef-item {
 		border-left: 0;
 	}

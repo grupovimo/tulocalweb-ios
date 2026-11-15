@@ -83,12 +83,15 @@ export function etiquetasDe(
 	if (c.etiquetas.masVendido && sirve.top && top3(t).includes(p.id))
 		r.push({ texto: 'Más vendido', tipo: 'top' });
 	// La propia de la tienda no se repite con una automática parecida («Más vendida» y «Más vendido»).
-	// Por la primera palabra: «Últimos» (la de la tienda) y «Últimas 2» dicen lo mismo.
+	// Por la primera palabra: «Últimos» (la de la tienda) y «Últimas 2» dicen lo mismo; y dos
+	// descuentos («−14 %» automática y «-14%» escrita a mano) son la misma etiqueta.
 	const raiz = (s: string) =>
-		s
-			.toLowerCase()
-			.split(/\s+/)[0]
-			.replace(/[aeo]s?$/, '');
+		/\d\s*%/.test(s)
+			? '%'
+			: s
+					.toLowerCase()
+					.split(/\s+/)[0]
+					.replace(/[aeo]s?$/, '');
 	return r.filter((e, i) => r.findIndex((x) => raiz(x.texto) === raiz(e.texto)) === i);
 }
 

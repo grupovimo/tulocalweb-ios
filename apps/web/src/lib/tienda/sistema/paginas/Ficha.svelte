@@ -109,7 +109,8 @@
 	const chips = $derived(
 		[
 			tienda.envios.gratisDesde && sel.precio >= tienda.envios.gratisDesde ? 'Envío gratis' : '',
-			producto.etiqueta?.trim() ?? '',
+			// La de la tienda, salvo que sea el mismo descuento que ya dice el chip de la oferta.
+			off && /\d\s*%/.test(producto.etiqueta ?? '') ? '' : (producto.etiqueta?.trim() ?? ''),
 			...automaticas
 		].filter((x, i, l) => x && l.indexOf(x) === i)
 	);

@@ -49,6 +49,9 @@ describe('etiquetas automáticas', () => {
 			'Nuevo'
 		]);
 	});
+	test('un descuento escrito a mano no repite el automático', () => {
+		expect(textos(p({ id: 'x', etiqueta: '-20%', anterior: 10000 }))).toEqual(['−20\u00a0%']);
+	});
 	test('«Últimos» de la tienda y «Últimas 2» automática no van juntas', () => {
 		expect(textos(p({ id: 'x', etiqueta: 'Últimos', stock: 2 }))).toEqual(['Últimos']);
 	});

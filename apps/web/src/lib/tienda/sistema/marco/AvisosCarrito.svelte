@@ -20,7 +20,7 @@
 	const textoMayor = $derived(mayor && textoAviso(mayor, precio));
 </script>
 
-{#if desde}
+{#if desde && lineas.length}
 	<div class="tv-aviso-barra" class:tv-aviso-barra--ok={!falta}>
 		<p>
 			{#if falta}Te faltan <b>{precio(falta)}</b> para el envío&nbsp;gratis.{:else}<b
