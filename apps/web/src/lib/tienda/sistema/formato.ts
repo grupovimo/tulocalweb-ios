@@ -58,10 +58,19 @@ export function urlFoto(f: string | null | undefined, ancho: number, alto?: numb
  * títulos y frases cortas; los textos largos van con `text-wrap: pretty`.
  */
 export function sinViuda(t: string): string {
-	const s = t.trim().replace(/\s+/g, ' ');
-	const i = s.lastIndexOf(' ');
-	if (i <= 0) return s;
-	// Si la última palabra es larga y la anterior también, igual conviene pegarlas: el título no
-	// queda con una palabra sola. Sólo se evita en textos de una línea muy corta.
-	return `${s.slice(0, i)}\u00a0${s.slice(i + 1)}`;
+	// Renglón por renglón: los saltos que escribió la tienda (párrafos, listas a mano) se respetan y
+	// cada renglón termina sin una palabra sola. Más de una línea en blanco seguida cuenta como una.
+	return t
+		.trim()
+		.replace(/\r\n?/g, '\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.split('\n')
+		.map((r) => {
+			const s = r.trim().replace(/[^\S\n]+/g, ' ');
+			const i = s.lastIndexOf(' ');
+			// Si la última palabra es larga y la anterior también, igual conviene pegarlas: el título
+			// no queda con una palabra sola.
+			return i <= 0 ? s : `${s.slice(0, i)}\u00a0${s.slice(i + 1)}`;
+		})
+		.join('\n');
 }

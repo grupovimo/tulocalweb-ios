@@ -39,6 +39,11 @@ describe('formato', () => {
 		);
 		expect(sinViuda('Lumbre')).toBe('Lumbre');
 	});
+	test('sin viudas respeta los párrafos: cada renglón por separado', () => {
+		expect(
+			sinViuda('Un cubo con cara viva.\n\n\n\nPara mí:  timers y listas.\r\nChicos: cuentos')
+		).toBe('Un cubo con cara viva.\n\nPara mí: timers y listas.\nChicos: cuentos');
+	});
 	test('fotos de la demo y subidas', () => {
 		expect(urlFoto('abc', 400)).toContain('images.unsplash.com/photo-abc');
 		expect(urlFoto('https://x.com/a.webp', 400)).toBe('https://x.com/a.webp');
