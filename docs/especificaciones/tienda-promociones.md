@@ -45,6 +45,8 @@ type Ventana = {
   - `cuponUnico`: el servidor genera un código propio de un uso (`porcentaje` | `monto` |
     `envioGratis`, `valor`, vence en `dias`);
   - `descarga`: un archivo o link (guía, recetario, catálogo PDF) que se muestra y se manda por mail;
+    el archivo se sube con `POST /panel/archivos` (PDF, EPUB o ZIP hasta 20 MB, tipo por la firma,
+    60 MB por tienda) y queda en `/f/archivos/<tienda>/<uuid>.<ext>`, junto a las fotos;
   - `nada`: sólo suscripción.
   El contacto entra a la newsletter con `origen = "ventana:<id>"` (sin duplicar por email).
 - `ruleta`: 4 a 8 porciones `{texto, premio: cuponUnico-like | nada, peso}`; pide email antes de
