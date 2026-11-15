@@ -85,6 +85,15 @@ class DatosEditor {
     var productos by mutableStateOf<List<ProductoFila>>(emptyList())
     val conocidos = mutableStateMapOf<String, ProductoFila>()
 
+    /** WhatsApp y dirección del local, para los avisos. Se vuelve a leer al volver de Datos del negocio. */
+    suspend fun cargarNegocio(api: Api) {
+        val n = api.opcional<ValorJSON>("/v1/panel/configuracion")?.get("negocio") ?: return
+        contexto = contexto.copy(
+            whatsapp = !(n["whatsapp"]?.texto ?: "").isBlank(),
+            direccionLocal = !(n["direccion"]?.texto ?: "").isBlank(),
+        )
+    }
+
     suspend fun cargarProductos(api: Api) {
         val l = api.opcional<PaginaProductos>("/v1/panel/listas/productos", listOf("orden" to "sold", "cuantos" to "60")) ?: return
         productos = l.filas

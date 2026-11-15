@@ -304,7 +304,9 @@ struct PanelBloque: View {
                 } else if let f = FaltaBloque.de(b, datos.contexto) {
                     AvisoPanel(texto: f.texto, simbolo: "exclamationmark.circle.fill") {
                         if f.enNegocio {
-                            NavigationLink("Cargar ahora") { NegocioCobro() }.buttonStyle(BotonTonal(alto: 34))
+                            NavigationLink("Cargar ahora") {
+                                NegocioCobro().onDisappear { Task { await datos.cargarNegocio(estado.api) } }
+                            }.buttonStyle(BotonTonal(alto: 34))
                         }
                     }
                 }

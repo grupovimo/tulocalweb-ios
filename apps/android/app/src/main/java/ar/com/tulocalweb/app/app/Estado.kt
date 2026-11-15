@@ -36,6 +36,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import ar.com.tulocalweb.app.pantallas.mas.DatosEditor
+import ar.com.tulocalweb.app.pantallas.mas.EditorTienda
 
 /** Adónde lleva un push, un widget o un link `tulocalweb://`. */
 sealed class Ruta {
@@ -98,6 +100,9 @@ class Estado(api: Api? = null) {
     var proveedores by mutableStateOf<Proveedores?>(null)
     var aviso by mutableStateOf<Aviso?>(null)
     var rutaPendiente by mutableStateOf<Ruta?>(null)
+    /** El editor de Mi tienda, por tienda. Vive acá porque la pila dibuja sólo la pantalla de arriba: al ir a
+     *  Datos del negocio (desde «Cargar ahora») y volver, MiTiendaEditor se rearma y no tiene que perder lo editado. */
+    var miTienda: Pair<String, Pair<EditorTienda, DatosEditor>>? = null
     /** Pantalla bloqueada con la huella o la cara hasta que la persona se identifique. */
     var bloqueada by mutableStateOf(false)
     /** Para que las listas se vuelvan a pedir después de un cambio (estado de un pedido, stock). */

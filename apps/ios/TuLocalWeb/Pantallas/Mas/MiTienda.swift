@@ -291,10 +291,7 @@ struct MiTiendaEditor: View {
         slug = estado.tienda?.slug ?? ""
         cargado = true
         // Lo que sólo hace falta para los avisos y los selectores: después de mostrar el editor.
-        if let c: ValorJSON = try? await estado.api.get("/v1/panel/configuracion"), let n = c["negocio"] {
-            datos.contexto.whatsapp = !(n["whatsapp"]?.texto ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-            datos.contexto.direccionLocal = !(n["direccion"]?.texto ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-        }
+        await datos.cargarNegocio(estado.api)
         await datos.cargarProductos(estado.api)
     }
 

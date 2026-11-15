@@ -12,6 +12,13 @@ final class DatosEditor {
     var productos: [ProductoFila] = []
     var conocidos: [String: ProductoFila] = [:]
 
+    /// WhatsApp y dirección del local, para los avisos. Se vuelve a leer al volver de Datos del negocio.
+    func cargarNegocio(_ api: Api) async {
+        guard let c: ValorJSON = try? await api.get("/v1/panel/configuracion"), let n = c["negocio"] else { return }
+        contexto.whatsapp = !(n["whatsapp"]?.texto ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        contexto.direccionLocal = !(n["direccion"]?.texto ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     func cargarProductos(_ api: Api) async {
         let q = [URLQueryItem(name: "orden", value: "sold"), URLQueryItem(name: "cuantos", value: "60")]
         guard let l: PaginaProductos = try? await api.get("/v1/panel/listas/productos", query: q) else { return }

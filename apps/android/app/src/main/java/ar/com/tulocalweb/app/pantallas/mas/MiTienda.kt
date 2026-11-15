@@ -81,8 +81,12 @@ fun MiTiendaEditor() {
     val estado = LocalEstado.current
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
-    val editor = remember { EditorTienda() }
-    val datos = remember { DatosEditor() }
+    // Lo que edita la persona sobrevive a salir y volver de la pantalla (ver Estado.miTienda).
+    val (editor, datos) = remember {
+        val clave = estado.tienda?.slug ?: ""
+        estado.miTienda?.takeIf { it.first == clave }?.second
+            ?: (EditorTienda() to DatosEditor()).also { estado.miTienda = clave to it }
+    }
     var cargado by remember { mutableStateOf(false) }
     var pestana by remember { mutableStateOf("paginas") }
     var direccion by remember { mutableStateOf("") }
@@ -117,7 +121,8 @@ fun MiTiendaEditor() {
         val v = estado.api.opcional<ValorJSON>("/v1/panel/mi-tienda")
         if (v == null) { estado.avisar("No pudimos traer tu tienda", ok = false); cargado = true; return }
         val plantilla = v["plantillaId"]?.texto ?: v["plantilla"]?.texto ?: ""
-        editor.empezar(Diseno.desde(v["diseno"]?.objeto ?: emptyMap(), plantilla), plantilla)
+        // Al volver con cambios sin guardar, se quedan los de la persona.
+        if (!editor.sinGuardar) editor.empezar(Diseno.desde(v["diseno"]?.objeto ?: emptyMap(), plantilla), plantilla)
         direccion = v["direccion"]?.texto ?: ""
         sinPublicar = v["sinPublicar"]?.bool ?: false
         categorias = v["vista"]?.get("categorias")?.lista?.mapNotNull { it.texto } ?: emptyList()
@@ -132,12 +137,7 @@ fun MiTiendaEditor() {
         slug = estado.tienda?.slug ?: ""
         cargado = true
         // Lo que sólo hace falta para los avisos y los selectores: después de mostrar el editor.
-        estado.api.opcional<ValorJSON>("/v1/panel/configuracion")?.get("negocio")?.let { n ->
-            datos.contexto = datos.contexto.copy(
-                whatsapp = !(n["whatsapp"]?.texto ?: "").isBlank(),
-                direccionLocal = !(n["direccion"]?.texto ?: "").isBlank(),
-            )
-        }
+        datos.cargarNegocio(estado.api)
         datos.cargarProductos(estado.api)
     }
 
