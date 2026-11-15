@@ -242,11 +242,11 @@ export function fotosPortada(t: Tienda, b: Bloque): string[] {
 	const propias = campo<string[]>(b, 'fotos') ?? [];
 	if (propias.length) return propias;
 	// La foto de portada de v1 (o la sugerida por la demo) y las de los productos, para collage.
+	// Con una sola foto de producto no: el bloque de productos ya la muestra en grande justo abajo
+	// y la portada quedaría repitiéndola (Yulz); sin foto propia, la portada va como texto.
 	const base = t.portada?.foto ? [t.portada.foto] : [];
-	return [...new Set([...base, ...t.productos.flatMap((p) => (p.foto ? [p.foto] : []))])].slice(
-		0,
-		5
-	);
+	const deProductos = [...new Set(t.productos.flatMap((p) => (p.foto ? [p.foto] : [])))];
+	return [...new Set([...base, ...(deProductos.length >= 2 ? deProductos : [])])].slice(0, 5);
 }
 
 /** Los botones de la portada: los elegidos o, si no, los que tienen sentido con lo que hay. */
