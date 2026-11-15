@@ -431,6 +431,7 @@
 				todos: [I.phTrayFill, 'var(--mu)'],
 				hoy: [I.phLightningFill, '#D2582F'],
 				'sin-pagar': [I.phHourglassMediumFill, '#9A6A10'],
+				'esperando-pago': [I.phHourglassMediumFill, '#7E6656'],
 				vip: [I.phCrownSimpleFill, '#C98A12'],
 				mayoristas: [I.phPackageFill, '#6A4FA0'],
 				hornero: [I.phSparkleFill, '#C24E25']
