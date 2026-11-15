@@ -20,6 +20,7 @@
 	import PanelCarrito from './PanelCarrito.svelte';
 	import Pie from './Pie.svelte';
 	import Ventanas from './Ventanas.svelte';
+	import CuponDelLink from './CuponDelLink.svelte';
 	import '../base.css';
 	import '../paginas.css';
 	import '../direcciones/vidriera.css';
@@ -160,5 +161,6 @@
 	{#if panel}<PanelCarrito envioGratis={opciones.carrito.envioGratisDesde} />{/if}
 	<!-- Las ventanas (popups): una por página, nunca en el checkout ni en los legales. -->
 	<Ventanas />
+	<CuponDelLink />
 	{#if conversion.pruebaSocial.activa}<PruebaSocial />{/if}
 </div>

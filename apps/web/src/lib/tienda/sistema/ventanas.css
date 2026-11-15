@@ -477,12 +477,24 @@
 }
 .tv-prod-chips .tv-prod-chip {
 	position: static;
+	white-space: nowrap;
 }
-.tv-chip--nuevo {
+.tv .tv-prod-chips .tv-chip--nuevo {
 	background: var(--t-texto);
 	color: var(--t-fondo);
 }
-.tv-chip--ultimas {
+/* En el celular la tarjeta es angosta: va una sola etiqueta. */
+@media (max-width: 759px) {
+	.tv-prod-chips {
+		top: 8px;
+		left: 8px;
+		right: 48px;
+	}
+	.tv-prod-chips .tv-prod-chip + .tv-prod-chip {
+		display: none;
+	}
+}
+.tv .tv-prod-chips .tv-chip--ultimas {
 	background: color-mix(in srgb, var(--t-error, #b42318) 12%, var(--t-fondo));
 	color: var(--t-error, #b42318);
 }
