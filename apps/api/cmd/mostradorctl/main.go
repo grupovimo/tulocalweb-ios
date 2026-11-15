@@ -17,6 +17,10 @@
 //	mostradorctl purga-tiendas --listar
 //	                         las tiendas cerradas hace más de 90 días que el worker borraría con
 //	                         MOSTRADOR_PURGA_TIENDAS=1 (id, nombre y cuándo se cerró). No borra nada.
+//	mostradorctl diseno-v2 [--seco]
+//	                         pasa a v2 (tienda en bloques) los diseños v1 de todas las tiendas, borrador y
+//	                         publicado, en una transacción (mitienda.MigrarBase; idempotente). Con --seco
+//	                         sólo lista qué tiendas cambiarían. Antes, una copia de la base.
 //
 // Las claves de los roles salen de MOSTRADOR_CLAVE_<ROL> (vacías en desarrollo).
 package main
@@ -34,6 +38,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cuentas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/demo"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/partners"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/config"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db"
@@ -148,6 +153,15 @@ func correr(cmd string) error {
 			return err
 		}
 		return listarPurga(ctx, cfg.BaseMigrador)
+	case "diseno-v2":
+		seco := len(os.Args) == 3 && os.Args[2] == "--seco"
+		if len(os.Args) > 3 || (len(os.Args) == 3 && !seco) {
+			return fmt.Errorf("uso: mostradorctl diseno-v2 [--seco]")
+		}
+		if err := cfg.Exigir("BaseMigrador"); err != nil {
+			return err
+		}
+		return disenoV2(ctx, cfg.BaseMigrador, seco)
 	default:
 		return fmt.Errorf("comando desconocido %q", cmd)
 	}
@@ -178,6 +192,38 @@ func altaEquipo(ctx context.Context, url, email, nombre, rol, clave string) erro
 		fmt.Println("listo:", email, "es", rol)
 	}
 	return err
+}
+
+// disenoV2 migra (o, en seco, lista) los diseños v1 de todas las tiendas.
+func disenoV2(ctx context.Context, url string, seco bool) error {
+	conn, err := pgx.Connect(ctx, url)
+	if err != nil {
+		return err
+	}
+	defer conn.Close(ctx)
+	cambios, err := mitienda.MigrarBase(ctx, conn, seco)
+	if err != nil {
+		return err
+	}
+	for _, c := range cambios {
+		var que []string
+		if c.Borrador {
+			que = append(que, "borrador")
+		}
+		if c.Publicado {
+			que = append(que, "publicado")
+		}
+		fmt.Printf("%s\t%s\n", c.Slug, strings.Join(que, " y "))
+	}
+	switch {
+	case len(cambios) == 0:
+		fmt.Println("ningún diseño v1: no hay nada que migrar")
+	case seco:
+		fmt.Printf("%d tiendas con diseños v1 (en seco: no se cambió nada)\n", len(cambios))
+	default:
+		fmt.Printf("%d tiendas pasadas a v2\n", len(cambios))
+	}
+	return nil
 }
 
 // listarPurga muestra las tiendas que el worker borraría hoy, sin tocar nada.

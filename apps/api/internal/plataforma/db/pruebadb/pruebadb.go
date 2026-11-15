@@ -26,6 +26,8 @@ type Bases struct {
 	App, Worker, Staff *db.Pool
 	// AdminURL es la URL de superusuario a la base del test (para inspeccionar el catálogo).
 	AdminURL string
+	// MigradorURL: la del rol que corre las migraciones y los comandos de mostradorctl.
+	MigradorURL string
 }
 
 var rolesListos sync.Once
@@ -76,7 +78,8 @@ func Nueva(t testing.TB) *Bases {
 		_, _ = c.Exec(context.Background(), "DROP DATABASE "+pgx.Identifier{nombre}.Sanitize()+" WITH (FORCE)")
 	})
 
-	if err := db.Migrar(ctx, conRol(t, admin, "mostrador_migrador", nombre)); err != nil {
+	migrador := conRol(t, admin, "mostrador_migrador", nombre)
+	if err := db.Migrar(ctx, migrador); err != nil {
 		t.Fatalf("migraciones: %v", err)
 	}
 	abrir := func(rol string) *db.Pool {
@@ -90,10 +93,11 @@ func Nueva(t testing.TB) *Bases {
 	u, _ := url.Parse(admin)
 	u.Path = "/" + nombre
 	return &Bases{
-		App:      abrir("mostrador_app"),
-		Worker:   abrir("mostrador_worker"),
-		Staff:    abrir("mostrador_staff"),
-		AdminURL: u.String(),
+		App:         abrir("mostrador_app"),
+		Worker:      abrir("mostrador_worker"),
+		Staff:       abrir("mostrador_staff"),
+		AdminURL:    u.String(),
+		MigradorURL: migrador,
 	}
 }
 

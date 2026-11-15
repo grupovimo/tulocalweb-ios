@@ -153,4 +153,11 @@ func TestTableroConElAcentoDeLaTienda(t *testing.T) {
 	if tb := poner("yerbal", `{"secciones": [], "paleta": 1, "estilo": {"colores": {"acento": "#123456"}}}`); tb.Acento != "#123456" {
 		t.Fatalf("estilo: %s", tb.Acento)
 	}
+	// Diseño v2 (tienda en bloques): la paleta y los colores siguen en el mismo lugar.
+	if tb := poner("yerbal", `{"version": 2, "paleta": 1, "inicio": [], "estilo": {"direccion": "mostrador", "colores": {"acento": "#654321"}}}`); tb.Acento != "#654321" {
+		t.Fatalf("v2: %s", tb.Acento)
+	}
+	if tb := poner("yerbal", `{"version": 2, "paleta": 1, "inicio": []}`); tb.Acento != "#B0441D" {
+		t.Fatalf("v2 sin estilo: %s", tb.Acento)
+	}
 }
