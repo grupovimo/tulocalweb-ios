@@ -86,6 +86,8 @@ data class Diseno(
     val estilo: EstiloTienda = EstiloTienda(),
     val inicio: List<Bloque> = emptyList(),
     val paginas: Map<String, AjustesPagina> = emptyMap(),
+    /** Las ventanas (popups), en orden: si varias califican, sale la primera. */
+    val ventanas: List<Ventana> = emptyList(),
     /** Lo que la app no edita (compartirFoto y lo que venga): vuelve igual en el PUT. */
     val resto: Map<String, ValorJSON> = emptyMap(),
 ) {
@@ -101,6 +103,7 @@ data class Diseno(
         if (!e.objeto.isNullOrEmpty()) o["estilo"] = e
         o["inicio"] = valorDe(ListSerializer(Bloque.serializer()), inicio)
         if (paginas.isNotEmpty()) o["paginas"] = Valor.objeto(paginas.mapValues { it.value.json })
+        if (ventanas.isNotEmpty()) o["ventanas"] = Valor.lista(ventanas.map { it.json })
         return o
     }
 
@@ -157,7 +160,7 @@ data class Diseno(
 
     companion object {
         private val propias = setOf("version", "plantilla", "paleta", "titulo", "lema", "portada", "logo", "compartirTitulo", "compartirDescripcion",
-            "estilo", "inicio", "paginas", "secciones")
+            "estilo", "inicio", "paginas", "secciones", "ventanas")
 
         /** Desde el JSON del GET. La API lo manda ya en v2; si llega uno viejo, se migra acá igual que en la web. */
         fun desde(o: Map<String, ValorJSON>, plantillaTienda: String): Diseno {
@@ -172,6 +175,7 @@ data class Diseno(
                 compartirTitulo = o["compartirTitulo"]?.texto ?: "",
                 compartirDescripcion = o["compartirDescripcion"]?.texto ?: "",
                 estilo = EstiloTienda.desde(o["estilo"]),
+                ventanas = o["ventanas"]?.lista?.map { Ventana.desde(it) } ?: emptyList(),
             )
             return if (o["version"]?.entero == 2) {
                 d.copy(inicio = o["inicio"]?.como(ListSerializer(Bloque.serializer())) ?: emptyList(),

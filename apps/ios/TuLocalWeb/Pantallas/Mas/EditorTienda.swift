@@ -16,6 +16,10 @@ final class EditorTienda {
     var panel: String?
     /// Dónde va el bloque que se elija en la biblioteca.
     var insertarEn: Int?
+    /// La ventana (popup) con el panel abierto.
+    var ventanaAbierta: String?
+    /// La hoja de plantillas para crear una ventana.
+    var creandoVentana = false
     private(set) var historial = Historial()
     private var ultimaClave: String?
     private var ultimaVez = Date.distantPast
@@ -68,6 +72,7 @@ final class EditorTienda {
     private func cerrarSiNoEsta() {
         if let p = panel, diseno.buscar(p) == nil { panel = nil }
         if let s = seleccion, diseno.buscar(s) == nil { seleccion = nil }
+        if let v = ventanaAbierta, ventana(v) == nil { ventanaAbierta = nil }
     }
 
     /// Un campo del diseño para un control (Marca, Estilo), con su paso en el historial.
@@ -178,5 +183,64 @@ final class EditorTienda {
 
     func aplicarPreset(_ id: String) {
         cambiar { $0.aplicarPreset(id) }
+    }
+
+    // MARK: Ventanas (Promociones)
+
+    var topeVentanas: Int { cat.limites.ventanas ?? 8 }
+    var puedeSumarVentana: Bool { diseno.ventanas.count < topeVentanas }
+
+    func ventana(_ id: String) -> Ventana? { diseno.ventanas.first { $0.id == id } }
+
+    /// Un id que no usa ningún bloque ni otra ventana.
+    func idNuevo() -> String {
+        var id = Bloque.nuevoId()
+        while diseno.idsUsados.contains(id) || ventana(id) != nil { id = Bloque.nuevoId() }
+        return id
+    }
+
+    /// Suma una ventana al final y abre su panel.
+    @discardableResult
+    func agregarVentana(_ v: Ventana, abrir: Bool = true) -> String? {
+        guard puedeSumarVentana else { return nil }
+        cambiar { $0.ventanas.append(v) }
+        if abrir { ventanaAbierta = v.id }
+        return v.id
+    }
+
+    func editarVentana(_ id: String, clave: String? = nil, _ f: @escaping (inout Ventana) -> Void) {
+        cambiar(clave: clave) { d in
+            if let i = d.ventanas.firstIndex(where: { $0.id == id }) { f(&d.ventanas[i]) }
+        }
+    }
+
+    func alternarVentana(_ id: String) { editarVentana(id) { $0.activa.toggle() } }
+
+    func duplicarVentana(_ id: String) {
+        guard puedeSumarVentana, var copia = ventana(id) else { return }
+        copia.id = idNuevo()
+        copia.nombre = String("\(copia.nombre) (copia)".prefix(40))
+        copia.activa = false
+        let nueva = copia
+        cambiar { d in
+            if let i = d.ventanas.firstIndex(where: { $0.id == id }) { d.ventanas.insert(nueva, at: i + 1) }
+        }
+    }
+
+    func borrarVentana(_ id: String) {
+        cambiar { $0.ventanas.removeAll { $0.id == id } }
+        if ventanaAbierta == id { ventanaAbierta = nil }
+    }
+
+    func moverVentana(_ id: String, _ paso: Int) {
+        cambiar { d in
+            guard let i = d.ventanas.firstIndex(where: { $0.id == id }), d.ventanas.indices.contains(i + paso) else { return }
+            d.ventanas.swapAt(i, i + paso)
+        }
+    }
+
+    /// Las herramientas de conversión (estilo.conversion), con su paso en el historial.
+    func editarConversion(_ c: [String: ValorJSON]) {
+        cambiar(clave: "conversion") { $0.estilo.conversion = c.isEmpty ? nil : c }
     }
 }

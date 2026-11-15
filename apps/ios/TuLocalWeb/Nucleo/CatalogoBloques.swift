@@ -12,8 +12,10 @@ struct CatalogoBloques: Decodable {
         var filasTabla: Int?
         var columnasTabla: Int?
         var letrasCelda: Int?
+        /// Cuántas ventanas (popups) puede tener la tienda.
+        var ventanas: Int?
     }
-    struct Opciones: Decodable { var opciones: [String]; var nombres: [String]; var porDefecto: String? }
+    struct Opciones: Decodable { var opciones: [String]; var nombres: [String]; var porDefecto: String?; var descripcion: String? }
     struct Grupo: Decodable, Identifiable { var id: String; var nombre: String }
 
     /// Un campo de un bloque (tiposCampo en bloques.json): texto, foto, link, lista…
@@ -31,6 +33,8 @@ struct CatalogoBloques: Decodable {
         var item: [Campo]?
         var opciones: [String]?
         var nombres: [String]?
+        /// La explicación corta que va abajo del campo.
+        var descripcion: String?
     }
 
     struct Tipo: Decodable, Identifiable {
@@ -74,6 +78,45 @@ struct CatalogoBloques: Decodable {
     var grupos: [Grupo]
     var bloques: [Tipo]
     var barraAnuncios: Barra
+    /// Las ventanas (popups) y las herramientas de conversión (docs/especificaciones/tienda-promociones.md).
+    var ventanas: Ventanas?
+    var conversion: Conversion?
+
+    struct Ventanas: Decodable {
+        struct Contenido: Decodable, Identifiable { var tipo: String; var nombre: String; var descripcion: String; var campos: [Campo]; var id: String { tipo } }
+        struct Rango: Decodable { var min: Int; var max: Int; var porDefecto: Int; var unidad: String? }
+        struct Disparo: Decodable, Identifiable { var cuando: String; var nombre: String; var descripcion: String; var valor: Rango?; var id: String { cuando } }
+        struct Frecuencia: Decodable, Identifiable { var cada: String; var nombre: String; var descripcion: String; var dias: Rango?; var id: String { cada } }
+        struct Plantilla: Decodable, Identifiable {
+            var id: String
+            var nombre: String
+            var descripcion: String
+            /// Los campos que la persona tiene que completar (un cupón suyo, el archivo).
+            var completar: [String]?
+            var hastaEnDias: Int?
+            var ventana: ValorJSON
+        }
+        var nombre: String
+        var descripcion: String
+        var variantes: [String]
+        var nombresVariantes: [String]
+        var descripcionesVariantes: [String]?
+        var campos: [Campo]
+        var contenidos: [Contenido]
+        var disparos: [Disparo]
+        var frecuencias: [Frecuencia]
+        var publicos: Opciones
+        var paginas: Opciones
+        var dispositivos: Opciones
+        var plantillas: [Plantilla]
+
+        func contenido(_ t: String) -> Contenido? { contenidos.first { $0.tipo == t } }
+        func disparo(_ c: String) -> Disparo? { disparos.first { $0.cuando == c } }
+        func frecuencia(_ c: String) -> Frecuencia? { frecuencias.first { $0.cada == c } }
+        func nombreVariante(_ v: String) -> String { variantes.firstIndex(of: v).map { nombresVariantes[$0] } ?? v }
+    }
+
+    struct Conversion: Decodable { var nombre: String; var descripcion: String; var campos: [Campo] }
 
     /// Las páginas del editor, en orden (el JSON es un objeto y no guarda el orden).
     static let ordenPaginas = ["inicio", "catalogo", "producto", "carrito", "nosotros"]

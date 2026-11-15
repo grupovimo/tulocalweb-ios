@@ -157,6 +157,9 @@ targets:
       # Los casos de la migración del diseño v1 → v2 (DisenoTests), los mismos que corren la web y Go.
       - path: ../../packages/contrato/casos/diseno-v2.json
         buildPhase: resources
+      # Los casos de las ventanas (DisenoTests), los mismos que corren Go y la web.
+      - path: ../../packages/contrato/casos/ventanas.json
+        buildPhase: resources
     dependencies:
       - target: TuLocalWeb
     settings:

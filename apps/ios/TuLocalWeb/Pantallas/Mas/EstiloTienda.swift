@@ -31,6 +31,8 @@ struct EstiloTienda: Codable, Equatable {
     var barra: Barra?
     /// false: sin el botón flotante de WhatsApp.
     var whatsappFlotante: Bool?
+    /// Las herramientas de conversión (bloques.json › conversion): lo que falta toma porDefecto.
+    var conversion: [String: ValorJSON]?
 
     struct ItemMenu: Codable, Equatable, Hashable { var t: String; var a: String }
 
@@ -39,7 +41,12 @@ struct EstiloTienda: Codable, Equatable {
         var variante: String
         var mensajes: [Mensaje]
         var fondo: String?
-        struct Mensaje: Codable, Equatable { var texto: String; var link: String? }
+        struct Mensaje: Codable, Equatable {
+            var texto: String
+            var link: String?
+            /// Cuenta regresiva: el mensaje se esconde al vencer (ISO).
+            var hasta: String?
+        }
     }
 
     /// Para mandarlo dentro del diseño: sin lo vacío (Go lo limpia igual) y sin lo de v1.
@@ -52,11 +59,12 @@ struct EstiloTienda: Codable, Equatable {
         e.textos = nil
         if var b = e.barra {
             b.mensajes = b.mensajes.filter { !$0.texto.trimmingCharacters(in: .whitespaces).isEmpty }
-                .map { .init(texto: $0.texto, link: ($0.link ?? "").isEmpty ? nil : $0.link) }
+                .map { .init(texto: $0.texto, link: ($0.link ?? "").isEmpty ? nil : $0.link, hasta: ($0.hasta ?? "").isEmpty ? nil : $0.hasta) }
             e.barra = b.mensajes.isEmpty ? nil : b
         }
         if e.whatsappFlotante == true { e.whatsappFlotante = nil }
         if e.logoAlto == 0 { e.logoAlto = nil }
+        if e.conversion?.isEmpty == true { e.conversion = nil }
         guard let d = try? JSONEncoder().encode(e), let v = try? JSONDecoder().decode(ValorJSON.self, from: d) else { return .objeto([:]) }
         return v
     }
@@ -266,7 +274,7 @@ struct EditorEstilo: View {
                 set: { d in
                     var n = actual
                     n.mensajes = d["mensajes"]?.lista?.map { m in
-                        EstiloTienda.Barra.Mensaje(texto: m["texto"]?.texto ?? "", link: m["link"]?.texto)
+                        EstiloTienda.Barra.Mensaje(texto: m["texto"]?.texto ?? "", link: m["link"]?.texto, hasta: m["hasta"]?.texto)
                     } ?? []
                     n.fondo = d["fondo"]?.texto
                     estilo.barra = n.mensajes.isEmpty && n.fondo == nil ? nil : n

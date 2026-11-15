@@ -38,6 +38,37 @@ final class DatosEditor {
     }
 
     func nombre(_ id: String) -> String { conocidos[id]?.nombre ?? "Un producto" }
+
+    // MARK: Promociones
+
+    /// Un cupón de la tienda, para elegirlo en una ventana.
+    struct CuponTienda: Equatable, Identifiable { var codigo: String; var descripcion: String; var activo: Bool; var id: String { codigo } }
+    var cupones: [CuponTienda] = []
+    /// Desde cuánto el envío es gratis (Cupones › automáticas), para las plantillas.
+    var envioGratis: Int?
+    /// Por ventana, los últimos 30 días.
+    var metricas: [String: MetricaVentana] = [:]
+    var metricasCargadas = false
+
+    func cargarPromos(_ api: Api) async {
+        let cs: ValorJSON? = try? await api.get("/v1/panel/cupones")
+        cupones = (cs?["cupones"]?.lista ?? []).compactMap { x in
+            guard let codigo = x["codigo"]?.texto, x["estado"]?.texto != "terminado" else { return nil }
+            return CuponTienda(codigo: codigo, descripcion: x["descripcion"]?.texto ?? "", activo: x["estado"]?.texto == "activo")
+        }
+        let en: ValorJSON? = try? await api.get("/v1/panel/configuracion/entregas")
+        envioGratis = en?["gratisDesde"]?.entero
+    }
+
+    func cargarMetricas(_ api: Api) async {
+        let hoy = Date()
+        let desde = Calendar.current.date(byAdding: .day, value: -29, to: hoy) ?? hoy
+        let q = [URLQueryItem(name: "desde", value: Self.dia(desde)), URLQueryItem(name: "hasta", value: Self.dia(hoy))]
+        if let v: ValorJSON = try? await api.get("/v1/panel/promos/metricas", query: q) { metricas = MetricaVentana.leer(v) }
+        metricasCargadas = true
+    }
+
+    private static func dia(_ f: Date) -> String { String(Ventana.isoAR(f).prefix(10)) }
 }
 
 /// Todos los campos de un bloque (o de un elemento de una lista).
@@ -48,12 +79,17 @@ struct EditorCampos: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(campos) { c in
-                EditorCampo(campo: c, valor: Binding(
-                    get: { datos[c.id] },
-                    set: { v in
-                        if let v, !v.vacio || v.bool != nil { datos[c.id] = v } else { datos[c.id] = nil }
+                VStack(alignment: .leading, spacing: 6) {
+                    EditorCampo(campo: c, valor: Binding(
+                        get: { datos[c.id] },
+                        set: { v in
+                            if let v, !v.vacio || v.bool != nil { datos[c.id] = v } else { datos[c.id] = nil }
+                        }
+                    ))
+                    if let d = c.descripcion, c.tipo != "grupo" {
+                        Text(d).estilo(.footnote).foregroundStyle(C.texto2).fixedSize(horizontal: false, vertical: true)
                     }
-                ))
+                }
             }
         }
     }
@@ -148,7 +184,8 @@ struct EditorCampo: View {
             AnyView(
                 VStack(alignment: .leading, spacing: 12) {
                     Text(campo.nombre).estilo(.subheadFuerte).foregroundStyle(C.texto)
-                    EditorCampos(campos: campo.item ?? [], datos: Binding(
+                    if let d = campo.descripcion { Text(d).estilo(.footnote).foregroundStyle(C.texto2).fixedSize(horizontal: false, vertical: true) }
+                    EditorCampos(campos: camposDelGrupo, datos: Binding(
                         get: { valor?.objeto ?? [:] }, set: { valor = .objeto($0) }))
                 }
                 .padding(12)
@@ -156,9 +193,24 @@ struct EditorCampo: View {
             )
         case "tabla":
             AnyView(EditorTabla(titulo: campo.nombre, valor: $valor))
+        case "cupon":
+            AnyView(SelectorCupon(titulo: campo.nombre, codigo: texto))
+        case "premio":
+            AnyView(EditorPremio(campo: campo, valor: $valor))
+        case "opciones":
+            AnyView(SelectorOpciones(titulo: campo.nombre, opciones: campo.opciones ?? [], nombres: campo.nombres ?? campo.opciones ?? [],
+                                     elegidas: Binding(get: { valor?.lista?.compactMap(\.texto) ?? [] }, set: { valor = .lista($0.map { .texto($0) }) })))
         default:
             EmptyView()
         }
+    }
+
+    /// Un grupo que empieza con «activa» apagada muestra sólo el interruptor (compras recientes).
+    private var camposDelGrupo: [CatalogoBloques.Campo] {
+        let items = campo.item ?? []
+        guard let p = items.first, p.id == "activa", p.tipo == "si" else { return items }
+        let on = valor?["activa"]?.bool ?? campo.porDefecto?["activa"]?.bool ?? p.porDefecto?.bool ?? false
+        return on ? items : [p]
     }
 
     static func esVideo(_ s: String) -> Bool {
@@ -381,6 +433,10 @@ struct SelectorOpcion: View {
 struct EditorFecha: View {
     var titulo: String
     @Binding var valor: ValorJSON?
+    var boton = "Elegir cuándo termina"
+    var pasada = "Ya pasó: no se muestra."
+    /// Con «Quitar» para dejarla sin fecha.
+    var quitable = false
 
     private static let formato: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -394,13 +450,17 @@ struct EditorFecha: View {
             if let v = valor?.texto, let f = Fecha.iso(v) {
                 DatePicker(titulo, selection: Binding(get: { f }, set: { valor = .texto(Self.formato.string(from: $0)) }))
                     .estilo(.body16).foregroundStyle(C.texto).tint(C.acento)
-                if f < Date() { Text("Ya pasó: la oferta no se muestra.").estilo(.footnote).foregroundStyle(C.errorTinta) }
+                HStack {
+                    if f < Date() { Text(pasada).estilo(.footnote).foregroundStyle(C.errorTinta) }
+                    Spacer()
+                    if quitable { Button("Quitar") { valor = nil }.estilo(.footnoteFuerte).foregroundStyle(C.primarioTexto) }
+                }
             } else {
                 Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.texto2)
                 Button {
                     let enUnaSemana = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
                     valor = .texto(Self.formato.string(from: Calendar.current.startOfDay(for: enUnaSemana).addingTimeInterval(-60)))
-                } label: { Label("Elegir cuándo termina", systemImage: "calendar") }
+                } label: { Label(boton, systemImage: "calendar") }
                     .buttonStyle(BotonTonal(alto: 40))
             }
         }
@@ -649,6 +709,22 @@ struct EditorLista: View {
 
     private func poner(_ l: [[String: ValorJSON]]) { valor = l.isEmpty ? nil : .lista(l.map { .objeto($0) }) }
 
+    /// Un elemento nuevo con los números por defecto ya puestos (el peso de una porción cuenta aunque no se toque).
+    private var nuevo: [String: ValorJSON] {
+        var o: [String: ValorJSON] = [:]
+        for c in campo.item ?? [] where c.tipo == "numero" { if let d = c.porDefecto { o[c.id] = d } }
+        return o
+    }
+
+    /// Con peso (las porciones de la ruleta): cuántas veces de cada 100 sale cada una.
+    private func chance(_ i: Int) -> String? {
+        guard (campo.item ?? []).contains(where: { $0.id == "peso" }) else { return nil }
+        let pesos = items.map { $0["peso"]?.numero ?? 0 }
+        let total = pesos.reduce(0, +)
+        guard total > 0, pesos.indices.contains(i), pesos[i] > 0 else { return "Nunca sale" }
+        return "Sale \(Int((pesos[i] / total * 100).rounded())) de cada 100"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -660,6 +736,7 @@ struct EditorLista: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 14) {
                         Text("\(i + 1)").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                        if let c = chance(i) { Text(c).estilo(.footnote).monospacedDigit().foregroundStyle(C.texto3).lineLimit(1) }
                         Spacer()
                         Button { var l = items; l.swapAt(i, i - 1); poner(l) } label: { Image(systemName: "chevron.up") }
                             .disabled(i == 0).accessibilityLabel("Subir")
@@ -681,7 +758,7 @@ struct EditorLista: View {
                 Text("Todavía no hay ninguno.").estilo(.footnote).foregroundStyle(C.texto2)
             }
             if items.count < max {
-                Button { poner(items + [[:]]) } label: { Label("Sumar", systemImage: "plus") }
+                Button { poner(items + [nuevo]) } label: { Label("Sumar", systemImage: "plus") }
                     .buttonStyle(BotonTonal(alto: 40))
             }
         }
@@ -763,6 +840,152 @@ struct EditorTabla: View {
                         Button { poner(nil) } label: { Label("Borrar la tabla", systemImage: "trash") }
                     }
                     .buttonStyle(BotonTonal(alto: 40))
+                }
+            }
+        }
+    }
+}
+// MARK: - Promociones: cupón, premio y opciones
+
+/// Un cupón de la tienda (tiposCampo › cupon): se elige de la lista de Cupones.
+struct SelectorCupon: View {
+    var titulo: String
+    @Binding var codigo: String
+    @Environment(DatosEditor.self) private var datos
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+            if datos.cupones.isEmpty && codigo.isEmpty {
+                Text("Todavía no tenés cupones. Crealos en Más › Cupones.").estilo(.footnote).foregroundStyle(C.avisoTinta)
+            } else {
+                Picker(titulo, selection: $codigo) {
+                    Text("Elegí uno").tag("")
+                    ForEach(datos.cupones) { c in
+                        Text(c.descripcion.isEmpty ? c.codigo : "\(c.codigo) · \(c.descripcion)").tag(c.codigo)
+                    }
+                    if !codigo.isEmpty, !datos.cupones.contains(where: { $0.codigo == codigo }) { Text(codigo).tag(codigo) }
+                }
+                .pickerStyle(.menu).tint(C.primarioTexto)
+                if let c = datos.cupones.first(where: { $0.codigo == codigo }), !c.activo {
+                    Text("Este cupón está pausado: activalo en Cupones para que funcione.").estilo(.footnote).foregroundStyle(C.avisoTinta)
+                }
+            }
+        }
+    }
+}
+
+/// El premio de una captación o de una porción de la ruleta (tiposCampo › premio).
+struct EditorPremio: View {
+    var campo: CatalogoBloques.Campo
+    @Binding var valor: ValorJSON?
+
+    static let nombres = ["cuponFijo": "Un cupón tuyo", "cuponUnico": "Un código único", "descarga": "Una descarga", "nada": "Nada, sólo sumarse"]
+    static let descuentos = [("porcentaje", "Porcentaje"), ("monto", "Monto fijo"), ("envioGratis", "Envío gratis")]
+
+    private var tipos: [String] { campo.opciones ?? ["cuponFijo", "cuponUnico", "descarga", "nada"] }
+    private var actual: [String: ValorJSON] { valor?.objeto ?? campo.porDefecto?.objeto ?? [:] }
+    private var tipo: String { actual["tipo"]?.texto ?? "" }
+
+    private func poner(_ k: String, _ v: ValorJSON?) {
+        var o = actual
+        o[k] = v
+        valor = .objeto(o)
+    }
+
+    /// Al cambiar de tipo quedan sólo las claves del nuevo (Go ignora las otras, pero así no confunden).
+    private func cambiarTipo(_ t: String) {
+        var o: [String: ValorJSON] = ["tipo": .texto(t)]
+        if t == "cuponUnico" { o["descuento"] = .texto("porcentaje"); o["valor"] = .numero(10); o["dias"] = .numero(7) }
+        if t == "descarga", let n = actual["nombreArchivo"] { o["nombreArchivo"] = n }
+        valor = .objeto(o)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SelectorOpcion(titulo: campo.nombre, opciones: tipos, nombres: tipos.map { Self.nombres[$0] ?? $0 },
+                           elegido: Binding(get: { tipo }, set: { cambiarTipo($0) }))
+            detalle
+        }
+        .padding(12)
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.linea2))
+    }
+
+    @ViewBuilder private var detalle: some View {
+        switch tipo {
+        case "cuponFijo":
+            SelectorCupon(titulo: "El cupón", codigo: Binding(get: { actual["cupon"]?.texto ?? "" }, set: { poner("cupon", $0.isEmpty ? nil : .texto($0)) }))
+        case "cuponUnico":
+            let d = actual["descuento"]?.texto ?? "porcentaje"
+            SelectorOpcion(titulo: "Qué descuento", opciones: Self.descuentos.map(\.0), nombres: Self.descuentos.map(\.1),
+                           elegido: Binding(get: { d }, set: { n in
+                               var o = actual
+                               o["descuento"] = .texto(n)
+                               o["valor"] = n == "envioGratis" ? nil : .numero(n == "monto" ? 2000 : 10)
+                               valor = .objeto(o)
+                           }))
+            if d == "porcentaje" {
+                numero("Porcentaje", clave: "valor", rango: 1...90, paso: 5, porDefecto: 10) { "\($0) %" }
+            } else if d == "monto" {
+                numero("Monto", clave: "valor", rango: 100...100_000, paso: 500, porDefecto: 2000) { Formato.pesos($0) }
+            }
+            numero("Vence a los", clave: "dias", rango: 1...90, paso: 1, porDefecto: 7) { $0 == 1 ? "1 día" : "\($0) días" }
+            Text("Cada persona recibe su propio código, de un solo uso.").estilo(.footnote).foregroundStyle(C.texto2)
+        case "descarga":
+            CampoLinea(titulo: "Link del archivo (PDF, guía, catálogo)", texto: Binding(
+                get: { actual["archivo"]?.texto ?? "" },
+                set: { v in let t = v.trimmingCharacters(in: .whitespaces); poner("archivo", t.isEmpty ? nil : .texto(String(t.prefix(300)))) }),
+                       sugerencia: "https://", teclado: .URL)
+            if let a = actual["archivo"]?.texto, !a.isEmpty, !a.hasPrefix("https://") {
+                Text("Tiene que empezar con https://").estilo(.footnote).foregroundStyle(C.errorTinta)
+            }
+            CampoLinea(titulo: "Cómo se llama", texto: Binding(
+                get: { actual["nombreArchivo"]?.texto ?? "" }, set: { poner("nombreArchivo", $0.isEmpty ? nil : .texto(String($0.prefix(60)))) }),
+                       sugerencia: "Guía", max: 60)
+        case "nada":
+            Text("Sólo se suma a tu newsletter.").estilo(.footnote).foregroundStyle(C.texto2)
+        default:
+            EmptyView()
+        }
+    }
+
+    private func numero(_ titulo: String, clave: String, rango: ClosedRange<Int>, paso: Int, porDefecto: Int, _ texto: @escaping (Int) -> String) -> some View {
+        let n = actual[clave]?.entero ?? porDefecto
+        return Stepper(value: Binding(get: { n }, set: { poner(clave, .numero(Double(min(max($0, rango.lowerBound), rango.upperBound)))) }),
+                       in: rango, step: paso) {
+            HStack {
+                Text(titulo).estilo(.body16).foregroundStyle(C.texto)
+                Spacer()
+                Text(texto(n)).estilo(.fila).monospacedDigit().foregroundStyle(C.texto)
+            }
+        }
+    }
+}
+
+/// Varias opciones de una lista (tiposCampo › opciones; vacía = todas), como chips que se prenden.
+struct SelectorOpciones: View {
+    var titulo: String
+    var opciones: [String]
+    var nombres: [String]
+    @Binding var elegidas: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(titulo).estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                Spacer()
+                if elegidas.isEmpty { Text("Todas").estilo(.footnote).foregroundStyle(C.texto3) }
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(opciones.enumerated()), id: \.element) { i, o in
+                        ChipFiltro(texto: nombres.indices.contains(i) ? nombres[i] : o, activo: elegidas.contains(o)) {
+                            Haptico.seleccion()
+                            // En el orden del catálogo, sin repetir.
+                            let n = elegidas.contains(o) ? elegidas.filter { $0 != o } : elegidas + [o]
+                            elegidas = opciones.filter { n.contains($0) }
+                        }
+                    }
                 }
             }
         }

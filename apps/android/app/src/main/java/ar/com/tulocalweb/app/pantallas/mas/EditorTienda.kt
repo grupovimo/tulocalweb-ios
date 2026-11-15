@@ -9,6 +9,8 @@ import ar.com.tulocalweb.app.nucleo.Bloque
 import ar.com.tulocalweb.app.nucleo.CatalogoBloques
 import ar.com.tulocalweb.app.nucleo.Diseno
 import ar.com.tulocalweb.app.nucleo.Historial
+import ar.com.tulocalweb.app.nucleo.ValorJSON
+import ar.com.tulocalweb.app.nucleo.Ventana
 
 // Clon de Pantallas/Mas/EditorTienda.swift.
 
@@ -26,6 +28,10 @@ class EditorTienda {
     var panel by mutableStateOf<String?>(null)
     /** Dónde va el bloque que se elija en la biblioteca. */
     var insertarEn by mutableStateOf<Int?>(null)
+    /** La ventana (popup) con el panel abierto. */
+    var ventanaAbierta by mutableStateOf<String?>(null)
+    /** La hoja de plantillas para crear una ventana. */
+    var creandoVentana by mutableStateOf(false)
     var historial by mutableStateOf(Historial())
         private set
     /** Cambia con cada paso del historial (Historial no es observable). */
@@ -83,6 +89,7 @@ class EditorTienda {
     private fun cerrarSiNoEsta() {
         panel?.let { if (diseno.buscar(it) == null) panel = null }
         seleccion?.let { if (diseno.buscar(it) == null) seleccion = null }
+        ventanaAbierta?.let { if (ventana(it) == null) ventanaAbierta = null }
     }
 
     // MARK: Bloques de la página elegida
@@ -184,4 +191,64 @@ class EditorTienda {
     }
 
     fun aplicarPreset(id: String) = cambiar { it.aplicarPreset(id) }
+
+    // MARK: Ventanas (Promociones)
+
+    val topeVentanas: Int get() = cat.limites.ventanas
+    val puedeSumarVentana: Boolean get() = diseno.ventanas.size < topeVentanas
+
+    fun ventana(id: String): Ventana? = diseno.ventanas.firstOrNull { it.id == id }
+
+    /** Un id que no usa ningún bloque ni otra ventana. */
+    fun idNuevo(): String {
+        var id = Bloque.nuevoId()
+        while (id in diseno.idsUsados || ventana(id) != null) id = Bloque.nuevoId()
+        return id
+    }
+
+    /** Suma una ventana al final y abre su panel. */
+    fun agregarVentana(v: Ventana, abrir: Boolean = true): String? {
+        if (!puedeSumarVentana) return null
+        cambiar { it.copy(ventanas = it.ventanas + v) }
+        if (abrir) ventanaAbierta = v.id
+        return v.id
+    }
+
+    fun editarVentana(id: String, clave: String? = null, f: (Ventana) -> Ventana) {
+        cambiar(clave) { d -> d.copy(ventanas = d.ventanas.map { if (it.id == id) f(it) else it }) }
+    }
+
+    fun alternarVentana(id: String) = editarVentana(id) { it.copy(activa = !it.activa) }
+
+    fun duplicarVentana(id: String) {
+        if (!puedeSumarVentana) return
+        val v = ventana(id) ?: return
+        val nueva = v.copy(id = idNuevo(), nombre = "${v.nombre} (copia)".take(40), activa = false)
+        cambiar { d ->
+            val l = d.ventanas.toMutableList()
+            val i = l.indexOfFirst { it.id == id }
+            if (i >= 0) l.add(i + 1, nueva)
+            d.copy(ventanas = l)
+        }
+    }
+
+    fun borrarVentana(id: String) {
+        cambiar { d -> d.copy(ventanas = d.ventanas.filter { it.id != id }) }
+        if (ventanaAbierta == id) ventanaAbierta = null
+    }
+
+    fun moverVentana(id: String, paso: Int) {
+        cambiar { d ->
+            val l = d.ventanas.toMutableList()
+            val i = l.indexOfFirst { it.id == id }
+            if (i < 0 || i + paso !in l.indices) return@cambiar d
+            val x = l[i]; l[i] = l[i + paso]; l[i + paso] = x
+            d.copy(ventanas = l)
+        }
+    }
+
+    /** Las herramientas de conversión (estilo.conversion), con su paso en el historial. */
+    fun editarConversion(c: Map<String, ValorJSON>) {
+        cambiar("conversion") { it.copy(estilo = it.estilo.copy(conversion = c.ifEmpty { null })) }
+    }
 }

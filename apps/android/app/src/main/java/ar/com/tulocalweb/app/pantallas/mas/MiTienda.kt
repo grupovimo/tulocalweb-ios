@@ -74,8 +74,8 @@ import kotlin.math.roundToInt
 
 /** Editar la tienda online desde el celular, igual que Mi tienda en el panel web (diseño v2, en bloques): la vista
  *  previa real arriba; Páginas (Inicio, Catálogo, Ficha, Carrito y Nosotros con sus bloques), Estilo (punto de
- *  partida, dirección, colores, tipografías, encabezado, pie, menú, barra y redes) y Marca (logos, al compartir y la
- *  dirección). Se guarda como borrador y se publica. */
+ *  partida, dirección, colores, tipografías, encabezado, pie, menú, barra y redes), Promociones (ventanas y
+ *  herramientas para vender más) y Marca (logos, al compartir y la dirección). Se guarda como borrador y se publica. */
 @Composable
 fun MiTiendaEditor() {
     val estado = LocalEstado.current
@@ -100,6 +100,9 @@ fun MiTiendaEditor() {
     /** La vista previa responde al protocolo: los cambios se ven sin guardar. */
     var viva by remember { mutableStateOf(false) }
     var presetPedido by remember { mutableStateOf<PlantillaTienda?>(null) }
+    /** La ventana que se pidió ver en la vista previa (la vez cambia en cada pedido). */
+    var ventanaVista by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    val desplazamiento = rememberScrollState()
     val plantillas = remember { PlantillaTienda.todas() }
 
     val urlTienda: String? = if (direccion.isEmpty()) estado.tienda?.url else (if (direccion.startsWith("http")) direccion else "https://$direccion")
@@ -198,6 +201,20 @@ fun MiTiendaEditor() {
         return CatalogoBloques.shared.estilo["direccion"]?.let { CatalogoBloques.nombre(it, d) } ?: d
     }
 
+    /** «Ver en la vista previa» de una ventana: sube a la vista y la abre con el borrador. Sin la vista conectada, primero
+     *  guarda el borrador y la recarga (la ventana se abre cuando la página avisa que está lista). */
+    fun verVentana(id: String) {
+        editor.ventanaAbierta = null
+        ventanaVista = id to ((ventanaVista?.second ?: 0) + 1)
+        alcance.launch { desplazamiento.animateScrollTo(0) }
+        if (!viva) alcance.launch { mirar(grande = false) }
+    }
+
+    // Cupones, envío gratis y métricas sólo hacen falta en Promociones: se traen la primera vez que se abre.
+    LaunchedEffect(pestana) {
+        if (pestana == "promos" && !datos.metricasCargadas) { datos.cargarPromos(estado.api); datos.cargarMetricas(estado.api) }
+    }
+
     fun cambiarPreset(p: PlantillaTienda) {
         editor.aplicarPreset(p.id)
         Haptico.exito()
@@ -239,14 +256,14 @@ fun MiTiendaEditor() {
                     habilitado = !guardando && subiendo == null && editor.sinGuardar)
             }
         }, Modifier.background(C.fondo).imePadding()) { abajo ->
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).margenPantalla().padding(bottom = 32.dp + abajo), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.fillMaxSize().verticalScroll(desplazamiento).margenPantalla().padding(bottom = 32.dp + abajo), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Texto("Mi tienda", Estilo.tituloGrande, C.texto)
                 if (!cargado) EsqueletoFilas(5, 0.dp)
                 else {
                     // MARK: Vista previa
                     Column(Modifier.fillMaxWidth().tarjeta(radio = 20.dp)) {
                         VistaPreviaTienda(estado.api.token, vuelta, Modifier.fillMaxWidth().height(380.dp).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)).background(C.pista),
-                            pagina = editor.pagina, diseno = editor.diseno.textoJSON, seleccion = editor.seleccion, marcos = true,
+                            pagina = editor.pagina, diseno = editor.diseno.textoJSON, seleccion = editor.seleccion, ventana = ventanaVista, marcos = true,
                             alTocarBloque = { id -> editor.abrir(id); pestana = "paginas" }, alCambiarViva = { viva = it })
                         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             when {
@@ -273,7 +290,7 @@ fun MiTiendaEditor() {
                             }
                         }
                     }
-                    Segmentado(listOf("paginas" to "Páginas", "estilo" to "Estilo", "marca" to "Marca"), pestana, { pestana = it })
+                    Segmentado(listOf("paginas" to "Páginas", "estilo" to "Estilo", "promos" to "Promociones", "marca" to "Marca"), pestana, { pestana = it })
                     when (pestana) {
                         "estilo" -> {
                             // MARK: Estilo
@@ -333,6 +350,7 @@ fun MiTiendaEditor() {
                                 BotonSecundario("Cambiar dirección", { alcance.launch { cambiarDireccion() } }, habilitado = slug.isNotEmpty() && !direccion.contains(slug))
                             }
                         }
+                        "promos" -> PestanaPromociones(editor) { verVentana(it) }
                         else -> ListaBloques(editor)
                     }
                 }
@@ -343,6 +361,12 @@ fun MiTiendaEditor() {
         }
         Hoja(editor.insertarEn != null, { editor.insertarEn = null }) {
             BibliotecaBloques(editor) { editor.insertarEn = null }
+        }
+        Hoja(editor.ventanaAbierta != null, { editor.ventanaAbierta = null }, listOf(Altura.media, Altura.grande)) {
+            editor.ventanaAbierta?.let { id -> PanelVentana(editor, id, { verVentana(it) }) { editor.ventanaAbierta = null } }
+        }
+        Hoja(editor.creandoVentana, { editor.creandoVentana = false }) {
+            PlantillasVentana(editor) { editor.creandoVentana = false }
         }
         // La vista previa en grande (la hoja con NavigationStack de iOS).
         Hoja(previaGrande, { previaGrande = false }) {

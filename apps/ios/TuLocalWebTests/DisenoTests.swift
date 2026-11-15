@@ -75,4 +75,57 @@ final class DisenoTests: XCTestCase {
         XCTAssertNil(FaltaBloque.de(Bloque(id: "b", tipo: "banner", variante: "banda", datos: ["titulo": .texto("Hot Sale")]), ctx))
         XCTAssertNotNil(FaltaBloque.de(Bloque(id: "p", tipo: "preguntas", variante: "acordeon"), ctx))
     }
+
+    // MARK: Ventanas (packages/contrato/casos/ventanas.json, los mismos que corren Go y la web)
+
+    func testVentanasCompletasComoGo() throws {
+        let url = try XCTUnwrap(Bundle(for: DisenoTests.self).url(forResource: "ventanas", withExtension: "json"))
+        let raiz = try JSONDecoder().decode(ValorJSON.self, from: Data(contentsOf: url))
+        let casos = raiz["ventanas"]?.lista ?? []
+        XCTAssertFalse(casos.isEmpty)
+        let ahora = try XCTUnwrap(Fecha.iso("2026-11-15T12:00:00-03:00"))
+        for c in casos where c["valida"]?.bool == true {
+            guard let completa = c["completa"]?.bool, let v = c["ventana"] else { continue }
+            let nombre = c["nombre"]?.texto ?? ""
+            let ventana = Ventana(json: v)
+            XCTAssertEqual(FaltaVentana.de(ventana, ahora: ahora) == nil, completa, nombre)
+            // Leer y volver a escribir no cambia lo que Go valida.
+            XCTAssertEqual(Ventana(json: ventana.json).json, ventana.json, nombre)
+        }
+    }
+
+    func testPlantillasDeVentanas() throws {
+        let cat = try XCTUnwrap(CatalogoBloques.shared.ventanas)
+        XCTAssertEqual(cat.plantillas.count, 7)
+        let e = EditorTienda()
+        e.empezar(Diseno(json: [:], plantillaTienda: "litoral"), plantilla: "litoral")
+        for p in cat.plantillas {
+            let v = Ventana.dePlantilla(p, id: e.idNuevo(), envioGratis: 50000)
+            XCTAssertNotNil(cat.contenido(v.contenido), p.id)
+            XCTAssertFalse(v.json["datos"].map { "\($0)" }?.contains("{envioGratis}") ?? true, p.id)
+            e.agregarVentana(v, abrir: false)
+        }
+        XCTAssertEqual(e.diseno.ventanas.count, 7)
+        XCTAssertEqual(Set(e.diseno.ventanas.map(\.id)).count, 7)
+        let id = e.diseno.ventanas[0].id
+        e.duplicarVentana(id)
+        XCTAssertEqual(e.diseno.ventanas.count, 8)
+        XCTAssertFalse(e.puedeSumarVentana)
+        e.moverVentana(id, 1)
+        XCTAssertEqual(e.diseno.ventanas[1].id, id)
+        e.borrarVentana(id)
+        e.deshacer()
+        XCTAssertEqual(e.diseno.ventanas[1].id, id)
+        let d = Diseno(json: e.diseno.json, plantillaTienda: "litoral")
+        XCTAssertEqual(d.ventanas, e.diseno.ventanas)
+    }
+
+    func testConversionYBarraViajanEnElEstilo() {
+        var d = Diseno(json: [:], plantillaTienda: "litoral")
+        d.estilo.conversion = ["favoritos": .booleano(true), "stockBajo": .numero(5)]
+        d.estilo.barra = .init(variante: "fija", mensajes: [.init(texto: "Hot Sale", hasta: "2026-11-20T23:59:00-03:00")])
+        let otra = Diseno(json: d.json, plantillaTienda: "litoral")
+        XCTAssertEqual(otra.estilo.conversion?["favoritos"], .booleano(true))
+        XCTAssertEqual(otra.estilo.barra?.mensajes.first?.hasta, "2026-11-20T23:59:00-03:00")
+    }
 }

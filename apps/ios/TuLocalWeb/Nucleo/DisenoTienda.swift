@@ -87,12 +87,14 @@ struct Diseno: Equatable {
     var estilo = EstiloTienda()
     var inicio: [Bloque] = []
     var paginas: [String: AjustesPagina] = [:]
+    /// Las ventanas (popups), en orden: si varias califican, sale la primera.
+    var ventanas: [Ventana] = []
     /// Lo que la app no edita (compartirFoto y lo que venga): vuelve igual en el PUT.
     var resto: [String: ValorJSON] = [:]
 
     private static let propias: Set<String> = [
         "version", "plantilla", "paleta", "titulo", "lema", "portada", "logo", "compartirTitulo", "compartirDescripcion",
-        "estilo", "inicio", "paginas", "secciones"
+        "estilo", "inicio", "paginas", "secciones", "ventanas"
     ]
 
     init() {}
@@ -109,6 +111,7 @@ struct Diseno: Equatable {
         compartirTitulo = o["compartirTitulo"]?.texto ?? ""
         compartirDescripcion = o["compartirDescripcion"]?.texto ?? ""
         estilo = EstiloTienda.desde(o["estilo"])
+        ventanas = o["ventanas"]?.lista?.map { Ventana(json: $0) } ?? []
         if o["version"]?.entero == 2 {
             inicio = o["inicio"]?.como([Bloque].self) ?? []
             if case let .objeto(p)? = o["paginas"] {
@@ -132,6 +135,7 @@ struct Diseno: Equatable {
         if case let .objeto(eo) = e, !eo.isEmpty { o["estilo"] = e }
         o["inicio"] = ValorJSON.de(inicio)
         if !paginas.isEmpty { o["paginas"] = .objeto(paginas.mapValues(\.json)) }
+        if !ventanas.isEmpty { o["ventanas"] = .lista(ventanas.map(\.json)) }
         return o
     }
 

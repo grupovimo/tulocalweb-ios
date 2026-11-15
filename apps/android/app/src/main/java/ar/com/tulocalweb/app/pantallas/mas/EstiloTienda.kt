@@ -79,10 +79,13 @@ data class EstiloTienda(
     val pie: String? = null,
     val barra: Barra? = null,
     val whatsappFlotante: Boolean? = null,
+    /** Las herramientas de conversión (bloques.json › conversion): lo que falta toma porDefecto. */
+    val conversion: Map<String, ValorJSON>? = null,
 ) {
     @Serializable data class ItemMenu(val t: String, val a: String)
     @Serializable data class Barra(val variante: String = "fija", val mensajes: List<Mensaje> = emptyList(), val fondo: String? = null) {
-        @Serializable data class Mensaje(val texto: String = "", val link: String? = null)
+        /** `hasta`: cuenta regresiva, el mensaje se esconde al vencer (ISO). */
+        @Serializable data class Mensaje(val texto: String = "", val link: String? = null, val hasta: String? = null)
     }
 
     /** Un ajuste de forma (direccion, forma, densidad…) por su nombre en bloques.json › estilo. */
@@ -101,7 +104,7 @@ data class EstiloTienda(
 
     /** Para mandarlo dentro del diseño: sin lo vacío (Go lo limpia igual). En v2 ya no van textos ni anuncio. */
     val json: ValorJSON get() {
-        val mensajes = barra?.mensajes?.filter { it.texto.isNotBlank() }?.map { it.copy(link = it.link?.trim()?.ifEmpty { null }) }
+        val mensajes = barra?.mensajes?.filter { it.texto.isNotBlank() }?.map { it.copy(link = it.link?.trim()?.ifEmpty { null }, hasta = it.hasta?.ifEmpty { null }) }
         val e = copy(
             colores = colores?.filter { it.value.isNotEmpty() },
             textos = null, anuncio = null, anuncioLink = null,
@@ -109,6 +112,7 @@ data class EstiloTienda(
             logoAlto = if (logoAlto == 0) null else logoAlto,
             barra = if (mensajes.isNullOrEmpty()) null else barra?.copy(mensajes = mensajes),
             whatsappFlotante = if (whatsappFlotante == false) false else null,
+            conversion = conversion?.ifEmpty { null },
         )
         return runCatching { Api.json.encodeToJsonElement(serializer(), e) }.getOrDefault(Valor.objeto(emptyMap()))
     }
@@ -402,7 +406,7 @@ fun EditorEstilo(estilo: EstiloTienda, alCambiar: (EstiloTienda) -> Unit, paleta
             }
             EditorCampos(b.campos, datos) { d ->
                 val n = actual.copy(
-                    mensajes = d["mensajes"]?.lista?.map { m -> EstiloTienda.Barra.Mensaje(m["texto"]?.texto ?: "", m["link"]?.texto) } ?: emptyList(),
+                    mensajes = d["mensajes"]?.lista?.map { m -> EstiloTienda.Barra.Mensaje(m["texto"]?.texto ?: "", m["link"]?.texto, m["hasta"]?.texto) } ?: emptyList(),
                     fondo = d["fondo"]?.texto,
                 )
                 alCambiar(estilo.copy(barra = if (n.mensajes.isEmpty() && n.fondo == null) null else n))

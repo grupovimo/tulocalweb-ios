@@ -3,8 +3,9 @@ import SwiftUI
 
 /// Editar la tienda online desde el celular, igual que Mi tienda en el panel web (diseño v2, en bloques):
 /// la vista previa real arriba; Páginas (Inicio, Catálogo, Ficha, Carrito y Nosotros con sus bloques),
-/// Estilo (punto de partida, dirección, colores, tipografías, encabezado, pie, menú, barra y redes) y
-/// Marca (logos, al compartir y la dirección). Se guarda como borrador y se publica.
+/// Estilo (punto de partida, dirección, colores, tipografías, encabezado, pie, menú, barra y redes), Promociones
+/// (ventanas y herramientas para vender más) y Marca (logos, al compartir y la dirección). Se guarda como borrador y
+/// se publica.
 struct MiTiendaEditor: View {
     @Environment(Estado.self) private var estado
     @Environment(\.openURL) private var abrir
@@ -26,19 +27,23 @@ struct MiTiendaEditor: View {
     /// La vista previa responde al protocolo: los cambios se ven sin guardar.
     @State private var viva = false
     @State private var presetPedido: PlantillaTienda?
+    /// La ventana que se pidió ver en la vista previa (la vez cambia en cada pedido).
+    @State private var ventanaVista: (id: String, vez: Int)?
     private let plantillas = PlantillaTienda.todas()
 
     var body: some View {
+        ScrollViewReader { desplazar in
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Mi tienda").estilo(.tituloGrande).foregroundStyle(C.texto)
+                Text("Mi tienda").estilo(.tituloGrande).foregroundStyle(C.texto).id("arriba")
                 if !cargado {
                     EsqueletoFilas(filas: 5, miniatura: 0)
                 } else {
                     vistaPrevia
-                    Segmentado(opciones: [("paginas", "Páginas"), ("estilo", "Estilo"), ("marca", "Marca")], elegido: $pestana)
+                    Segmentado(opciones: [("paginas", "Páginas"), ("estilo", "Estilo"), ("promos", "Promociones"), ("marca", "Marca")], elegido: $pestana)
                     switch pestana {
                     case "estilo": pestanaEstilo
+                    case "promos": PestanaPromociones(editor: editor) { id in verVentana(id) { withAnimation(.snappy) { desplazar.scrollTo("arriba", anchor: .top) } } }
                     case "marca": pestanaMarca
                     default: ListaBloques(editor: editor)
                     }
@@ -46,6 +51,15 @@ struct MiTiendaEditor: View {
             }
             .margenPantalla()
             .padding(.bottom, 32)
+        }
+        .sheet(isPresented: Binding(get: { editor.ventanaAbierta != nil }, set: { if !$0 { editor.ventanaAbierta = nil } })) {
+            if let id = editor.ventanaAbierta {
+                PanelVentana(editor: editor, id: id) { v in verVentana(v) { withAnimation(.snappy) { desplazar.scrollTo("arriba", anchor: .top) } } }
+                    .environment(estado).environment(datos)
+                    .hojaTLW([.medium, .large])
+                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            }
+        }
         }
         .scrollDismissesKeyboard(.interactively)
         .barraAccion {
@@ -74,6 +88,13 @@ struct MiTiendaEditor: View {
         .sheet(isPresented: Binding(get: { editor.insertarEn != nil }, set: { if !$0 { editor.insertarEn = nil } })) {
             BibliotecaBloques(editor: editor).hojaTLW([.large])
         }
+        .sheet(isPresented: Binding(get: { editor.creandoVentana }, set: { editor.creandoVentana = $0 })) {
+            PlantillasVentana(editor: editor).environment(datos).hojaTLW([.large])
+        }
+        .onChange(of: pestana) { _, p in
+            // Cupones, envío gratis y métricas sólo hacen falta en Promociones: se traen la primera vez que se abre.
+            if p == "promos", !datos.metricasCargadas { Task { await datos.cargarPromos(estado.api); await datos.cargarMetricas(estado.api) } }
+        }
         .sheet(isPresented: $previaGrande) {
             NavigationStack {
                 VistaPreviaTienda(token: estado.api.token, vuelta: vuelta, pagina: editor.pagina,
@@ -98,7 +119,7 @@ struct MiTiendaEditor: View {
     private var vistaPrevia: some View {
         VStack(alignment: .leading, spacing: 0) {
             VistaPreviaTienda(token: estado.api.token, vuelta: vuelta, pagina: editor.pagina, diseno: editor.diseno.textoJSON,
-                              seleccion: editor.seleccion, marcos: true,
+                              seleccion: editor.seleccion, ventana: ventanaVista, marcos: true,
                               alTocarBloque: { id in editor.abrir(id); pestana = "paginas" },
                               alCambiarViva: { viva = $0 })
                 .frame(height: 380)
@@ -138,6 +159,15 @@ struct MiTiendaEditor: View {
             }
         }
         .tarjeta(radio: 20)
+    }
+
+    /// «Ver en la vista previa» de una ventana: sube a la vista y la abre con el borrador. Sin la vista conectada,
+    /// primero guarda el borrador y la recarga (la ventana se abre cuando la página avisa que está lista).
+    private func verVentana(_ id: String, subir: @escaping () -> Void) {
+        editor.ventanaAbierta = nil
+        ventanaVista = (id, (ventanaVista?.vez ?? 0) + 1)
+        subir()
+        if !viva { Task { await mirar(grande: false) } }
     }
 
     private var urlTienda: URL? {

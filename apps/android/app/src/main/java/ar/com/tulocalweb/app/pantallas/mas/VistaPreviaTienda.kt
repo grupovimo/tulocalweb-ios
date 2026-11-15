@@ -25,7 +25,8 @@ import kotlinx.serialization.json.JsonPrimitive
  *  - la página avisa `{tipo:'lista'}` por `window.TiendaPuente` y recién ahí se le manda algo;
  *  - `window.tiendaVista.mostrar(<diseño>, '<pagina>')` dibuja el borrador sin guardar ni recargar;
  *  - `window.tiendaVista.seleccionar('<id>')` resalta el bloque elegido en la lista;
- *  - al tocar un bloque (con `marcos=1`) avisa `TiendaPuente.bloque(id)` y el editor abre su panel.
+ *  - al tocar un bloque (con `marcos=1`) avisa `TiendaPuente.bloque(id)` y el editor abre su panel;
+ *  - «Ver en la vista previa» de una ventana le manda `{tipo:'ventana', id}` (tienda-promociones.md) y la abre.
  *  Si la página todavía no responde (no avisa «lista»), queda como antes: se recarga con `vuelta`. */
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
@@ -37,6 +38,8 @@ fun VistaPreviaTienda(
     /** El borrador sin guardar, en JSON (Diseno.textoJSON); null: lo guardado. */
     diseno: String? = null,
     seleccion: String? = null,
+    /** La ventana (popup) que se pidió ver; la vez cambia en cada pedido, así se puede volver a abrir la misma. */
+    ventana: Pair<String, Int>? = null,
     marcos: Boolean = false,
     alTocarBloque: ((String) -> Unit)? = null,
     /** true cuando la página responde al protocolo (los cambios se ven sin guardar). */
@@ -80,6 +83,11 @@ fun VistaPreviaTienda(
             c.seleccionada = seleccion
             seleccion?.let { c.seleccionar(it) }
         }
+        if (ventana != null && ventana.second != c.vezVentana) {
+            c.vezVentana = ventana.second
+            c.ventanaPedida = ventana.first
+            c.abrirVentana()
+        }
     })
 }
 
@@ -91,6 +99,9 @@ private class Coordinador {
     var pendiente: String? = null
     var enviado: String? = null
     var seleccionada: String? = null
+    var vezVentana = 0
+    /** La ventana pedida antes de que la página estuviera lista: se abre al conectar. */
+    var ventanaPedida: String? = null
     val reloj = Handler(Looper.getMainLooper())
     var alTocarBloque: ((String) -> Unit)? = null
     var alCambiarViva: ((Boolean) -> Unit)? = null
@@ -112,6 +123,7 @@ private class Coordinador {
                 alCambiarViva?.invoke(true)
                 enviar(siempre = true)
                 seleccionada?.let { seleccionar(it) }
+                abrirVentana()
             }
             "bloque" -> if (id != null) { Haptico.seleccion(); alTocarBloque?.invoke(id) }
         }
@@ -129,6 +141,17 @@ private class Coordinador {
         if (!lista || (!siempre && d == enviado)) return
         enviado = d
         web?.evaluateJavascript("window.tiendaVista && window.tiendaVista.mostrar($d, ${js(pagina)})", null)
+    }
+
+    /** Abre la ventana pedida con el borrador de ahora: `tiendaVista.ventana(id)` o, si la página no lo trae, el mismo
+     *  mensaje `{tipo:'ventana', id}` que manda el editor web. */
+    fun abrirVentana() {
+        if (!lista) return
+        val id = ventanaPedida ?: return
+        ventanaPedida = null
+        enviar(siempre = true)
+        val i = js(id)
+        web?.evaluateJavascript("(function(){var v=window.tiendaVista;if(v&&v.ventana){v.ventana($i)}else{window.postMessage({tipo:'ventana',id:$i},location.origin)}})()", null)
     }
 
     fun seleccionar(id: String) {

@@ -1,0 +1,3304 @@
+{
+  "$comentario": "Casos de validación de las ventanas (diseno.ventanas), estilo.conversion y la barra con «hasta» (docs/especificaciones/tienda-promociones.md; bloques.json › ventanas y conversion). Los corren mitienda/ventanas_test.go y la web. «valida»: un diseño con eso se puede guardar. «completa»: además sale en la tienda (los requeridos del contenido cargados, el premio con lo suyo y, en la ruleta, algún peso mayor a 0). Las plantillas van completadas como lo hace el editor.",
+  "ventanas": [
+    {
+      "nombre": "captación completa con cupón único",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "captación sin premio: válida pero no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "captación sin título: válida pero no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "premio cuponUnico sin descuento: no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "premio cuponUnico porcentaje sin valor: no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "premio envío gratis sin valor: sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "envioGratis"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio monto en pesos",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "monto",
+            "valor": 5000,
+            "dias": 30
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio cuponFijo con cupón",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponFijo",
+            "cupon": "BIENVENIDA"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio cuponFijo sin cupón: no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponFijo"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "premio descarga con archivo",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "descarga",
+            "archivo": "https://cdn.tulocalweb.com.ar/guia.pdf",
+            "nombreArchivo": "Recetario"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio descarga sin archivo: no sale",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "descarga"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "premio nada: sólo suscripción",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "nada"
+          },
+          "pedirNombre": true,
+          "pedirWhatsapp": true
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio con claves de otro tipo: se ignoran",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "nada",
+            "cupon": "VIEJO",
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "premio sin tipo",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "cupon": "VIEJO"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio con tipo desconocido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "regalo"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio porcentaje 95",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 95
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio monto 50 pesos",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "monto",
+            "valor": 50
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio envío gratis con valor",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "envioGratis",
+            "valor": 10
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio con 120 días",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "envioGratis",
+            "dias": 120
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio con clave inventada",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "nada",
+            "sorpresa": true
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "premio descarga http",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "descarga",
+            "archivo": "http://x.com/a.pdf"
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "campo que no es del contenido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          },
+          "cupon": "BIENVENIDA"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "título con HTML",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "<b>Hola</b>",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "título de 71 letras",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "promo con botón, foto y cuenta regresiva",
+      "ventana": {
+        "id": "promo001",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "completa",
+        "contenido": "promo",
+        "datos": {
+          "foto": "https://cdn.tulocalweb.com.ar/f.jpg",
+          "etiqueta": "Se viene",
+          "titulo": "Nueva colección",
+          "texto": "Llega el viernes.",
+          "boton": {
+            "t": "Ver",
+            "a": "catalogo"
+          },
+          "hasta": "2026-12-01T00:00:00-03:00"
+        },
+        "disparo": {
+          "cuando": "entrar"
+        },
+        "frecuencia": {
+          "cada": "sesion"
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "promo con fecha mal escrita",
+      "ventana": {
+        "id": "promo001",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "promo",
+        "datos": {
+          "titulo": "Hola",
+          "hasta": "1 de diciembre"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "cupón con código",
+      "ventana": {
+        "id": "cupon001",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "cupon",
+        "datos": {
+          "titulo": "Llevate 15 %",
+          "cupon": "CHAU15",
+          "condiciones": "Mínimo $ 20.000"
+        },
+        "disparo": {
+          "cuando": "salida"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "cupón sin código: no sale",
+      "ventana": {
+        "id": "cupon001",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "cupon",
+        "datos": {
+          "titulo": "Llevate 15 %"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "cupón con código en minúsculas",
+      "ventana": {
+        "id": "cupon001",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "cupon",
+        "datos": {
+          "titulo": "x",
+          "cupon": "chau15"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta de 4 porciones",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "$ 2.000 off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "monto",
+                "valor": 2000
+              },
+              "peso": 20
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "ruleta de 3 porciones",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta de 9 porciones",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "$ 2.000 off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "monto",
+                "valor": 2000
+              },
+              "peso": 20
+            },
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "$ 2.000 off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "monto",
+                "valor": 2000
+              },
+              "peso": 20
+            },
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta con premio descarga",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "Guía",
+              "premio": {
+                "tipo": "descarga",
+                "archivo": "https://x.com/a.pdf"
+              },
+              "peso": 10
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta con porción sin peso",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              }
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta con peso 101",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 101
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "ruleta con todos los pesos en 0: no sale",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 0
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 0
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 0
+            },
+            {
+              "texto": "$ 2.000 off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "monto",
+                "valor": 2000
+              },
+              "peso": 0
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "ruleta con un premio incompleto: no sale",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Casi",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 30
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 3
+              },
+              "peso": 20
+            },
+            {
+              "texto": "10 %",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje"
+              },
+              "peso": 10
+            }
+          ]
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "ruleta sin porciones: no sale",
+      "ventana": {
+        "id": "ruleta01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": false
+    },
+    {
+      "nombre": "contenido desconocido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "encuesta",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "variante desconocida",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "flotante",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "id corto",
+      "ventana": {
+        "id": "abc",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "id con mayúsculas",
+      "ventana": {
+        "id": "Bienvenida1",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "sin nombre",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "nombre de 41 letras",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "activa no booleana",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": "si",
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "disparo desconocido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "clic"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "segundos sin valor: toma el de por defecto",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "segundos 2",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 2
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "segundos 121",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 121
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "scroll 90",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "scroll",
+          "valor": 90
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "scroll 95",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "scroll",
+          "valor": 95
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "salida con valor",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "salida",
+          "valor": 10
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "carrito",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "carrito"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "frecuencia desconocida",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "hora"
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "cada 0 días",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 0
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "cada 91 días",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 91
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "una vez con días",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "unaVez",
+          "dias": 3
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "siempre",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "siempre"
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "público desconocido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "vip",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "páginas: inicio y producto",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [
+          "inicio",
+          "producto"
+        ],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "páginas: checkout no se puede",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [
+          "checkout"
+        ],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "páginas repetidas",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [
+          "inicio",
+          "inicio"
+        ],
+        "dispositivos": "todos"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "dispositivo desconocido",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "tablet"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "desde y hasta en orden",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos",
+        "desde": "2026-11-20T00:00:00-03:00",
+        "hasta": "2026-11-30T23:59:00-03:00"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "hasta antes que desde",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos",
+        "desde": "2026-11-30T00:00:00-03:00",
+        "hasta": "2026-11-20T00:00:00-03:00"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "desde mal escrito",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos",
+        "desde": "mañana"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "clave desconocida en la ventana",
+      "ventana": {
+        "id": "bienve01",
+        "nombre": "Bienvenida",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          }
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos",
+        "color": "rojo"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "plantilla bienvenida, completada",
+      "ventana": {
+        "id": "plant000",
+        "nombre": "Bienvenida 10 %",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "10 % en tu primera compra",
+          "texto": "Dejanos tu mail y te mandamos el código. Además, te enterás antes que nadie de las novedades.",
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 10,
+            "dias": 7
+          },
+          "textoBoton": "Quiero mi 10 %",
+          "listo": "¡Listo! Tu código ya está en el carrito y también te lo mandamos por mail."
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 8
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 14
+        },
+        "publico": "nuevos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla antes-de-irte, completada",
+      "ventana": {
+        "id": "plant001",
+        "nombre": "Antes de irte",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "cupon",
+        "datos": {
+          "titulo": "¡Esperá! Llevate un descuento",
+          "texto": "Usá este código antes de terminar tu compra.",
+          "condiciones": "Válido por tiempo limitado.",
+          "cupon": "CHAU10"
+        },
+        "disparo": {
+          "cuando": "salida"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 3
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla ruleta, completada",
+      "ventana": {
+        "id": "plant002",
+        "nombre": "Ruleta de premios",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "ruleta",
+        "datos": {
+          "titulo": "Girá y ganá",
+          "texto": "Dejá tu mail y probá suerte. Un giro por persona.",
+          "porciones": [
+            {
+              "texto": "5 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 5,
+                "dias": 7
+              },
+              "peso": 35
+            },
+            {
+              "texto": "Casi…",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 15
+            },
+            {
+              "texto": "10 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 10,
+                "dias": 7
+              },
+              "peso": 25
+            },
+            {
+              "texto": "Envío gratis",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "envioGratis",
+                "dias": 7
+              },
+              "peso": 15
+            },
+            {
+              "texto": "Otra vez será",
+              "premio": {
+                "tipo": "nada"
+              },
+              "peso": 5
+            },
+            {
+              "texto": "15 % off",
+              "premio": {
+                "tipo": "cuponUnico",
+                "descuento": "porcentaje",
+                "valor": 15,
+                "dias": 7
+              },
+              "peso": 5
+            }
+          ],
+          "textoBoton": "Girar la ruleta"
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 10
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 7
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla envio-gratis, completada",
+      "ventana": {
+        "id": "plant003",
+        "nombre": "Envío gratis",
+        "activa": true,
+        "variante": "lateral",
+        "contenido": "promo",
+        "datos": {
+          "etiqueta": "Envío gratis",
+          "titulo": "Envío gratis desde $ 40.000",
+          "texto": "Sumá productos al carrito y el envío corre por nuestra cuenta.",
+          "boton": {
+            "t": "Ver productos",
+            "a": "catalogo"
+          }
+        },
+        "disparo": {
+          "cuando": "scroll",
+          "valor": 40
+        },
+        "frecuencia": {
+          "cada": "sesion"
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla lanzamiento, completada",
+      "ventana": {
+        "id": "plant004",
+        "nombre": "Lanzamiento",
+        "activa": true,
+        "variante": "completa",
+        "contenido": "promo",
+        "datos": {
+          "etiqueta": "Se viene",
+          "titulo": "Nueva colección",
+          "texto": "Faltan pocos días. Mirá lo que llega antes que nadie.",
+          "boton": {
+            "t": "Ver novedades",
+            "a": "catalogo"
+          },
+          "hasta": "2026-11-22T12:00:00-03:00"
+        },
+        "disparo": {
+          "cuando": "entrar"
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 1
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla guia, completada",
+      "ventana": {
+        "id": "plant005",
+        "nombre": "Guía gratis",
+        "activa": true,
+        "variante": "centrada",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "Bajate la guía gratis",
+          "texto": "Te la mandamos al mail y la podés descargar ahora mismo.",
+          "premio": {
+            "tipo": "descarga",
+            "nombreArchivo": "Guía",
+            "archivo": "https://cdn.tulocalweb.com.ar/guia.pdf"
+          },
+          "textoBoton": "Quiero la guía",
+          "listo": "¡Listo! Descargala acá; también te la mandamos por mail."
+        },
+        "disparo": {
+          "cuando": "scroll",
+          "valor": 50
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 30
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    },
+    {
+      "nombre": "plantilla whatsapp, completada",
+      "ventana": {
+        "id": "plant006",
+        "nombre": "Sumate por WhatsApp",
+        "activa": true,
+        "variante": "inferior",
+        "contenido": "captacion",
+        "datos": {
+          "titulo": "Enterate primero por WhatsApp",
+          "texto": "Ofertas y novedades antes que nadie. Sin cadenas ni spam.",
+          "pedirNombre": true,
+          "pedirWhatsapp": true,
+          "premio": {
+            "tipo": "cuponUnico",
+            "descuento": "porcentaje",
+            "valor": 5,
+            "dias": 14
+          },
+          "textoBoton": "Sumarme",
+          "listo": "¡Gracias! Ya estás en la lista. Tu 5 % llega por mail."
+        },
+        "disparo": {
+          "cuando": "segundos",
+          "valor": 20
+        },
+        "frecuencia": {
+          "cada": "dias",
+          "dias": 30
+        },
+        "publico": "todos",
+        "paginas": [],
+        "dispositivos": "todos"
+      },
+      "valida": true,
+      "completa": true
+    }
+  ],
+  "listas": [
+    {
+      "nombre": "sin ventanas",
+      "ventanas": [],
+      "valida": true
+    },
+    {
+      "nombre": "ocho ventanas",
+      "ventanas": [
+        {
+          "id": "vent0000",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0001",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0002",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0003",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0004",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0005",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0006",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0007",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      ],
+      "valida": true
+    },
+    {
+      "nombre": "nueve ventanas",
+      "ventanas": [
+        {
+          "id": "vent0000",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0001",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0002",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0003",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0004",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0005",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0006",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0007",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "vent0008",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      ],
+      "valida": false
+    },
+    {
+      "nombre": "ids repetidos",
+      "ventanas": [
+        {
+          "id": "bienve01",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        },
+        {
+          "id": "bienve01",
+          "nombre": "Bienvenida",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            }
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      ],
+      "valida": false
+    }
+  ],
+  "conversion": [
+    {
+      "nombre": "vacía: todo por defecto",
+      "conversion": {},
+      "valida": true
+    },
+    {
+      "nombre": "completa",
+      "conversion": {
+        "envioGratis": true,
+        "pruebaSocial": {
+          "activa": true,
+          "cada": 20,
+          "paginas": [
+            "inicio",
+            "producto"
+          ]
+        },
+        "etiquetas": {
+          "nuevo": true,
+          "oferta": true,
+          "ultimas": false,
+          "masVendido": true
+        },
+        "stockBajo": 5,
+        "compraFija": true,
+        "sumaEnCarrito": false,
+        "favoritos": true
+      },
+      "valida": true
+    },
+    {
+      "nombre": "prueba social a medias",
+      "conversion": {
+        "pruebaSocial": {
+          "activa": true
+        }
+      },
+      "valida": true
+    },
+    {
+      "nombre": "prueba social cada 10 s",
+      "conversion": {
+        "pruebaSocial": {
+          "activa": true,
+          "cada": 10
+        }
+      },
+      "valida": false
+    },
+    {
+      "nombre": "prueba social cada 121 s",
+      "conversion": {
+        "pruebaSocial": {
+          "cada": 121
+        }
+      },
+      "valida": false
+    },
+    {
+      "nombre": "prueba social en el checkout",
+      "conversion": {
+        "pruebaSocial": {
+          "paginas": [
+            "checkout"
+          ]
+        }
+      },
+      "valida": false
+    },
+    {
+      "nombre": "páginas repetidas",
+      "conversion": {
+        "pruebaSocial": {
+          "paginas": [
+            "inicio",
+            "inicio"
+          ]
+        }
+      },
+      "valida": false
+    },
+    {
+      "nombre": "stock bajo 0: no avisa",
+      "conversion": {
+        "stockBajo": 0
+      },
+      "valida": true
+    },
+    {
+      "nombre": "stock bajo 21",
+      "conversion": {
+        "stockBajo": 21
+      },
+      "valida": false
+    },
+    {
+      "nombre": "stock bajo con decimales",
+      "conversion": {
+        "stockBajo": 2.5
+      },
+      "valida": false
+    },
+    {
+      "nombre": "etiqueta desconocida",
+      "conversion": {
+        "etiquetas": {
+          "agotado": true
+        }
+      },
+      "valida": false
+    },
+    {
+      "nombre": "favoritos como texto",
+      "conversion": {
+        "favoritos": "si"
+      },
+      "valida": false
+    },
+    {
+      "nombre": "clave desconocida",
+      "conversion": {
+        "contador": true
+      },
+      "valida": false
+    }
+  ],
+  "barra": [
+    {
+      "nombre": "mensaje con cuenta regresiva",
+      "barra": {
+        "variante": "fija",
+        "mensajes": [
+          {
+            "texto": "Hot Sale: 20 % off",
+            "hasta": "2026-11-20T23:59:00-03:00"
+          }
+        ]
+      },
+      "valida": true
+    },
+    {
+      "nombre": "mensaje sin hasta",
+      "barra": {
+        "variante": "rotativa",
+        "mensajes": [
+          {
+            "texto": "Envío gratis",
+            "link": "catalogo"
+          }
+        ]
+      },
+      "valida": true
+    },
+    {
+      "nombre": "hasta mal escrito",
+      "barra": {
+        "mensajes": [
+          {
+            "texto": "Hot Sale",
+            "hasta": "el viernes"
+          }
+        ]
+      },
+      "valida": false
+    }
+  ]
+}

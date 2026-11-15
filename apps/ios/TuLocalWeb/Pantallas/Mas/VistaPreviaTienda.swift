@@ -6,7 +6,8 @@ import WebKit
 /// - la página avisa `{tipo:'lista'}` por `webkit.messageHandlers.tienda` y recién ahí se le manda algo;
 /// - `window.tiendaVista.mostrar(<diseño>, '<pagina>')` dibuja el borrador sin guardar ni recargar;
 /// - `window.tiendaVista.seleccionar('<id>')` resalta el bloque elegido en la lista;
-/// - al tocar un bloque (con `marcos=1`) avisa `{tipo:'bloque', id}` y el editor abre su panel.
+/// - al tocar un bloque (con `marcos=1`) avisa `{tipo:'bloque', id}` y el editor abre su panel;
+/// - «Ver en la vista previa» de una ventana le manda `{tipo:'ventana', id}` (tienda-promociones.md) y la abre.
 /// Si la página todavía no responde (no avisa «lista»), queda como antes: se recarga con `vuelta`.
 struct VistaPreviaTienda: UIViewRepresentable {
     var token: String?
@@ -15,6 +16,8 @@ struct VistaPreviaTienda: UIViewRepresentable {
     /// El borrador sin guardar, en JSON (Diseno.textoJSON); nil: lo guardado.
     var diseno: String?
     var seleccion: String?
+    /// La ventana (popup) que se pidió ver; `vez` cambia en cada pedido, así se puede volver a abrir la misma.
+    var ventana: (id: String, vez: Int)?
     var marcos = false
     var alTocarBloque: ((String) -> Void)?
     /// true cuando la página responde al protocolo (los cambios se ven sin guardar).
@@ -59,6 +62,11 @@ struct VistaPreviaTienda: UIViewRepresentable {
             c.seleccionada = seleccion
             if let s = seleccion { c.seleccionar(s) }
         }
+        if let v = ventana, v.vez != c.vezVentana {
+            c.vezVentana = v.vez
+            c.ventanaPedida = v.id
+            c.abrirVentana()
+        }
     }
 
     final class Coordinador: NSObject, WKScriptMessageHandler {
@@ -69,6 +77,9 @@ struct VistaPreviaTienda: UIViewRepresentable {
         var pendiente: String?
         var enviado: String?
         var seleccionada: String?
+        var vezVentana = 0
+        /// La ventana pedida antes de que la página estuviera lista: se abre al conectar.
+        var ventanaPedida: String?
         var reloj: Timer?
         var alTocarBloque: ((String) -> Void)?
         var alCambiarViva: ((Bool) -> Void)?
@@ -95,6 +106,7 @@ struct VistaPreviaTienda: UIViewRepresentable {
                 alCambiarViva?(true)
                 enviar(siempre: true)
                 if let s = seleccionada { seleccionar(s) }
+                abrirVentana()
             case "bloque":
                 if let id = o["id"] as? String { Haptico.seleccion(); alTocarBloque?(id) }
             default: break
@@ -112,6 +124,20 @@ struct VistaPreviaTienda: UIViewRepresentable {
             guard lista, let d = pendiente, siempre || d != enviado else { return }
             enviado = d
             web?.evaluateJavaScript("window.tiendaVista && window.tiendaVista.mostrar(\(d), \(Self.js(pagina)))")
+        }
+
+        /// Abre la ventana pedida con el borrador de ahora: `tiendaVista.ventana(id)` o, si la página no lo trae, el mismo
+        /// mensaje `{tipo:'ventana', id}` que manda el editor web.
+        func abrirVentana() {
+            guard lista, let id = ventanaPedida else { return }
+            ventanaPedida = nil
+            enviar(siempre: true)
+            web?.evaluateJavaScript(Self.jsVentana(id))
+        }
+
+        static func jsVentana(_ id: String) -> String {
+            let i = js(id)
+            return "(function(){var v=window.tiendaVista;if(v&&v.ventana){v.ventana(\(i))}else{window.postMessage({tipo:'ventana',id:\(i)},location.origin)}})()"
         }
 
         func seleccionar(_ id: String) {

@@ -18,13 +18,56 @@ data class CatalogoBloques(
     val grupos: List<Grupo> = emptyList(),
     val bloques: List<Tipo> = emptyList(),
     val barraAnuncios: Barra = Barra(nombre = "Barra de anuncios", variantes = listOf("fija"), nombresVariantes = listOf("Fija")),
+    /** Las ventanas (popups) y las herramientas de conversión (docs/especificaciones/tienda-promociones.md). */
+    val ventanas: Ventanas? = null,
+    val conversion: Conversion? = null,
 ) {
+    @Serializable
+    data class Ventanas(
+        val nombre: String = "",
+        val descripcion: String = "",
+        val variantes: List<String> = emptyList(),
+        val nombresVariantes: List<String> = emptyList(),
+        val descripcionesVariantes: List<String>? = null,
+        val campos: List<Campo> = emptyList(),
+        val contenidos: List<Contenido> = emptyList(),
+        val disparos: List<Disparo> = emptyList(),
+        val frecuencias: List<Frecuencia> = emptyList(),
+        val publicos: Opciones = Opciones(),
+        val paginas: Opciones = Opciones(),
+        val dispositivos: Opciones = Opciones(),
+        val plantillas: List<Plantilla> = emptyList(),
+    ) {
+        @Serializable data class Contenido(val tipo: String, val nombre: String = "", val descripcion: String = "", val campos: List<Campo> = emptyList())
+        @Serializable data class Rango(val min: Int, val max: Int, val porDefecto: Int, val unidad: String? = null)
+        @Serializable data class Disparo(val cuando: String, val nombre: String = "", val descripcion: String = "", val valor: Rango? = null)
+        @Serializable data class Frecuencia(val cada: String, val nombre: String = "", val descripcion: String = "", val dias: Rango? = null)
+        @Serializable data class Plantilla(
+            val id: String,
+            val nombre: String = "",
+            val descripcion: String = "",
+            /** Los campos que la persona tiene que completar (un cupón suyo, el archivo). */
+            val completar: List<String>? = null,
+            val hastaEnDias: Int? = null,
+            val ventana: ValorJSON = kotlinx.serialization.json.JsonObject(emptyMap()),
+        )
+
+        fun contenido(t: String): Contenido? = contenidos.firstOrNull { it.tipo == t }
+        fun disparo(c: String): Disparo? = disparos.firstOrNull { it.cuando == c }
+        fun frecuencia(c: String): Frecuencia? = frecuencias.firstOrNull { it.cada == c }
+        fun nombreVariante(v: String): String = variantes.indexOf(v).takeIf { it >= 0 }?.let { nombresVariantes.getOrNull(it) } ?: v
+    }
+
+    @Serializable data class Conversion(val nombre: String = "", val descripcion: String = "", val campos: List<Campo> = emptyList())
     @Serializable data class Limites(
         val bloquesPorPagina: Int = 30, val itemsPorLista: Int = 12, val bytesDiseno: Int = 65536,
         /** Los topes de un campo tabla (la guía de talles). */
         val filasTabla: Int = 8, val columnasTabla: Int = 8, val letrasCelda: Int = 30,
+        /** Cuántas ventanas (popups) puede tener la tienda. */
+        val ventanas: Int = 8,
     )
-    @Serializable data class Opciones(val opciones: List<String> = emptyList(), val nombres: List<String> = emptyList(), val porDefecto: String? = null)
+    @Serializable data class Opciones(val opciones: List<String> = emptyList(), val nombres: List<String> = emptyList(), val porDefecto: String? = null,
+                                      val descripcion: String? = null)
     @Serializable data class Grupo(val id: String, val nombre: String)
 
     /** Un campo de un bloque (tiposCampo en bloques.json): texto, foto, link, lista… */
@@ -43,6 +86,8 @@ data class CatalogoBloques(
         val item: List<Campo>? = null,
         val opciones: List<String>? = null,
         val nombres: List<String>? = null,
+        /** La explicación corta que va abajo del campo. */
+        val descripcion: String? = null,
     )
 
     @Serializable

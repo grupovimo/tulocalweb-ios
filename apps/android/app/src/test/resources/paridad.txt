@@ -26,6 +26,7 @@ Mas/Mas.swift
 Mas/MiTienda.swift
 Mas/MiniaturaBloque.swift
 Mas/Plan.swift
+Mas/PromocionesTienda.swift
 Mas/Secciones.swift
 Mas/VistaPreviaTienda.swift
 Pedidos/CancelarPedido.swift

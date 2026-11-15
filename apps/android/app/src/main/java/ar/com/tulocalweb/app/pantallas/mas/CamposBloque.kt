@@ -52,6 +52,9 @@ import ar.com.tulocalweb.app.nucleo.CatalogoBloques
 import ar.com.tulocalweb.app.nucleo.ContextoTienda
 import ar.com.tulocalweb.app.nucleo.Fecha
 import ar.com.tulocalweb.app.nucleo.Fotos
+import ar.com.tulocalweb.app.nucleo.MetricaVentana
+import ar.com.tulocalweb.app.nucleo.Ventana
+import ar.com.tulocalweb.app.nucleo.numero
 import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.PaginaProductos
 import ar.com.tulocalweb.app.nucleo.ProductoFila
@@ -111,6 +114,34 @@ class DatosEditor {
     }
 
     fun nombre(id: String): String = conocidos[id]?.nombre ?: "Un producto"
+
+    // MARK: Promociones
+
+    /** Un cupón de la tienda, para elegirlo en una ventana. */
+    data class CuponTienda(val codigo: String, val descripcion: String, val activo: Boolean)
+    var cupones by mutableStateOf<List<CuponTienda>>(emptyList())
+    /** Desde cuánto el envío es gratis (Cupones › automáticas), para las plantillas. */
+    var envioGratis by mutableStateOf<Int?>(null)
+    /** Por ventana, los últimos 30 días. */
+    var metricas by mutableStateOf<Map<String, MetricaVentana>>(emptyMap())
+    var metricasCargadas by mutableStateOf(false)
+
+    suspend fun cargarPromos(api: Api) {
+        val cs = api.opcional<ValorJSON>("/v1/panel/cupones")
+        cupones = (cs?.get("cupones")?.lista ?: emptyList()).mapNotNull { x ->
+            val codigo = x["codigo"]?.texto ?: return@mapNotNull null
+            if (x["estado"]?.texto == "terminado") null else CuponTienda(codigo, x["descripcion"]?.texto ?: "", x["estado"]?.texto == "activo")
+        }
+        envioGratis = api.opcional<ValorJSON>("/v1/panel/configuracion/entregas")?.get("gratisDesde")?.entero
+    }
+
+    suspend fun cargarMetricas(api: Api) {
+        val hoy = Instant.now()
+        val desde = hoy.atZone(Ventana.zonaAR).minusDays(29)
+        api.opcional<ValorJSON>("/v1/panel/promos/metricas", listOf("desde" to Ventana.isoAR(desde).take(10), "hasta" to Ventana.isoAR(hoy).take(10)))
+            ?.let { metricas = MetricaVentana.leer(it) }
+        metricasCargadas = true
+    }
 }
 
 val LocalDatosEditor = staticCompositionLocalOf { DatosEditor() }
@@ -121,10 +152,14 @@ fun EditorCampos(campos: List<CatalogoBloques.Campo>, datos: Map<String, ValorJS
     val actuales by rememberUpdatedState(datos)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         campos.forEach { c ->
-            EditorCampo(c, datos[c.id]) { v ->
-                val d = actuales.toMutableMap()
-                if (v != null && (!v.vacio || v.bool != null)) d[c.id] = v else d.remove(c.id)
-                alCambiar(d)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                EditorCampo(c, datos[c.id]) { v ->
+                    val d = actuales.toMutableMap()
+                    if (v != null && (!v.vacio || v.bool != null)) d[c.id] = v else d.remove(c.id)
+                    alCambiar(d)
+                }
+                val d = c.descripcion
+                if (d != null && c.tipo != "grupo") Texto(d, Estilo.footnote, C.texto2)
             }
         }
     }
@@ -178,11 +213,25 @@ fun EditorCampo(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
         "lista" -> EditorLista(campo, valor, alCambiar)
         "grupo" -> Column(Modifier.fillMaxWidth().border(1.dp, C.linea2, RoundedCornerShape(14.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Texto(campo.nombre, Estilo.subheadFuerte, C.texto)
-            EditorCampos(campo.item ?: emptyList(), valor?.objeto ?: emptyMap()) { alCambiar(Valor.objeto(it)) }
+            campo.descripcion?.let { Texto(it, Estilo.footnote, C.texto2) }
+            EditorCampos(camposDelGrupo(campo, valor), valor?.objeto ?: emptyMap()) { alCambiar(Valor.objeto(it)) }
         }
         "tabla" -> EditorTabla(campo.nombre, valor, alCambiar)
+        "cupon" -> SelectorCupon(campo.nombre, texto, ::ponerTexto)
+        "premio" -> EditorPremio(campo, valor, alCambiar)
+        "opciones" -> SelectorOpciones(campo.nombre, campo.opciones ?: emptyList(), campo.nombres ?: campo.opciones ?: emptyList(),
+            valor?.lista?.mapNotNull { it.texto } ?: emptyList()) { alCambiar(Valor.lista(it.map { o -> Valor.texto(o) })) }
         else -> {}
     }
+}
+
+/** Un grupo que empieza con «activa» apagada muestra sólo el interruptor (compras recientes). */
+private fun camposDelGrupo(campo: CatalogoBloques.Campo, valor: ValorJSON?): List<CatalogoBloques.Campo> {
+    val items = campo.item ?: emptyList()
+    val p = items.firstOrNull() ?: return items
+    if (p.id != "activa" || p.tipo != "si") return items
+    val on = valor?.get("activa")?.bool ?: campo.porDefecto?.get("activa")?.bool ?: p.porDefecto?.bool ?: false
+    return if (on) items else listOf(p)
 }
 
 fun esVideo(s: String): Boolean {
@@ -340,7 +389,8 @@ private fun isoAR(f: ZonedDateTime): String = f.withZoneSameInstant(zonaAR).with
 
 /** Fecha y hora (ISO 8601 con la hora de Argentina). */
 @Composable
-fun EditorFecha(titulo: String, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Unit) {
+fun EditorFecha(titulo: String, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Unit, boton: String = "Elegir cuándo termina",
+                pasada: String = "Ya pasó: no se muestra.", /** Con «Quitar» para dejarla sin fecha. */ quitable: Boolean = false) {
     val f = valor?.texto?.let { Fecha.iso(it) }?.atZone(zonaAR)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (f != null) {
@@ -348,10 +398,14 @@ fun EditorFecha(titulo: String, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Un
                 RenglonFecha(titulo, f.toLocalDate(), { d -> alCambiar(Valor.texto(isoAR(d.atTime(f.toLocalTime()).atZone(zonaAR)))) })
                 RenglonHora("Hora", f.hour * 60 + f.minute) { m -> alCambiar(Valor.texto(isoAR(f.withHour(m / 60).withMinute(m % 60).withSecond(0)))) }
             }
-            if (f.toInstant().isBefore(Instant.now())) Texto("Ya pasó: la oferta no se muestra.", Estilo.footnote, C.errorTinta)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                if (f.toInstant().isBefore(Instant.now())) Texto(pasada, Estilo.footnote, C.errorTinta)
+                Spacer(Modifier.weight(1f))
+                if (quitable) Texto("Quitar", Estilo.footnoteFuerte, C.primarioTexto, Modifier.clickable { alCambiar(null) })
+            }
         } else {
             Texto(titulo, Estilo.footnoteFuerte, C.texto2)
-            BotonTonal("Elegir cuándo termina", {
+            BotonTonal(boton, {
                 val enUnaSemana = LocalDate.now(zonaAR).plusDays(7).atStartOfDay(zonaAR).minusMinutes(1)
                 alCambiar(Valor.texto(isoAR(enUnaSemana)))
             }, alto = 40.dp, simbolo = "calendar")
@@ -531,6 +585,16 @@ fun EditorLista(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
     val items = valor?.lista?.map { it.objeto ?: emptyMap() } ?: emptyList()
     val max = campo.max ?: CatalogoBloques.shared.limites.itemsPorLista
     fun poner(l: List<Map<String, ValorJSON>>) = alCambiar(if (l.isEmpty()) null else Valor.lista(l.map { Valor.objeto(it) }))
+    /** Un elemento nuevo con los números por defecto ya puestos (el peso de una porción cuenta aunque no se toque). */
+    val nuevo = (campo.item ?: emptyList()).filter { it.tipo == "numero" }.mapNotNull { c -> c.porDefecto?.let { c.id to it } }.toMap()
+    /** Con peso (las porciones de la ruleta): cuántas veces de cada 100 sale cada una. */
+    fun chance(i: Int): String? {
+        if ((campo.item ?: emptyList()).none { it.id == "peso" }) return null
+        val pesos = items.map { it["peso"]?.numero ?: 0.0 }
+        val total = pesos.sum()
+        if (total <= 0 || i !in pesos.indices || pesos[i] <= 0) return "Nunca sale"
+        return "Sale ${Math.round(pesos[i] / total * 100)} de cada 100"
+    }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row {
             Texto(campo.nombre, Estilo.subheadFuerte, C.texto, Modifier.weight(1f))
@@ -541,7 +605,8 @@ fun EditorLista(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
             Column(Modifier.fillMaxWidth().clip(forma).background(C.crema2.copy(alpha = 0.5f)).border(1.dp, C.linea, forma).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Texto("${i + 1}", Estilo.footnoteFuerte, C.texto2, Modifier.weight(1f))
+                    Texto("${i + 1}", Estilo.footnoteFuerte, C.texto2)
+                    Texto(chance(i) ?: "", Estilo.footnote, C.texto3, Modifier.weight(1f).padding(start = 10.dp), lineas = 1, numeros = true)
                     Box(Modifier.size(36.dp).alpha(if (i == 0) 0.35f else 1f).clickable(enabled = i > 0) {
                         val l = items.toMutableList(); val x = l[i]; l[i] = l[i - 1]; l[i - 1] = x; poner(l)
                     }.semantics { contentDescription = "Subir" }, contentAlignment = Alignment.Center) { Icono("chevron.up", 14f, C.primarioTexto) }
@@ -555,7 +620,7 @@ fun EditorLista(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Val
             }
         }
         if (items.isEmpty()) Texto("Todavía no hay ninguno.", Estilo.footnote, C.texto2)
-        if (items.size < max) BotonTonal("Sumar", { poner(items + listOf(emptyMap())) }, alto = 40.dp, simbolo = "plus")
+        if (items.size < max) BotonTonal("Sumar", { poner(items + listOf(nuevo)) }, alto = 40.dp, simbolo = "plus")
     }
 }
 
@@ -608,6 +673,106 @@ fun EditorTabla(titulo: String, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Un
                 BotonTonal("Columna", { poner(filas.map { it + "" }) }, Modifier.semantics { contentDescription = "Sumar una columna" }, alto = 40.dp, simbolo = "plus", habilitado = ancho < lim.columnasTabla)
                 BotonTonal("Columna", { poner(filas.map { it.dropLast(1) }) }, Modifier.semantics { contentDescription = "Quitar la última columna" }, alto = 40.dp, simbolo = "minus", habilitado = ancho > 1)
                 BotonTonal("Borrar la tabla", { poner(null) }, alto = 40.dp, simbolo = "trash")
+            }
+        }
+    }
+}
+// MARK: - Promociones: cupón, premio y opciones
+
+/** Un cupón de la tienda (tiposCampo › cupon): se elige de la lista de Cupones. */
+@Composable
+fun SelectorCupon(titulo: String, codigo: String, alElegir: (String) -> Unit) {
+    val datos = LocalDatosEditor.current
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Texto(titulo, Estilo.footnoteFuerte, C.texto2)
+        if (datos.cupones.isEmpty() && codigo.isEmpty()) {
+            Texto("Todavía no tenés cupones. Crealos en Más › Cupones.", Estilo.footnote, C.avisoTinta)
+        } else {
+            val opciones = listOf("" to "Elegí uno") + datos.cupones.map { c -> c.codigo to (if (c.descripcion.isEmpty()) c.codigo else "${c.codigo} · ${c.descripcion}") } +
+                (if (codigo.isNotEmpty() && datos.cupones.none { it.codigo == codigo }) listOf(codigo to codigo) else emptyList())
+            SelectorMenu(opciones, codigo, alElegir, titulo)
+            if (datos.cupones.firstOrNull { it.codigo == codigo }?.activo == false) {
+                Texto("Este cupón está pausado: activalo en Cupones para que funcione.", Estilo.footnote, C.avisoTinta)
+            }
+        }
+    }
+}
+
+private val nombresPremio = mapOf("cuponFijo" to "Un cupón tuyo", "cuponUnico" to "Un código único", "descarga" to "Una descarga", "nada" to "Nada, sólo sumarse")
+private val descuentosPremio = listOf("porcentaje" to "Porcentaje", "monto" to "Monto fijo", "envioGratis" to "Envío gratis")
+
+/** El premio de una captación o de una porción de la ruleta (tiposCampo › premio). */
+@Composable
+fun EditorPremio(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (ValorJSON?) -> Unit) {
+    val tipos = campo.opciones ?: listOf("cuponFijo", "cuponUnico", "descarga", "nada")
+    val actual = valor?.objeto ?: campo.porDefecto?.objeto ?: emptyMap()
+    val tipo = actual["tipo"]?.texto ?: ""
+    fun poner(k: String, v: ValorJSON?) {
+        val o = actual.toMutableMap()
+        if (v == null) o.remove(k) else o[k] = v
+        alCambiar(Valor.objeto(o))
+    }
+    /** Al cambiar de tipo quedan sólo las claves del nuevo (Go ignora las otras, pero así no confunden). */
+    fun cambiarTipo(t: String) {
+        val o = mutableMapOf<String, ValorJSON>("tipo" to Valor.texto(t))
+        if (t == "cuponUnico") { o["descuento"] = Valor.texto("porcentaje"); o["valor"] = Valor.numero(10); o["dias"] = Valor.numero(7) }
+        if (t == "descarga") actual["nombreArchivo"]?.let { o["nombreArchivo"] = it }
+        alCambiar(Valor.objeto(o))
+    }
+    @Composable
+    fun Numero(titulo: String, clave: String, rango: IntRange, paso: Int, porDefecto: Int, texto: (Int) -> String) {
+        val n = actual[clave]?.entero ?: porDefecto
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Texto(titulo, Estilo.body16, C.texto, Modifier.weight(1f))
+            Texto(texto(n), Estilo.fila, C.texto, Modifier.padding(end = 10.dp), numeros = true)
+            Pasador(n, { poner(clave, Valor.numero(it.coerceIn(rango.first, rango.last))) }, rango, paso)
+        }
+    }
+    Column(Modifier.fillMaxWidth().border(1.dp, C.linea2, RoundedCornerShape(14.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SelectorOpcion(campo.nombre, tipos, tipos.map { nombresPremio[it] ?: it }, tipo) { cambiarTipo(it) }
+        when (tipo) {
+            "cuponFijo" -> SelectorCupon("El cupón", actual["cupon"]?.texto ?: "") { poner("cupon", if (it.isEmpty()) null else Valor.texto(it)) }
+            "cuponUnico" -> {
+                val d = actual["descuento"]?.texto ?: "porcentaje"
+                SelectorOpcion("Qué descuento", descuentosPremio.map { it.first }, descuentosPremio.map { it.second }, d) { n ->
+                    val o = actual.toMutableMap()
+                    o["descuento"] = Valor.texto(n)
+                    if (n == "envioGratis") o.remove("valor") else o["valor"] = Valor.numero(if (n == "monto") 2000 else 10)
+                    alCambiar(Valor.objeto(o))
+                }
+                if (d == "porcentaje") Numero("Porcentaje", "valor", 1..90, 5, 10) { "$it %" }
+                else if (d == "monto") Numero("Monto", "valor", 100..100_000, 500, 2000) { Formato.pesos(it) }
+                Numero("Vence a los", "dias", 1..90, 1, 7) { if (it == 1) "1 día" else "$it días" }
+                Texto("Cada persona recibe su propio código, de un solo uso.", Estilo.footnote, C.texto2)
+            }
+            "descarga" -> {
+                val a = actual["archivo"]?.texto ?: ""
+                CampoLinea("Link del archivo (PDF, guía, catálogo)", a, { v -> val t = v.trim(); poner("archivo", if (t.isEmpty()) null else Valor.texto(t.take(300))) },
+                    "https://", teclado = KeyboardType.Uri)
+                if (a.isNotEmpty() && !a.startsWith("https://")) Texto("Tiene que empezar con https://", Estilo.footnote, C.errorTinta)
+                CampoLinea("Cómo se llama", actual["nombreArchivo"]?.texto ?: "", { v -> poner("nombreArchivo", if (v.isEmpty()) null else Valor.texto(v.take(60))) }, "Guía", 60)
+            }
+            "nada" -> Texto("Sólo se suma a tu newsletter.", Estilo.footnote, C.texto2)
+        }
+    }
+}
+
+/** Varias opciones de una lista (tiposCampo › opciones; vacía = todas), como chips que se prenden. */
+@Composable
+fun SelectorOpciones(titulo: String, opciones: List<String>, nombres: List<String>, elegidas: List<String>, alCambiar: (List<String>) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row {
+            Texto(titulo, Estilo.footnoteFuerte, C.texto2, Modifier.weight(1f))
+            if (elegidas.isEmpty()) Texto("Todas", Estilo.footnote, C.texto3)
+        }
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            opciones.forEachIndexed { i, o ->
+                ChipFiltro(nombres.getOrNull(i) ?: o, activo = o in elegidas) {
+                    Haptico.seleccion()
+                    // En el orden del catálogo, sin repetir.
+                    val n = if (o in elegidas) elegidas - o else elegidas + o
+                    alCambiar(opciones.filter { it in n })
+                }
             }
         }
     }
