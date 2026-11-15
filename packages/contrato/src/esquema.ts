@@ -995,6 +995,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/carritos/recordatorios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Los tres recordatorios automáticos por mail (§62): prendidos o no, la demora de cada uno y el cupón opcional del segundo o el tercero. 400 con el motivo si no va. */
+        put: operations["guardarRecordatoriosCarritos"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panel/carritos/{id}/recordar": {
         parameters: {
             query?: never;
@@ -1419,6 +1436,23 @@ export interface paths {
         put?: never;
         /** Guarda el carrito de quien dejó su email en el checkout (uno abierto por email; se cierra solo si compra). Tope de 60 por hora por IP. */
         post: operations["guardarCarritoTienda"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/carritos/{token}/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «No quiero más estos mails» del recordatorio del carrito (§62): corta los recordatorios de ese email en la tienda, también los de un carrito nuevo. Lo llama el link del mail y el botón de baja del correo (RFC 8058). Siempre 204. */
+        post: operations["bajaCarritoTienda"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4093,6 +4127,29 @@ export interface components {
             tasa: number;
             costoMensaje: number;
             automaticos: components["schemas"]["AutomaticosCarritos"];
+            recordatorios: components["schemas"]["RecordatoriosCarritos"];
+            /** @description Este mes, las compras de quienes recibieron un recordatorio antes: cuántos pedidos y lo cobrado */
+            recuperados: {
+                pedidos: number;
+                monto: number;
+            };
+        };
+        /** @description Hasta tres recordatorios por mail desde que dejó el carrito (por defecto 1 h, 24 h y 72 h). Se cortan si compra o se da de baja. */
+        RecordatoriosCarritos: {
+            activo: boolean;
+            pasos: {
+                activo: boolean;
+                /** @description Horas desde que dejó el carrito, cada una mayor que la anterior */
+                horas: number;
+                /** @description Cupón único de un uso (origen carrito:<id>), sólo en el segundo o el tercero */
+                cupon: {
+                    /** @enum {string} */
+                    descuento: "porcentaje" | "monto" | "envioGratis";
+                    /** @description Porcentaje (1–90) o pesos (100–100.000); 0 con envío gratis */
+                    valor: number;
+                    dias: number;
+                } | null;
+            }[];
         };
         Newsletter: {
             /** @description Las ventanas de la tienda (borrador y publicado, sin repetir): para nombrar el origen ventana:<id> de cada contacto y filtrar por él. Una ventana borrada ya no está: su origen se muestra como «Ventana». */
@@ -8369,6 +8426,30 @@ export interface operations {
             401: components["responses"]["Problema"];
         };
     };
+    guardarRecordatoriosCarritos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordatoriosCarritos"];
+            };
+        };
+        responses: {
+            /** @description Guardados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            401: components["responses"]["Problema"];
+        };
+    };
     recordarCarrito: {
         parameters: {
             query?: never;
@@ -9308,6 +9389,27 @@ export interface operations {
             400: components["responses"]["Problema"];
             /** @description Demasiados carritos desde esa IP */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    bajaCarritoTienda: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dado de baja */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

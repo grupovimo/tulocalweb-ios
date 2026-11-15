@@ -153,6 +153,7 @@ var Rutas = map[string]Permiso{
 	"GET /v1/panel/marketing":                              Tienda,
 	"POST /v1/panel/campanas":                              Tienda,
 	"PUT /v1/panel/carritos":                               Tienda,
+	"PUT /v1/panel/carritos/recordatorios":                 Tienda,
 	"GET /v1/panel/newsletter":                             Tienda, // Crecer › Newsletter (§50)
 	"DELETE /v1/panel/newsletter/suscriptores/{id}":        Tienda,
 	"POST /v1/panel/newsletter/envios":                     Tienda,

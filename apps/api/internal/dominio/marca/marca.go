@@ -5,6 +5,7 @@ package marca
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html"
 	"regexp"
@@ -13,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/acentos"
-	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 )
 
 // Marca de una tienda para sus mails.
@@ -38,7 +38,16 @@ func De(ctx context.Context, t pgx.Tx, tiendaID, sitio string) (Marca, error) {
 	if err := t.QueryRow(ctx, sqlTienda, tiendaID).Scan(&m.Nombre, &m.Slug, &plantilla, &diseno, &m.ResponderA); err != nil {
 		return m, err
 	}
-	d := mitienda.LeerDiseno(diseno, plantilla)
+	// Sólo lo que hace a la marca (paleta, logo y colores del estilo). No se usa mitienda.LeerDiseno:
+	// mitienda llega a ventas y ventas manda estos mails.
+	var d struct {
+		Paleta int    `json:"paleta"`
+		Logo   string `json:"logo"`
+		Estilo *struct {
+			Colores map[string]string `json:"colores"`
+		} `json:"estilo"`
+	}
+	_ = json.Unmarshal(diseno, &d)
 	var acento, sobre string
 	if d.Estilo != nil {
 		acento, sobre = d.Estilo.Colores["acento"], d.Estilo.Colores["sobreAcento"]
@@ -72,16 +81,18 @@ func Absoluta(sitio, f string) string {
 // Mail arma el HTML y el texto con la marca: cabecera (logo o nombre), título, párrafos, una foto
 // opcional, el botón principal y el pie (con el link de baja si hay).
 type Mail struct {
-	Titulo     string
-	Parrafos   []string
-	Foto       string
-	Detalle    string // debajo de la foto (el producto y su precio)
-	Boton      string
-	Link       string
-	Codigo     string // un cupón destacado (opcional)
-	CodigoNota string
-	Pie        string
-	Baja       string // link para darse de baja (opcional)
+	Titulo      string
+	Parrafos    []string
+	Lista       []string // en una tarjeta blanca (lo que quedó en el carrito)
+	Foto        string
+	Detalle     string // debajo de la foto (el producto y su precio)
+	Boton       string
+	Link        string
+	CodigoIntro string // el párrafo que presenta el cupón
+	Codigo      string // un cupón destacado (opcional)
+	CodigoNota  string
+	Pie         string
+	Baja        string // link para darse de baja (opcional)
 }
 
 // HTML y texto del mail.
@@ -99,6 +110,15 @@ func (m Marca) Armar(c Mail) (string, string) {
 		fmt.Fprintf(&b, `<p style="margin:12px 0 0;font-size:15.5px;line-height:1.5;color:#5C4536">%s</p>`, html.EscapeString(p))
 		fmt.Fprintf(&t, "%s\n\n", p)
 	}
+	if len(c.Lista) > 0 {
+		b.WriteString(`<div style="margin:14px 0 0;padding:14px 16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.7">`)
+		for _, l := range c.Lista {
+			fmt.Fprintf(&b, "<div>%s</div>", html.EscapeString(l))
+			fmt.Fprintf(&t, "%s\n", l)
+		}
+		b.WriteString(`</div>`)
+		t.WriteString("\n")
+	}
 	if c.Foto != "" {
 		fmt.Fprintf(&b, `<img src="%s" alt="" width="240" style="display:block;margin:18px 0 0;width:240px;max-width:100%%;border-radius:14px;border:0">`, html.EscapeString(c.Foto))
 	}
@@ -107,6 +127,10 @@ func (m Marca) Armar(c Mail) (string, string) {
 		fmt.Fprintf(&t, "%s\n\n", c.Detalle)
 	}
 	if c.Codigo != "" {
+		if c.CodigoIntro != "" {
+			fmt.Fprintf(&b, `<p style="margin:18px 0 0;font-size:15.5px;line-height:1.5;color:#5C4536">%s</p>`, html.EscapeString(c.CodigoIntro))
+			fmt.Fprintf(&t, "%s\n", c.CodigoIntro)
+		}
 		fmt.Fprintf(&b, `<div style="margin:16px 0 0;padding:16px;border-radius:14px;background:#fff;border:2px dashed %s;font-size:24px;font-weight:700;letter-spacing:2px;text-align:center">%s</div>`,
 			m.Acento, html.EscapeString(c.Codigo))
 		fmt.Fprintf(&t, "Tu código: %s\n", c.Codigo)

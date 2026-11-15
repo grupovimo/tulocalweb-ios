@@ -76,4 +76,54 @@ describe('carritos de la tienda (demo)', () => {
 		expect(despues.recuperado).toBe(antes.recuperado + 50_000);
 		expect(await datos.carritoTienda(fila.token)).toBeNull();
 	});
+
+	it('los tres recordatorios (§62): arrancan prendidos en la demo, se validan como Go y la baja corta', async () => {
+		const datos = await moda();
+		const k = await datos.carritos();
+		expect(k.recordatorios.activo).toBe(true);
+		expect(k.recordatorios.pasos.map((p) => p.horas)).toEqual([1, 24, 72]);
+		expect(k.recordatorios.pasos[1].cupon).toMatchObject({ descuento: 'porcentaje', valor: 10 });
+		expect(k.recuperados.monto).toBe(k.recuperado);
+
+		const r = structuredClone(k.recordatorios);
+		r.pasos[2].horas = 12;
+		expect(await datos.guardarRecordatorios(r)).toBe(
+			'Cada recordatorio tiene que salir después del anterior.'
+		);
+		r.pasos[2].horas = 96;
+		r.pasos[0].cupon = { descuento: 'envioGratis', valor: 0, dias: 3 };
+		expect(await datos.guardarRecordatorios(r)).toBe(
+			'El cupón va en el segundo o en el tercer recordatorio.'
+		);
+		r.pasos[0].cupon = null;
+		r.activo = false;
+		expect(await datos.guardarRecordatorios(r)).toBeNull();
+		expect((await datos.carritos()).recordatorios).toMatchObject({ activo: false });
+		// Las apps de antes prenden con «email».
+		await datos.guardarAutomaticos({ hora: false, dia: false, email: true });
+		expect((await datos.carritos()).recordatorios.activo).toBe(true);
+		expect((await datos.carritos()).recordatorios.pasos[2].horas).toBe(96);
+
+		const tienda = await datos.tiendaPublica(false);
+		const remera = tienda.productos.find((x) => x.id === 'remera-pima')!;
+		const v = remera.variantes.find((x) => x.stock > 0)!;
+		await datos.guardarCarritoTienda('ana@ejemplo.com', 'Ana', [
+			{ id: remera.id, varianteId: v.id, cantidad: 1 }
+		]);
+		const token = (
+			(await d1!
+				.prepare("SELECT datos AS valor FROM cambios WHERE entidad = 'carrito-tienda'")
+				.first()) as {
+				valor: string;
+			}
+		).valor;
+		const t = (JSON.parse(token) as { token: string }).token;
+		await datos.bajaCarritoTienda(t);
+		const fila = (await d1!
+			.prepare("SELECT datos AS valor FROM cambios WHERE entidad = 'carrito-tienda'")
+			.first()) as {
+			valor: string;
+		};
+		expect((JSON.parse(fila.valor) as { baja?: number }).baja).toBeTypeOf('number');
+	});
 });

@@ -75,6 +75,7 @@ import type {
 	PedidoNuevo,
 	ResenasYPreguntas,
 	AutomaticosCarritos,
+	RecordatoriosCarritos,
 	Tarjeta,
 	Carritos,
 	Conversacion,
@@ -331,6 +332,12 @@ export class DatosApi implements Datos {
 	}
 	guardarAutomaticos(a: AutomaticosCarritos) {
 		return this.pedir<void>('/v1/panel/carritos', 'PUT', a);
+	}
+	async guardarRecordatorios(r: RecordatoriosCarritos) {
+		const res = await this.intentar('/v1/panel/carritos/recordatorios', 'PUT', r, [400]);
+		if (res.ok) return null;
+		const p = (await res.json().catch(() => null)) as { detail?: string } | null;
+		return p?.detail ?? 'No pudimos guardar los recordatorios.';
 	}
 	tarjeta() {
 		return this.pedir<Tarjeta>('/v1/panel/tarjeta');

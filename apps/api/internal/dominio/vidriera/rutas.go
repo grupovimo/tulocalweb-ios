@@ -222,6 +222,19 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 		}
 		escribir(w, http.StatusOK, map[string]any{"carrito": ls})
 	})
+	// «No quiero más estos mails» del recordatorio del carrito (§62): desde el link y desde el botón de
+	// baja del correo (List-Unsubscribe-Post, sin Origin; el token es la credencial). Siempre 204.
+	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/carritos/{token}/baja", func(w http.ResponseWriter, r *http.Request) {
+		id, err := tiendaDe(r.Context(), pool, r.PathValue("slug"))
+		if err == nil {
+			err = ventas.BajaCarrito(r.Context(), pool, id, r.PathValue("token"))
+		}
+		if err != nil && !errors.Is(err, ErrNoExiste) {
+			error404(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 	// Vista previa del cupón en el carrito y el checkout (al comprar se vuelve a evaluar).
 	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/cupon", func(w http.ResponseWriter, r *http.Request) {
 		var c Compra

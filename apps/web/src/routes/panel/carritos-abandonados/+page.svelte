@@ -3,12 +3,22 @@
 	import { page } from '$app/state';
 	import Icon from '#lib/components/Icon.svelte';
 	import Interruptor from '#lib/components/Interruptor.svelte';
+	import Modal from '#lib/components/Modal.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
 	import { cara, unsplash } from '#lib/landing/formato.ts';
 	import { anim } from '#lib/panel/anim.ts';
 	import { pesos } from '#lib/panel/formato.ts';
 	import { hace, iniciales } from '#lib/panel/listas/clientes.ts';
+	import {
+		CUPONES,
+		DEMORAS,
+		idCupon,
+		problemaRecordatorios,
+		textoCupon,
+		textoDemora,
+		type RecordatoriosCarritos
+	} from '#lib/panel/recordatorios.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 
 	/** Carritos abandonados (design/PanelVentas.dc.html): lo que quedó, lo recuperado y los recordatorios. */
@@ -58,21 +68,56 @@
 					: `${c.nombre} · por mail, con el link a su carrito`
 			});
 	}
-	const TODOS = [
-		['hora', 'Recordatorio por WhatsApp a la hora'],
-		['dia', 'Segundo aviso a las 24 h con 5% off'],
-		['email', 'Email al tercer día']
-	] as const;
-	const AUTOS = $derived(
-		demo ? TODOS : ([['email', 'Mail al tercer día con el link a su carrito']] as const)
-	);
-	async function automatico(clave: (typeof TODOS)[number][0], on: boolean) {
-		await post('automaticos', { ...k.automaticos, [clave]: on });
-		ui.toast({
-			k: 'ok',
-			title: on ? 'Recordatorio activado' : 'Recordatorio apagado',
-			desc: AUTOS.find((a) => a[0] === clave)?.[1] ?? ''
-		});
+	/**
+	 * Los tres recordatorios por mail (§62): se prenden y se apagan acá, y «Configurar» abre la demora
+	 * de cada uno y el cupón del segundo o el tercero. La demo los guarda sin mandar mails.
+	 */
+	const rec = $derived(k.recordatorios);
+	const ORDEN = ['Primero', 'Segundo', 'Tercero'];
+	async function guardarRec(r: RecordatoriosCarritos, titulo: string, desc: string) {
+		const res = await fetch('/panel/carritos-abandonados/recordatorios', {
+			method: 'PUT',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(r)
+		}).catch(() => null);
+		if (!res?.ok) {
+			const b = (await res?.json().catch(() => null)) as { message?: string } | null;
+			ui.toast({ k: 'err', title: 'No se guardó', desc: b?.message ?? 'Revisá la conexión.' });
+			return false;
+		}
+		await invalidateAll();
+		ui.toast({ k: 'ok', title: titulo, desc });
+		return true;
+	}
+	const resumenPaso = (p: RecordatoriosCarritos['pasos'][number]) =>
+		`${textoDemora(p.horas)} después${p.cupon ? ` · ${textoCupon(p.cupon)}` : ''}`;
+	async function prender(on: boolean) {
+		await guardarRec(
+			{ ...rec, activo: on },
+			on ? 'Recordatorios prendidos' : 'Recordatorios apagados',
+			on ? 'Les llega un mail con el link a su carrito' : 'No sale ningún recordatorio automático'
+		);
+	}
+	async function paso(i: number, on: boolean) {
+		const pasos = rec.pasos.map((p, j) => (j === i ? { ...p, activo: on } : p));
+		await guardarRec(
+			{ ...rec, pasos },
+			on ? `${ORDEN[i]} recordatorio prendido` : `${ORDEN[i]} recordatorio apagado`,
+			resumenPaso(rec.pasos[i])
+		);
+	}
+
+	let editando = $state(false);
+	let borrador = $state<RecordatoriosCarritos | null>(null);
+	const problema = $derived(borrador ? problemaRecordatorios(borrador) : null);
+	function configurar() {
+		borrador = structuredClone($state.snapshot(rec));
+		editando = true;
+	}
+	async function guardarBorrador() {
+		if (!borrador || problema) return;
+		if (await guardarRec(borrador, 'Recordatorios guardados', 'Se aplican a los próximos carritos'))
+			editando = false;
 	}
 </script>
 
@@ -114,18 +159,42 @@
 			<div class="t-s">{k.tasa}% de recuperación</div>
 		</div>
 		<div class="tarjeta autos">
-			<div class="a-t">Automático</div>
-			{#each AUTOS as [clave, t] (clave)}
-				<div class="auto">
-					<span>{t}</span>
+			<div class="auto a-cab">
+				<span class="a-t">Recordatorios por mail</span>
+				<Interruptor label="Recordatorios por mail" checked={rec.activo} onchange={prender} />
+			</div>
+			{#each rec.pasos as p, i (i)}
+				<div class="auto" class:apagado={!rec.activo}>
+					<span>{ORDEN[i]} · {resumenPaso(p)}</span>
 					<Interruptor
-						label={t}
-						checked={k.automaticos[clave]}
-						onchange={(on: boolean) => automatico(clave, on)}
+						label="{ORDEN[i]} recordatorio"
+						checked={p.activo}
+						disabled={!rec.activo}
+						onchange={(on: boolean) => paso(i, on)}
 					/>
 				</div>
 			{/each}
+			<button type="button" class="configurar" onclick={configurar}
+				><Icon icon={I.phTimerBold} size={14} />Configurar demoras y cupones</button
+			>
 		</div>
+	</div>
+
+	<div class="recup" use:anim={{ t: 'rise', delay: 90 }}>
+		<Icon icon={I.phCheckCircleFill} size={16} />
+		{#if k.recuperados.pedidos}
+			<span
+				>Este mes {k.recuperados.pedidos === 1
+					? 'volvió 1 persona'
+					: `volvieron ${k.recuperados.pedidos} personas`} después del recordatorio:
+				<b>{pesos(k.recuperados.monto)}</b> en&nbsp;ventas.</span
+			>
+		{:else}
+			<span
+				>Cuando alguien compre después de un recordatorio, lo vas a ver acá con lo
+				que&nbsp;cobraste.</span
+			>
+		{/if}
 	</div>
 
 	<div class="carritos" use:anim={{ t: 'rise', delay: 120 }}>
@@ -169,6 +238,59 @@
 		{/each}
 	</div>
 </div>
+
+<Modal bind:open={editando} titulo="Recordatorios del carrito" ancho={520}>
+	{#if borrador}
+		<div class="ed">
+			<h2>Recordatorios del carrito</h2>
+			<p class="ed-s">
+				Salen desde que dejó el carrito. Si compra o se da de baja, no le llega&nbsp;ninguno más.
+			</p>
+			{#each borrador.pasos as p, i (i)}
+				<div class="ed-paso">
+					<div class="ed-cab">
+						<b>{ORDEN[i]}</b>
+						<Interruptor label="{ORDEN[i]} recordatorio" bind:checked={p.activo} />
+					</div>
+					<div class="ed-campos">
+						<label class="campo"
+							>Cuándo sale<select bind:value={p.horas}>
+								{#each DEMORAS as h (h)}<option value={h}>{textoDemora(h)} después</option>{/each}
+							</select></label
+						>
+						{#if i > 0}
+							<label class="campo"
+								>Cupón de un uso<select
+									value={idCupon(p.cupon)}
+									onchange={(e) => {
+										const c = CUPONES.find((x) => x.id === e.currentTarget.value);
+										p.cupon = c?.cupon ? { ...c.cupon } : null;
+									}}
+								>
+									{#each CUPONES as c (c.id)}<option value={c.id}>{c.texto}</option>{/each}
+									{#if idCupon(p.cupon) === 'otro'}<option value="otro"
+											>{textoCupon(p.cupon)}</option
+										>{/if}
+								</select></label
+							>
+						{/if}
+					</div>
+				</div>
+			{/each}
+			<p class="ed-nota">
+				<Icon icon={I.phTicketFill} size={14} />El cupón es único para cada carrito, vale 3 días y
+				se aplica solo con el link del&nbsp;mail.
+			</p>
+			{#if problema}<p class="ed-error" role="alert">{problema}</p>{/if}
+			<div class="ed-acc">
+				<button type="button" class="sec" onclick={() => (editando = false)}>Cancelar</button>
+				<button type="button" class="primario" disabled={!!problema} onclick={guardarBorrador}
+					>Guardar</button
+				>
+			</div>
+		</div>
+	{/if}
+</Modal>
 
 <style>
 	.pagina {
@@ -301,6 +423,132 @@
 		flex: 1;
 		font-size: 13.5px;
 		line-height: 1.3;
+	}
+	.a-cab {
+		padding-top: 0;
+	}
+	.a-cab .a-t {
+		margin: 0;
+	}
+	.auto.apagado span {
+		color: var(--mu);
+	}
+	.configurar {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		align-self: flex-start;
+		min-height: 36px;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--ac, #d2582f);
+		font: 600 13px inherit;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	.recup {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		padding: 12px 16px;
+		border-radius: 16px;
+		background: rgba(47, 143, 99, 0.1);
+		color: #237550;
+		font-size: 13.5px;
+		line-height: 1.4;
+		text-wrap: pretty;
+	}
+	.recup :global(svg) {
+		flex: none;
+		margin-top: 1px;
+	}
+	.ed {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	.ed h2 {
+		margin: 0;
+		font-size: 22px;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+	.ed-s,
+	.ed-nota {
+		margin: -6px 0 0;
+		font-size: 13.5px;
+		color: var(--mu);
+		text-wrap: pretty;
+	}
+	.ed-nota {
+		margin: 0;
+		display: flex;
+		gap: 6px;
+		align-items: flex-start;
+	}
+	.ed-nota :global(svg) {
+		flex: none;
+		margin-top: 2px;
+	}
+	.ed-paso {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 14px;
+		border-radius: 16px;
+		background: var(--sf2, var(--sf3));
+	}
+	.ed-cab {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 14.5px;
+	}
+	.ed-campos {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+		gap: 10px;
+	}
+	.campo {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--mu);
+	}
+	.campo select {
+		min-height: 44px;
+		padding: 0 12px;
+		border-radius: 12px;
+		border: 1px solid var(--ln, rgba(0, 0, 0, 0.12));
+		background: var(--sf);
+		color: var(--tx);
+		font: 500 14.5px inherit;
+		font-family: inherit;
+	}
+	.ed-error {
+		margin: 0;
+		font-size: 13.5px;
+		color: #b83a2e;
+	}
+	.ed-acc {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+	.sec {
+		min-height: 44px;
+		padding: 0 18px;
+		border-radius: 999px;
+		border: 1px solid var(--ln, rgba(0, 0, 0, 0.12));
+		background: transparent;
+		color: var(--tx);
+		font: 600 14px inherit;
+		font-family: inherit;
+		cursor: pointer;
 	}
 	.carritos {
 		display: flex;

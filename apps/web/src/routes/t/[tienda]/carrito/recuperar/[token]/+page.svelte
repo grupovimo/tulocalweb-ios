@@ -13,8 +13,9 @@
 	let { data } = $props();
 	onMount(() => {
 		if (data.lineas?.length) carritoDe(data.tienda.slug).restaurar(data.lineas);
+		// Con ?cupon= (el recordatorio con cupón, §62) llega al carrito con el cupón aplicado.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- ruta de la tienda con su slug
-		goto(`/t/${data.tienda.slug}/carrito`, { replaceState: true });
+		goto(`/t/${data.tienda.slug}/carrito${location.search}`, { replaceState: true });
 	});
 </script>
 

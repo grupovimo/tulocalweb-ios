@@ -692,7 +692,7 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 		return Resultado{}, err
 	}
 	// Compró: su carrito abandonado (si había) queda recuperado.
-	_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email) })
+	_ = pool.EnTienda(ctx, id, func(t pgx.Tx) error { return ventas.CarritoRecuperado(ctx, t, c.Email, numero, int64(total)) })
 	if c.Novedades {
 		if err := newsletter.Suscribir(ctx, pool, id, c.Email, "checkout"); err != nil {
 			slog.Warn("vidriera: no se sumó al newsletter desde el checkout", "error", err)

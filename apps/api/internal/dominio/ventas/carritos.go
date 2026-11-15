@@ -7,13 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/marca"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/correo"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 )
@@ -78,8 +78,9 @@ func GuardarCarrito(ctx context.Context, pool tx, tienda, email, nombre string, 
 			return ErrCarritoInvalido
 		}
 		items, _ := json.Marshal(validas)
-		_, err := t.Exec(ctx, `INSERT INTO carritos (tienda_id, email, nombre, items, total, token)
-			VALUES ($1, $2, $3, $4, $5, $6)
+		// Si ese email ya pidió no recibir recordatorios, el carrito nuevo nace con la baja.
+		_, err := t.Exec(ctx, `INSERT INTO carritos (tienda_id, email, nombre, items, total, token, baja_en)
+			VALUES ($1, $2, $3, $4, $5, $6, (SELECT max(baja_en) FROM carritos WHERE tienda_id = $1 AND lower(email) = $2))
 			ON CONFLICT (tienda_id, lower(email)) WHERE recuperado_en IS NULL
 			DO UPDATE SET items = excluded.items, total = excluded.total, actualizado = now(),
 				nombre = CASE WHEN excluded.nombre <> '' THEN excluded.nombre ELSE carritos.nombre END`,
@@ -88,9 +89,11 @@ func GuardarCarrito(ctx context.Context, pool tx, tienda, email, nombre string, 
 	})
 }
 
-// CarritoRecuperado cierra el carrito de ese email cuando compra (lo llama la vidriera).
-func CarritoRecuperado(ctx context.Context, t pgx.Tx, email string) error {
-	_, err := t.Exec(ctx, `UPDATE carritos SET recuperado_en = now() WHERE lower(email) = lower($1) AND recuperado_en IS NULL`, email)
+// CarritoRecuperado cierra el carrito de ese email cuando compra (lo llama la vidriera), con el
+// pedido y lo que se cobró: si antes le llegó un recordatorio, cuenta como recuperado.
+func CarritoRecuperado(ctx context.Context, t pgx.Tx, email string, numero int, total int64) error {
+	_, err := t.Exec(ctx, `UPDATE carritos SET recuperado_en = now(), pedido_numero = $2, pedido_total = $3
+		WHERE lower(email) = lower($1) AND recuperado_en IS NULL`, email, numero, total)
 	return err
 }
 
@@ -123,8 +126,20 @@ type CarritoPanel struct {
 	Recordado bool      `json:"recordado"`
 }
 
+// Recuperados: lo que se vendió este mes a quienes les llegó un recordatorio (pedidos y lo cobrado).
+type Recuperados struct {
+	Pedidos int   `json:"pedidos"`
+	Monto   int64 `json:"monto"`
+}
+
 // CarritosPanel: los abiertos de los últimos 30 días y los números del mes.
 func CarritosPanel(ctx context.Context, pool tx, tienda string, ahora time.Time) (cs []CarritoPanel, abiertos int, monto, recuperado int64, tasa float64, err error) {
+	cs, abiertos, monto, r, tasa, err := CarritosYRecuperados(ctx, pool, tienda, ahora)
+	return cs, abiertos, monto, r.Monto, tasa, err
+}
+
+// CarritosYRecuperados es CarritosPanel con los pedidos recuperados.
+func CarritosYRecuperados(ctx context.Context, pool tx, tienda string, ahora time.Time) (cs []CarritoPanel, abiertos int, monto int64, rec Recuperados, tasa float64, err error) {
 	cs = []CarritoPanel{}
 	err = pool.EnTienda(ctx, tienda, func(t pgx.Tx) error {
 		filas, err := t.Query(ctx, `SELECT c.id::text, coalesce(nullif(c.nombre, ''), split_part(c.email, '@', 1)), c.creado, c.items, c.total,
@@ -179,16 +194,21 @@ func CarritosPanel(ctx context.Context, pool tx, tienda string, ahora time.Time)
 			}
 		}
 		inicioMes := time.Date(ahora.Year(), ahora.Month(), 1, 0, 0, 0, 0, ahora.Location())
-		// Recuperado este mes: los que se cerraron con compra después de un recordatorio.
-		var recordados, recup int
-		if err := t.QueryRow(ctx, `SELECT count(*) FILTER (WHERE recordado_en IS NOT NULL),
-				count(*) FILTER (WHERE recuperado_en IS NOT NULL AND recordado_en IS NOT NULL),
-				coalesce(sum(total) FILTER (WHERE recuperado_en IS NOT NULL AND recordado_en IS NOT NULL), 0)
-			FROM carritos WHERE tienda_id = $1 AND creado >= $2`, tienda, inicioMes).Scan(&recordados, &recup, &recuperado); err != nil {
+		// Recuperado este mes: las compras de quienes recibieron un recordatorio antes de comprar, con
+		// lo que se cobró en el pedido (los carritos de antes de 00084, con lo que tenían).
+		var recordados int
+		if err := t.QueryRow(ctx, `SELECT count(*) FILTER (WHERE recordado_en IS NOT NULL AND (recuperado_en IS NULL OR recordado_en <= recuperado_en)),
+				count(*) FILTER (WHERE recuperado_en >= $2 AND recordado_en <= recuperado_en),
+				coalesce(sum(coalesce(pedido_total, total)) FILTER (WHERE recuperado_en >= $2 AND recordado_en <= recuperado_en), 0)
+			FROM carritos WHERE tienda_id = $1 AND (creado >= $2 OR recuperado_en >= $2)`, tienda, inicioMes).
+			Scan(&recordados, &rec.Pedidos, &rec.Monto); err != nil {
 			return err
 		}
 		if recordados > 0 {
-			tasa = float64(recup) * 100 / float64(recordados)
+			tasa = float64(rec.Pedidos) * 100 / float64(recordados)
+			if tasa > 100 {
+				tasa = 100
+			}
 		}
 		return nil
 	})
@@ -216,40 +236,6 @@ func RecordarCarrito(ctx context.Context, pool tx, tienda, id string, ahora time
 	})
 }
 
-// RecordatoriosAutomaticos encola el mail de los carritos de 3 días de las tiendas que lo prendieron.
-func RecordatoriosAutomaticos(ctx context.Context, pool interface {
-	tx
-	EnTx(context.Context, func(pgx.Tx) error) error
-}, ahora time.Time) (int, error) {
-	type par struct{ tienda, id string }
-	var pares []par
-	err := pool.EnTx(ctx, func(t pgx.Tx) error {
-		filas, err := t.Query(ctx, `SELECT tienda_id::text, id::text FROM app.carritos_para_recordar(100)`)
-		if err != nil {
-			return err
-		}
-		defer filas.Close()
-		for filas.Next() {
-			var p par
-			if err := filas.Scan(&p.tienda, &p.id); err != nil {
-				return err
-			}
-			pares = append(pares, p)
-		}
-		return filas.Err()
-	})
-	if err != nil {
-		return 0, err
-	}
-	n := 0
-	for _, p := range pares {
-		if RecordarCarrito(ctx, pool, p.tienda, p.id, ahora) == nil {
-			n++
-		}
-	}
-	return n, nil
-}
-
 // Mails de carritos (el worker): "¿Te olvidaste algo?" con el link que restaura el carrito.
 type MailsCarritos struct {
 	Pool   tx
@@ -262,53 +248,101 @@ func (m *MailsCarritos) Manejadores() map[string]outbox.Manejador {
 }
 
 func (m *MailsCarritos) recordar(ctx context.Context, ev outbox.Evento) error {
-	var d struct{ ID string }
+	var d struct {
+		ID    string `json:"id"`
+		Paso  int    `json:"paso"`
+		Cupon string `json:"cupon"`
+	}
 	if json.Unmarshal(ev.Datos, &d) != nil || m.Correo == nil {
 		return nil
 	}
-	var email, nombre, token, tienda, slug string
+	var email, nombre, token string
 	var items []byte
-	var total int64
-	var recuperado bool
-	err := m.Pool.EnTienda(ctx, ev.TiendaID, func(t pgx.Tx) error {
-		return t.QueryRow(ctx, `SELECT c.email, c.nombre, c.token, c.items, c.total, c.recuperado_en IS NOT NULL, t.nombre, t.slug
-			FROM carritos c JOIN tiendas t ON t.id = c.tienda_id WHERE c.id::text = $1`, d.ID).
-			Scan(&email, &nombre, &token, &items, &total, &recuperado, &tienda, &slug)
-	})
-	if errors.Is(err, pgx.ErrNoRows) || recuperado {
-		return nil // compró mientras tanto: no se manda
-	}
-	if err != nil {
-		return err
-	}
-	var ls []LineaCarrito
-	_ = json.Unmarshal(items, &ls)
+	var recuperado, baja bool
+	var mc marca.Marca
 	var nombres []string
-	_ = m.Pool.EnTienda(ctx, ev.TiendaID, func(t pgx.Tx) error {
+	var cupon *cuponMail
+	err := m.Pool.EnTienda(ctx, ev.TiendaID, func(t pgx.Tx) error {
+		if err := t.QueryRow(ctx, `SELECT c.email, c.nombre, c.token, c.items, c.recuperado_en IS NOT NULL, c.baja_en IS NOT NULL
+			FROM carritos c WHERE c.id::text = $1`, d.ID).
+			Scan(&email, &nombre, &token, &items, &recuperado, &baja); err != nil {
+			return err
+		}
+		var err error
+		if mc, err = marca.De(ctx, t, ev.TiendaID, m.Sitio); err != nil {
+			return err
+		}
+		var ls []LineaCarrito
+		_ = json.Unmarshal(items, &ls)
 		for _, l := range ls {
 			var n string
 			if t.QueryRow(ctx, `SELECT nombre FROM productos WHERE id::text = $1`, l.ID).Scan(&n) == nil {
 				nombres = append(nombres, fmt.Sprintf("%d × %s", l.Cantidad, n))
 			}
 		}
+		if d.Cupon != "" {
+			var c cuponMail
+			if t.QueryRow(ctx, `SELECT codigo, descripcion, termina FROM cupones WHERE codigo = $1 AND origen = $2`,
+				d.Cupon, "carrito:"+d.ID).Scan(&c.codigo, &c.descripcion, &c.vence) == nil {
+				cupon = &c
+			}
+		}
 		return nil
 	})
-	link := fmt.Sprintf("%s/t/%s/carrito/recuperar/%s", strings.TrimRight(m.Sitio, "/"), slug, token)
+	if errors.Is(err, pgx.ErrNoRows) || recuperado || baja {
+		return nil // compró o se dio de baja mientras tanto: no se manda
+	}
+	if err != nil {
+		return err
+	}
+	return m.Correo.Enviar(ctx, MailRecordatorio(m.Sitio, mc, d.Paso, email, nombre, token, nombres, cupon))
+}
+
+type cuponMail struct {
+	codigo, descripcion string
+	vence               *time.Time
+}
+
+var argentina = time.FixedZone("ART", -3*3600)
+
+// MailRecordatorio: el recordatorio del carrito con la marca de la tienda. paso 0 es el que se manda
+// a mano; 1 a 3, los automáticos (cada uno con su texto). Con cupón, el código destacado y el link
+// lo deja aplicado. Siempre con el link de baja y los encabezados de baja con un clic (RFC 8058).
+func MailRecordatorio(sitio string, mc marca.Marca, paso int, email, nombre, token string, lineas []string, c *cuponMail) correo.Mensaje {
+	base := fmt.Sprintf("%s/t/%s/carrito", strings.TrimRight(sitio, "/"), mc.Slug)
+	link := base + "/recuperar/" + token
+	baja := base + "/baja/" + token
 	hola := "Hola"
 	if nombre != "" {
 		hola += ", " + strings.Split(nombre, " ")[0]
 	}
-	texto := fmt.Sprintf("%s.\n\nDejaste esto en tu carrito de %s:\n\n%s\n\nSi lo querés, está guardado acá: %s\n\n%s",
-		hola, tienda, strings.Join(nombres, "\n"), link, tienda)
-	var b strings.Builder
-	fmt.Fprintf(&b, `<!doctype html><html lang="es-AR"><body style="margin:0;background:#FBF7F2;font-family:Helvetica,Arial,sans-serif;color:#2A140C"><div style="max-width:560px;margin:0 auto;padding:32px 24px"><div style="font-size:20px;font-weight:700">%s</div><h1 style="margin:24px 0 0;font-size:26px;font-weight:600">¿Te olvidaste algo?</h1><p style="margin:12px 0 0;font-size:15.5px;line-height:1.5;color:#5C4536">%s. Dejaste esto en tu carrito:</p><div style="margin:14px 0 0;padding:14px 16px;border-radius:14px;background:#fff;font-size:14.5px;line-height:1.7">`,
-		html.EscapeString(tienda), html.EscapeString(hola))
-	for _, n := range nombres {
-		fmt.Fprintf(&b, "<div>%s</div>", html.EscapeString(n))
+	titulo, asunto := "¿Te olvidaste algo?", "¿Te olvidaste algo en "+mc.Nombre+"?"
+	intro := hola + ". Dejaste esto en tu carrito de " + mc.Nombre + ":"
+	switch paso {
+	case 2:
+		titulo, asunto = "Tu carrito te espera", "Tu carrito de "+mc.Nombre+" te espera"
+		intro = hola + ". Te guardamos lo que elegiste en " + mc.Nombre + ":"
+	case 3:
+		titulo, asunto = "Última vuelta por tu carrito", "Última vuelta por tu carrito de "+mc.Nombre
+		intro = hola + ". Lo que dejaste en " + mc.Nombre + " sigue guardado, pero no por mucho más:"
 	}
-	fmt.Fprintf(&b, `</div><p style="margin:22px 0 0"><a href="%s" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#2A140C;color:#fff;text-decoration:none;font-weight:600">Volver a mi carrito</a></p><p style="margin:28px 0 0;font-size:12px;color:#9C8676">Te escribimos porque dejaste tu email en el checkout de %s.</p></div></body></html>`,
-		html.EscapeString(link), html.EscapeString(tienda))
-	return m.Correo.Enviar(ctx, correo.Mensaje{Para: email, Asunto: "¿Te olvidaste algo en " + tienda + "?", Texto: texto, HTML: b.String()})
+	mail := marca.Mail{Parrafos: []string{intro}, Titulo: titulo, Lista: lineas, Boton: "Volver a mi carrito", Link: link,
+		Pie: "Te escribimos porque dejaste tu email en el checkout de " + mc.Nombre + ".", Baja: baja}
+	if c != nil {
+		asunto = "Te dejamos " + strings.ToLower(strings.SplitN(c.descripcion, " · ", 2)[0]) + " para tu carrito de " + mc.Nombre
+		mail.CodigoIntro = "Para que lo termines, te dejamos un cupón de " + strings.ToLower(strings.SplitN(c.descripcion, " · ", 2)[0]) + ":"
+		mail.Codigo = c.codigo
+		if c.vence != nil {
+			v := c.vence.In(argentina)
+			meses := []string{"enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"}
+			mail.CodigoNota = fmt.Sprintf("Vale hasta el %d de %s. Es de un solo uso.", v.Day(), meses[v.Month()-1])
+		}
+		mail.Link = link + "?cupon=" + c.codigo
+		mail.Boton = "Usar mi cupón"
+	}
+	h, t := mc.Armar(mail)
+	return correo.Mensaje{Para: email, Asunto: asunto, Texto: t, HTML: h, DeNombre: mc.Nombre, ResponderA: mc.ResponderA,
+		Encabezados: map[string]string{"List-Unsubscribe": "<" + baja + ">", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}}
 }
 
 // RecordarTodos: los abiertos de la semana que no se recordaron en el último día.

@@ -24,7 +24,8 @@ type Unico struct {
 	Nombre string
 }
 
-var reOrigen = regexp.MustCompile(`^ventana:[a-z0-9]{6,16}$`)
+// Origen: «ventana:<id>» o, el de un recordatorio del carrito abandonado, «carrito:<uuid>».
+var reOrigen = regexp.MustCompile(`^(ventana:[a-z0-9]{6,16}|carrito:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`)
 
 // alfabeto sin letras que se confunden (0/O, 1/I/L).
 const alfabeto = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"

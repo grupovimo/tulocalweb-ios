@@ -27,18 +27,21 @@ type Automaticos struct {
 	Email bool `json:"email"`
 }
 
-// LeerAutomaticos y GuardarAutomaticos: la configuración de la tienda.
+// LeerAutomaticos y GuardarAutomaticos: la configuración de antes de los tres recordatorios (§62),
+// para las apps viejas. Email es el interruptor de los recordatorios (carritos_recordatorios.activo).
 func LeerAutomaticos(ctx context.Context, pool tx, tiendaID string) (Automaticos, error) {
 	var a Automaticos
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		return t.QueryRow(ctx, `SELECT carritos_automaticos FROM tiendas WHERE id = $1`, tiendaID).Scan(&a)
+		return t.QueryRow(ctx, `SELECT carritos_automaticos || jsonb_build_object('email', coalesce((carritos_recordatorios->>'activo')::boolean, false))
+			FROM tiendas WHERE id = $1`, tiendaID).Scan(&a)
 	})
 	return a, err
 }
 
 func GuardarAutomaticos(ctx context.Context, pool tx, tiendaID string, a Automaticos) error {
 	return pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		_, err := t.Exec(ctx, `UPDATE tiendas SET carritos_automaticos = $2 WHERE id = $1`, tiendaID, a)
+		_, err := t.Exec(ctx, `UPDATE tiendas SET carritos_automaticos = $2,
+			carritos_recordatorios = jsonb_set(carritos_recordatorios, '{activo}', to_jsonb($3::boolean)) WHERE id = $1`, tiendaID, a, a.Email)
 		return err
 	})
 }
@@ -93,13 +96,36 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string, pregu
 			problema.Escribir(w, problema.Interno())
 			return
 		}
-		cs, abiertos, monto, recuperado, tasa, err := CarritosPanel(r.Context(), pool, id, time.Now())
+		rc, err := LeerRecordatorios(r.Context(), pool, id)
 		if err != nil {
 			problema.Escribir(w, problema.Interno())
 			return
 		}
-		escribir(w, map[string]any{"carritos": cs, "abiertos": abiertos, "monto": monto, "recuperado": recuperado, "tasa": tasa,
-			"costoMensaje": 120, "automaticos": a})
+		cs, abiertos, monto, rec, tasa, err := CarritosYRecuperados(r.Context(), pool, id, time.Now())
+		if err != nil {
+			problema.Escribir(w, problema.Interno())
+			return
+		}
+		escribir(w, map[string]any{"carritos": cs, "abiertos": abiertos, "monto": monto, "recuperado": rec.Monto, "tasa": tasa,
+			"costoMensaje": 120, "automaticos": a, "recordatorios": rc, "recuperados": rec})
+	}))
+	// Los tres recordatorios automáticos (§62).
+	mux.HandleFunc("PUT /v1/panel/carritos/recordatorios", con(func(w http.ResponseWriter, r *http.Request, id string) {
+		var rc Recordatorios
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2<<10)).Decode(&rc); err != nil {
+			problema.Escribir(w, problema.Invalido("Revisá los recordatorios."))
+			return
+		}
+		err := GuardarRecordatorios(r.Context(), pool, id, rc)
+		var mal ErrRecordatorios
+		switch {
+		case errors.As(err, &mal):
+			problema.Escribir(w, problema.Invalido(mal.Motivo))
+		case err != nil:
+			problema.Escribir(w, problema.Interno())
+		default:
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}))
 	mux.HandleFunc("PUT /v1/panel/carritos", con(func(w http.ResponseWriter, r *http.Request, id string) {
 		var a Automaticos

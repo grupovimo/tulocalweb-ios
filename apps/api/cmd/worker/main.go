@@ -87,8 +87,9 @@ func correr() error {
 	}
 	mails := correo.Elegir(cfg.ResendClave, cfg.SMTP, cfg.SMTPUsuario, cfg.SMTPClave, cfg.CorreoDe)
 	mc := &ventas.MailsCarritos{Pool: app, Correo: mails, Sitio: cfg.Sitio}
+	// Los recordatorios del carrito abandonado (§62), cada 5 minutos: el primero sale a la hora.
 	go func() {
-		t := time.NewTicker(time.Hour)
+		t := time.NewTicker(5 * time.Minute)
 		defer t.Stop()
 		for {
 			if _, err := ventas.RecordatoriosAutomaticos(ctx, app, time.Now()); err != nil && ctx.Err() == nil {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RECORDATORIOS_POR_DEFECTO } from '#lib/panel/recordatorios.ts';
 import { demoDe } from './demo.ts';
 import { bandejaDemo, carritosDemo, conversacionDemo } from './ventas.ts';
 
@@ -32,7 +33,8 @@ describe('bandeja y carritos de la demo', () => {
 		const e = {
 			recordados: new Set(['k1']),
 			todos: false,
-			automaticos: { hora: true, dia: true, email: false }
+			automaticos: { hora: true, dia: true, email: false },
+			recordatorios: RECORDATORIOS_POR_DEFECTO
 		};
 		const k = carritosDemo(d, BASE, e, 120);
 		expect(k.abiertos).toBe(12);

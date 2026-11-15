@@ -976,6 +976,19 @@ paths:
       responses:
         '204': { description: Guardado }
         '401': { $ref: '#/components/responses/Problema' }
+  /v1/panel/carritos/recordatorios:
+    put:
+      operationId: guardarRecordatoriosCarritos
+      summary: 'Los tres recordatorios automáticos por mail (§62): prendidos o no, la demora de cada uno y el cupón opcional del segundo o el tercero. 400 con el motivo si no va.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordatoriosCarritos' }
+      responses:
+        '204': { description: Guardados }
+        '400': { $ref: '#/components/responses/Problema' }
+        '401': { $ref: '#/components/responses/Problema' }
   /v1/panel/carritos/{id}/recordar:
     post:
       operationId: recordarCarrito
@@ -1539,6 +1552,16 @@ paths:
         '204': { description: Guardado }
         '400': { $ref: '#/components/responses/Problema' }
         '429': { description: Demasiados carritos desde esa IP }
+  /v1/publico/tiendas/{slug}/carritos/{token}/baja:
+    post:
+      operationId: bajaCarritoTienda
+      summary: '«No quiero más estos mails» del recordatorio del carrito (§62): corta los recordatorios de ese email en la tienda, también los de un carrito nuevo. Lo llama el link del mail y el botón de baja del correo (RFC 8058). Siempre 204.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Dado de baja }
   /v1/publico/tiendas/{slug}/carritos/{token}:
     get:
       operationId: carritoPorToken
@@ -4251,7 +4274,7 @@ components:
         email: { type: boolean, description: 'Email al tercer día' }
     Carritos:
       type: object
-      required: [carritos, abiertos, monto, recuperado, tasa, costoMensaje, automaticos]
+      required: [carritos, abiertos, monto, recuperado, tasa, costoMensaje, automaticos, recordatorios, recuperados]
       properties:
         carritos:
           type: array
@@ -4274,6 +4297,38 @@ components:
         tasa: { type: number, description: 'Porcentaje recuperado (0–100)' }
         costoMensaje: { type: integer }
         automaticos: { $ref: '#/components/schemas/AutomaticosCarritos' }
+        recordatorios: { $ref: '#/components/schemas/RecordatoriosCarritos' }
+        recuperados:
+          type: object
+          description: 'Este mes, las compras de quienes recibieron un recordatorio antes: cuántos pedidos y lo cobrado'
+          required: [pedidos, monto]
+          properties:
+            pedidos: { type: integer }
+            monto: { type: integer }
+    RecordatoriosCarritos:
+      type: object
+      description: 'Hasta tres recordatorios por mail desde que dejó el carrito (por defecto 1 h, 24 h y 72 h). Se cortan si compra o se da de baja.'
+      required: [activo, pasos]
+      properties:
+        activo: { type: boolean }
+        pasos:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: object
+            required: [activo, horas, cupon]
+            properties:
+              activo: { type: boolean }
+              horas: { type: integer, minimum: 1, maximum: 168, description: 'Horas desde que dejó el carrito, cada una mayor que la anterior' }
+              cupon:
+                type: [object, 'null']
+                description: 'Cupón único de un uso (origen carrito:<id>), sólo en el segundo o el tercero'
+                required: [descuento, valor, dias]
+                properties:
+                  descuento: { type: string, enum: [porcentaje, monto, envioGratis] }
+                  valor: { type: integer, description: 'Porcentaje (1–90) o pesos (100–100.000); 0 con envío gratis' }
+                  dias: { type: integer, minimum: 1, maximum: 30 }
     Newsletter:
       type: object
       required: [suscriptores, confirmados, pendientes, envios, hoy, tope, productos, ventanas]

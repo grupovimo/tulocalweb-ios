@@ -51,6 +51,7 @@ export type ConversacionBreve = components['schemas']['ConversacionBreve'];
 export type Conversacion = components['schemas']['Conversacion'];
 export type Carritos = components['schemas']['Carritos'];
 export type AutomaticosCarritos = components['schemas']['AutomaticosCarritos'];
+export type RecordatoriosCarritos = components['schemas']['RecordatoriosCarritos'];
 export type PedidoNuevo = components['schemas']['PedidoNuevo'];
 export type ListasPrecio = components['schemas']['ListasPrecio'];
 export type Cupon = components['schemas']['Cupon'];
@@ -192,6 +193,8 @@ export interface Datos {
 	): Promise<Resultado>;
 	carritos(): Promise<Carritos>;
 	guardarAutomaticos(a: AutomaticosCarritos): Promise<void>;
+	/** Los tres recordatorios por mail (§62); devuelve el motivo si no va, o null. */
+	guardarRecordatorios(r: RecordatoriosCarritos): Promise<string | null>;
 	recordarCarrito(id: string): Promise<Resultado>;
 	/** Un pedido nuevo (punto de venta o cargado a mano); descuenta stock. */
 	crearPedido(

@@ -45,6 +45,11 @@ import {
 	type EstadoRelampago
 } from './cupones.ts';
 import { EsquemaEntregas, problemaEntregas } from '#lib/panel/entregas.ts';
+import {
+	problemaRecordatorios,
+	RECORDATORIOS_POR_DEFECTO,
+	type RecordatoriosCarritos
+} from '#lib/panel/recordatorios.ts';
 import { BENEFICIOS } from '#lib/panel/planes.ts';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
@@ -630,6 +635,15 @@ function medicionDe(c: Map<string, unknown>): Medicion {
 		feeds: { gm: m?.feeds.gm ?? demo.gm ?? true, meta: m?.feeds.meta ?? false }
 	};
 }
+
+/** Los recordatorios de la demo: prendidos, con 10 % off en el segundo (§62). */
+const RECORDATORIOS_DEMO: RecordatoriosCarritos = {
+	activo: true,
+	pasos: RECORDATORIOS_POR_DEFECTO.pasos.map((p, i) => ({
+		...p,
+		cupon: i === 1 ? { descuento: 'porcentaje' as const, valor: 10, dias: 3 } : null
+	}))
+};
 
 export class DatosSandbox implements Datos {
 	constructor(
@@ -1534,10 +1548,15 @@ export class DatosSandbox implements Datos {
 		const c = await cambiosDe(this.db, this.sb.id, 'carrito');
 		const auto = (await cambiosDe(this.db, this.sb.id, 'carritos')).get('automaticos') as
 			EstadoCarritos['automaticos'] | undefined;
+		const automaticos = auto ?? { hora: true, dia: true, email: false };
+		// En la demo los tres recordatorios arrancan prendidos, con 10 % en el segundo, para que se vea.
+		const rec = (await cambiosDe(this.db, this.sb.id, 'carritos')).get('recordatorios') as
+			RecordatoriosCarritos | undefined;
 		return {
 			recordados: new Set([...c].filter(([, v]) => v).map(([k]) => k)),
 			todos: (await this.ideasHechas()).includes('carritos'),
-			automaticos: auto ?? { hora: true, dia: true, email: false }
+			automaticos,
+			recordatorios: rec ?? RECORDATORIOS_DEMO
 		};
 	}
 
@@ -1631,6 +1650,37 @@ export class DatosSandbox implements Datos {
 			dia: !!a.dia,
 			email: !!a.email
 		});
+		// El interruptor de las apps de antes es el de los recordatorios (como Go).
+		const e = await this.estadoCarritos();
+		await guardarCambio(this.db, this.sb.id, 'carritos', 'recordatorios', {
+			...e.recordatorios,
+			activo: !!a.email
+		});
+	}
+
+	/** Los tres recordatorios por mail (§62), con las reglas de Go. La demo no manda mails. */
+	async guardarRecordatorios(r: RecordatoriosCarritos): Promise<string | null> {
+		const mal = problemaRecordatorios(r);
+		if (mal) return mal;
+		await guardarCambio(this.db, this.sb.id, 'carritos', 'recordatorios', {
+			activo: !!r.activo,
+			pasos: r.pasos.map((p, i) => ({
+				activo: !!p.activo,
+				horas: p.horas,
+				cupon: i > 0 && p.cupon ? { ...p.cupon } : null
+			}))
+		} satisfies RecordatoriosCarritos);
+		return null;
+	}
+
+	/** «No quiero más estos mails» desde la tienda de la demo: corta los recordatorios de ese email. */
+	async bajaCarritoTienda(token: string) {
+		const c = (await this.carritosTienda()).find((x) => x.token === token);
+		if (!c || c.baja) return;
+		await guardarCambio(this.db, this.sb.id, 'carrito-tienda', c.email, {
+			...c,
+			baja: Date.now()
+		} satisfies CarritoTienda);
 	}
 
 	async recordarCarrito(id: string): Promise<Resultado> {

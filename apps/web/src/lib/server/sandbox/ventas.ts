@@ -272,6 +272,8 @@ export type EstadoCarritos = {
 	recordados: Set<string>;
 	todos: boolean;
 	automaticos: { hora: boolean; dia: boolean; email: boolean };
+	/** Los tres recordatorios por mail (§62). */
+	recordatorios: Carritos['recordatorios'];
 };
 
 const DESDE: Record<string, string> = {
@@ -309,9 +311,10 @@ export function carritosDemo(
 	// Lo recuperado este mes: los clientes con carrito que después compraron.
 	const mes = ahora - 30 * DIA;
 	const conCarrito = new Set(d.carritos.map((k) => k.clienteId));
-	const recuperado = d.pedidos
-		.filter((p) => conCarrito.has(p.clienteId) && p.creado > mes && p.estado !== 'Cancelado')
-		.reduce((s, p) => s + p.total, 0);
+	const recuperados = d.pedidos.filter(
+		(p) => conCarrito.has(p.clienteId) && p.creado > mes && p.estado !== 'Cancelado'
+	);
+	const recuperado = recuperados.reduce((s, p) => s + p.total, 0);
 	const monto = carritos.reduce((s, k) => s + k.total, 0);
 	return {
 		carritos,
@@ -320,7 +323,9 @@ export function carritosDemo(
 		recuperado,
 		tasa: Math.round((recuperado / Math.max(1, recuperado + monto)) * 100),
 		costoMensaje,
-		automaticos: e.automaticos
+		automaticos: e.automaticos,
+		recordatorios: e.recordatorios,
+		recuperados: { pedidos: recuperados.length, monto: recuperado }
 	};
 }
 
@@ -339,6 +344,8 @@ export type CarritoTienda = {
 	/** Cuándo compró ese email (y cuánto), o null si sigue abierto. */
 	recuperado: number | null;
 	recuperadoTotal?: number;
+	/** Pidió no recibir más recordatorios (§62). */
+	baja?: number;
 };
 
 /** El id con el que el panel nombra un carrito de la tienda (no expone el email ni el token). */
@@ -367,11 +374,9 @@ export function conCarritosTienda(
 			recordado: e.todos || e.recordados.has(idCarritoTienda(c))
 		}));
 	const mes = ahora - 30 * DIA;
+	const deVerdad = propios.filter((c) => c.recuperado && c.recuperado > mes);
 	const recuperado =
-		base.recuperado +
-		propios
-			.filter((c) => c.recuperado && c.recuperado > mes)
-			.reduce((s, c) => s + (c.recuperadoTotal ?? c.total), 0);
+		base.recuperado + deVerdad.reduce((s, c) => s + (c.recuperadoTotal ?? c.total), 0);
 	const carritos = [...abiertos, ...base.carritos];
 	const monto = carritos.reduce((s, k) => s + k.total, 0);
 	return {
@@ -380,6 +385,7 @@ export function conCarritosTienda(
 		abiertos: carritos.length,
 		monto,
 		recuperado,
+		recuperados: { pedidos: base.recuperados.pedidos + deVerdad.length, monto: recuperado },
 		tasa: Math.round((recuperado / Math.max(1, recuperado + monto)) * 100)
 	};
 }

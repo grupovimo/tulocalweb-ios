@@ -19,6 +19,12 @@ class CarritosApi extends ClienteBff {
 			carrito
 		});
 	}
+	baja(slug: string, token: string) {
+		return this.pedir<void>(
+			'POST',
+			`/v1/publico/tiendas/${slug}/carritos/${encodeURIComponent(token)}/baja`
+		);
+	}
 	async porToken(slug: string, token: string) {
 		try {
 			const r = await this.pedir<{ carrito: LineaGuardada[] }>(
@@ -63,4 +69,18 @@ export async function carritoPorToken(
 	if (!/^[A-Za-z0-9_-]{20,64}$/.test(token) || r.tienda.vitrina) return null;
 	if (!r.datos || !r.sandboxId) return api(cliente).porToken(r.tienda.slug, token);
 	return r.datos.carritoTienda(token);
+}
+
+/**
+ * «No quiero más estos mails» del recordatorio (§62): corta los recordatorios de ese email. Siempre
+ * responde lo mismo (no se filtra si el token existe).
+ */
+export async function bajaCarrito(
+	r: TiendaResuelta,
+	cliente: { ip: string; agente: string },
+	token: string
+) {
+	if (!/^[A-Za-z0-9_-]{20,64}$/.test(token) || r.tienda.vitrina) return;
+	if (!r.datos || !r.sandboxId) return api(cliente).baja(r.tienda.slug, token);
+	await r.datos.bajaCarritoTienda(token);
 }
