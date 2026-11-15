@@ -2,6 +2,25 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 15/11/2026 · Tienda en bloques · API
+
+- `mitienda` trabaja en v2 (`docs/especificaciones/tienda-bloques.md`): `Diseno{version, inicio, paginas}`,
+  `Bloque`, `Paginas` y los campos nuevos de `Estilo` (dirección, forma, densidad, ancho, fotoProducto,
+  encabezado, pie, `barra`, `whatsappFlotante`). `bloques.json` y `presets.json` van embebidos como copia
+  (`go generate ./internal/dominio/mitienda`; `TestCopiasDelContrato` falla si difieren del contrato).
+- Validación contra el catálogo (`bloques.go`): tipo, variante, campos por `tiposCampo`, campos desconocidos
+  rechazados, ids `[a-z0-9]{6,16}` únicos en todo el diseño, una portada, 30 bloques por página, nada de `<>`.
+  En el bloque todo es opcional (un bloque a medias se guarda y no se dibuja); dentro de las listas, los
+  requeridos se exigen.
+- `Migrar` pasa los casos de `casos/diseno-v2.json`. Leer y la tienda pública migran al vuelo; Guardar exige v2
+  (un v1 da 400); el PUT acepta hasta 64 KB; `Inicial(plantilla)` es el del preset.
+- Tienda pública: `diseno` (v2 completo) más `secciones`/`estilo` de v1 derivados mientras conviva la web vieja;
+  los productos que nombran los bloques vienen siempre en `productos`. Demos sembradas en v2 con beneficios,
+  banner, preguntas y local.
+- **Migrar la base** (con copia previa, después de `mostradorctl migrar`, que aplica la 00080):
+  `mostradorctl diseno-v2 --seco` lista qué tiendas cambiarían; `mostradorctl diseno-v2` las migra en una
+  transacción (idempotente). No se corrió contra producción.
+
 ## 15/11/2026 · Tienda en bloques · iOS
 
 - **Mi tienda** en la app (`apps/ios`, `docs/especificaciones/tienda-bloques.md`), con tres pestañas debajo de la
