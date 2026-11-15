@@ -14,7 +14,7 @@
 	let { bloque }: { bloque: Bloque } = $props();
 	const ctx = usarTienda();
 	const href = $derived(waHref(ctx.tienda, '¡Hola! Quería hacer una consulta.'));
-	const texto = $derived(textoDe(bloque, 'texto') || 'Te respondemos por WhatsApp en el día.');
+	const texto = $derived(textoDe(bloque, 'texto') || 'Consultanos lo que necesites por WhatsApp.');
 </script>
 
 {#if href}

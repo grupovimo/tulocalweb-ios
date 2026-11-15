@@ -20,7 +20,14 @@
 	const sel = $derived(campo<SeleccionProductos>(bloque, 'productos'));
 	const lista = $derived(productosDe(ctx.tienda, sel));
 	const columnas = $derived(campo<number>(bloque, 'columnas') ?? 4);
-	const titulo = $derived(textoDe(bloque, 'titulo'));
+	// «Lo más elegido» (el título por defecto) sólo si hay ventas que lo respalden: sin ninguna, los
+	// «más vendidos» son el orden del catálogo y el título prometía algo que no era.
+	const sinVentas = $derived(
+		(sel?.fuente ?? 'vendidos') === 'vendidos' &&
+			!(bloque.datos.titulo as string | undefined)?.trim() &&
+			!(ctx.tienda.topVendidos ?? []).length
+	);
+	const titulo = $derived(sinVentas ? 'Nuestros productos' : textoDe(bloque, 'titulo'));
 	const total = $derived(ctx.tienda.productos.length);
 	const link = $derived(
 		campo<boolean>(bloque, 'verTodo') !== false && total > lista.length
