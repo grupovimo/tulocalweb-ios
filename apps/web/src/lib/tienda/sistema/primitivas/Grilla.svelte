@@ -21,6 +21,7 @@
 		columnas = 4,
 		movil = 2,
 		recortar = true,
+		fija = false,
 		clase = '',
 		etiqueta,
 		children
@@ -31,6 +32,11 @@
 		movil?: number;
 		/** false: muestra todos aunque la última fila quede incompleta (listas). */
 		recortar?: boolean;
+		/**
+		 * Siempre las columnas elegidas, con lo que haya: para lo que acompaña (relacionados, «Te puede
+		 * gustar»), donde un solo producto no puede volverse un destacado a todo el ancho.
+		 */
+		fija?: boolean;
 		clase?: string;
 		/** Para los lectores de pantalla (una lista de productos, de fotos…). */
 		etiqueta?: string;
@@ -38,18 +44,31 @@
 	} = $props();
 
 	const a = $derived(armado(items.length, columnas, movil));
-	const lista = $derived(recortar ? items.slice(0, a.mostrar) : items);
+	// Fija: con más de una fila, igual se recorta a filas completas (regla 2).
+	const lista = $derived(
+		fija
+			? items.length > columnas
+				? items.slice(0, Math.floor(items.length / columnas) * columnas)
+				: items
+			: recortar
+				? items.slice(0, a.mostrar)
+				: items
+	);
 </script>
 
 <ul
 	class="tv-grilla {clase}"
-	data-n={Math.min(lista.length, 4)}
-	style:--cols={recortar ? a.cols : Math.min(columnas, Math.max(1, lista.length))}
-	style:--cols-m={a.movil}
+	data-n={fija ? 4 : Math.min(lista.length, 4)}
+	style:--cols={fija ? columnas : recortar ? a.cols : Math.min(columnas, Math.max(1, lista.length))}
+	style:--cols-m={fija ? movil : a.movil}
 	aria-label={etiqueta}
 >
 	{#each lista as item, i (i)}
-		<li class:tv-sobra={recortar && a.sobra > 0 && i >= lista.length - a.sobra}>
+		<li
+			class:tv-sobra={fija
+				? lista.length > movil && i >= lista.length - (lista.length % movil)
+				: recortar && a.sobra > 0 && i >= lista.length - a.sobra}
+		>
 			{@render children(item, i)}
 		</li>
 	{/each}

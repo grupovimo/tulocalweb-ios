@@ -221,7 +221,7 @@
 	{#if sugeridos.length && lineas.length}
 		<section class="tv-ancho tv-ficha-rel" aria-labelledby="tv-sug">
 			<h2 class="tv-h2" id="tv-sug">Te puede gustar</h2>
-			<Grilla items={sugeridos} columnas={4} etiqueta="Te puede gustar">
+			<Grilla items={sugeridos} columnas={4} fija etiqueta="Te puede gustar">
 				{#snippet children(p)}<TarjetaProducto producto={p} ancho={500} />{/snippet}
 			</Grilla>
 		</section>

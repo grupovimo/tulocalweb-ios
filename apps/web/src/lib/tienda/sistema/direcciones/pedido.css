@@ -180,6 +180,8 @@
 	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: flex-start;
+	/* Los renglones arriba: si la tarjeta de al lado es más alta, el precio no baja a buscarla. */
+	align-content: flex-start;
 	gap: 4px 8px;
 }
 .tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-nombre {

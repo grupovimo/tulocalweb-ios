@@ -632,7 +632,7 @@
 	{#if relacionados.length}
 		<section class="tv-ancho tv-ficha-rel" aria-labelledby="tv-rel">
 			<h2 class="tv-h2" id="tv-rel">{tituloRel}</h2>
-			<Grilla items={relacionados} columnas={dir === 'pedido' ? 6 : 4} etiqueta={tituloRel}>
+			<Grilla items={relacionados} columnas={dir === 'pedido' ? 6 : 4} fija etiqueta={tituloRel}>
 				{#snippet children(p)}<TarjetaProducto producto={p} ancho={500} />{/snippet}
 			</Grilla>
 		</section>

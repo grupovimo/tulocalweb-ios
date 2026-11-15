@@ -25,7 +25,7 @@
 		<h1 class="tv-h1 tv-pag-titulo">Favoritos</h1>
 		{#if productos.length}
 			<p class="tv-suave">Quedan guardados en este dispositivo.</p>
-			<Grilla items={productos} columnas={4} etiqueta="Favoritos">
+			<Grilla items={productos} columnas={4} fija etiqueta="Favoritos">
 				{#snippet children(p)}<TarjetaProducto producto={p} ancho={500} />{/snippet}
 			</Grilla>
 		{:else}
