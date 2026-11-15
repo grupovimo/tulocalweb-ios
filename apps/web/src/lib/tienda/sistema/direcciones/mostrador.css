@@ -1,0 +1,541 @@
+/*
+ * B · Mostrador (docs/handoff/tienda-bloques/B-*.dc.html): de venta, con todo a la vista.
+ * Bricolage Grotesque 800 con −0,03em e Instrument Sans; escala 72 · 40 · 28 · 17 · 15 · 13;
+ * radios 16–28; tarjetas blancas con sombra; botón píldora de 52 en 700; cuotas en verde y precio
+ * con transferencia; 56–72 px entre bloques; margen de 40 px.
+ */
+
+.tv[data-dir='mostrador'] {
+	--t-h1: 72px;
+	--t-h2: 40px;
+	--t-h3: 28px;
+	--t-lead: 17px;
+	--t-cuerpo: 15px;
+	--t-chico: 13px;
+	--t-peso-titulos: 800;
+	--t-esp-titulos: -0.03em;
+	--t-alto-boton: 52px;
+	--t-peso-boton: 700;
+	--t-alto-enc: 80px;
+	--t-ritmo-m: 40px;
+	--t-sombra: 0 1px 2px color-mix(in srgb, var(--t-texto) 6%, transparent),
+		0 8px 24px -12px color-mix(in srgb, var(--t-texto) 18%, transparent);
+	--t-btn-fondo: var(--t-acento);
+	--t-btn-texto: var(--t-sobre-acento);
+	--t-btn-borde: var(--t-texto);
+}
+.tv[data-dir='mostrador'] .tv-h1 {
+	line-height: 0.92;
+}
+.tv[data-dir='mostrador'] .tv-btn--secundario {
+	background: var(--t-fondo);
+	color: var(--t-texto);
+	border-color: transparent;
+}
+.tv[data-dir='mostrador'] .tv-z[data-fondo='oscuro'] .tv-btn--secundario,
+.tv[data-dir='mostrador'] .tv-z[data-fondo='acento'] .tv-btn--secundario,
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-btn--secundario {
+	background: transparent;
+	color: var(--t-zona-texto);
+	box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.tv[data-dir='mostrador'] .tv-z[data-fondo='oscuro'] {
+	--t-btn-fondo: var(--t-acento);
+	--t-btn-texto: var(--t-sobre-acento);
+}
+.tv[data-dir='mostrador'] .tv-ante {
+	align-self: flex-start;
+	display: inline-flex;
+	align-items: center;
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 999px;
+	background: var(--t-acento-suave);
+	color: var(--t-acento-suave-texto);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
+}
+.tv[data-dir='mostrador'] .tv-z[data-fondo='oscuro'] .tv-ante,
+.tv[data-dir='mostrador'] .tv-z[data-fondo='acento'] .tv-ante {
+	background: var(--t-sobre-oscuro);
+	color: var(--t-oscuro);
+}
+.tv[data-dir='mostrador'] .tv-link {
+	font-weight: 700;
+}
+
+/* Tarjetas blancas con sombra, sin borde. */
+.tv[data-dir='mostrador'] .tv-tarjeta {
+	border: 0;
+	box-shadow: var(--t-sombra);
+}
+
+/* Encabezado en tarjeta: logo, buscador píldora y carrito oscuro; las pestañas abajo. */
+.tv[data-dir='mostrador'] .tv-marca-nombre {
+	font-size: 24px;
+}
+.tv[data-dir='mostrador'] .tv-enc-fila {
+	gap: 32px;
+}
+.tv[data-dir='mostrador'] .tv-buscar {
+	border-radius: 999px;
+	background: var(--t-fondo);
+}
+.tv[data-dir='mostrador'] .tv-bolsa {
+	height: 44px;
+	padding: 0 8px 0 18px;
+	border-radius: 999px;
+	background: var(--t-texto);
+	color: var(--t-fondo);
+	font-weight: 700;
+}
+.tv[data-dir='mostrador'] .tv-bolsa svg {
+	display: none;
+}
+.tv[data-dir='mostrador'] .tv-bolsa-n {
+	display: inline-grid;
+	place-items: center;
+	min-width: 26px;
+	height: 26px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
+	font-size: 12px;
+}
+.tv[data-dir='mostrador'] .tv-bolsa-n::before,
+.tv[data-dir='mostrador'] .tv-bolsa-n::after {
+	content: none;
+}
+.tv[data-dir='mostrador'] .tv-enc-pestanas .tv-nav a:first-child {
+	color: var(--t-acento-texto);
+}
+
+/* Producto en tarjeta: foto arriba, precio grande, «+» redondo. */
+.tv[data-dir='mostrador'] .tv-prod--grilla {
+	gap: 0;
+	overflow: hidden;
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-prod--grilla .tv-prod-foto {
+	border-radius: 0;
+}
+.tv[data-dir='mostrador'] .tv-prod--grilla .tv-prod-foto .tv-foto {
+	border-radius: 0;
+}
+.tv[data-dir='mostrador'] .tv-prod--grilla .tv-prod-info {
+	gap: 6px;
+	padding: 16px 18px 20px;
+	color: var(--t-texto);
+}
+.tv[data-dir='mostrador'] .tv-prod-nombre {
+	font-size: 15px;
+	font-weight: 600;
+}
+.tv[data-dir='mostrador'] .tv-precio-monto {
+	font-size: 20px;
+	font-weight: 700;
+}
+.tv[data-dir='mostrador'] .tv-precio--grande .tv-precio-monto {
+	font-size: 28px;
+}
+.tv[data-dir='mostrador'] .tv-prod-chip {
+	border-radius: 999px;
+	font-weight: 700;
+}
+.tv[data-dir='mostrador'] .tv-prod-chip:not(.tv-chip--off) {
+	background: var(--t-superficie);
+}
+.tv[data-dir='mostrador'] .tv-mas {
+	border: 0;
+	border-radius: 50%;
+	background: var(--t-texto);
+	color: var(--t-fondo);
+}
+.tv[data-dir='mostrador'] .tv-grilla {
+	gap: 20px;
+}
+
+/* Categorías: tarjeta con la foto al costado y «Ver productos». */
+.tv[data-dir='mostrador'] .tv-cats--tarjetas .tv-cat {
+	display: grid;
+	grid-template-columns: 160px 1fr;
+	align-items: center;
+	gap: 20px;
+	padding: 12px;
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-cats--tarjetas .tv-cat .tv-foto {
+	width: 160px;
+	height: 160px;
+	aspect-ratio: 1;
+	border-radius: 12px;
+}
+.tv[data-dir='mostrador'] .tv-cat-textos {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+}
+.tv[data-dir='mostrador'] .tv-cat-ver {
+	display: block;
+	margin-top: 8px;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--t-acento-texto);
+}
+.tv[data-dir='mostrador'] .tv-cats-lista a {
+	border: 0;
+	background: var(--t-superficie);
+	font-weight: 600;
+	box-shadow: var(--t-sombra);
+}
+
+/* Beneficios en tarjetas con el ícono en un cuadrado del acento. */
+.tv[data-dir='mostrador'] .tv-benef-lista {
+	gap: 20px;
+}
+.tv[data-dir='mostrador'] .tv-benef-item {
+	padding: 20px 22px !important;
+	border: 0 !important;
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-benef[data-variante='fila'] .tv-benef-lista {
+	border: 0;
+}
+.tv[data-dir='mostrador'] .tv-benef-icono {
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: var(--t-acento-suave);
+	color: var(--t-acento-suave-texto);
+}
+.tv[data-dir='mostrador'] .tv-benef-textos b {
+	font-weight: 700;
+}
+
+/* Reseñas en tarjeta. */
+.tv[data-dir='mostrador'] .tv-resena {
+	padding: 24px;
+	gap: 14px;
+}
+.tv[data-dir='mostrador'] .tv-resena blockquote {
+	font-weight: 500;
+}
+.tv[data-dir='mostrador'] .tv-resena-foto {
+	width: 44px !important;
+	height: 44px !important;
+	border-radius: 10px !important;
+}
+
+/* Secciones con fondo: caja de radio 24 con 36 de aire (B-moda «Ofertas»). */
+.tv[data-dir='mostrador'] .tv-cab {
+	margin-bottom: 24px;
+	align-items: center;
+}
+.tv[data-dir='mostrador'] .tv-sec[data-fondo='superficie'] .tv-sec-caja {
+	background: var(--t-acento-suave);
+}
+
+/* Portada: en tarjetas de radio 24–28. */
+.tv[data-dir='mostrador'] .tv-portada-foto.tv-ancho-foto {
+	height: 560px;
+	margin: 24px auto 0;
+	max-width: calc(var(--t-ancho) - 2 * var(--t-margen));
+	width: calc(100% - 2 * var(--t-margen));
+	border-radius: 24px;
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre {
+	inset: auto 0 32px;
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre.tv-ancho {
+	padding-inline: 32px;
+}
+.tv[data-dir='mostrador'] .tv-portada-foto .tv-velo {
+	background: linear-gradient(0deg, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0) 55%);
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-portada-textos {
+	width: 440px;
+	max-width: 100%;
+	gap: 16px;
+	padding: 32px;
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	color: var(--t-texto);
+	box-shadow: var(--t-sombra);
+	--t-zona-texto: var(--t-texto);
+	--t-zona-suave: var(--t-suave);
+	--t-acento-texto: var(--t-acento-suave-texto);
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-h1 {
+	font-size: 52px;
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-lead {
+	font-size: 16px;
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-btn--claro {
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
+	border-color: var(--t-acento);
+}
+.tv[data-dir='mostrador'] .tv-portada-sobre .tv-btn--secundario {
+	background: var(--t-fondo);
+	color: var(--t-texto);
+	box-shadow: none;
+}
+.tv[data-dir='mostrador'] .tv-portada-partida {
+	grid-template-columns: 3fr 2fr;
+	gap: 20px;
+	min-height: 520px;
+	padding-top: 24px;
+	padding-right: var(--t-margen);
+}
+.tv[data-dir='mostrador'] .tv-portada-col {
+	justify-content: flex-end;
+	gap: 20px;
+	padding: 56px;
+	border-radius: 28px;
+	background: var(--t-oscuro);
+	color: var(--t-sobre-oscuro);
+	--t-zona-texto: var(--t-sobre-oscuro);
+	--t-zona-suave: color-mix(in srgb, var(--t-sobre-oscuro) 78%, var(--t-oscuro));
+}
+.tv[data-dir='mostrador'] .tv-portada-col .tv-btn--secundario {
+	background: transparent;
+	color: var(--t-sobre-oscuro);
+	box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.tv[data-dir='mostrador'] .tv-portada-col .tv-ante {
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
+}
+.tv[data-dir='mostrador'] .tv-portada-col .tv-portada-nota {
+	color: var(--t-zona-suave);
+}
+.tv[data-dir='mostrador'] .tv-portada-fotos .tv-foto {
+	border-radius: 28px;
+}
+.tv[data-dir='mostrador'] .tv-portada-fotos {
+	gap: 20px;
+}
+.tv[data-dir='mostrador'] .tv-portada-tile,
+.tv[data-dir='mostrador'] .tv-portada-celda {
+	border-radius: 28px;
+}
+.tv[data-dir='mostrador'] .tv-portada-tile .tv-ante {
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
+}
+.tv[data-dir='mostrador'] .tv-portada-caja {
+	margin-top: 24px;
+	border-radius: 28px;
+	padding: 56px;
+	grid-template-columns: 1fr;
+	gap: 20px;
+	min-height: 440px;
+	align-content: end;
+}
+.tv[data-dir='mostrador'] .tv-portada-caja .tv-lead,
+.tv[data-dir='mostrador'] .tv-portada-caja .tv-botones {
+	grid-column: 1;
+	grid-row: auto;
+}
+.tv[data-dir='mostrador'] .tv-portada-caja .tv-ante {
+	background: var(--t-sobre-acento);
+	color: var(--t-acento);
+}
+
+/* Un producto: tarjeta blanca con la foto adentro (B-vacia). */
+.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] {
+	grid-template-columns: 1fr 1fr;
+	gap: 40px;
+	padding: 14px;
+	border-radius: 28px;
+	background: var(--t-superficie);
+	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto .tv-foto {
+	border-radius: 14px;
+}
+.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-info {
+	padding: 24px 40px 24px 0;
+	color: var(--t-texto);
+}
+
+/* Banners, newsletter: radio 24, 48 de aire. */
+.tv[data-dir='mostrador'] .tv-banner-caja,
+.tv[data-dir='mostrador'] .tv-nl-caja,
+.tv[data-dir='mostrador'] .tv-ti-caja,
+.tv[data-dir='mostrador'] .tv-escribinos-caja {
+	border-radius: 24px;
+}
+.tv[data-dir='mostrador'] .tv-escribinos-caja {
+	border: 0;
+	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-nl-form input {
+	border: 0;
+	border-radius: 999px;
+}
+.tv[data-dir='mostrador'] .tv-local-datos.tv-tarjeta,
+.tv[data-dir='mostrador'] .tv-local-mapa {
+	border-radius: 24px;
+}
+.tv[data-dir='mostrador'] .tv-faq details {
+	border-color: color-mix(in srgb, var(--t-borde) 70%, var(--t-superficie));
+}
+.tv[data-dir='mostrador'] .tv-faq summary {
+	font-weight: 700;
+}
+.tv[data-dir='mostrador'] .tv-pie {
+	margin-top: 0;
+	padding-top: 64px;
+}
+.tv[data-dir='mostrador'] .tv-pie-nombre {
+	font-size: 32px;
+}
+.tv[data-dir='mostrador'] .tv-pie-tit {
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--t-pie-texto);
+}
+
+@media (max-width: 999px) {
+	.tv[data-dir='mostrador'] {
+		--t-h1: 56px;
+		--t-h2: 34px;
+	}
+	.tv[data-dir='mostrador'] .tv-cats--tarjetas .tv-cat {
+		grid-template-columns: 96px 1fr;
+	}
+	.tv[data-dir='mostrador'] .tv-cats--tarjetas .tv-cat .tv-foto {
+		width: 96px;
+		height: 96px;
+	}
+}
+@media (max-width: 759px) {
+	.tv[data-dir='mostrador'] {
+		--t-h1: 36px;
+		--t-h2: 24px;
+		--t-h3: 20px;
+		--t-lead: 16px;
+	}
+	.tv[data-dir='mostrador'] .tv-marca-nombre {
+		font-size: 20px;
+	}
+	.tv[data-dir='mostrador'] .tv-bolsa {
+		padding: 0 6px 0 6px;
+		min-width: 44px;
+		justify-content: center;
+	}
+	.tv[data-dir='mostrador'] .tv-bolsa svg {
+		display: block;
+	}
+	.tv[data-dir='mostrador'] .tv-grilla {
+		gap: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-prod--grilla .tv-prod-info {
+		padding: 10px 12px 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-precio-monto {
+		font-size: 17px;
+	}
+	.tv[data-dir='mostrador'] .tv-prod--grilla .tv-precio-ok {
+		font-size: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-mas {
+		width: 40px;
+		height: 40px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-foto.tv-ancho-foto {
+		height: auto;
+		min-height: 420px;
+		margin-top: 12px;
+		width: calc(100% - 24px);
+		border-radius: 22px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-sobre {
+		inset: auto 0 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-sobre.tv-ancho {
+		padding-inline: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-sobre .tv-portada-textos {
+		padding: 20px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-sobre .tv-h1 {
+		font-size: 32px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-partida {
+		padding: 12px 12px 0;
+		gap: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-col {
+		padding: 24px;
+		border-radius: 22px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-fotos {
+		margin-inline: 0;
+		height: 240px;
+		gap: 10px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-fotos .tv-foto,
+	.tv[data-dir='mostrador'] .tv-portada-tile,
+	.tv[data-dir='mostrador'] .tv-portada-celda {
+		border-radius: 22px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-texto.tv-ancho {
+		padding-inline: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-portada-caja {
+		margin-top: 12px;
+		padding: 24px;
+		min-height: 0;
+		border-radius: 22px;
+	}
+	.tv[data-dir='mostrador'] .tv-uno.tv-ancho {
+		padding-inline: 12px;
+	}
+	.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] {
+		grid-template-columns: 1fr;
+		gap: 10px;
+		padding: 10px;
+		border-radius: 20px;
+	}
+	.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-info {
+		padding: 6px 6px 8px;
+	}
+	.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto {
+		aspect-ratio: 4/3;
+	}
+	.tv[data-dir='mostrador'] .tv-benef-lista {
+		gap: 10px;
+	}
+	.tv[data-dir='mostrador'] .tv-benef-item {
+		padding: 14px 16px !important;
+	}
+	.tv[data-dir='mostrador'] .tv-benef[data-variante='fila'] .tv-benef-lista {
+		grid-template-columns: 1fr;
+	}
+	.tv[data-dir='mostrador'] .tv-benef[data-variante='fila'] .tv-benef-item {
+		flex-direction: row;
+		align-items: center;
+	}
+	.tv[data-dir='mostrador'] .tv-banner-caja,
+	.tv[data-dir='mostrador'] .tv-nl-caja,
+	.tv[data-dir='mostrador'] .tv-ti-caja {
+		border-radius: 20px;
+	}
+	.tv[data-dir='mostrador'] .tv-pie {
+		padding-top: 40px;
+	}
+}

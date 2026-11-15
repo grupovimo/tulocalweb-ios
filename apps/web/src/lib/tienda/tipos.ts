@@ -1,6 +1,7 @@
 import type { EstiloTienda } from './estilo/estilo.ts';
 import type { components } from '@mostrador/contrato/esquema';
 import type { MinimoMayorista } from './mayorista.ts';
+import type { DisenoV2 } from './sistema/catalogo.ts';
 
 /** Los turnos de la tienda (servicios y profesionales activos, seña, horario); null si no toma. */
 export type TurnosTienda = components['schemas']['TurnosPublicos'];
@@ -97,6 +98,12 @@ export type TiendaPublica = {
 	compartir: { titulo: string; descripcion: string; foto: string };
 	/** Mi tienda › Estilo: colores, tipografías, logos, anuncio, textos y redes (vacío: la plantilla). */
 	estilo?: EstiloTienda | null;
+	/**
+	 * El diseño v2 completo (ya migrado): la portada en bloques y el estilo ampliado
+	 * (docs/especificaciones/tienda-bloques.md). Si no viene, la tienda migra al vuelo lo de arriba
+	 * (lib/tienda/sistema/migrar.ts › disenoDeTienda).
+	 */
+	diseno?: DisenoV2 | null;
 	ciudad: string;
 	direccion: string;
 	whatsapp: string;

@@ -62,7 +62,8 @@ export type EstiloTienda = {
 	pie?: 'simple' | 'columnas' | 'grande';
 	/** La barra de anuncios de arriba de todo (en v1 era `anuncio` y `anuncioLink`). */
 	barra?: {
-		variante: 'fija' | 'rotativa';
+		/** Vacío: fija. */
+		variante?: 'fija' | 'rotativa';
 		mensajes: { texto: string; link?: string }[];
 		fondo?: 'normal' | 'superficie' | 'acento' | 'oscuro';
 	};

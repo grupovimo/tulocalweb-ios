@@ -127,7 +127,8 @@
 
 <svelte:document onfocusout={alSalir} />
 
-<AnuncioTienda tienda={data.tienda} />
+<!-- La portada ya va con el sistema de bloques, que dibuja su propia barra (sistema/marco/Barra). -->
+{#if page.route.id !== '/t/[tienda]'}<AnuncioTienda tienda={data.tienda} />{/if}
 {@render children()}
 {#key data.tienda.slug}
 	<AvisoCookies tienda={data.tienda} />

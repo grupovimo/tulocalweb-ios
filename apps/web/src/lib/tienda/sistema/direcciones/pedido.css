@@ -1,0 +1,614 @@
+/*
+ * C · Pedido (docs/handoff/tienda-bloques/C-*.dc.html): para pedir rápido, la bolsa siempre a la
+ * vista. Geist 700 con −0,025em; escala 44 · 22 · 17 · 15 · 13; radio 12 en tarjetas y 10–12 en
+ * fotos; tarjetas blancas con borde; botón de radio 10, alto 44–48; 24–32 px entre bloques;
+ * encabezado compacto de 64 px; margen de 32 px.
+ */
+
+.tv[data-dir='pedido'] {
+	--t-h1: 44px;
+	--t-h2: 22px;
+	--t-h3: 17px;
+	--t-lead: 15px;
+	--t-cuerpo: 15px;
+	--t-chico: 13px;
+	--t-peso-titulos: 700;
+	--t-esp-titulos: -0.025em;
+	--t-alto-boton: 44px;
+	--t-peso-boton: 600;
+	--t-alto-enc: 64px;
+	--t-ritmo-m: 24px;
+	--t-btn-fondo: var(--t-texto);
+	--t-btn-texto: var(--t-fondo);
+	--t-btn-borde: var(--t-borde);
+	background: color-mix(in srgb, var(--t-fondo) 92%, #fff);
+}
+.tv[data-dir='pedido'] .tv-h1 {
+	line-height: 1;
+}
+.tv[data-dir='pedido'] .tv-btn {
+	padding: 0 18px;
+}
+.tv[data-dir='pedido'] .tv-btn--secundario {
+	background: color-mix(in srgb, var(--t-texto) 6%, var(--t-superficie));
+	border-color: transparent;
+}
+.tv[data-dir='pedido'] .tv-z[data-fondo='oscuro'] .tv-btn--secundario,
+.tv[data-dir='pedido'] .tv-z[data-fondo='acento'] .tv-btn--secundario,
+.tv[data-dir='pedido'] .tv-portada-sobre .tv-btn--secundario {
+	background: transparent;
+	border-color: currentColor;
+}
+.tv[data-dir='pedido'] .tv-ante {
+	font-size: 13px;
+	letter-spacing: 0;
+	text-transform: none;
+}
+.tv[data-dir='pedido'] .tv-link {
+	font-size: 14px;
+}
+.tv[data-dir='pedido'] .tv-cab {
+	margin-bottom: 14px;
+	align-items: baseline;
+}
+.tv[data-dir='pedido'] .tv-cab-textos {
+	gap: 4px;
+}
+
+/* Encabezado compacto. */
+.tv[data-dir='pedido'] .tv-enc {
+	border-bottom: 1px solid var(--t-borde);
+}
+.tv[data-dir='pedido'] .tv-enc-fila {
+	gap: 24px;
+}
+.tv[data-dir='pedido'] .tv-marca-nombre {
+	font-size: 22px;
+}
+.tv[data-dir='pedido'] .tv-marca-inicial {
+	width: 32px;
+	height: 32px;
+	border-radius: 9px;
+	font-size: 16px;
+	font-weight: 700;
+}
+.tv[data-dir='pedido'] .tv-enc-buscar {
+	max-width: 520px;
+	margin-left: auto;
+}
+.tv[data-dir='pedido'] .tv-enc-buscar + .tv-enc-acciones {
+	margin-left: 0;
+}
+.tv[data-dir='pedido'] .tv-buscar {
+	height: 40px;
+	padding: 0 14px;
+	border-radius: 10px;
+}
+.tv[data-dir='pedido'] .tv-bolsa {
+	height: 40px;
+	padding: 0 16px;
+	border-radius: var(--t-r-boton);
+	background: var(--t-texto);
+	color: var(--t-fondo);
+	font-weight: 600;
+}
+.tv[data-dir='pedido'] .tv-bolsa svg {
+	display: none;
+}
+.tv[data-dir='pedido'] .tv-bolsa-n::before {
+	content: '· ';
+}
+.tv[data-dir='pedido'] .tv-bolsa-n::after {
+	content: none;
+}
+
+/* La portada en tres columnas (C-moda): categorías, bloques y la bolsa. */
+.tv-pedido {
+	display: grid;
+	grid-template-columns: 1fr 340px;
+	gap: 24px;
+	align-items: start;
+	padding-top: 24px;
+}
+.tv-pedido[data-cats='true'] {
+	grid-template-columns: 220px 1fr 340px;
+}
+.tv-pedido-main {
+	min-width: 0;
+}
+.tv-pedido .tv-ancho {
+	max-width: none;
+	padding-inline: 0;
+}
+.tv-pedido-cats {
+	position: sticky;
+	top: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.tv-pedido-cats > a {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	min-height: 40px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-weight: 500;
+	text-decoration: none;
+}
+.tv-pedido-cats > a:hover {
+	background: color-mix(in srgb, var(--t-texto) 6%, transparent);
+}
+.tv-pedido-cats > a span {
+	font-size: 13px;
+	color: var(--t-suave);
+}
+.tv-pedido-local {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 20px;
+	padding: 14px;
+	font-size: 13px;
+	color: var(--t-suave);
+}
+.tv-pedido-local b {
+	font-size: 14px;
+	color: var(--t-texto);
+}
+.tv-pedido-local a {
+	font-weight: 600;
+	color: var(--t-texto);
+}
+.tv[data-dir='pedido'] .tv-main {
+	padding-bottom: 56px;
+}
+
+/* Tarjetas blancas con borde. */
+.tv[data-dir='pedido'] .tv-tarjeta {
+	background: var(--t-superficie);
+}
+
+/* Producto: foto con radio, nombre y precio en una línea, «+» oscuro de radio 10. */
+.tv[data-dir='pedido'] .tv-prod {
+	gap: 8px;
+}
+.tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-info {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: start;
+	gap: 4px 8px;
+}
+.tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-pie {
+	margin-top: 0;
+}
+.tv[data-dir='pedido'] .tv-prod-nombre {
+	font-size: 15px;
+	font-weight: 500;
+}
+.tv[data-dir='pedido'] .tv-precio-monto {
+	font-size: 15px;
+	font-weight: 600;
+}
+.tv[data-dir='pedido'] .tv-precio--grande .tv-precio-monto {
+	font-size: 22px;
+}
+.tv[data-dir='pedido'] .tv-prod-chip {
+	top: 8px;
+	left: 8px;
+	height: 24px;
+	padding: 0 7px;
+	border-radius: 6px;
+	background: var(--t-texto);
+	color: var(--t-fondo);
+}
+.tv[data-dir='pedido'] .tv-prod-chip.tv-chip--off {
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
+}
+.tv[data-dir='pedido'] .tv-mas {
+	width: 36px;
+	height: 36px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--t-texto);
+	color: var(--t-fondo);
+}
+.tv[data-dir='pedido'] .tv-grilla {
+	gap: 20px 16px;
+}
+.tv[data-dir='pedido'] .tv-prod--lista {
+	padding: 14px;
+	margin-bottom: 12px;
+	border: 1px solid var(--t-borde);
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+}
+.tv[data-dir='pedido'] .tv-lista {
+	gap: 0 12px;
+}
+
+/* Portada: dentro de la columna, con radio 16. */
+.tv[data-dir='pedido'] .tv-portada-foto {
+	height: 300px;
+	border-radius: 16px;
+}
+.tv[data-dir='pedido'] .tv-portada-foto.tv-ancho-foto {
+	margin-inline: 0;
+}
+.tv[data-dir='pedido'] .tv-portada-sobre {
+	inset: 0;
+	display: flex;
+	align-items: center;
+}
+.tv[data-dir='pedido'] .tv-portada-sobre.tv-ancho {
+	padding-inline: 32px;
+}
+.tv[data-dir='pedido'] .tv-portada-sobre .tv-portada-textos {
+	max-width: 440px;
+	gap: 12px;
+}
+.tv[data-dir='pedido'] .tv-portada-partida {
+	grid-template-columns: 1fr 1fr;
+	min-height: 0;
+	gap: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid var(--t-borde);
+	border-radius: 16px;
+	background: var(--t-superficie);
+}
+.tv[data-dir='pedido'] .tv-portada-col {
+	gap: 16px;
+	padding: 32px;
+}
+.tv[data-dir='pedido'] .tv-portada-textos {
+	gap: 12px;
+}
+.tv[data-dir='pedido'] .tv-portada-fotos {
+	min-height: 300px;
+}
+.tv[data-dir='pedido'] .tv-portada-fotos .tv-foto {
+	border-radius: 0;
+}
+.tv[data-dir='pedido'] .tv-portada-collage {
+	grid-template-rows: 150px 150px;
+	gap: 12px;
+	padding-top: 0;
+}
+.tv[data-dir='pedido'] .tv-portada-tile {
+	padding: 28px;
+	border-radius: 16px;
+}
+.tv[data-dir='pedido'] .tv-portada-celda {
+	border-radius: 16px;
+}
+.tv[data-dir='pedido'] .tv-portada-num {
+	font-size: 40px;
+}
+.tv[data-dir='pedido'] .tv-portada-nota-tile {
+	padding: 18px;
+}
+/* Sin fotos (C-vacia): tarjeta con la inicial, el título, la frase y el botón al costado. */
+.tv[data-dir='pedido'] .tv-portada-caja.tv-z {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	min-height: 0;
+	padding: 28px;
+	border: 1px solid var(--t-borde);
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	color: var(--t-texto);
+	--t-zona-texto: var(--t-texto);
+	--t-zona-suave: var(--t-suave);
+	--t-btn-fondo: var(--t-texto);
+	--t-btn-texto: var(--t-fondo);
+	--t-btn-borde: var(--t-borde);
+	--t-acento-texto: var(--t-acento-suave-texto);
+}
+.tv[data-dir='pedido'] .tv-portada-caja .tv-portada-textos {
+	display: flex;
+	flex: 1;
+	gap: 8px;
+}
+.tv[data-dir='pedido'] .tv-portada-caja .tv-h1 {
+	font-size: 34px;
+}
+.tv[data-dir='pedido'] .tv-portada-caja .tv-botones {
+	margin-top: 6px;
+}
+
+/* Un producto (C-vacia): fila con la foto, los datos y el botón. */
+.tv[data-dir='pedido'] .tv-uno-caja {
+	grid-template-columns: 240px 1fr;
+	gap: 24px;
+	padding: 14px;
+	border: 1px solid var(--t-borde);
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+	color: var(--t-texto);
+	--t-zona-texto: var(--t-texto);
+	--t-zona-suave: var(--t-suave);
+	--t-btn-fondo: var(--t-texto);
+	--t-btn-texto: var(--t-fondo);
+}
+.tv[data-dir='pedido'] .tv-uno-caja .tv-uno-info {
+	padding: 0 !important;
+	gap: 8px;
+}
+.tv[data-dir='pedido'] .tv-uno-foto {
+	aspect-ratio: 1;
+}
+.tv[data-dir='pedido'] .tv-uno-foto .tv-foto {
+	border-radius: 10px !important;
+}
+.tv[data-dir='pedido'] .tv-uno-info .tv-h2 {
+	font-size: 20px;
+}
+.tv[data-dir='pedido'] .tv-uno[data-variante='foto'] .tv-uno-caja {
+	min-height: 360px;
+	border: 0;
+}
+
+/* Beneficios: tarjetas chicas en fila, sin ícono grande (C-moda). */
+.tv[data-dir='pedido'] .tv-benef-lista {
+	gap: 12px;
+}
+.tv[data-dir='pedido'] .tv-benef-item {
+	padding: 12px 14px !important;
+	border: 1px solid var(--t-borde) !important;
+	border-radius: var(--t-r-tarjeta);
+	background: var(--t-superficie);
+}
+.tv[data-dir='pedido'] .tv-benef-icono {
+	display: none;
+}
+.tv[data-dir='pedido'] .tv-benef-textos b {
+	font-size: 14px;
+}
+.tv[data-dir='pedido'] .tv-benef-textos span {
+	font-size: 13px;
+}
+.tv[data-dir='pedido'] .tv-benef[data-variante='fila'] .tv-benef-lista {
+	border: 0;
+}
+
+/* Reseñas: caja con las tres en columnas. */
+.tv[data-dir='pedido'] .tv-resena {
+	padding: 18px;
+	gap: 6px;
+}
+.tv[data-dir='pedido'] .tv-resena blockquote {
+	font-size: 15px;
+}
+.tv[data-dir='pedido'] .tv-resena figcaption {
+	font-size: 13px;
+}
+.tv[data-dir='pedido'] .tv-resena-foto {
+	display: none !important;
+}
+.tv[data-dir='pedido'] .tv-grilla .tv-resena {
+	border-radius: var(--t-r-tarjeta);
+}
+
+/* Categorías: chips o tarjetas chicas. */
+.tv[data-dir='pedido'] .tv-cat-nombre {
+	font-size: 17px;
+}
+.tv[data-dir='pedido'] .tv-cat .tv-foto {
+	aspect-ratio: 4/3;
+}
+.tv[data-dir='pedido'] .tv-cats-lista a {
+	border: 1px solid var(--t-borde);
+	background: var(--t-superficie);
+	font-weight: 600;
+	font-size: 14px;
+}
+.tv[data-dir='pedido'] .tv-circulos .tv-foto {
+	width: 96px;
+	height: 96px;
+}
+.tv[data-dir='pedido'] .tv-circulos a {
+	width: 96px;
+	font-size: 14px;
+}
+
+/* Franjas y bloques de marca, más chicos. */
+.tv[data-dir='pedido'] .tv-banner-caja,
+.tv[data-dir='pedido'] .tv-nl-caja {
+	padding: 24px 28px;
+	border-radius: 16px;
+}
+.tv[data-dir='pedido'] .tv-nl[data-variante='centrado'] .tv-nl-caja {
+	padding: 40px 28px;
+}
+.tv[data-dir='pedido'] .tv-nl-form input {
+	width: 260px;
+	border-radius: 10px;
+}
+.tv[data-dir='pedido'] .tv-ti-textos {
+	padding: 40px;
+	gap: 12px;
+}
+.tv[data-dir='pedido'] .tv-ti-foto {
+	min-height: 360px;
+}
+.tv[data-dir='pedido'] .tv-ti-caja,
+.tv[data-dir='pedido'] .tv-escribinos-caja {
+	border-radius: 16px;
+}
+.tv[data-dir='pedido'] .tv-escribinos-caja {
+	padding: 20px 24px;
+	background: var(--t-superficie);
+}
+.tv[data-dir='pedido'] .tv-local {
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+}
+.tv[data-dir='pedido'] .tv-local-mapa {
+	height: 280px;
+}
+.tv[data-dir='pedido'] .tv-local-datos {
+	gap: 12px;
+}
+.tv[data-dir='pedido'] .tv-faq {
+	grid-template-columns: 1fr;
+	gap: 6px;
+}
+.tv[data-dir='pedido'] .tv-faq details {
+	padding: 14px 0;
+}
+.tv[data-dir='pedido'] .tv-faq summary {
+	font-size: 15px;
+}
+.tv[data-dir='pedido'] .tv-faq details p {
+	font-size: 14px;
+}
+.tv[data-dir='pedido'] .tv-video[data-variante='conTexto'] {
+	gap: 24px;
+}
+
+/* Pie simple, en tarjeta. */
+.tv[data-dir='pedido'] .tv-pie[data-variante='simple'] {
+	padding: 24px 0;
+	background: var(--t-superficie);
+}
+.tv[data-dir='pedido'] .tv-pie {
+	padding-top: 56px;
+}
+.tv[data-dir='pedido'] .tv-pie-nombre {
+	font-size: 28px;
+}
+.tv[data-dir='pedido'] .tv-pie-grande .tv-pie-nombre {
+	font-size: 44px;
+}
+
+@media (max-width: 1180px) {
+	.tv-pedido[data-cats='true'] {
+		grid-template-columns: 1fr 320px;
+	}
+	.tv-pedido[data-cats='true'] .tv-pedido-cats {
+		display: none;
+	}
+}
+@media (max-width: 999px) {
+	.tv-pedido,
+	.tv-pedido[data-cats='true'] {
+		grid-template-columns: 1fr;
+	}
+	.tv-pedido-lado {
+		display: none;
+	}
+}
+@media (max-width: 759px) {
+	.tv[data-dir='pedido'] {
+		--t-h1: 28px;
+		--t-h2: 20px;
+		--t-h3: 17px;
+		--t-alto-boton: 48px;
+	}
+	.tv-pedido {
+		padding-top: 12px;
+	}
+	.tv[data-dir='pedido'] .tv-marca-nombre {
+		font-size: 17px;
+	}
+	.tv[data-dir='pedido'] .tv-marca-inicial {
+		width: 40px;
+		height: 40px;
+		border-radius: 12px;
+		font-size: 19px;
+	}
+	.tv[data-dir='pedido'] .tv-bolsa {
+		padding: 0 12px;
+	}
+	.tv[data-dir='pedido'] .tv-bolsa-texto {
+		display: inline;
+	}
+	.tv[data-dir='pedido'] .tv-portada-foto {
+		height: 260px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-sobre {
+		align-items: flex-end;
+		padding-bottom: 16px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-sobre.tv-ancho {
+		padding-inline: 16px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-partida {
+		grid-template-columns: 1fr;
+	}
+	.tv[data-dir='pedido'] .tv-portada-col {
+		padding: 18px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-fotos {
+		min-height: 0;
+		height: 200px;
+		margin-inline: 0;
+	}
+	.tv[data-dir='pedido'] .tv-portada-texto.tv-ancho {
+		padding-inline: 0;
+	}
+	.tv[data-dir='pedido'] .tv-portada-caja.tv-z {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 14px;
+		padding: 18px;
+		border-radius: var(--t-r-tarjeta);
+	}
+	.tv[data-dir='pedido'] .tv-portada-caja .tv-h1 {
+		font-size: 26px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-caja .tv-botones {
+		width: 100%;
+	}
+	.tv[data-dir='pedido'] .tv-uno-caja {
+		grid-template-columns: 96px 1fr;
+		gap: 12px;
+		padding: 10px;
+		align-items: center;
+	}
+	.tv[data-dir='pedido'] .tv-uno-info .tv-lead {
+		font-size: 13px;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.tv[data-dir='pedido'] .tv-uno-info .tv-h2 {
+		font-size: 16px;
+	}
+	.tv[data-dir='pedido'] .tv-uno-info .tv-precio--grande .tv-precio-monto {
+		font-size: 17px;
+	}
+	.tv[data-dir='pedido'] .tv-uno-info .tv-botones {
+		grid-column: 1 / -1;
+	}
+	.tv[data-dir='pedido'] .tv-uno-caja .tv-botones {
+		display: none;
+	}
+	.tv[data-dir='pedido'] .tv-benef-lista {
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+	.tv[data-dir='pedido'] .tv-benef[data-variante='fila'] .tv-benef-item {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.tv[data-dir='pedido'] .tv-local {
+		grid-template-columns: 1fr;
+	}
+	.tv[data-dir='pedido'] .tv-banner-caja,
+	.tv[data-dir='pedido'] .tv-nl-caja {
+		padding: 20px 16px;
+	}
+	.tv[data-dir='pedido'] .tv-ti-textos {
+		padding: 22px 18px;
+	}
+	.tv[data-dir='pedido'] .tv-nl-form input {
+		width: 100%;
+	}
+}

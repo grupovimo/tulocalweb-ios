@@ -14,10 +14,15 @@
 	import Yerbal from './plantillas/Yerbal.svelte';
 	import { acentoElegido } from './acentos.ts';
 	import { cssEstilo } from './estilo/css.ts';
+	import Inicio from './sistema/paginas/Inicio.svelte';
 
 	type Props = ComponentProps<typeof Ceibo>;
 
 	/**
+	 * La portada (pagina 'inicio') ya se dibuja con el sistema de bloques (lib/tienda/sistema, diseño
+	 * v2: `tienda.diseno`, o migrado al vuelo si no viene). Las demás páginas siguen, por ahora, con
+	 * las plantillas viejas.
+	 *
 	 * Dibuja la tienda con su plantilla. Las que tienen archivo propio en el handoff (Plantilla X.dc.html)
 	 * usan su diseño; las demás salen del motor de plantillas (Plantillas Tienda.dc.html).
 	 */
@@ -48,12 +53,14 @@
 </script>
 
 <svelte:head>
-	{#if estilo.fuentes}<link rel="stylesheet" href={estilo.fuentes} />{/if}
+	{#if estilo.fuentes && props.pagina !== 'inicio'}<link rel="stylesheet" href={estilo.fuentes} />{/if}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -- colores #RRGGBB validados en estilo/css.ts -->
-	{#if estilo.reglas}{@html `<style>${estilo.reglas}</style>`}{/if}
+	{#if estilo.reglas && props.pagina !== 'inicio'}{@html `<style>${estilo.reglas}</style>`}{/if}
 </svelte:head>
 
-{#if raiz || estilo.reglas}
+{#if props.pagina === 'inicio'}
+	<Inicio tienda={props.tienda} proximos={props.proximos} />
+{:else if raiz || estilo.reglas}
 	<div class="t-estilo" style={raiz} style:display="contents"><Vista {...props} /></div>
 {:else}
 	<Vista {...props} />

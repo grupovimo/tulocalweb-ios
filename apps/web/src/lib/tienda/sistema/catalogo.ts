@@ -156,19 +156,25 @@ export type DisenoV2 = {
 // Validación (valibot), generada campo por campo desde el catálogo.
 
 const URL_HTTPS = /^https:\/\/[^\s"'<>]{3,}$/;
-const LINK = /^(inicio|catalogo|nosotros|turnos|suscripciones|cat:.{1,60}|prod:[\w-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
-const VIDEO = /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com)\/[^\s"'<>]+$/;
+const LINK = /^(inicio|catalogo|nosotros|turnos|suscripciones|cat:[^<>\n]{1,60}|prod:[0-9A-Za-z-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
+const VIDEO =
+	/^https:\/\/(youtube\.com|www\.youtube\.com|youtu\.be|vimeo\.com|www\.vimeo\.com|player\.vimeo\.com)\/[^\s"'<>]+$/;
 
-const texto = (max = 200) => v.pipe(v.string(), v.maxLength(max));
+// Igual que Go (mitienda/bloques.go): sin < ni >, y los textos de una línea sin saltos.
+const texto = (max = 200, largo = false) =>
+	v.pipe(v.string(), v.maxLength(max), v.regex(largo ? /^[^<>]*$/ : /^[^<>\r\n]*$/));
+const lleno = (s: v.GenericSchema<string, string>, requerido?: boolean) =>
+	requerido ? v.pipe(s, v.minLength(1)) : s;
 const foto = v.pipe(v.string(), v.maxLength(300), v.regex(URL_HTTPS));
 const link = v.pipe(v.string(), v.maxLength(300), v.regex(LINK));
-const id = v.pipe(v.string(), v.minLength(1), v.maxLength(64));
+const id = v.pipe(v.string(), v.regex(/^[0-9A-Za-z-]{1,64}$/));
 
 function esquemaCampo(c: Campo): v.GenericSchema {
 	switch (c.tipo) {
 		case 'texto':
+			return lleno(texto(c.max), c.requerido);
 		case 'textoLargo':
-			return texto(c.max);
+			return lleno(texto(c.max, true), c.requerido);
 		case 'foto':
 			return foto;
 		case 'fotos':
@@ -176,7 +182,7 @@ function esquemaCampo(c: Campo): v.GenericSchema {
 		case 'link':
 			return link;
 		case 'boton':
-			return v.object({ t: texto(30), a: link });
+			return v.strictObject({ t: v.pipe(texto(30), v.minLength(1)), a: link });
 		case 'fondo':
 			return v.picklist(FONDOS);
 		case 'fecha':
@@ -197,14 +203,15 @@ function esquemaCampo(c: Campo): v.GenericSchema {
 		case 'video':
 			return v.pipe(v.string(), v.maxLength(300), v.regex(VIDEO));
 		case 'producto':
-		case 'categoria':
 			return id;
+		case 'categoria':
+			return lleno(texto(60), true);
 		case 'elegidos':
 			return v.pipe(v.array(id), v.minLength(c.min ?? 0), v.maxLength(c.max ?? 24));
 		case 'categorias':
 			return v.pipe(v.array(texto(60)), v.maxLength(LIMITES.itemsPorLista));
 		case 'productos':
-			return v.object({
+			return v.strictObject({
 				fuente: v.picklist(FUENTES_PRODUCTOS),
 				cantidad: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(24)),
 				ids: v.optional(v.pipe(v.array(id), v.maxLength(24))),
@@ -221,9 +228,12 @@ function esquemaCampo(c: Campo): v.GenericSchema {
 	}
 }
 
-/** Un objeto con esos campos: los requeridos tienen que venir, los demás son opcionales. */
+/**
+ * Un objeto con esos campos (los desconocidos se rechazan): los requeridos tienen que venir, y no
+ * vacíos; los demás son opcionales.
+ */
 function objeto(campos: Campo[]) {
-	return v.object(
+	return v.strictObject(
 		Object.fromEntries(
 			campos.map((c) => [c.id, c.requerido ? esquemaCampo(c) : v.optional(esquemaCampo(c))])
 		)
@@ -234,9 +244,9 @@ function objeto(campos: Campo[]) {
 const DATOS: Record<TipoBloque, v.GenericSchema> = Object.fromEntries(
 	BLOQUES.map((b) => [
 		b.tipo,
-		v.object(Object.fromEntries(b.campos.map((c) => [c.id, v.optional(esquemaCampo(c))])))
+		v.strictObject(Object.fromEntries(b.campos.map((c) => [c.id, v.optional(esquemaCampo(c))])))
 	])
-) as Record<TipoBloque, v.GenericSchema>;
+) as unknown as Record<TipoBloque, v.GenericSchema>;
 
 const ID_BLOQUE = /^[a-z0-9]{6,16}$/;
 

@@ -10,11 +10,12 @@
  * textos, anuncio y anuncioLink. Un diseño ya v2 vuelve igual. null → el inicial del preset.
  */
 import type { EstiloTienda, SeccionConTitulo } from '../estilo/estilo.ts';
-import type { Bloque, DisenoV2, TipoBloque } from './catalogo.ts';
+import type { TiendaPublica } from '../tipos.ts';
+import { validarBloques, type Bloque, type DisenoV2, type TipoBloque } from './catalogo.ts';
 import { inicioDe, presetDe } from './presets.ts';
 
-type SeccionV1 = 'hero' | 'cats' | 'prods' | 'revs' | 'ig' | 'wa';
-type DisenoV1 = {
+export type SeccionV1 = 'hero' | 'cats' | 'prods' | 'revs' | 'ig' | 'wa';
+export type DisenoV1 = {
 	version?: number;
 	secciones?: { id: SeccionV1; visible: boolean }[];
 	paleta?: number;
@@ -113,4 +114,80 @@ export function migrar(diseno: unknown, plantilla: string): DisenoV2 {
 	if (visible.get('wa') === false) estilo.whatsappFlotante = false;
 	if (Object.keys(estilo).length) out.estilo = estilo;
 	return out;
+}
+
+/**
+ * El diseño v2 de una tienda pública: el que trae (`tienda.diseno`, ya migrado por la API) o, si no
+ * viene, el v1 armado con lo que trae la tienda y migrado al vuelo. Los bloques inválidos se
+ * descartan (validarBloques): la tienda nunca se rompe por un dato raro.
+ */
+export function disenoDeTienda(t: TiendaPublica): DisenoV2 {
+	const d = esV2(t.diseno)
+		? t.diseno
+		: migrar(
+				{
+					secciones: [
+						...t.secciones.map((id) => ({ id, visible: true })),
+						...INICIAL.filter((s) => !t.secciones.includes(s)).map((id) => ({
+							id,
+							visible: false
+						}))
+					],
+					paleta: t.paleta,
+					titulo: t.portada?.titulo,
+					lema: t.portada?.lema,
+					portada: t.portada?.foto ?? undefined,
+					logo: t.logo,
+					estilo: t.estilo
+				},
+				t.plantilla
+			);
+	return { ...d, inicio: validarBloques(d.inicio) };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Convivencia con lo v1 (como mitienda/convivencia.go): mientras las plantillas viejas y el editor
+// el onboarding sigan, se derivan del v2. Cuando todo migró, esto se borra.
+
+/** Las secciones visibles como las esperan las plantillas viejas («wa» al final, si no se apagó). */
+export function seccionesV1(d: DisenoV2): SeccionV1[] {
+	const out: SeccionV1[] = [];
+	for (const b of d.inicio) {
+		const s = DE_BLOQUE[b.tipo];
+		if (s && s !== 'wa' && !b.oculto && !out.includes(s)) out.push(s);
+	}
+	if (d.estilo?.whatsappFlotante !== false) out.push('wa');
+	return out;
+}
+
+/** El estilo con el anuncio (el primer mensaje de la barra) y los títulos de las secciones. */
+export function estiloV1(d: DisenoV2): EstiloTienda {
+	const e: EstiloTienda = { ...(d.estilo ?? {}) };
+	const m = e.barra?.mensajes?.[0];
+	if (m?.texto) {
+		e.anuncio = m.texto;
+		if (m.link) e.anuncioLink = m.link;
+	}
+	const textos: Partial<Record<SeccionConTitulo, string>> = {};
+	for (const b of d.inicio) {
+		const s = DE_BLOQUE[b.tipo] as SeccionConTitulo | 'hero' | undefined;
+		const t = b.datos.titulo;
+		if (s && s !== 'hero' && typeof t === 'string' && t && !textos[s]) textos[s] = t;
+	}
+	if (Object.keys(textos).length) e.textos = textos;
+	return e;
+}
+
+/** Prende o apaga los bloques de esas secciones (el onboarding: «mostrar destacados», etc.). */
+export function conVisibles(d: DisenoV2, ver: Partial<Record<SeccionV1, boolean>>): DisenoV2 {
+	return {
+		...d,
+		inicio: d.inicio.map((b) => {
+			const s = DE_BLOQUE[b.tipo];
+			const v = s ? ver[s] : undefined;
+			if (typeof v !== 'boolean') return b;
+			const resto: Bloque = { id: b.id, tipo: b.tipo, variante: b.variante, datos: b.datos };
+			return v ? resto : { ...resto, oculto: true };
+		})
+	};
 }

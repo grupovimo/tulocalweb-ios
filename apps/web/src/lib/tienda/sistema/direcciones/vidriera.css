@@ -1,0 +1,239 @@
+/*
+ * A · Vidriera (docs/handoff/tienda-bloques/A-*.dc.html): editorial y con mucho aire. Fraunces
+ * 300–400 con −0,02em y Figtree; escala 84 · 52 · 30 · 19 · 16 · 13; sin radios ni sombras, bordes
+ * de 1 px; botón rectangular de 52 con borde; 120 px entre bloques; margen de 56 px.
+ */
+
+.tv[data-dir='vidriera'] {
+	--t-h1: 84px;
+	--t-h2: 52px;
+	--t-h3: 30px;
+	--t-lead: 19px;
+	--t-cuerpo: 16px;
+	--t-chico: 13px;
+	--t-peso-titulos: 400;
+	--t-esp-titulos: -0.02em;
+	--t-alto-boton: 52px;
+	--t-peso-boton: 600;
+	--t-alto-enc: 84px;
+	--t-estrella: var(--t-acento-texto);
+	--t-ritmo-m: 64px;
+	--t-btn-fondo: var(--t-texto);
+	--t-btn-texto: var(--t-fondo);
+}
+.tv[data-dir='vidriera'] .tv-h1 {
+	font-weight: 300;
+}
+.tv[data-dir='vidriera'] .tv-btn {
+	padding: 0 28px;
+}
+.tv[data-dir='vidriera'] .tv-btn--secundario {
+	border-color: currentColor;
+}
+
+/* Encabezado: logo centrado (o a la izquierda), línea fina abajo. */
+.tv[data-dir='vidriera'] .tv-enc {
+	border-bottom: 1px solid var(--t-borde);
+}
+.tv[data-dir='vidriera'] .tv-marca-nombre {
+	font-size: 34px;
+}
+.tv[data-dir='vidriera'] .tv-buscar {
+	border: 1px solid var(--t-enc-texto);
+	border-radius: 0;
+	background: var(--t-superficie);
+	height: 44px;
+}
+
+/* Tarjetas con borde, sin sombra. */
+.tv[data-dir='vidriera'] .tv-tarjeta {
+	background: color-mix(in srgb, var(--t-superficie) 60%, var(--t-fondo));
+}
+
+/* Producto: sin caja, la etiqueta clara arriba; el «+» sólo en el celular. */
+.tv[data-dir='vidriera'] .tv-prod-chip:not(.tv-chip--off) {
+	background: var(--t-fondo);
+	color: var(--t-texto);
+	letter-spacing: 0.04em;
+}
+.tv[data-dir='vidriera'] .tv-prod-pie {
+	align-items: center;
+}
+.tv[data-dir='vidriera'] .tv-prod--grilla .tv-mas {
+	display: none;
+}
+.tv[data-dir='vidriera'] .tv-precio-monto {
+	font-size: 16px;
+}
+.tv[data-dir='vidriera'] .tv-precio--grande .tv-precio-monto {
+	font-size: 28px;
+}
+
+/* Categorías: foto alta con el nombre en serif. */
+.tv[data-dir='vidriera'] .tv-cats-lista a {
+	border-radius: 0;
+}
+
+/* Reseñas: cita en serif, caja con borde. */
+.tv[data-dir='vidriera'] .tv-resena blockquote {
+	font-family: var(--t-f-titulos);
+	font-size: 24px;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+}
+.tv[data-dir='vidriera'] .tv-resena-foto {
+	border-radius: 0 !important;
+}
+
+/* Beneficios en franja con bordes (A-moda). */
+.tv[data-dir='vidriera'] .tv-benef[data-variante='fila'].tv-ancho {
+	max-width: none;
+	padding-inline: 0;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='fila'] .tv-benef-lista {
+	max-width: var(--t-ancho);
+	margin-inline: auto;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='fila'] .tv-benef-item {
+	padding: 28px 40px;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-item {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 56px;
+	border: 1px solid var(--t-borde);
+	border-radius: 0;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-lista {
+	gap: 0;
+	border: 1px solid var(--t-borde);
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-item {
+	border: 0;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-item + .tv-benef-item {
+	border-left: 1px solid var(--t-borde);
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-textos b {
+	font-size: 17px;
+	font-weight: 500;
+}
+.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-textos span {
+	font-size: 16px;
+}
+
+/* La portada sin fotos (A-vacia): el título enorme sobre el color de la marca. */
+.tv[data-dir='vidriera'] .tv-portada-texto.tv-ancho {
+	max-width: none;
+	padding-inline: 0;
+}
+.tv[data-dir='vidriera'] .tv-portada-caja {
+	border-radius: 0;
+	padding-inline: max(var(--t-margen), calc((100% - var(--t-ancho)) / 2 + var(--t-margen)));
+}
+.tv[data-dir='vidriera'] .tv-portada-caja .tv-h1 {
+	font-size: calc(var(--t-h1) * 1.14);
+	line-height: 0.95;
+}
+.tv[data-dir='vidriera'] .tv-portada-partida .tv-h1 {
+	line-height: 0.98;
+}
+.tv[data-dir='vidriera'] .tv-portada-partida {
+	padding-right: 0;
+	margin-right: 0;
+}
+.tv[data-dir='vidriera'] .tv-portada-fotos .tv-foto {
+	border-radius: 0;
+}
+.tv[data-dir='vidriera'] .tv-portada-collage {
+	gap: 8px;
+}
+
+/* Destacado y texto con imagen: en mitades con aire. */
+.tv[data-dir='vidriera'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto {
+	aspect-ratio: 4/5;
+}
+.tv[data-dir='vidriera'] .tv-uno-info .tv-h2 {
+	font-size: calc(var(--t-h2) * 1.08);
+	line-height: 1;
+}
+.tv[data-dir='vidriera'] .tv-sec:not([data-fondo='normal']) .tv-sec-caja {
+	padding: 56px;
+}
+.tv[data-dir='vidriera'] .tv-banner-caja,
+.tv[data-dir='vidriera'] .tv-nl-caja {
+	padding: 56px;
+}
+.tv[data-dir='vidriera'] .tv-nl-form input {
+	border-radius: 0;
+}
+
+/* Pie: banda oscura con columnas (A-moda) o el nombre en grande (A-cafe). */
+.tv[data-dir='vidriera'] .tv-pie {
+	margin-top: var(--t-ritmo);
+}
+.tv[data-dir='vidriera'] .tv-main {
+	padding-bottom: 0;
+}
+.tv[data-dir='vidriera'] .tv-pie-grande .tv-pie-nombre {
+	font-style: italic;
+	font-weight: 300;
+}
+
+@media (max-width: 999px) {
+	.tv[data-dir='vidriera'] {
+		--t-h1: 60px;
+		--t-h2: 40px;
+		--t-h3: 24px;
+	}
+}
+@media (max-width: 759px) {
+	.tv[data-dir='vidriera'] {
+		--t-h1: 40px;
+		--t-h2: 28px;
+		--t-h3: 22px;
+		--t-lead: 17px;
+		--t-alto-boton: 48px;
+	}
+	.tv[data-dir='vidriera'] .tv-ante {
+		font-size: 11px;
+	}
+	.tv[data-dir='vidriera'] .tv-marca-nombre {
+		font-size: 22px;
+	}
+	.tv[data-dir='vidriera'] .tv-prod--grilla .tv-mas {
+		display: grid;
+		width: 40px;
+		height: 40px;
+		border-radius: 0;
+	}
+	.tv[data-dir='vidriera'] .tv-portada-caja .tv-h1 {
+		font-size: 42px;
+		line-height: 1;
+	}
+	.tv[data-dir='vidriera'] .tv-portada-caja {
+		padding: 40px 16px 32px;
+	}
+	.tv[data-dir='vidriera'] .tv-benef[data-variante='fila'] .tv-benef-item {
+		padding: 16px;
+	}
+	.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-item {
+		padding: 22px 18px;
+	}
+	.tv[data-dir='vidriera'] .tv-benef[data-variante='tarjetas'] .tv-benef-item + .tv-benef-item {
+		border-left: 0;
+		border-top: 1px solid var(--t-borde);
+	}
+	.tv[data-dir='vidriera'] .tv-resena blockquote {
+		font-size: 20px;
+	}
+	.tv[data-dir='vidriera'] .tv-sec:not([data-fondo='normal']) .tv-sec-caja,
+	.tv[data-dir='vidriera'] .tv-banner-caja,
+	.tv[data-dir='vidriera'] .tv-nl-caja {
+		padding: 28px 20px;
+	}
+	.tv[data-dir='vidriera'] .tv-uno-info .tv-h2 {
+		font-size: 28px;
+	}
+}

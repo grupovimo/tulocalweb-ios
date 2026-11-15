@@ -60,7 +60,7 @@ describe('estilo de la tienda', () => {
 		expect(r.raiz).toContain("--tf-titulos:'Fraunces',serif");
 		expect(r.raiz).toContain("--tf-texto:'Inter',sans-serif");
 		expect(r.fuentes).toBe(
-			'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap'
+			'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap'
 		);
 		// Yerbal tiene una sola: los títulos van con la de texto.
 		expect(cssEstilo('yerbal', { fuenteTexto: 'lora' }).raiz).toContain(

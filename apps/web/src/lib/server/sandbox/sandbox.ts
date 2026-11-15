@@ -6,6 +6,9 @@
  * demo cuesta una escritura y no cientos, y el cupo gratis de D1 (100.000 escrituras por día)
  * alcanza para muchas visitas.
  */
+import { estiloV1, migrar, seccionesV1 } from '#lib/tienda/sistema/migrar.ts';
+import { presetDe } from '#lib/tienda/sistema/presets.ts';
+import type { Bloque, DisenoV2 } from '#lib/tienda/sistema/catalogo.ts';
 import { PERMISOS_DE, type Rol, type RolInvitable } from '#lib/panel/permisos.ts';
 import { contextoSinMontos, sinMontos, type TableroConMontos } from '../datos/montos.ts';
 import {
@@ -521,14 +524,60 @@ function sabado10(ahora: number) {
 	return Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate() + dias, 13);
 }
 
-/** Las secciones de la portada y los colores, como vienen en la plantilla. */
-const DISENO_INICIAL: DisenoTienda = {
-	secciones: (['hero', 'cats', 'prods', 'revs', 'ig', 'wa'] as const).map((id) => ({
-		id,
-		visible: true
-	})),
-	paleta: 0
-};
+/**
+ * El diseño con el que arranca la demo (v2, como demo.Diseno en Go): el inicial del preset con
+ * bloques que lucen la tienda armada: beneficios bajo la portada (salen solos de la configuración),
+ * un banner después de los productos y, al final, preguntas y el local.
+ */
+function disenoDemo(plantilla: string, ciudad: string): DisenoV2 {
+	const d = migrar(null, plantilla);
+	const gastro = presetDe(plantilla).gastronomia;
+	const donde = ciudad ? ` en ${ciudad}` : '';
+	const extra: Partial<Record<string, Bloque>> = {
+		portada: { id: 'beneficios', tipo: 'beneficios', variante: 'fila', datos: {} },
+		productos: {
+			id: 'promobanner',
+			tipo: 'banner',
+			variante: 'banda',
+			datos: gastro
+				? {
+						titulo: 'Desayuno para dos',
+						texto: 'Dos cafés y dos medialunas, de 8 a 11.',
+						boton: { t: 'Pedir ahora', a: 'catalogo' },
+						fondo: 'oscuro'
+					}
+				: {
+						titulo: 'Nueva temporada',
+						texto: 'Lo último que llegó, antes que nadie.',
+						boton: { t: 'Ver novedades', a: 'catalogo' },
+						fondo: 'oscuro'
+					}
+		}
+	};
+	const inicio = d.inicio.flatMap((b) => (extra[b.tipo] ? [b, extra[b.tipo]!] : [b]));
+	inicio.push(
+		{
+			id: 'preguntas',
+			tipo: 'preguntas',
+			variante: 'acordeon',
+			datos: {
+				items: [
+					gastro
+						? { p: '¿Hacen delivery?', r: `Sí, en moto${donde}. El costo lo ves al pagar.` }
+						: { p: '¿Hacen envíos?', r: `Sí, a todo el país y en moto${donde}.` },
+					{ p: '¿Cómo pago?', r: 'Con Mercado Pago, tarjeta o transferencia.' },
+					{ p: '¿Puedo retirar?', r: 'Sí, sin cargo: la dirección y el horario están abajo.' }
+				]
+			}
+		},
+		{ id: 'ellocal', tipo: 'local', variante: 'mapa', datos: { titulo: 'Vení a conocernos' } }
+	);
+	return { ...d, inicio };
+}
+
+/** Lo guardado (v1 de antes o v2) como v2; sin nada, el de la demo. */
+const disenoDe = (x: unknown, plantilla: string, ciudad: string): DisenoV2 =>
+	x ? migrar(x, plantilla) : disenoDemo(plantilla, ciudad);
 
 const NOMBRE_PLAN: Record<Plan, string> = {
 	gratis: 'Gratis',
@@ -3172,8 +3221,8 @@ export class DatosSandbox implements Datos {
 			this.tienda(),
 			cambiosDe(this.db, this.sb.id, 'mi-tienda')
 		]);
-		const borrador = (c.get('borrador') as DisenoTienda | undefined) ?? DISENO_INICIAL;
-		const publicado = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
+		const borrador = disenoDe(c.get('borrador'), t.plantilla, d.catalogo.ciudad);
+		const publicado = disenoDe(c.get('publicado'), t.plantilla, d.catalogo.ciudad);
 		// En la demo la plantilla de la tienda fija su nombre y su dirección: la elegida en Mi tienda
 		// queda en el diseño y se usa para dibujarla.
 		const plantillaId = borrador.plantilla || publicado.plantilla || t.plantilla;
@@ -3394,7 +3443,7 @@ export class DatosSandbox implements Datos {
 		]);
 		// Sin venta mayorista no se publican el mínimo ni los precios mayoristas (como Go).
 		const soloSi = (n: number | null | undefined) => (may.activa ? (n ?? null) : null);
-		const diseno = (c.get('publicado') as DisenoTienda | undefined) ?? DISENO_INICIAL;
+		const diseno = disenoDe(c.get('publicado'), t.plantilla, d.catalogo.ciudad);
 		const plantillaId = diseno.plantilla || t.plantilla;
 		const p = buscarPlantilla(plantillaId);
 		const visibles = productos.filter((x) => x.publicado && x.canales.includes('web'));
@@ -3439,7 +3488,8 @@ export class DatosSandbox implements Datos {
 			nombre: t.nombre,
 			plantilla: plantillaId,
 			paleta: diseno.paleta,
-			secciones: diseno.secciones.filter((s) => s.visible).map((s) => s.id),
+			// Lo de v1 sale del v2, como en Go (mitienda/convivencia.go), para las plantillas viejas.
+			secciones: seccionesV1(diseno),
 			portada: {
 				titulo: diseno.titulo || (p?.lema ?? t.nombre),
 				lema: diseno.lema || (d.catalogo.ciudad ? `Desde ${d.catalogo.ciudad}` : ''),
@@ -3451,7 +3501,8 @@ export class DatosSandbox implements Datos {
 				descripcion: diseno.compartirDescripcion ?? '',
 				foto: diseno.compartirFoto ?? ''
 			},
-			estilo: diseno.estilo ?? {},
+			estilo: estiloV1(diseno),
+			diseno,
 			ciudad: d.catalogo.ciudad,
 			direccion: conf.negocio.direccion,
 			whatsapp: conf.negocio.whatsapp,
@@ -3539,13 +3590,17 @@ export class DatosSandbox implements Datos {
 	}
 
 	async publicarTienda() {
-		const c = await cambiosDe(this.db, this.sb.id, 'mi-tienda');
+		const [d, t, c] = await Promise.all([
+			this.demo(),
+			this.tienda(),
+			cambiosDe(this.db, this.sb.id, 'mi-tienda')
+		]);
 		await guardarCambio(
 			this.db,
 			this.sb.id,
 			'mi-tienda',
 			'publicado',
-			c.get('borrador') ?? DISENO_INICIAL
+			disenoDe(c.get('borrador'), t.plantilla, d.catalogo.ciudad)
 		);
 	}
 

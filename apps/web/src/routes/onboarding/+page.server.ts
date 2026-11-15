@@ -12,6 +12,7 @@ import { cbuValido } from '#lib/panel/cbu.ts';
 import { COOKIE, crear, DatosSandbox, dbSandbox, VIDA_MS } from '#lib/server/sandbox/sandbox.ts';
 import { descubrir } from '#lib/server/importar/fuentes.ts';
 import { PASOS_REALES } from '#lib/onboarding/datos.ts';
+import { conVisibles, migrar } from '#lib/tienda/sistema/migrar.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -126,11 +127,10 @@ async function aplicarSecciones(event: RequestEvent, elecciones: Record<string, 
 	try {
 		const datos = datosDe(event.locals);
 		const mt = await datos.miTienda();
-		const secciones = mt.diseno.secciones.map((x) =>
-			typeof ver[x.id] === 'boolean' ? { ...x, visible: ver[x.id]! } : x
-		);
-		if (JSON.stringify(secciones) === JSON.stringify(mt.diseno.secciones)) return;
-		await datos.guardarMiTienda({ ...mt.diseno, secciones });
+		const actual = migrar(mt.diseno, mt.plantillaId);
+		const nuevo = conVisibles(actual, ver);
+		if (JSON.stringify(nuevo) === JSON.stringify(actual)) return;
+		await datos.guardarMiTienda(nuevo);
 		if (!mt.sinPublicar) await datos.publicarTienda();
 	} catch {
 		// Se cambian después desde Mi tienda.

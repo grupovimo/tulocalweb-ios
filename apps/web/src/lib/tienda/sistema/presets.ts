@@ -7,7 +7,7 @@
  */
 import PRESETS_JSON from '@mostrador/contrato/presets.json';
 import { acentoElegido } from '../acentos.ts';
-import { colorValido } from '../estilo/css.ts';
+import { colorValido, esOscuro } from '../estilo/css.ts';
 import { FUENTES } from '../estilo/fuentes.ts';
 import { rolesDe } from '../estilo/roles.ts';
 import type { EstiloTienda, Zona } from '../estilo/estilo.ts';
@@ -135,6 +135,24 @@ export function estiloFinal(
 		colores.encabezado = colores.fondo;
 	if (!colorValido(e.colores?.encabezadoTexto) && colorValido(e.colores?.texto))
 		colores.encabezadoTexto = colores.texto;
+	// Las zonas como en el handoff, si la tienda no eligió color: Mostrador y Pedido llevan el
+	// encabezado en tarjeta (blanco); el pie de Vidriera con columnas o nombre grande es una banda
+	// oscura, y el de Mostrador y Pedido va en tarjeta.
+	const pie = de(e.pie, ['simple', 'columnas', 'grande'], p?.pie ?? base.pie);
+	const propio = (z: Zona) => !!colorValido(e.colores?.[z]);
+	if (direccion !== 'vidriera' && !propio('encabezado') && colores.encabezado === colores.fondo) {
+		colores.encabezado = colores.superficie;
+		if (!propio('encabezadoTexto')) colores.encabezadoTexto = colores.texto;
+	}
+	if (!propio('pie') && colores.pie === colores.fondo) {
+		if (direccion === 'vidriera' && pie !== 'simple') {
+			colores.pie = esOscuro(colores.texto) ? colores.texto : '#16150F';
+			if (!propio('pieTexto')) colores.pieTexto = colores.fondo;
+		} else if (direccion !== 'vidriera' && pie !== 'simple') {
+			colores.pie = colores.superficie;
+			if (!propio('pieTexto')) colores.pieTexto = colores.texto;
+		}
+	}
 	const fuente = (x: string | undefined, si: string) => (x && FUENTES[x] ? x : si);
 	const mensajes = (e.barra?.mensajes ?? [])
 		.map((m) => ({ texto: (m.texto ?? '').trim(), ...(m.link ? { link: m.link } : {}) }))
@@ -155,7 +173,7 @@ export function estiloFinal(
 			['izquierda', 'centrado', 'buscador'],
 			p?.encabezado ?? base.encabezado
 		),
-		pie: de(e.pie, ['simple', 'columnas', 'grande'], p?.pie ?? base.pie),
+		pie,
 		fuenteTitulos: fuente(e.fuenteTitulos, p?.fuenteTitulos ?? base.titulos),
 		fuenteTexto: fuente(e.fuenteTexto, p?.fuenteTexto ?? base.texto),
 		colores,
