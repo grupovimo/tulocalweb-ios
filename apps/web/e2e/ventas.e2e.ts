@@ -46,13 +46,14 @@ test('carritos: recordar uno, todos y los automáticos', async ({ page }) => {
 	await expect(page.getByText('12 recordatorios en camino')).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Recordar$/ })).toHaveCount(0);
 
-	await page.getByRole('switch', { name: 'Email al tercer día' }).click();
-	await expect(page.getByText('Recordatorio activado')).toBeVisible();
+	// Los tres recordatorios por mail (§62): en la demo arrancan prendidos.
+	await page.getByRole('switch', { name: 'Tercero recordatorio' }).click();
+	await expect(page.getByText('Tercero recordatorio apagado')).toBeVisible();
 	await page.reload();
 	await listo(page);
-	await expect(page.getByRole('switch', { name: 'Email al tercer día' })).toHaveAttribute(
+	await expect(page.getByRole('switch', { name: 'Tercero recordatorio' })).toHaveAttribute(
 		'aria-checked',
-		'true'
+		'false'
 	);
 	// El Resumen también los ve recordados.
 	await page.goto('/panel');
