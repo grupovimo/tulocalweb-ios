@@ -68,12 +68,16 @@ func TestPurgarCerradas(t *testing.T) {
 	}
 
 	dir := t.TempDir()
+	// Fotos y archivos para descargar (el premio «descarga» de una captación) de las dos tiendas.
+	subidos := map[string]string{"fotos": "a.webp", "archivos": "guia.pdf"}
 	for _, id := range []string{luna, sol} {
-		if err := os.MkdirAll(filepath.Join(dir, "fotos", id), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(dir, "fotos", id, "a.webp"), []byte("x"), 0o644); err != nil {
-			t.Fatal(err)
+		for sub, nombre := range subidos {
+			if err := os.MkdirAll(filepath.Join(dir, sub, id), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, sub, id, nombre), []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 	n, err := configuracion.PurgarCerradas(ctx, b.App, dir)
@@ -100,11 +104,13 @@ func TestPurgarCerradas(t *testing.T) {
 	if cuenta(`SELECT count(*) FROM pedidos WHERE tienda_id = $1`, sol) != 1 || cuenta(`SELECT count(*) FROM tiendas WHERE id IN ($1, $2)`, sol, mar) != 2 {
 		t.Fatal("se llevó otra tienda")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "fotos", luna)); !os.IsNotExist(err) {
-		t.Fatalf("las fotos de la tienda borrada siguen: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(dir, "fotos", sol, "a.webp")); err != nil {
-		t.Fatalf("borró fotos de otra tienda: %v", err)
+	for sub, nombre := range subidos {
+		if _, err := os.Stat(filepath.Join(dir, sub, luna)); !os.IsNotExist(err) {
+			t.Fatalf("%s de la tienda borrada siguen: %v", sub, err)
+		}
+		if _, err := os.Stat(filepath.Join(dir, sub, sol, nombre)); err != nil {
+			t.Fatalf("borró %s de otra tienda: %v", sub, err)
+		}
 	}
 
 	// Lo contable: el comprobante emitido (no el pendiente) y el cobro del abono, sin datos de quien

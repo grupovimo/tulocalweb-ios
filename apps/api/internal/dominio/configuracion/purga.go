@@ -55,7 +55,8 @@ var idTienda = regexp.MustCompile(`^[0-9a-f-]{36}$`)
 
 // PurgarCerradas borra las tiendas cerradas hace más de DiasParaPurgar días, de a una por
 // transacción (app.purgar_tienda: lo contable queda en archivo_contable, sin datos de quien compró),
-// y sus fotos de dirFotos/fotos/<tienda> (la carpeta de archivos de la web; vacía, no toca el disco).
+// y sus fotos y archivos para descargar de dirFotos/fotos/<tienda> y dirFotos/archivos/<tienda> (la
+// carpeta de archivos de la web; vacía, no toca el disco).
 // También borra lo archivado hace más de 10 años. Devuelve cuántas tiendas borró.
 func PurgarCerradas(ctx context.Context, pool enTx, dirFotos string) (int, error) {
 	l, err := ParaPurgar(ctx, pool, 50)
@@ -77,7 +78,9 @@ func PurgarCerradas(ctx context.Context, pool enTx, dirFotos string) (int, error
 		}
 		n++
 		if dirFotos != "" && idTienda.MatchString(c.ID) {
-			errs = errors.Join(errs, os.RemoveAll(filepath.Join(dirFotos, "fotos", c.ID)))
+			for _, sub := range []string{"fotos", "archivos"} {
+				errs = errors.Join(errs, os.RemoveAll(filepath.Join(dirFotos, sub, c.ID)))
+			}
 		}
 	}
 	errs = errors.Join(errs, pool.EnTx(ctx, func(t pgx.Tx) error {

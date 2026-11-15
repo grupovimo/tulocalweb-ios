@@ -23,6 +23,16 @@ export const LIMITES = {
 	total: 1024 * 1024 * 1024
 };
 
+/** Archivos para descargar (el premio «descarga» de una captación): PDF, EPUB o ZIP, sin tocar. */
+export const LIMITES_DOCUMENTO = {
+	/** Por archivo. */
+	archivo: 20 * 1024 * 1024,
+	/** Por dueño: alcanza para varias guías y catálogos. */
+	porDuenio: 60 * 1024 * 1024,
+	/** Tu Local Web entero (aparte de las fotos). */
+	total: 3 * 1024 * 1024 * 1024
+};
+
 /** WebP, JPEG o PNG, mirando la firma (no el tipo que dice el navegador). */
 export function tipoDe(b: Uint8Array): string | null {
 	const ascii = (i: number, n: number) => String.fromCharCode(...b.subarray(i, i + n));
@@ -71,6 +81,30 @@ export async function optimizar(bytes: Uint8Array): Promise<Uint8Array> {
 	}
 }
 
+/**
+ * PDF, EPUB o ZIP, mirando la firma. El EPUB es un ZIP cuyo primer archivo es `mimetype` (sin
+ * comprimir) con `application/epub+zip`; cualquier otro ZIP es un ZIP.
+ */
+export function tipoDocumentoDe(b: Uint8Array): string | null {
+	const ascii = (i: number, n: number) => String.fromCharCode(...b.subarray(i, i + n));
+	if (b.length > 5 && ascii(0, 5) === '%PDF-') return 'application/pdf';
+	if (b.length > 4 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04) {
+		if (ascii(30, 8) === 'mimetype' && ascii(38, 20) === 'application/epub+zip')
+			return 'application/epub+zip';
+		return 'application/zip';
+	}
+	return null;
+}
+
+const EXT_DOCUMENTO: Record<string, string> = {
+	'application/pdf': 'pdf',
+	'application/epub+zip': 'epub',
+	'application/zip': 'zip'
+};
+
+/** La clave pública de un archivo para descargar: `archivos/{dueño}/{uuid}.{ext}`. */
+export const CLAVE_DOCUMENTO = /^archivos\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(pdf|epub|zip)$/;
+
 /** La clave pública de un archivo: `fotos/{dueño}/{uuid}.{ext}`. */
 export const CLAVE = /^fotos\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(webp|jpg|png)$/;
 
@@ -94,7 +128,8 @@ export async function subirFoto(
 			duenio: sql<number>`coalesce(sum(case when ${archivos.duenio} = ${duenio} then ${archivos.bytes} else 0 end), 0)`,
 			total: sql<number>`coalesce(sum(${archivos.bytes}), 0)`
 		})
-		.from(archivos);
+		.from(archivos)
+		.where(sql`${archivos.clave} like 'fotos/%'`);
 	if (Number(uso?.duenio ?? 0) + bytes.byteLength > LIMITES.porDuenio)
 		error(413, 'Llegaste al límite de 15 MB de fotos.');
 	if (Number(uso?.total ?? 0) + bytes.byteLength > LIMITES.total)
@@ -109,7 +144,43 @@ export async function subirFoto(
 	return clave;
 }
 
-/** Borra las fotos de los sandboxes vencidos de la demo. */
+/**
+ * Sube un archivo para descargar (PDF, EPUB o ZIP) tal como llegó, respetando los topes. Devuelve
+ * su clave. Los mismos dueños que las fotos; la cuenta de espacio va aparte.
+ */
+export async function subirDocumento(
+	db: DbSandbox,
+	duenio: string,
+	bytes: Uint8Array,
+	sandbox: string | null = null,
+	/** Dónde se guarda (las pruebas pasan uno en memoria). */
+	destino: Pick<R2Bucket, 'put'> = env.FILES
+) {
+	const tipo = tipoDocumentoDe(bytes);
+	if (!tipo) error(415, 'Subí un archivo PDF, EPUB o ZIP.');
+	if (bytes.byteLength > LIMITES_DOCUMENTO.archivo) error(413, 'El archivo pesa más de 20 MB.');
+	const [uso] = await db
+		.select({
+			duenio: sql<number>`coalesce(sum(case when ${archivos.duenio} = ${duenio} then ${archivos.bytes} else 0 end), 0)`,
+			total: sql<number>`coalesce(sum(${archivos.bytes}), 0)`
+		})
+		.from(archivos)
+		.where(sql`${archivos.clave} like 'archivos/%'`);
+	if (Number(uso?.duenio ?? 0) + bytes.byteLength > LIMITES_DOCUMENTO.porDuenio)
+		error(413, 'Llegaste al límite de 60 MB de archivos. Borrá alguno que ya no uses.');
+	if (Number(uso?.total ?? 0) + bytes.byteLength > LIMITES_DOCUMENTO.total)
+		error(507, 'Subir archivos está pausado por un rato. Probá más tarde.');
+	const clave = `archivos/${duenio}/${crypto.randomUUID()}.${EXT_DOCUMENTO[tipo]}`;
+	await destino.put(clave, bytes, {
+		httpMetadata: { contentType: tipo, cacheControl: 'public, max-age=31536000, immutable' }
+	});
+	await db
+		.insert(archivos)
+		.values({ clave, duenio, sandboxId: sandbox, bytes: bytes.byteLength, creadoEn: Date.now() });
+	return clave;
+}
+
+/** Borra las fotos y los archivos de los sandboxes vencidos de la demo. */
 export async function borrarDe(db: DbSandbox, sandboxes: string[]) {
 	if (!sandboxes.length) return 0;
 	const filas = await db

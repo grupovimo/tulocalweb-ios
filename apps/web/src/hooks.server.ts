@@ -74,7 +74,12 @@ function esDocumento(h: Headers) {
 }
 
 /** Rutas de la web que la app de iPhone llama con `Authorization: Bearer`. */
-const RUTAS_APP = new Set(['/panel/fotos', '/panel/hornero', '/panel/mi-tienda/vista']);
+const RUTAS_APP = new Set([
+	'/panel/fotos',
+	'/panel/archivos',
+	'/panel/hornero',
+	'/panel/mi-tienda/vista'
+]);
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// www.tulocalweb.com.ar es el mismo Worker: se manda al dominio principal, con el mismo camino.
