@@ -560,6 +560,61 @@ export const ARTICULOS: Articulo[] = [
 		],
 		claves: 'logo colores portada banner tipografia editor'
 	},
+	{
+		slug: 'promociones-en-la-tienda',
+		categoria: 'diseno',
+		titulo: 'Ventanas de promociones, captar mails y ruleta de premios',
+		resumen: 'Avisos que se abren solos y ayudas que empujan la compra, sin molestar.',
+		cuerpo: [
+			{
+				t: 'p',
+				x: 'En Mi tienda › Promociones armás ventanas que se abren solas en tu tienda: una promo con botón, un cupón tuyo que se aplica solo al carrito, un formulario para captar mails a cambio de un premio o una ruleta de premios. Arrancás desde una plantilla y la ves en la vista previa antes de publicar.'
+			},
+			{
+				t: 'pasos',
+				x: [
+					'Entrá a Mi tienda › Promociones y tocá «Nueva ventana».',
+					'Elegí una plantilla: Bienvenida 10 %, Antes de irte, Ruleta, Envío gratis, Lanzamiento, Descargá la guía o Sumate por WhatsApp.',
+					'Cambiá los textos, la foto y el premio; elegí el diseño (centrada, en un costado, pantalla completa o desde abajo).',
+					'Decidí cuándo sale (al entrar, después de unos segundos, al bajar, antes de irse o al agregar al carrito), a quién y en qué páginas.',
+					'Tocá «Ver en la vista previa» y, cuando te guste, «Publicar cambios».'
+				]
+			},
+			{ t: 'h', x: 'Reglas que cuidan la compra' },
+			{
+				t: 'lista',
+				x: [
+					'Sale una sola ventana por página; si varias califican, la primera de la lista.',
+					'Nunca en el pago, en la página de compra lista, en los legales ni en el botón de arrepentimiento.',
+					'En el celular, la pantalla completa sube como una hoja desde abajo y deja ver la tienda.',
+					'Siempre se cierra con la X, con Esc o tocando afuera, y no tapa WhatsApp ni la barra del pedido.',
+					'Quien ya dejó su mail en una ventana no la vuelve a ver.'
+				]
+			},
+			{ t: 'h', x: 'Captar mails y ruleta' },
+			{
+				t: 'p',
+				x: 'El contacto entra a tu Newsletter con el nombre de la ventana como origen. El premio puede ser un cupón tuyo, un código propio de un solo uso (porcentaje, monto o envío gratis), una descarga o nada. En la ruleta, el premio lo sortea el servidor según el peso de cada porción, una vez por mail.'
+			},
+			{ t: 'h', x: 'Herramientas para vender más' },
+			{
+				t: 'lista',
+				x: [
+					'Cuánto falta para el envío gratis, en la bolsa y en el carrito.',
+					'Compras recientes: avisos chicos con pedidos reales de los últimos 7 días (nombre de pila y provincia).',
+					'Etiquetas solas en los productos: Nuevo, oferta, Últimas unidades y Más vendido.',
+					'«Quedan 3» en la ficha, el botón de comprar fijo en el celular y «Sumá también» en el carrito.',
+					'Favoritos: un corazón en los productos y la página Favoritos.'
+				]
+			},
+			{
+				t: 'nota',
+				x: 'En Promociones ves cuántas personas vieron cada ventana, cuántas dejaron el mail y cuántas ventas trajo su cupón.'
+			}
+		],
+		claves:
+			'popup ventana emergente promo lead magnet captar mail ruleta premio cupon salida conversion favoritos'
+	},
 
 	// ------------------------------------------------------------------ Cuenta y plan
 	{

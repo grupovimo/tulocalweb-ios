@@ -155,4 +155,9 @@ Cambiar de preset con la tienda armada conserva los datos de los bloques del mis
   - Web: `parent.postMessage`.
   - iOS: `window.webkit.messageHandlers.tienda.postMessage`.
   - Android: `window.TiendaPuente.bloque(id)`.
+- Para abrir una ventana (popup, `diseno.ventanas`) con el borrador (Promociones › «Ver en la vista previa»):
+  - Web: `postMessage({ tipo: 'ventana', id })`; con `id: null` se cierra.
+  - Apps: `window.tiendaVista.ventana('<id>')` (o `null`).
+  - En la vista las ventanas no salen solas ni se miden: sólo se abren así, sin mirar sus reglas
+    (páginas, público, frecuencia) y con lo último del borrador. Captar y girar no anotan a nadie.
 - La página avisa `{ tipo: 'lista' }` al cargar. Hasta ese momento el editor no manda nada.
