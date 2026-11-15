@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 )
@@ -262,6 +263,25 @@ func redondear(c int64) int64 { return (c + 50) / 100 * 100 } // a la centena de
 // beneficios bajo la portada, un banner después de los productos y, al final, preguntas y el local.
 func Diseno(t Tienda) mitienda.Diseno {
 	d := mitienda.Inicial(t.Plantilla)
+	// Las promociones que estrenan las demos (docs/especificaciones/tienda-promociones.md § 5), de las
+	// plantillas del catálogo, como sandbox/promos.ts › promosDemo.
+	ventana := func(plantilla, id string) []mitienda.Ventana {
+		v, ok := mitienda.DePlantilla(plantilla, id, cupones.EnvioGratisDesde, time.Time{})
+		if !ok {
+			return nil
+		}
+		return []mitienda.Ventana{v}
+	}
+	switch t.Slug {
+	case "lumbre":
+		d.Ventanas = ventana("bienvenida", "bienvenida")
+	case "cafebruma":
+		d.Ventanas = ventana("ruleta", "ruletabruma")
+	case "almacenverde":
+		d.Ventanas = ventana("envio-gratis", "enviogratis")
+		d.Estilo = &mitienda.Estilo{Conversion: map[string]any{"envioGratis": true,
+			"pruebaSocial": map[string]any{"activa": true, "cada": 25, "paginas": []any{}}}}
+	}
 	d.Plantilla, d.Titulo, d.Lema, d.Portada = t.Plantilla, t.Nombre, t.Lema, t.Portada
 	d.CompartirTitulo, d.CompartirDescripcion = t.Nombre, t.Lema
 	beneficios := []any{
@@ -416,7 +436,7 @@ VALUES (%s, %s, %s, %s, %s, %d, %d, %s, %d, %s, ARRAY[%s], '{"web": true, "pos":
 		}
 		alta := creada.Add(time.Duration(r.IntN(int(ahora.Sub(creada).Hours()))) * time.Hour)
 		fmt.Fprintf(b, "INSERT INTO clientes (id, tienda_id, nombre, email, telefono, ciudad, provincia, origen, creado_en) VALUES (%s, %s, %s, %s, %s, %s, %s, 'panel', %s);\n",
-			q(cl.id), q(tid), q(cl.nombre), email, q(cl.telefono), q(cl.ciudad), q(t.Provincia), ts(alta))
+			q(cl.id), q(tid), q(cl.nombre), email, q(cl.telefono), q(cl.ciudad), q(provinciaDe(t, cl.ciudad)), ts(alta))
 		clis = append(clis, cl)
 	}
 
@@ -568,8 +588,60 @@ VALUES (%s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s);
 	(%s, 'ENVIOGRATIS', 'envio', 0, 'Envío gratis en compras grandes', %d, %d, %d, '{web}', %s);
 `, q(tid), 30+r.IntN(40), 2_000_000+r.Int64N(3_000_000), 180_000+r.Int64N(200_000), ts(creada.AddDate(0, 0, 5)),
 		q(tid), 12+r.IntN(20), 1_200_000+r.Int64N(2_000_000), 60_000+r.Int64N(90_000), ts(creada.AddDate(0, 1, 0)))
+	promos(b, t, tid, clis, ahora)
 	return nil
 }
+
+// provinciaDe: la del cliente según su ciudad (los del conurbano son de Buenos Aires, no de CABA).
+func provinciaDe(t Tienda, ciudad string) string {
+	switch {
+	case t.Provincia == "Córdoba":
+		return "Córdoba"
+	case ciudad == "CABA":
+		return "CABA"
+	}
+	return "Buenos Aires"
+}
+
+// promos: los números de las ventanas de la demo (30 días de vistas, cierres y clics) y los contactos
+// que captaron, con su origen en la newsletter. Va con su propio generador: lo de antes no cambia.
+func promos(b *strings.Builder, t Tienda, tid string, clis []cliente, ahora time.Time) {
+	d := Diseno(t)
+	if len(d.Ventanas) == 0 {
+		return
+	}
+	r := rand.New(rand.NewPCG(uint64(len(t.Slug))*104729, 2026))
+	v := d.Ventanas[0]
+	captados := 0
+	for dia := 29; dia >= 0; dia-- {
+		cuando := ahora.AddDate(0, 0, -dia)
+		vistas := 60 + r.IntN(90)
+		fmt.Fprintf(b, "INSERT INTO promo_metricas (tienda_id, ventana, dia, vistas, cierres, clics) VALUES (%s, %s, %s, %d, %d, %d);\n",
+			q(tid), q(v.ID), q(cuando.In(argentina).Format(time.DateOnly)), vistas, vistas*(55+r.IntN(15))/100, vistas*(3+r.IntN(5))/100)
+		if v.Contenido != "captacion" && v.Contenido != "ruleta" {
+			continue
+		}
+		// Del 4 al 9 % deja su email: cada uno, una vez (los clientes de ejemplo con email).
+		for n := vistas * (4 + r.IntN(6)) / 100; n > 0 && captados < len(clis); n-- {
+			cl := clis[captados]
+			captados++
+			if cl.email == nil {
+				continue
+			}
+			en := cuando.Add(-time.Duration(r.IntN(20)) * time.Hour)
+			premio := map[string]any{"tipo": "cuponUnico", "descripcion": "10 % off"}
+			if v.Contenido == "ruleta" {
+				premio = map[string]any{"tipo": "nada"}
+			}
+			fmt.Fprintf(b, `INSERT INTO promo_captaciones (tienda_id, ventana, email_hash, premio, creado_en) VALUES (%s, %s, sha256(convert_to(%s, 'UTF8')), %s, %s);
+INSERT INTO suscriptores (tienda_id, email, origen, token, nombre, creado, confirmado_en) VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;
+`, q(tid), q(v.ID), q(*cl.email), j(premio), ts(en), q(tid), q(*cl.email), q("ventana:"+v.ID),
+				q(fmt.Sprintf("demo%016x%08x", r.Uint64(), r.Uint32())), q(strings.Fields(cl.nombre)[0]), ts(en), ts(en.Add(25*time.Minute)))
+		}
+	}
+}
+
+var argentina = time.FixedZone("ART", -3*3600)
 
 // elegirProducto: en el café casi todo sale de la carta; el café en grano (los últimos seis del
 // catálogo) es una de cada doce compras.

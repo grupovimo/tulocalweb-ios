@@ -130,8 +130,8 @@ type Tienda struct {
 	MasVendidos []string          `json:"masVendidos"`
 	// TopVendidos: hasta 3 ids de los que más se vendieron en 30 días (con alguna venta): la etiqueta
 	// «Más vendido» de estilo.conversion. MasVendidos, en cambio, ordena todo el catálogo.
-	TopVendidos []string `json:"topVendidos"`
-	Resenas     []ResenaPublica   `json:"resenas"`
+	TopVendidos []string        `json:"topVendidos"`
+	Resenas     []ResenaPublica `json:"resenas"`
 	// Preguntas respondidas, por producto.
 	Preguntas []PreguntaPublica `json:"preguntas"`
 	Promedio  *float64          `json:"promedio"`

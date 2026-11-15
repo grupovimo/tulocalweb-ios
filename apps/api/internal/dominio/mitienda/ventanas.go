@@ -1,6 +1,8 @@
 package mitienda
 
 import (
+	"encoding/json"
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -59,6 +61,11 @@ type catalogoVentanas struct {
 		Cada string `json:"cada"`
 		Dias *rango `json:"dias"`
 	} `json:"frecuencias"`
+	Plantillas []struct {
+		ID          string          `json:"id"`
+		HastaEnDias int             `json:"hastaEnDias"`
+		Ventana     json.RawMessage `json:"ventana"`
+	} `json:"plantillas"`
 	Publicos     opciones `json:"publicos"`
 	Paginas      opciones `json:"paginas"`
 	Dispositivos opciones `json:"dispositivos"`
@@ -325,4 +332,42 @@ func conversionValida(m map[string]any) bool {
 	}
 	d, ok := normalizar(m)
 	return ok && camposValidos(Catalogo.Conversion.Campos, d, false)
+}
+
+// DePlantilla: una plantilla del catálogo (bloques.json › ventanas.plantillas) como ventana, con su id,
+// el monto de envío gratis en lugar de {envioGratis} y, si la plantilla lo pide, la cuenta regresiva
+// desde ahora (lo mismo que hace el editor al crear; las demos la usan así).
+func DePlantilla(plantilla, id string, gratisDesde int64, ahora time.Time) (Ventana, bool) {
+	for _, p := range Catalogo.Ventanas.Plantillas {
+		if p.ID != plantilla {
+			continue
+		}
+		var v Ventana
+		if json.Unmarshal(p.Ventana, &v) != nil {
+			return v, false
+		}
+		v.ID = id
+		monto := ""
+		if gratisDesde > 0 {
+			monto = "$ " + miles(gratisDesde)
+		}
+		for _, k := range []string{"titulo", "texto", "etiqueta"} {
+			if s, ok := v.Datos[k].(string); ok {
+				v.Datos[k] = strings.ReplaceAll(s, "{envioGratis}", monto)
+			}
+		}
+		if p.HastaEnDias > 0 {
+			v.Datos["hasta"] = ahora.Add(time.Duration(p.HastaEnDias) * 24 * time.Hour).UTC().Format(time.RFC3339)
+		}
+		return v, v.valida()
+	}
+	return Ventana{}, false
+}
+
+func miles(n int64) string {
+	s := fmt.Sprint(n)
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "." + s[i:]
+	}
+	return s
 }
