@@ -8787,6 +8787,8 @@ export interface operations {
                         id: string;
                         varianteId?: string | null;
                         cantidad: number;
+                        /** @description El bloque «combo» con el que se agregó: la API calcula su descuento (casos/combos.json) */
+                        combo?: string | null;
                     }[];
                     email: string;
                     nombre: string;

@@ -3,6 +3,7 @@
 	import * as I from '#lib/icons.ts';
 	import CampoCupon from '../../CampoCupon.svelte';
 	import { carritoDe } from '../../carrito.svelte.ts';
+	import { combosDe, descuentoCombos } from '../../combos.ts';
 	import { CuponCheckout } from '../../cupon.svelte.ts';
 	import { cotizar, cpValido } from '../../envio.svelte.ts';
 	import { envia } from '../../envio.ts';
@@ -49,7 +50,14 @@
 		document.cookie = `cupon-${tienda.slug}=${cupon.aplicado}; path=/t/${tienda.slug}; max-age=${7 * 86_400}; samesite=lax`;
 	});
 	const descCupon = $derived(cupon.ok?.descuento ?? 0);
-	const total = $derived(Math.max(0, subtotal - descCupon));
+	// Los combos completos (agregados juntos desde su bloque), como los cobra el servidor.
+	const descCombo = $derived(
+		descuentoCombos(
+			combosDe(diseno),
+			lineas.map((l) => ({ ...l, precio: l.producto.precio }))
+		).total
+	);
+	const total = $derived(Math.max(0, subtotal - descCombo - descCupon));
 
 	// El envío estimado: el más barato a domicilio para ese código postal.
 	let cp = $state('');
@@ -115,6 +123,10 @@
 							<dt>Subtotal</dt>
 							<dd>{precio(subtotal)}</dd>
 						</div>
+						{#if descCombo}<div class="tv-ok">
+								<dt>Combo</dt>
+								<dd>− {precio(descCombo)}</dd>
+							</div>{/if}
 						{#if descCupon}<div class="tv-ok">
 								<dt>Cupón {cupon.aplicado}</dt>
 								<dd>− {precio(descCupon)}</dd>

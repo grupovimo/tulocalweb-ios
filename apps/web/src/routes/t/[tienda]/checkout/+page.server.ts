@@ -9,6 +9,8 @@ import { resolverTienda } from '#lib/server/tienda/publica.ts';
 import { cotizar, cpValido } from '#lib/tienda/envio.ts';
 import { proximamente } from '#lib/tienda/lanzamiento.ts';
 import { detalleLineas } from '#lib/tienda/lineas.ts';
+import { combosDe, descuentoCombos } from '#lib/tienda/combos.ts';
+import { disenoDeTienda } from '#lib/tienda/sistema/migrar.ts';
 import type { Actions } from './$types';
 import { irAfuera } from '#lib/server/afuera.ts';
 import { cuitValido, limpiarCuit } from '#lib/panel/cuit.ts';
@@ -21,7 +23,9 @@ const Pedido = v.object({
 			v.object({
 				id: v.pipe(v.string(), v.maxLength(80)),
 				varianteId: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(120))), null),
-				cantidad: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(99))
+				cantidad: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(99)),
+				// El combo con el que se agregó (el descuento lo calcula el servidor: lib/tienda/combos.ts).
+				combo: v.optional(v.nullable(v.pipe(v.string(), v.regex(/^[0-9A-Za-z-]{1,40}$/))), null)
 			})
 		),
 		v.minLength(1),
@@ -155,11 +159,17 @@ export const actions: Actions = {
 		const cupon = p.cupon ? await evaluarCupon(r, p.cupon, p.email, p.carrito) : null;
 		if (cupon && !cupon.ok) return fail(409, { error: cupon.motivo });
 		const descCupon = cupon?.ok ? cupon.descuento : 0;
+		// Los combos completos (bloque «combo» con descuento), con el precio que se cobra de cada línea.
+		const descCombo = descuentoCombos(
+			combosDe(disenoDeTienda(r.tienda)),
+			detalle.map((l) => ({ ...l, precio: l.producto.precio }))
+		).total;
 		const envio = cupon?.ok && cupon.envioGratis ? 0 : opcion.precio;
 		const descuento =
+			descCombo +
 			descCupon +
 			(p.pago === 'transferencia' && (!cupon || (cupon.ok && cupon.combinable))
-				? Math.round(((subtotal - descCupon) * r.tienda.cobros.transferencia) / 100)
+				? Math.round(((subtotal - descCombo - descCupon) * r.tienda.cobros.transferencia) / 100)
 				: 0);
 		const total = subtotal + envio - descuento;
 		const res = await r.datos.crearPedido(
@@ -181,6 +191,7 @@ export const actions: Actions = {
 						p.cuit &&
 						`Factura A: ${p.razonSocial || p.nombre}, CUIT ${p.cuit}`,
 					p.envio !== 'retiro' && `Entrega: ${p.direccion} (${p.cp})`,
+					descCombo > 0 && `Combo: − $ ${descCombo.toLocaleString('es-AR')}`,
 					cupon?.ok && `Cupón: ${p.cupon.toUpperCase()}`,
 					`Total cobrado: $ ${total.toLocaleString('es-AR')}`
 				]

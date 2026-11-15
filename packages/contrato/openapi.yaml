@@ -1365,7 +1365,7 @@ paths:
               type: object
               required: [carrito, email, nombre, telefono, envio, pago]
               properties:
-                carrito: { type: array, maxItems: 50, items: { type: object, required: [id, cantidad], properties: { id: { type: string }, varianteId: { type: [string, 'null'] }, cantidad: { type: integer, minimum: 1, maximum: 99 } } } }
+                carrito: { type: array, maxItems: 50, items: { type: object, required: [id, cantidad], properties: { id: { type: string }, varianteId: { type: [string, 'null'] }, cantidad: { type: integer, minimum: 1, maximum: 99 }, combo: { type: [string, 'null'], maxLength: 40, description: 'El bloque «combo» con el que se agregó: la API calcula su descuento (casos/combos.json)' } } } }
                 email: { type: string }
                 nombre: { type: string }
                 telefono: { type: string }

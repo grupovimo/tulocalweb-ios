@@ -2312,3 +2312,14 @@
 		background: none;
 	}
 }
+
+/* La línea que entra en un combo completo (su descuento va en el resumen). */
+.tv-linea-combo {
+	align-self: flex-start;
+	padding: 2px 8px;
+	border-radius: min(var(--t-r-boton), 999px);
+	background: color-mix(in srgb, var(--t-ok) 14%, var(--t-superficie));
+	color: var(--t-ok);
+	font-size: 12px;
+	font-weight: 600;
+}

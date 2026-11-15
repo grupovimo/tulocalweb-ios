@@ -12,7 +12,13 @@ import {
 import type { ProductoPublico } from './tipos.ts';
 import { precioDe, textoVariante } from './variantes.ts';
 
-export type Linea = { id: string; varianteId: string | null; cantidad: number };
+/** `combo`: el id del bloque combo con el que se agregó (su descuento: combos.ts). */
+export type Linea = {
+	id: string;
+	varianteId: string | null;
+	cantidad: number;
+	combo?: string | null;
+};
 
 export const MAX_LINEAS = 50;
 
@@ -35,7 +41,10 @@ export function migrarLineas(g: unknown): Linea[] {
 		const l: Linea = {
 			id: x.id,
 			varianteId: typeof x.varianteId === 'string' && x.varianteId ? x.varianteId : null,
-			cantidad: Math.min(99, cantidad)
+			cantidad: Math.min(99, cantidad),
+			...(typeof x.combo === 'string' && /^[0-9A-Za-z-]{1,40}$/.test(x.combo)
+				? { combo: x.combo }
+				: {})
 		};
 		if (vistas.has(claveLinea(l))) continue;
 		vistas.add(claveLinea(l));

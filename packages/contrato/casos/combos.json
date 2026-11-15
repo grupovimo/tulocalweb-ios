@@ -1,0 +1,191 @@
+{
+  "$comentario": "El descuento de los combos (bloque «combo» con descuento %). Lo corren la web (lib/tienda/combos.ts) y Go (vidriera/combo.go). Regla: las líneas marcadas con el combo (sin variante) cuentan sólo si están todos sus productos; los juegos completos son la menor cantidad entre ellos; el descuento es el % sobre la suma de un juego (con el precio que se cobra de cada línea) por la cantidad de juegos, redondeado al peso. Un combo sin descuento, oculto o con menos de 2 productos no descuenta.",
+  "casos": [
+    {
+      "nombre": "un juego completo",
+      "combos": [
+        { "id": "look1", "productos": ["remera", "jean"], "descuento": 10 }
+      ],
+      "lineas": [
+        {
+          "id": "remera",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "look1",
+          "precio": 28500
+        },
+        {
+          "id": "jean",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "look1",
+          "precio": 79500
+        }
+      ],
+      "descuento": 10800
+    },
+    {
+      "nombre": "falta un producto del combo: no descuenta",
+      "combos": [
+        {
+          "id": "look1",
+          "productos": ["remera", "jean", "tote"],
+          "descuento": 10
+        }
+      ],
+      "lineas": [
+        {
+          "id": "remera",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "look1",
+          "precio": 28500
+        },
+        {
+          "id": "jean",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "look1",
+          "precio": 79500
+        }
+      ],
+      "descuento": 0
+    },
+    {
+      "nombre": "los juegos son la menor cantidad",
+      "combos": [
+        {
+          "id": "desayuno",
+          "productos": ["cafe", "medialuna"],
+          "descuento": 15
+        }
+      ],
+      "lineas": [
+        {
+          "id": "cafe",
+          "varianteId": null,
+          "cantidad": 2,
+          "combo": "desayuno",
+          "precio": 4200
+        },
+        {
+          "id": "medialuna",
+          "varianteId": null,
+          "cantidad": 3,
+          "combo": "desayuno",
+          "precio": 1300
+        }
+      ],
+      "descuento": 1650
+    },
+    {
+      "nombre": "sin la marca del combo no cuenta",
+      "combos": [
+        {
+          "id": "desayuno",
+          "productos": ["cafe", "medialuna"],
+          "descuento": 15
+        }
+      ],
+      "lineas": [
+        {
+          "id": "cafe",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": null,
+          "precio": 4200
+        },
+        {
+          "id": "medialuna",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "desayuno",
+          "precio": 1300
+        }
+      ],
+      "descuento": 0
+    },
+    {
+      "nombre": "un combo que ya no está en el diseño (o sin descuento) no descuenta",
+      "combos": [
+        { "id": "otro", "productos": ["cafe", "medialuna"], "descuento": 0 }
+      ],
+      "lineas": [
+        {
+          "id": "cafe",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "otro",
+          "precio": 4200
+        },
+        {
+          "id": "medialuna",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "desayuno",
+          "precio": 1300
+        }
+      ],
+      "descuento": 0
+    },
+    {
+      "nombre": "dos combos a la vez, con el precio que se cobra (mayorista incluido)",
+      "combos": [
+        { "id": "a", "productos": ["p1", "p2"], "descuento": 20 },
+        { "id": "b", "productos": ["p3", "p4"], "descuento": 5 }
+      ],
+      "lineas": [
+        {
+          "id": "p1",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "a",
+          "precio": 1000
+        },
+        {
+          "id": "p2",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "a",
+          "precio": 1499
+        },
+        {
+          "id": "p3",
+          "varianteId": null,
+          "cantidad": 2,
+          "combo": "b",
+          "precio": 3000
+        },
+        {
+          "id": "p4",
+          "varianteId": null,
+          "cantidad": 2,
+          "combo": "b",
+          "precio": 5000
+        }
+      ],
+      "descuento": 1300
+    },
+    {
+      "nombre": "una línea con variante no cuenta para el combo",
+      "combos": [{ "id": "a", "productos": ["p1", "p2"], "descuento": 20 }],
+      "lineas": [
+        {
+          "id": "p1",
+          "varianteId": "v1",
+          "cantidad": 1,
+          "combo": "a",
+          "precio": 1000
+        },
+        {
+          "id": "p2",
+          "varianteId": null,
+          "cantidad": 1,
+          "combo": "a",
+          "precio": 1000
+        }
+      ],
+      "descuento": 0
+    }
+  ]
+}

@@ -68,6 +68,18 @@ export class Carrito {
 		return true;
 	}
 
+	/**
+	 * Suma un combo (bloque «combo»): uno de cada producto, con la línea marcada con el combo para
+	 * su descuento (combos.ts). Sólo productos sin opciones: el bloque lleva a elegir los otros.
+	 */
+	sumarCombo(ps: ProductoPublico[], combo: string) {
+		for (const p of ps) {
+			if (!this.sumarProducto(p)) continue;
+			this.lineas = this.lineas.map((l) => (l.id === p.id && !l.varianteId ? { ...l, combo } : l));
+		}
+		this.#guardar();
+	}
+
 	/** Cantidad de una línea (por su clave: el id del producto, o producto~variante). */
 	fijar(clave: string, cantidad: number) {
 		this.lineas =

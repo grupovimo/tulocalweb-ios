@@ -13,18 +13,20 @@
 	/**
 	 * Combo / completá el look: varios productos que se agregan juntos, con la tarjeta del precio
 	 * (la suma, el descuento si hay y un solo botón). Si alguno tiene opciones, el botón lleva a
-	 * elegir en su ficha. El descuento del bloque no se muestra todavía: el checkout no lo cobra, y
-	 * un precio que no se respeta al pagar no se dibuja.
+	 * elegir en su ficha. Con descuento, «Ahorrás»: agregados juntos, las líneas quedan marcadas con el
+	 * combo y el checkout lo cobra mientras estén todos (combos.ts, igual que el servidor).
 	 */
 	let { bloque }: { bloque: Bloque } = $props();
 	const ctx = usarTienda();
 	const ui = getUi();
 	const items = $derived(comboDe(ctx.tienda, bloque));
 	const total = $derived(items.reduce((s, p) => s + tarjetaDe(p).precio, 0));
+	const pct = $derived(Math.max(0, Math.min(50, Math.floor(Number(bloque.datos?.descuento ?? 0)))));
+	const ahorro = $derived(Math.floor((total * pct + 50) / 100));
 	const todosDirecto = $derived(items.every((p) => sumaDirecto(ctx, p)));
 	function sumarTodo() {
 		if (ctx.tienda.vitrina) return;
-		for (const p of items) ctx.carrito.sumarProducto(p);
+		ctx.carrito.sumarCombo(items, bloque.id);
 		ui?.toast({
 			k: 'ok',
 			title: 'Sumaste el combo',
@@ -54,8 +56,11 @@
 		<div class="tv-combo-precio tv-tarjeta">
 			<p class="tv-chico tv-suave">Los {items.length} juntos</p>
 			<p class="tv-combo-total">
-				<b>{precio(total)}</b>
+				<b>{precio(total - ahorro)}</b>
 			</p>
+			{#if ahorro}<p class="tv-chico tv-suave">
+					Ahorrás {precio(ahorro)} ({pct}&nbsp;%)
+				</p>{/if}
 			{#if todosDirecto}<Boton bloque onclick={sumarTodo}>Agregar los {items.length}</Boton
 				>{:else if falta && !ctx.tienda.vitrina}<Boton bloque href={productoHref(ctx.tienda, falta)}
 					>Elegir {falta.opciones[0]?.nombre.toLowerCase() ?? 'opción'}</Boton

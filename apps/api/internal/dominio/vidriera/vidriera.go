@@ -503,6 +503,8 @@ type LineaCarrito struct {
 	ID         string `json:"id"`
 	VarianteID string `json:"varianteId"`
 	Cantidad   int    `json:"cantidad"`
+	// Combo: el bloque «combo» con el que se agregó (su descuento se calcula acá: combo.go).
+	Combo *string `json:"combo"`
 }
 
 // Compra es lo que manda el checkout (precios y envío NO vienen: se calculan acá).
@@ -639,13 +641,20 @@ func ComprarConCorreo(ctx context.Context, pool tx, mp Pagador, correo Correo, s
 			costoEnvio = 0
 		}
 	}
+	// Los combos completos (bloque «combo» con descuento), con el precio que se cobra de cada línea.
+	lc := make([]LineaCombo, len(c.Carrito))
+	for i, l := range c.Carrito {
+		v := l.VarianteID
+		lc[i] = LineaCombo{ID: l.ID, VarianteID: &v, Cantidad: l.Cantidad, Combo: l.Combo, Precio: precios[i]}
+	}
+	descCombo := DescuentoCombos(CombosDe(t.Diseno), lc)
 	n.Pago = "transf"
 	if c.Pago == "mercadopago" {
 		n.Pago = "mp"
 	} else if pct, _ := t.Cobros["transferencia"].(int); combinable && pct > 0 {
-		n.Descuento = (subtotal - descCupon) * int64(pct) / 100
+		n.Descuento = (subtotal - descCombo - descCupon) * int64(pct) / 100
 	}
-	n.Descuento += descCupon
+	n.Descuento += descCombo + descCupon
 	n.DescuentoCupon = descCupon
 	f := false
 	n.Pagado = &f

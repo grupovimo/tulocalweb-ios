@@ -61,13 +61,22 @@ export function totales(p: {
 	pago: 'transferencia' | 'mercadopago';
 	transferencia: number;
 	cupon: CuponCheckout;
+	/** El descuento de los combos completos (combos.ts). */
+	combo?: number;
 }) {
 	const c = p.cupon.ok;
+	const descCombo = p.combo ?? 0;
 	const descCupon = c ? c.descuento : 0;
 	const envio = c?.envioGratis ? 0 : p.envio;
 	const transf =
 		p.pago === 'transferencia' && (!c || c.combinable)
-			? Math.round(((p.subtotal - descCupon) * p.transferencia) / 100)
+			? Math.round(((p.subtotal - descCombo - descCupon) * p.transferencia) / 100)
 			: 0;
-	return { descCupon, envio, transf, total: p.subtotal + envio - descCupon - transf };
+	return {
+		descCombo,
+		descCupon,
+		envio,
+		transf,
+		total: p.subtotal + envio - descCombo - descCupon - transf
+	};
 }

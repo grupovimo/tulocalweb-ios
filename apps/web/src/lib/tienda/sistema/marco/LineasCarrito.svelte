@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { combosDe, descuentoCombos } from '../../combos.ts';
 	import { faltantes } from '../../faltantes.ts';
+	import { disenoDeTienda } from '../migrar.ts';
 	import type { LineaDetalle } from '../../lineas.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { productoHref } from '../datos.ts';
@@ -16,6 +18,15 @@
 	const ctx = usarTienda();
 	const faltan = $derived(
 		new Map(faltantes(ctx.carrito.lineas, ctx.tienda.productos).map((f) => [f.clave, f]))
+	);
+	// Los combos completos: sus líneas se marcan (el descuento va en el resumen).
+	const enCombo = $derived(
+		new Set(
+			descuentoCombos(
+				combosDe(disenoDeTienda(ctx.tienda)),
+				lineas.map((l) => ({ ...l, precio: l.producto.precio }))
+			).porCombo.map((c) => c.id)
+		)
 	);
 	// Las que ya no se venden no tienen detalle: se avisan aparte.
 	const perdidas = $derived(
@@ -49,6 +60,10 @@
 					>{l.variante ? `${l.variante} · ` : ''}{precio(l.producto.precio)} c/u{#if l.alPorMayor}&nbsp;·
 						por mayor{/if}</span
 				>
+				{#if l.combo && enCombo.has(l.combo)}<span class="tv-linea-combo">En combo</span
+					>{:else if l.combo}<span class="tv-chico tv-suave"
+						>Sumá el resto del combo para el descuento</span
+					>{/if}
 				{#if f}
 					<p class="tv-linea-aviso" role="alert">
 						{f.quedan ? `Quedan ${f.quedan}: ajustá la cantidad.` : 'Se agotó: sacalo para seguir.'}

@@ -5,7 +5,9 @@
 	import CampoCupon from '../../CampoCupon.svelte';
 	import EnvioCorreo from '../../EnvioCorreo.svelte';
 	import { carritoDe } from '../../carrito.svelte.ts';
+	import { combosDe, descuentoCombos } from '../../combos.ts';
 	import { CuponCheckout, totales } from '../../cupon.svelte.ts';
+	import { disenoDeTienda } from '../migrar.ts';
 	import { cotizar, cpValido } from '../../envio.svelte.ts';
 	import { camposFactura, OPCIONALES } from '../../factura.ts';
 	import type { OpcionEnvio, TiendaPublica } from '../../tipos.ts';
@@ -61,7 +63,11 @@
 			envio: elegida?.precio ?? 0,
 			pago,
 			transferencia: tienda.cobros.transferencia,
-			cupon
+			cupon,
+			combo: descuentoCombos(
+				combosDe(disenoDeTienda(tienda)),
+				lineas.map((l) => ({ ...l, precio: l.producto.precio }))
+			).total
 		})
 	);
 
@@ -359,6 +365,10 @@
 							<dt>Envío{elegida ? ` · ${elegida.nombre}` : ''}</dt>
 							<dd>{elegida ? (cuenta.envio ? precio(cuenta.envio) : 'Gratis') : '—'}</dd>
 						</div>
+						{#if cuenta.descCombo}<div class="tv-ok">
+								<dt>Combo</dt>
+								<dd>− {precio(cuenta.descCombo)}</dd>
+							</div>{/if}
 						{#if cuenta.descCupon}<div class="tv-ok">
 								<dt>Cupón {cupon.aplicado}</dt>
 								<dd>− {precio(cuenta.descCupon)}</dd>
@@ -374,8 +384,10 @@
 							class="tv-chico tv-suave"
 						>
 							{precio(
-								conTransferencia(subtotal - cuenta.descCupon, tienda.cobros.transferencia) +
-									cuenta.envio
+								conTransferencia(
+									subtotal - cuenta.descCombo - cuenta.descCupon,
+									tienda.cobros.transferencia
+								) + cuenta.envio
 							)} pagando con transferencia
 						</p>{/if}
 					<p class="tv-chico tv-suave tv-carrito-seguro">
