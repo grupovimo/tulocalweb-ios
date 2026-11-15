@@ -869,6 +869,11 @@
 .tv-portada-caja .tv-botones {
 	grid-row: 3;
 }
+/* Sólo el nombre (tienda recién abierta, sin frase ni botones): una franja, no un bloque alto y vacío. */
+.tv[data-dir] .tv-portada-caja[data-solo] {
+	min-height: 0;
+	padding-block: 56px;
+}
 .tv-portada-caja[data-fondo='normal'] {
 	padding-inline: 0;
 }

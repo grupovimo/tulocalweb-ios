@@ -138,7 +138,11 @@
 		</div>
 	{:else}
 		<div class="tv-portada-texto tv-ancho">
-			<div class="tv-z tv-portada-caja" data-fondo={fondo}>
+			<div
+				class="tv-z tv-portada-caja"
+				data-fondo={fondo}
+				data-solo={!frase && !ante && !botones.length ? '' : undefined}
+			>
 				{#if ctx.dir === 'pedido'}<span class="tv-portada-inicial" aria-hidden="true"
 						>{inicial(t.nombre)}</span
 					>{/if}
