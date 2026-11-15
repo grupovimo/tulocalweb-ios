@@ -110,10 +110,9 @@ func tipoDe(tipo string) *tipoBloque {
 }
 
 var (
-	reIDBloque  = regexp.MustCompile(`^[a-z0-9]{6,16}$`)
-	reProducto  = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
-	hostsVideo  = []string{"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com", "player.vimeo.com"}
-	formasFecha = []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02T15:04", "2006-01-02"}
+	reIDBloque = regexp.MustCompile(`^[a-z0-9]{6,16}$`)
+	reProducto = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
+	hostsVideo = []string{"youtube.com", "www.youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com", "player.vimeo.com"}
 )
 
 // linkValido: una página de la tienda, «cat:<categoría>», «prod:<id>» o un link https (las mismas
@@ -123,7 +122,7 @@ func linkValido(a string) bool {
 		return true
 	}
 	if c, ok := strings.CutPrefix(a, "cat:"); ok {
-		return categoriaValida(c)
+		return strings.TrimSpace(c) != "" && utf8.RuneCountInString(c) <= 80 && !strings.ContainsAny(c, "<>\"")
 	}
 	if p, ok := strings.CutPrefix(a, "prod:"); ok {
 		return reProducto.MatchString(p)
@@ -131,25 +130,25 @@ func linkValido(a string) bool {
 	return strings.HasPrefix(a, "https://") && foto(a)
 }
 
+// categoriaValida: el nombre de una categoría en un bloque (hasta 60, como la web).
 func categoriaValida(c string) bool {
-	return strings.TrimSpace(c) != "" && utf8.RuneCountInString(c) <= 80 && !strings.ContainsAny(c, "<>\"")
+	return strings.TrimSpace(c) != "" && utf8.RuneCountInString(c) <= 60 && !strings.ContainsAny(c, "<>\"")
 }
+
+// fotoBloque: las fotos de los bloques, sólo https (la web descarta las otras).
+func fotoBloque(s string) bool { return strings.HasPrefix(s, "https://") && foto(s) }
 
 func videoValido(u string) bool {
 	if !strings.HasPrefix(u, "https://") || !foto(u) {
 		return false
 	}
 	p, err := url.Parse(u)
-	return err == nil && slices.Contains(hostsVideo, strings.ToLower(p.Hostname()))
+	return err == nil && len(p.Path) > 1 && slices.Contains(hostsVideo, strings.ToLower(p.Hostname()))
 }
 
 func fechaValida(s string) bool {
-	for _, f := range formasFecha {
-		if _, err := time.Parse(f, s); err == nil {
-			return true
-		}
-	}
-	return false
+	_, err := time.Parse(time.RFC3339, s)
+	return err == nil
 }
 
 // textoValido: hasta max letras, sin HTML; en una línea salvo los largos.
@@ -174,7 +173,7 @@ func lista(v any) ([]any, bool) {
 	return l, ok
 }
 
-// vacio: lo que no cuenta como cargado (para «requerido» y para el mínimo de las listas).
+// vacio: lo que no cuenta como cargado (para «requerido»).
 func vacio(v any) bool {
 	switch x := v.(type) {
 	case nil:
@@ -204,21 +203,21 @@ func valorValido(c campo, v any) bool {
 		return textoValido(v, maxO(c, 1000), true)
 	case "foto":
 		s, ok := v.(string)
-		return ok && foto(s)
+		return ok && fotoBloque(s)
 	case "fotos":
 		l, ok := lista(v)
 		if !ok || len(l) > maxO(c, items) {
 			return false
 		}
 		for _, x := range l {
-			if s, ok := x.(string); !ok || s == "" || !foto(s) {
+			if s, ok := x.(string); !ok || !fotoBloque(s) {
 				return false
 			}
 		}
 		return true
 	case "link":
 		s, ok := v.(string)
-		return ok && (s == "" || linkValido(s))
+		return ok && linkValido(s)
 	case "boton":
 		m, ok := v.(map[string]any)
 		if !ok {
@@ -231,9 +230,6 @@ func valorValido(c campo, v any) bool {
 		}
 		t, _ := m["t"].(string)
 		a, _ := m["a"].(string)
-		if t == "" && a == "" {
-			return true // botón sin cargar: no se dibuja
-		}
 		return ItemMenu{T: t, A: a}.valido()
 	case "fondo":
 		s, ok := v.(string)
@@ -260,7 +256,7 @@ func valorValido(c campo, v any) bool {
 		return ok && reProducto.MatchString(s)
 	case "elegidos":
 		l, ok := lista(v)
-		if !ok || len(l) > maxO(c, items) || (c.Min != nil && len(l) > 0 && len(l) < *c.Min) {
+		if !ok || len(l) > maxO(c, items) || (c.Min != nil && len(l) < *c.Min) {
 			return false
 		}
 		for _, x := range l {
@@ -287,7 +283,7 @@ func valorValido(c campo, v any) bool {
 		return true
 	case "lista":
 		l, ok := lista(v)
-		if !ok || len(l) > maxO(c, items) || (c.Min != nil && len(l) > 0 && len(l) < *c.Min) {
+		if !ok || len(l) > maxO(c, items) || (c.Min != nil && len(l) < *c.Min) {
 			return false
 		}
 		for _, x := range l {
@@ -304,7 +300,7 @@ func valorValido(c campo, v any) bool {
 	return false
 }
 
-// productosValidos: { fuente, cantidad 1–24, ids? (elegidos), categoria? }.
+// productosValidos: { fuente, cantidad 1–24, ids? (elegidos), categoria? }; fuente y cantidad siempre.
 func productosValidos(v any) bool {
 	m, ok := v.(map[string]any)
 	if !ok {
@@ -335,7 +331,8 @@ func productosValidos(v any) bool {
 		}
 	}
 	_, conFuente := m["fuente"]
-	return conFuente
+	_, conCantidad := m["cantidad"]
+	return conFuente && conCantidad
 }
 
 // camposValidos: sólo los campos del tipo, cada uno con su valor. Los requeridos se exigen dentro

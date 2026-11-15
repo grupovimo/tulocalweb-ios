@@ -3,6 +3,7 @@ package mitienda
 import (
 	"maps"
 	"slices"
+	"strings"
 )
 
 // De sección v1 a tipo de bloque v2.
@@ -15,7 +16,7 @@ var ordenV1 = []string{"hero", "cats", "prods", "revs", "ig", "wa"}
 // lib/tienda/sistema/migrar.ts (los dos corren packages/contrato/casos/diseno-v2.json):
 //   - el preset es el de la plantilla del diseño (si el borrador la cambia) o el de la tienda;
 //   - un bloque por tipo del orden del preset (id = tipo), en ese orden, salvo que la tienda haya
-//     reordenado las secciones: entonces el suyo, filtrado a los del preset (los que faltan, al final);
+//     reordenado las secciones: entonces el suyo, filtrado a los del preset;
 //   - las secciones ocultas quedan oculto:true; hero → portada con titulo, lema y portada;
 //     textos[sección] → datos.titulo; wa oculta → estilo.whatsappFlotante=false;
 //   - anuncio y anuncioLink → estilo.barra fija con un mensaje;
@@ -51,11 +52,6 @@ func Migrar(d *Diseno, plantilla string) Diseno {
 				orden = append(orden, t)
 			}
 		}
-		for _, t := range p.Orden {
-			if !slices.Contains(orden, t) {
-				orden = append(orden, t)
-			}
-		}
 	}
 	var textos map[string]string
 	if d.Estilo != nil {
@@ -66,17 +62,16 @@ func Migrar(d *Diseno, plantilla string) Diseno {
 		sec := seccionDe(t)
 		b := Bloque{ID: t, Tipo: t, Variante: p.Variantes[t], Oculto: oculta[sec], Datos: map[string]any{}}
 		if t == "portada" {
-			if d.Titulo != "" {
-				b.Datos["titulo"] = d.Titulo
+			if x := strings.TrimSpace(d.Titulo); x != "" {
+				b.Datos["titulo"] = x
 			}
-			if d.Lema != "" {
-				b.Datos["texto"] = d.Lema
+			if x := strings.TrimSpace(d.Lema); x != "" {
+				b.Datos["texto"] = x
 			}
-			if d.Portada != "" {
-				b.Datos["fotos"] = []any{d.Portada}
+			if x := strings.TrimSpace(d.Portada); x != "" {
+				b.Datos["fotos"] = []any{x}
 			}
-		}
-		if x := textos[sec]; x != "" {
+		} else if x := strings.TrimSpace(textos[sec]); x != "" {
 			b.Datos["titulo"] = x
 		}
 		out.Inicio = append(out.Inicio, b)
@@ -89,8 +84,8 @@ func Migrar(d *Diseno, plantilla string) Diseno {
 		e.Colores, e.Redes = maps.Clone(e.Colores), maps.Clone(e.Redes)
 		e.Menu = slices.Clone(e.Menu)
 	}
-	if e.Anuncio != "" && e.Barra == nil {
-		e.Barra = &Barra{Variante: "fija", Mensajes: []MensajeBarra{{Texto: e.Anuncio, Link: e.AnuncioLink}}}
+	if a := strings.TrimSpace(e.Anuncio); a != "" && e.Barra == nil {
+		e.Barra = &Barra{Variante: "fija", Mensajes: []MensajeBarra{{Texto: a, Link: strings.TrimSpace(e.AnuncioLink)}}}
 	}
 	e.Anuncio, e.AnuncioLink, e.Textos = "", "", nil
 	if oculta["wa"] {
