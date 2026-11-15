@@ -266,7 +266,7 @@ func Diseno(t Tienda) mitienda.Diseno {
 	// Las promociones que estrenan las demos (docs/especificaciones/tienda-promociones.md § 5), de las
 	// plantillas del catálogo, como sandbox/promos.ts › promosDemo.
 	ventana := func(plantilla, id string) []mitienda.Ventana {
-		v, ok := mitienda.DePlantilla(plantilla, id, cupones.EnvioGratisDesde, time.Time{})
+		v, ok := mitienda.DePlantilla(plantilla, id, cupones.EnvioGratisPorDefecto, time.Time{})
 		if !ok {
 			return nil
 		}

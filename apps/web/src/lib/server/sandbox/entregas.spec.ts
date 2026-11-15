@@ -92,6 +92,39 @@ describe('Envíos y retiro (demo, como configuracion.Entregas en Go)', () => {
 		]);
 		expect((await datos.entregas()).retiro).toBe(true);
 	});
+
+	it('el envío gratis con el monto de la tienda: lo ve la tienda, el checkout y Cupones', async () => {
+		const datos = await moda();
+		const e = await datos.entregas();
+		expect(e).toMatchObject({ envioGratis: true, envioGratisMonto: 40_000, gratisDesde: 40_000 });
+		const moto = {
+			retiro: true,
+			retiroDireccion: '',
+			retiroHorario: '',
+			moto: true,
+			motoCosto: 3500,
+			motoZona: 'Palermo',
+			motoDemora: 'En el día'
+		};
+		await datos.guardarEntregas({ ...moto, envioGratisMonto: 25_000 });
+		const t = await datos.tiendaPublica(false);
+		expect(t.envios.gratisDesde).toBe(25_000);
+		expect(cotizar('1414', 25_000, t).find((o) => o.id === 'moto')?.precio).toBe(0);
+		expect(cotizar('1414', 24_999, t).find((o) => o.id === 'moto')?.precio).toBe(3500);
+		const envio = (await datos.cupones()).automaticas.find((a) => a.id === 'envio');
+		expect(envio?.detalle).toContain('25.000');
+		// Apagado conserva el monto; sin mandarlo, queda como estaba.
+		await datos.guardarEntregas({ ...moto, envioGratis: false });
+		expect(await datos.entregas()).toMatchObject({
+			envioGratis: false,
+			envioGratisMonto: 25_000,
+			gratisDesde: null
+		});
+		expect(await mensaje(datos.guardarEntregas({ ...moto, envioGratisMonto: 10 }))).toEqual([
+			400,
+			'El envío gratis va desde $ 1.000 hasta $ 100.000.000.'
+		]);
+	});
 });
 
 describe('Cambios y devoluciones (demo, como configuracion.Negocio.Politica en Go)', () => {

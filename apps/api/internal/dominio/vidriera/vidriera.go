@@ -202,7 +202,7 @@ type Envios struct {
 // Cuotas sin interés: ninguna (0), porque las absorbe la tienda y no se le promete al que compra lo
 // que la tienda no eligió; las plantillas no las muestran con menos de 2. El descuento por
 // transferencia y el envío gratis salen de las promociones automáticas que prendió la tienda
-// (cupones.TransferenciaPct, cupones.EnvioGratisDesde): la misma fuente que muestra el panel.
+// (cupones.TransferenciaPct y el monto de envío gratis de la tienda): la misma fuente que muestra el panel.
 const cuotas = 0
 
 var slugValido = regexp.MustCompile(`^[a-z0-9-]{2,60}$`)
@@ -290,9 +290,14 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		}
 		out.Cobros["facturaA"] = facturaA
 		// El envío gratis sólo si la tienda envía (moto o Correo): con sólo retiro no hay envío que regalar.
-		if autos["envio"] && (out.Envios.Moto || out.Envios.Correo) {
-			g := int64(cupones.EnvioGratisDesde)
-			out.Envios.GratisDesde = &g
+		if out.Envios.Moto || out.Envios.Correo {
+			activa, desde, err := cupones.EnvioGratis(ctx, t, id)
+			if err != nil {
+				return err
+			}
+			if activa {
+				out.Envios.GratisDesde = &desde
+			}
 		}
 		if out.Turnos, err = turnos.ResumenDe(ctx, t, id, mp); err != nil {
 			return err

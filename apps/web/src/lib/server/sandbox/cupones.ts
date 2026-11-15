@@ -11,7 +11,10 @@ type Cupones = components['schemas']['Cupones'];
 type Automatica = components['schemas']['Automatica'];
 
 const DIA = 86_400_000;
-/** La promoción automática de envío gratis (como cupones.EnvioGratisDesde en Go). */
+/**
+ * El envío gratis de una tienda que nunca cambió el monto (como cupones.EnvioGratisPorDefecto en Go):
+ * cada tienda pone el suyo en Envíos y retiro.
+ */
 export const ENVIO_GRATIS_DESDE = 40_000;
 const iso = (t: number) => new Date(t).toISOString();
 const pesos = (n: number) => '$ ' + Math.round(n).toLocaleString('es-AR');

@@ -5316,14 +5316,16 @@ components:
         motoCosto: { type: integer, minimum: 0, maximum: 1000000, description: 'Costo fijo de la moto, en pesos' }
         motoZona: { type: string, maxLength: 160, description: 'Barrios o localidades adonde llega (obligatoria con moto)' }
         motoDemora: { type: string, maxLength: 60, description: 'Cuánto tarda, en texto (En el día, 24 a 48 h)' }
+        envioGratis: { type: boolean, description: 'Envío gratis prendido (es la promoción automática «envio» de Cupones). Al guardar, sin mandar: queda como estaba' }
+        envioGratisMonto: { type: integer, minimum: 1000, maximum: 100000000, description: 'Desde qué monto, en pesos (por defecto 40.000). Al guardar, sin mandar: queda como estaba' }
     EstadoEntregas:
       allOf:
         - { $ref: '#/components/schemas/Entregas' }
         - type: object
-          required: [correo, gratisDesde]
+          required: [correo, gratisDesde, envioGratis, envioGratisMonto]
           properties:
             correo: { type: boolean, description: 'La cuenta de MiCorreo está conectada (se configura en Integraciones)' }
-            gratisDesde: { type: [integer, 'null'], description: 'Envío gratis desde este monto (promoción automática prendida en Cupones)' }
+            gratisDesde: { type: [integer, 'null'], description: 'Envío gratis desde este monto (null: apagado)' }
     SenaPedido:
       type: [object, 'null']
       description: 'El pedido se reservó o encargó con seña (§52); null si se paga entero. falta = total − seña (0 si ya se saldó).'

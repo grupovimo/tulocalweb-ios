@@ -1797,12 +1797,15 @@ export class DatosSandbox implements Datos {
 		);
 		// El mayorista dice el mínimo de verdad (Configuración › Venta mayorista, como Go).
 		const desde = textoMinimo(mayorista, pesos).replace(' de\u00a0compra', '');
+		const gratis = await this.envioGratis();
 		return {
 			...c,
 			automaticas: c.automaticas.map((a) =>
 				a.id === 'mayorista'
 					? { ...a, detalle: `Desde ${desde}, con el precio mayorista de cada producto` }
-					: a
+					: a.id === 'envio'
+						? { ...a, detalle: `Desde ${pesos(gratis.monto)} en moto y por Correo` }
+						: a
 			)
 		};
 	}
@@ -2975,11 +2978,23 @@ export class DatosSandbox implements Datos {
 		return 'ok';
 	}
 
-	/** Envío gratis desde el monto de la promoción automática, si está prendida (como en Go). */
-	private async envioGratisDesde(): Promise<number | null> {
-		const autos = await cambiosDe(this.db, this.sb.id, 'automatica');
+	/**
+	 * El envío gratis: el interruptor es la promoción automática (prendida de entrada en la demo) y el
+	 * monto, el de la tienda (Envíos y retiro; 40.000 si nunca lo cambió), como cupones.EnvioGratis en Go.
+	 */
+	private async envioGratis(): Promise<{ activa: boolean; monto: number }> {
+		const [autos, c] = await Promise.all([
+			cambiosDe(this.db, this.sb.id, 'automatica'),
+			cambiosDe(this.db, this.sb.id, 'entregas')
+		]);
 		const envio = autos.get('envio') as { activa: boolean } | null | undefined;
-		return (envio?.activa ?? true) ? ENVIO_GRATIS_DESDE : null;
+		const monto = (c.get('gratis') as { monto: number } | undefined)?.monto ?? ENVIO_GRATIS_DESDE;
+		return { activa: envio?.activa ?? true, monto };
+	}
+
+	private async envioGratisDesde(): Promise<number | null> {
+		const g = await this.envioGratis();
+		return g.activa ? g.monto : null;
 	}
 
 	/**
@@ -2987,10 +3002,10 @@ export class DatosSandbox implements Datos {
 	 * horario del negocio y sin moto. La demo no tiene cuenta de MiCorreo: Correo nunca está conectado.
 	 */
 	async entregas(): Promise<EstadoEntregas> {
-		const [c, conf, gratisDesde] = await Promise.all([
+		const [c, conf, gratis] = await Promise.all([
 			cambiosDe(this.db, this.sb.id, 'entregas'),
 			this.configuracion(),
-			this.envioGratisDesde()
+			this.envioGratis()
 		]);
 		const e = (c.get('config') as Entregas | undefined) ?? {
 			retiro: true,
@@ -3006,7 +3021,9 @@ export class DatosSandbox implements Datos {
 			retiroDireccion: e.retiroDireccion || conf.negocio.direccion || '',
 			retiroHorario: e.retiroHorario || conf.negocio.horario || '',
 			correo: false,
-			gratisDesde
+			gratisDesde: gratis.activa ? gratis.monto : null,
+			envioGratis: gratis.activa,
+			envioGratisMonto: gratis.monto
 		};
 	}
 	async guardarEntregas(e: Entregas): Promise<void> {
@@ -3018,7 +3035,13 @@ export class DatosSandbox implements Datos {
 			direccionNegocio: conf.negocio.direccion ?? ''
 		});
 		if (mal) error(400, mal);
-		await guardarCambio(this.db, this.sb.id, 'entregas', 'config', r.output satisfies Entregas);
+		const { envioGratis, envioGratisMonto, ...config } = r.output;
+		await guardarCambio(this.db, this.sb.id, 'entregas', 'config', config satisfies Entregas);
+		// Sin mandarlos, el envío gratis queda como estaba (como Go).
+		if (envioGratis !== undefined)
+			await guardarCambio(this.db, this.sb.id, 'automatica', 'envio', { activa: envioGratis });
+		if (envioGratisMonto !== undefined)
+			await guardarCambio(this.db, this.sb.id, 'entregas', 'gratis', { monto: envioGratisMonto });
 	}
 
 	/** En la demo Mercado Libre arranca conectado (como en el handoff) y todo se simula. */

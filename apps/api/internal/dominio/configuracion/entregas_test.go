@@ -40,7 +40,7 @@ func TestEntregas(t *testing.T) {
 	}
 	e, err = configuracion.LeerEntregas(ctx, b.App, luna)
 	if err != nil || e.RetiroDireccion != "Thames 1200" || e.MotoZona != "Palermo, Villa Crespo" || e.MotoCosto != 3500 ||
-		e.GratisDesde == nil || *e.GratisDesde != cupones.EnvioGratisDesde {
+		e.GratisDesde == nil || *e.GratisDesde != cupones.EnvioGratisPorDefecto {
 		t.Fatalf("guardado: %+v %v", e, err)
 	}
 	// Dirección vacía: vuelve la del negocio.
@@ -84,5 +84,32 @@ func TestEntregas(t *testing.T) {
 	// Cada tienda lo suyo.
 	if e, _ := configuracion.LeerEntregas(ctx, b.App, luna); !e.Moto || e.Correo {
 		t.Fatalf("se mezcló con otra tienda: %+v", e)
+	}
+
+	// El envío gratis con el monto de la tienda: se cambia desde Envíos; sin mandarlo, queda como estaba.
+	monto := int64(65000)
+	nueva.EnvioGratisMonto = &monto
+	if err := configuracion.GuardarEntregas(ctx, b.App, luna, nueva); err != nil {
+		t.Fatal(err)
+	}
+	e, _ = configuracion.LeerEntregas(ctx, b.App, luna)
+	if e.GratisDesde == nil || *e.GratisDesde != 65000 || !*e.EnvioGratis || *e.EnvioGratisMonto != 65000 {
+		t.Fatalf("monto propio: %+v", e)
+	}
+	apagado := false
+	nueva.EnvioGratis, nueva.EnvioGratisMonto = &apagado, nil
+	if err := configuracion.GuardarEntregas(ctx, b.App, luna, nueva); err != nil {
+		t.Fatal(err)
+	}
+	if e, _ = configuracion.LeerEntregas(ctx, b.App, luna); e.GratisDesde != nil || *e.EnvioGratis || *e.EnvioGratisMonto != 65000 {
+		t.Fatalf("apagado conserva el monto: %+v", e)
+	}
+	if e, _ = configuracion.LeerEntregas(ctx, b.App, sol); *e.EnvioGratisMonto != cupones.EnvioGratisPorDefecto || *e.EnvioGratis {
+		t.Fatalf("la otra tienda, por defecto: %+v", e)
+	}
+	chico := int64(10)
+	nueva.EnvioGratisMonto = &chico
+	if err := configuracion.GuardarEntregas(ctx, b.App, luna, nueva); !errors.As(err, &mal) {
+		t.Fatalf("monto fuera de rango: %v", err)
 	}
 }

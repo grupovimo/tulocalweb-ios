@@ -15,7 +15,8 @@
 	/**
 	 * Envíos y retiro (Configuración): cómo le llega a quien compra. El handoff no la diseña: se arma
 	 * con las piezas de Configuración (tarjetas, opciones con Interruptor y campos) y de la tarjeta para
-	 * paquetes (cabecera con Guardar). Correo Argentino y el envío gratis se configuran en su pantalla.
+	 * paquetes (cabecera con Guardar). Correo Argentino se conecta en Integraciones; el envío gratis
+	 * (la misma promoción automática de Cupones) se prende acá con el monto de la tienda.
 	 */
 	let { data } = $props();
 	const ui = getUi();
@@ -27,7 +28,9 @@
 		moto: e.moto,
 		motoCosto: e.motoCosto,
 		motoZona: e.motoZona,
-		motoDemora: e.motoDemora
+		motoDemora: e.motoDemora,
+		envioGratis: e.envioGratis ?? false,
+		envioGratisMonto: e.envioGratisMonto ?? 40_000
 	});
 	let e = $state<Entregas>(untrack(() => copia(data.entregas)));
 	let guardando = $state(false);
@@ -200,18 +203,33 @@
 				<span class="o-ico"><Icon icon={I.phTruckFill} size={18} /></span>
 				<span class="o-txt"
 					><span class="o-t">Envío gratis</span><span class="o-d"
-						>{data.entregas.gratisDesde !== null
-							? `Desde ${pesos(data.entregas.gratisDesde)}, en moto y por Correo`
-							: 'Es una promoción automática de Cupones'}</span
+						>{e.envioGratis
+							? `Desde ${pesos(e.envioGratisMonto ?? 0)}, en moto y por Correo`
+							: 'Para que sumen algo más al carrito'}</span
 					></span
 				>
-				<span class="estado" class:on={data.entregas.gratisDesde !== null}
-					>{data.entregas.gratisDesde !== null ? 'Prendido' : 'Apagado'}</span
-				>
+				<Interruptor bind:checked={e.envioGratis} label="Envío gratis" />
 			</div>
-			<a class="mas" href="{resolve('/panel/cupones')}?tab=auto"
-				>Cupones › Automáticas <Icon icon={I.phArrowRightBold} size={13} /></a
-			>
+			{#if e.envioGratis}
+				<div class="campos">
+					<label class="campo"
+						>Desde qué monto<span class="pesos"
+							><span>$</span><input
+								type="number"
+								inputmode="numeric"
+								min={TOPES_ENTREGAS.gratisMinimo}
+								max={TOPES_ENTREGAS.gratisMaximo}
+								step="1"
+								bind:value={e.envioGratisMonto}
+							/></span
+						></label
+					>
+				</div>
+				<p class="nota">
+					<Icon icon={I.phInfoFill} size={15} />La tienda muestra cuánto les falta en la bolsa y en
+					el carrito, y el envío sale gratis al&nbsp;pagar.
+				</p>
+			{/if}
 		</section>
 	</div>
 

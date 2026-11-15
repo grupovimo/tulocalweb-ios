@@ -216,6 +216,19 @@ func TestEntregasConfiguradas(t *testing.T) {
 	if envio != "moto" || costo != 3500 || direccion != "Gorriti 4500" {
 		t.Fatalf("pedido con moto: %s %d %q", envio, costo, direccion)
 	}
+
+	// Envío gratis con el monto de la tienda (no el fijo de antes): la vidriera lo expone y el checkout lo aplica.
+	si, desde := true, int64(9000)
+	if err := configuracion.GuardarEntregas(ctx, b.App, luna, configuracion.Entregas{Moto: true, MotoCosto: 3500,
+		MotoZona: "Palermo", MotoDemora: "En el día", EnvioGratis: &si, EnvioGratisMonto: &desde}); err != nil {
+		t.Fatal(err)
+	}
+	if tienda, _ = vidriera.Publica(ctx, b.App, "luna"); tienda.Envios.GratisDesde == nil || *tienda.Envios.GratisDesde != 9000 {
+		t.Fatalf("gratisDesde de la tienda: %+v", tienda.Envios)
+	}
+	if r, err := vidriera.Comprar(ctx, b.App, nil, "", "luna", moto, lunes); err != nil || r.Total != 10000 {
+		t.Fatalf("moto gratis desde el monto propio: %+v %v", r, err)
+	}
 }
 
 func TestCompraConCupon(t *testing.T) {

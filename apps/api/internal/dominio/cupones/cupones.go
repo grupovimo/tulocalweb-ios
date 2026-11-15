@@ -305,16 +305,67 @@ type automatica struct {
 }
 
 // Lo que aplica la tienda online cuando la tienda prende estas promociones (vidriera las lee de acá):
-// la pantalla las describe con los mismos números, así no dice una cosa y cobra otra.
+// la pantalla las describe con los mismos números, así no dice una cosa y cobra otra. El envío gratis
+// tiene el monto de cada tienda (tiendas.envio_gratis_desde, migración 00082); EnvioGratisPorDefecto es
+// el de una tienda que nunca lo cambió.
 const (
-	TransferenciaPct = 15
-	EnvioGratisDesde = 40000
+	TransferenciaPct      = 15
+	EnvioGratisPorDefecto = 40000
+	EnvioGratisMinimo     = 1000
+	EnvioGratisMaximo     = 100_000_000
 )
+
+// EnvioGratis: si la tienda lo prendió (automaticas->>'envio') y desde qué monto, en pesos. Dentro de
+// una transacción ya fijada en la tienda.
+func EnvioGratis(ctx context.Context, t pgx.Tx, tiendaID string) (activa bool, desde int64, err error) {
+	err = t.QueryRow(ctx, `SELECT coalesce((automaticas->>'envio')::boolean, false), envio_gratis_desde FROM tiendas WHERE id = $1`,
+		tiendaID).Scan(&activa, &desde)
+	return
+}
+
+// FijarEnvioGratis prende o apaga el envío gratis y, si viene, cambia el monto (en pesos). Con la tienda
+// fijada; deja el registro en la Actividad sólo si algo cambió.
+func FijarEnvioGratis(ctx context.Context, t pgx.Tx, tiendaID string, activa *bool, desde *int64) error {
+	if desde != nil && (*desde < EnvioGratisMinimo || *desde > EnvioGratisMaximo) {
+		return ErrInvalido
+	}
+	antesActiva, antesDesde, err := EnvioGratis(ctx, t, tiendaID)
+	if err != nil {
+		return err
+	}
+	a, d := antesActiva, antesDesde
+	if activa != nil {
+		a = *activa
+	}
+	if desde != nil {
+		d = *desde
+	}
+	if a == antesActiva && d == antesDesde {
+		return nil
+	}
+	if _, err := t.Exec(ctx, `UPDATE tiendas SET automaticas = automaticas || jsonb_build_object('envio', $2::boolean),
+		envio_gratis_desde = $3 WHERE id = $1`, tiendaID, a, d); err != nil {
+		return err
+	}
+	texto := fmt.Sprintf("cambió el envío gratis a compras desde %s", pesosTxt(d))
+	switch {
+	case a && !antesActiva:
+		texto = fmt.Sprintf("prendió el envío gratis desde %s", pesosTxt(d))
+	case !a && antesActiva:
+		texto = "apagó el envío gratis"
+	case !a:
+		texto = fmt.Sprintf("dejó el envío gratis (apagado) desde %s", pesosTxt(d))
+	}
+	return auditoria.Registrar(ctx, t, tiendaID, auditoria.Registro{Accion: "promocion.envio_gratis", Entidad: "promocion",
+		EntidadID: "envio", Texto: texto,
+		Antes: map[string]any{"activa": antesActiva, "desde": antesDesde}, Despues: map[string]any{"activa": a, "desde": d}})
+}
 
 var automaticas = []automatica{
 	{"transf", "Descuento por transferencia", fmt.Sprintf("%d %% si pagan con transferencia", TransferenciaPct),
 		fmt.Sprintf("Carrito de $ 50.000 → paga %s", pesosTxt(50000*(100-TransferenciaPct)/100))},
-	{"envio", "Envío gratis desde un monto", fmt.Sprintf("Desde %s a todo el país", pesosTxt(EnvioGratisDesde)),
+	// El detalle sale del monto de la tienda (Envíos y retiro).
+	{"envio", "Envío gratis desde un monto", "",
 		"Le faltan $ 6.000 → “Sumá algo y el envío es gratis”"},
 	{"cantidad", "Descuento por cantidad", "3 o más unidades: 15 % off", "3 unidades → 15 % off automático"},
 	{"3x2", "3x2 en una categoría", "Llevás 3, pagás 2", "3 unidades → la más barata gratis"},
@@ -368,7 +419,9 @@ func Leer(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (map[s
 		}
 		var prendidas map[string]bool
 		var nombre string
-		if err := t.QueryRow(ctx, `SELECT automaticas, nombre FROM tiendas WHERE id = $1`, tiendaID).Scan(&prendidas, &nombre); err != nil {
+		var gratisDesde int64
+		if err := t.QueryRow(ctx, `SELECT automaticas, nombre, envio_gratis_desde FROM tiendas WHERE id = $1`, tiendaID).
+			Scan(&prendidas, &nombre, &gratisDesde); err != nil {
 			return err
 		}
 		may, err := mayorista.Leer(ctx, t, tiendaID)
@@ -379,6 +432,9 @@ func Leer(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (map[s
 		for _, a := range automaticas {
 			if a.ID == "mayorista" {
 				a.Detalle = may.Detalle() + ", con el precio mayorista de cada producto"
+			}
+			if a.ID == "envio" {
+				a.Detalle = fmt.Sprintf("Desde %s en moto y por Correo", pesosTxt(gratisDesde))
 			}
 			estado := "Apagada"
 			if prendidas[a.ID] {

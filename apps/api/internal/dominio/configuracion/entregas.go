@@ -27,6 +27,10 @@ type Entregas struct {
 	MotoCosto  int64  `json:"motoCosto"`
 	MotoZona   string `json:"motoZona"`
 	MotoDemora string `json:"motoDemora"`
+	// El envío gratis (el interruptor es la promoción automática «envio» de Cupones) y desde qué monto,
+	// en pesos. Al guardar, sin mandar: queda como estaba (las apps viejas no lo mandan).
+	EnvioGratis      *bool  `json:"envioGratis,omitempty"`
+	EnvioGratisMonto *int64 `json:"envioGratisMonto,omitempty"`
 }
 
 // EstadoEntregas es components/schemas/EstadoEntregas: lo guardado más lo que se ve desde otras
@@ -88,14 +92,16 @@ func LeerEntregas(ctx context.Context, pool tx, tiendaID string) (EstadoEntregas
 		if out.Entregas, err = EntregasEnTx(ctx, t, tiendaID); err != nil {
 			return err
 		}
-		var autos map[string]bool
-		if err := t.QueryRow(ctx, `SELECT automaticas, EXISTS (SELECT 1 FROM ca_conexiones WHERE tienda_id = $1)
-			FROM tiendas WHERE id = $1`, tiendaID).Scan(&autos, &out.Correo); err != nil {
+		if err := t.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ca_conexiones WHERE tienda_id = $1)`, tiendaID).Scan(&out.Correo); err != nil {
 			return err
 		}
-		if autos["envio"] {
-			g := int64(cupones.EnvioGratisDesde)
-			out.GratisDesde = &g
+		activa, desde, err := cupones.EnvioGratis(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
+		out.EnvioGratis, out.EnvioGratisMonto = &activa, &desde
+		if activa {
+			out.GratisDesde = &desde
 		}
 		return nil
 	})
@@ -117,6 +123,9 @@ func GuardarEntregas(ctx context.Context, pool tx, tiendaID string, e Entregas) 
 	e.MotoDemora, ok[3] = texto(e.MotoDemora, maxDemora)
 	if !ok[0] || !ok[1] || !ok[2] || !ok[3] || e.MotoCosto < 0 || e.MotoCosto > maxCostoMoto {
 		return ErrInvalido
+	}
+	if m := e.EnvioGratisMonto; m != nil && (*m < cupones.EnvioGratisMinimo || *m > cupones.EnvioGratisMaximo) {
+		return ErrEntrega{Motivo: "El envío gratis va desde $ 1.000 hasta $ 100.000.000."}
 	}
 	if e.Moto && utf8.RuneCountInString(e.MotoZona) < 3 {
 		return ErrEntrega{Motivo: "Poné hasta dónde llega la moto (barrios o localidades)."}
@@ -154,7 +163,10 @@ func GuardarEntregas(ctx context.Context, pool tx, tiendaID string, e Entregas) 
 		if err != nil {
 			return err
 		}
-		return auditoria.Registrar(ctx, t, tiendaID, registrosEntregas(antes, despues)...)
+		if err := auditoria.Registrar(ctx, t, tiendaID, registrosEntregas(antes, despues)...); err != nil {
+			return err
+		}
+		return cupones.FijarEnvioGratis(ctx, t, tiendaID, e.EnvioGratis, e.EnvioGratisMonto)
 	})
 }
 

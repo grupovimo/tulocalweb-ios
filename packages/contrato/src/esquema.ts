@@ -5109,11 +5109,15 @@ export interface components {
             motoZona: string;
             /** @description Cuánto tarda, en texto (En el día, 24 a 48 h) */
             motoDemora: string;
+            /** @description Envío gratis prendido (es la promoción automática «envio» de Cupones). Al guardar, sin mandar: queda como estaba */
+            envioGratis?: boolean;
+            /** @description Desde qué monto, en pesos (por defecto 40.000). Al guardar, sin mandar: queda como estaba */
+            envioGratisMonto?: number;
         };
         EstadoEntregas: components["schemas"]["Entregas"] & {
             /** @description La cuenta de MiCorreo está conectada (se configura en Integraciones) */
             correo: boolean;
-            /** @description Envío gratis desde este monto (promoción automática prendida en Cupones) */
+            /** @description Envío gratis desde este monto (null: apagado) */
             gratisDesde: number | null;
         };
         /** @description El pedido se reservó o encargó con seña (§52); null si se paga entero. falta = total − seña (0 si ya se saldó). */
