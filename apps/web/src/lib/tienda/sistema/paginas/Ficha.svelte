@@ -270,7 +270,7 @@
 			{/if}
 		</div>
 		{#if op.producto.variante === 'miniaturas'}
-			<div class="tv-ficha-mini tv-solo-compu">
+			<div class="tv-ficha-mini tv-solo-compu" class:tv-ficha-mini--una={fotos.length < 2}>
 				{#if fotos.length > 1}
 					<div class="tv-ficha-miniaturas" role="group" aria-label="Fotos">
 						{#each fotos as f, i (i)}<button

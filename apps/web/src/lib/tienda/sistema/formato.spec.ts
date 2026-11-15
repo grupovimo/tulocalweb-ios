@@ -26,6 +26,8 @@ describe('formato', () => {
 		expect(cuotas(186000, 3)).toBe('3 cuotas de $\u00a062.000');
 		expect(cuotas(186000, 6, true)).toBe('6 cuotas sin interés de $\u00a031.000');
 		expect(cuotas(186000, 1)).toBe('');
+		// Debajo del mínimo de Mercado Pago no se ofrecen.
+		expect(cuotas(2800, 6)).toBe('');
 		expect(conTransferencia(214500, 10)).toBe(193050);
 	});
 	test('descuento de una oferta', () => {
@@ -38,6 +40,7 @@ describe('formato', () => {
 			'Ropa de autor, hecha para\u00a0durar.'
 		);
 		expect(sinViuda('Lumbre')).toBe('Lumbre');
+		expect(sinViuda('Drop 07 · ya disponible')).toBe('Drop 07\u00a0· ya\u00a0disponible');
 	});
 	test('sin viudas respeta los párrafos: cada renglón por separado', () => {
 		expect(

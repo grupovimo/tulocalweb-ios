@@ -22,9 +22,16 @@ export function promedio(n: number): string {
 /** El valor de cada cuota (redondeado al peso). */
 export const cuota = (total: number, n: number) => Math.round(total / Math.max(1, n));
 
+/**
+ * Desde qué total se ofrecen las cuotas sin interés de Mercado Pago (lib/panel/integraciones.ts ›
+ * «3 y 6 cuotas desde $ 30.000»). Debajo, «6 cuotas de $ 467» por un rol de canela es ruido y
+ * además una promesa que el pago no cumple.
+ */
+export const CUOTAS_DESDE = 30_000;
+
 /** «3 cuotas de $ 62.000» o «6 cuotas sin interés de $ 31.000». Vacío si no hay cuotas. */
 export function cuotas(total: number, n: number, sinInteres = false): string {
-	if (!(n > 1) || !(total > 0)) return '';
+	if (!(n > 1) || !(total >= CUOTAS_DESDE)) return '';
 	return `${n} cuotas ${sinInteres ? 'sin interés ' : ''}de ${precio(cuota(total, n))}`;
 }
 
@@ -66,7 +73,12 @@ export function sinViuda(t: string): string {
 		.replace(/\n{3,}/g, '\n\n')
 		.split('\n')
 		.map((r) => {
-			const s = r.trim().replace(/[^\S\n]+/g, ' ');
+			// Un separador («Drop 07 · ya disponible», «Café — Palermo») nunca abre un renglón: va
+			// pegado a lo anterior.
+			const s = r
+				.trim()
+				.replace(/[^\S\n]+/g, ' ')
+				.replace(/ ([·•|–—]) /g, '\u00a0$1 ');
 			const i = s.lastIndexOf(' ');
 			// Si la última palabra es larga y la anterior también, igual conviene pegarlas: el título
 			// no queda con una palabra sola.

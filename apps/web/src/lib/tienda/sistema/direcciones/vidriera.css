@@ -152,6 +152,20 @@
 .tv[data-dir='vidriera'] .tv-portada-partida .tv-h1 {
 	line-height: 0.98;
 }
+/* Partida (A-moda): el texto alineado con la página y las fotos hasta el borde de la pantalla.
+   Antes las fotos frenaban en el borde del contenedor, 80 px antes del borde a 1440 y pasadas del
+   contenido: ni alineadas ni a sangre. Desde 1600 px, contenidas y alineadas con todo lo demás. */
+@media (min-width: 760px) and (max-width: 1599px) {
+	.tv[data-dir='vidriera'] .tv-portada-partida.tv-ancho {
+		max-width: none;
+		padding-left: max(var(--t-margen), calc((100% - var(--t-ancho)) / 2 + var(--t-margen)));
+	}
+}
+@media (min-width: 1600px) {
+	.tv[data-dir='vidriera'] .tv-portada-partida.tv-ancho {
+		padding-right: var(--t-margen);
+	}
+}
 .tv[data-dir='vidriera'] .tv-portada-fotos .tv-foto {
 	border-radius: 0;
 }

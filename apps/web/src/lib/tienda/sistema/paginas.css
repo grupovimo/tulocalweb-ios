@@ -780,6 +780,11 @@
 	gap: 20px;
 	align-items: start;
 }
+/* Con una sola foto no hay miniaturas: la principal ocupa todo (antes caía en la columna de
+   96 px de las miniaturas y la ficha quedaba con una estampita). */
+.tv-ficha-mini--una {
+	grid-template-columns: minmax(0, 1fr);
+}
 .tv-ficha-miniaturas {
 	display: flex;
 	flex-direction: column;

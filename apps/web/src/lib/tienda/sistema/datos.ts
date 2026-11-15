@@ -15,7 +15,7 @@ import {
 	type Icono,
 	type SeleccionProductos
 } from './catalogo.ts';
-import { cuantos, precio } from './formato.ts';
+import { CUOTAS_DESDE, cuantos, precio } from './formato.ts';
 
 export type Tienda = TiendaPublica;
 
@@ -170,7 +170,7 @@ export function beneficiosAuto(t: Tienda): Beneficio[] {
 		out.push({
 			icono: 'cuotas',
 			titulo: `${t.cobros.cuotas} cuotas sin interés`,
-			texto: 'Con Mercado Pago'
+			texto: `Desde ${precio(CUOTAS_DESDE)}`
 		});
 	if (t.cobros.transferencia > 0 && t.cobros.datosTransferencia)
 		out.push({

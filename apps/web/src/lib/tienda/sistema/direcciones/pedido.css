@@ -544,6 +544,21 @@
 	.tv[data-dir='pedido'] .tv-bolsa-texto {
 		display: inline;
 	}
+}
+/* En un celular angosto «Pedido · 2» le comía el nombre a la tienda («Panadería L…»): queda la
+   bolsa con el número, que dice lo mismo, y el nombre entero. */
+@media (max-width: 419px) {
+	.tv[data-dir='pedido'] .tv-bolsa-texto {
+		display: none;
+	}
+	.tv[data-dir='pedido'] .tv-bolsa svg {
+		display: block;
+	}
+	.tv[data-dir='pedido'] .tv-bolsa-n::before {
+		content: none;
+	}
+}
+@media (max-width: 759px) {
 	.tv[data-dir='pedido'] .tv-portada-foto {
 		height: 260px;
 	}

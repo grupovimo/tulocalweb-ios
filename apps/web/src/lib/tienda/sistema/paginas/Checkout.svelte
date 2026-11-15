@@ -11,7 +11,7 @@
 	import { cotizar, cpValido } from '../../envio.svelte.ts';
 	import { camposFactura, OPCIONALES } from '../../factura.ts';
 	import type { OpcionEnvio, TiendaPublica } from '../../tipos.ts';
-	import { conTransferencia, cuotas, precio } from '../formato.ts';
+	import { conTransferencia, cuotas, CUOTAS_DESDE, precio } from '../formato.ts';
 	import Tienda from '../marco/Tienda.svelte';
 	import Boton from '../primitivas/Boton.svelte';
 	import Foto from '../primitivas/Foto.svelte';
@@ -78,7 +78,7 @@
 						id: 'mercadopago' as const,
 						t: 'Mercado Pago',
 						d:
-							tienda.cobros.cuotas > 1
+							tienda.cobros.cuotas > 1 && cuenta.total >= CUOTAS_DESDE
 								? `Tarjetas, hasta ${tienda.cobros.cuotas} cuotas sin interés, o dinero en cuenta`
 								: 'Tarjetas de crédito y débito, o dinero en cuenta'
 					}
