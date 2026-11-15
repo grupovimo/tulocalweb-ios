@@ -3,8 +3,13 @@
 	import { usarTienda } from '../contexto.ts';
 	import { enlace } from '../datos.ts';
 	import { urlFoto } from '../formato.ts';
+	import { medirLogo } from '../logos.ts';
 
-	/** Logos de prensa, marcas o con quién trabaja la tienda: una fila centrada, en el tono del texto. */
+	/**
+	 * Logos de prensa, marcas o con quién trabaja la tienda: una fila centrada, con sus colores y a
+	 * pleno. El que no contrasta con el fondo (uno negro en una tienda oscura) se pasa entero a claro
+	 * u oscuro (logos.ts).
+	 */
 	let { bloque }: { bloque: Bloque } = $props();
 	const ctx = usarTienda();
 	type Logo = { foto: string; nombre: string; link?: string };
@@ -25,8 +30,14 @@
 				{#if l.href}<a
 						href={l.href}
 						target={l.href.startsWith('https://') ? '_blank' : undefined}
-						rel="noopener"><img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" /></a
-					>{:else}<img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" />{/if}
+						rel="noopener"
+						><img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" use:medirLogo /></a
+					>{:else}<img
+						src={urlFoto(l.foto, 320)}
+						alt={l.nombre}
+						loading="lazy"
+						use:medirLogo
+					/>{/if}
 			</li>
 		{/each}
 	</ul>

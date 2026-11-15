@@ -1900,8 +1900,13 @@
 	width: auto;
 	max-width: 160px;
 	object-fit: contain;
-	filter: grayscale(1);
-	opacity: 0.75;
+}
+/* El que no se leía sobre este fondo, entero en claro u oscuro (logos.ts › medirLogo). */
+.tv-logos img[data-tono='claro'] {
+	filter: brightness(0) invert(1);
+}
+.tv-logos img[data-tono='oscuro'] {
+	filter: brightness(0);
 }
 
 .tv-turnos-hoy {
