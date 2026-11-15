@@ -1349,6 +1349,13 @@ paths:
                     description: 'El publicado, siempre v2 (un v1 se migra al leer). Los productos que nombran sus bloques vienen en productos.'
                   secciones: { type: array, items: { type: string }, deprecated: true, description: 'v1, derivado del diseño (mientras convivan las plantillas viejas)' }
                   estilo: { type: object, additionalProperties: true, description: 'estilo del diseño con anuncio y textos de v1 derivados' }
+                  masVendidos: { type: array, items: { type: string }, description: 'Todos los productos, de más a menos vendido en 30 días' }
+                  topVendidos: { type: array, maxItems: 3, items: { type: string }, description: 'Hasta 3 ids con ventas en 30 días: la etiqueta «Más vendido» (estilo.conversion.etiquetas.masVendido)' }
+                  productos:
+                    type: array
+                    description: 'Cada producto trae además stock (para «Quedan N» y «Últimas N») y alta (fecha de carga, para «Nuevo»: 14 días o menos)'
+                    items: { type: object, additionalProperties: true, properties: { stock: { type: integer }, alta: { type: string, format: date-time } } }
+                  envios: { type: object, additionalProperties: true, properties: { gratisDesde: { type: [integer, 'null'], description: 'Envío gratis desde este monto: la barra «Te faltan $ X» (estilo.conversion.envioGratis)' } } }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/pedidos:
     post:
@@ -1552,6 +1559,98 @@ paths:
             schema: { type: object, required: [token], properties: { token: { type: string } } }
       responses:
         '204': { description: Suscripto }
+        '404': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/promos/captar:
+    post:
+      operationId: captarPromo
+      summary: 'Una ventana de captación (docs/especificaciones/tienda-promociones.md): suma el contacto a la newsletter con origen ventana:<id> (pendiente; el mail del premio trae el botón de confirmar) y devuelve el premio. Una vez por email y ventana: repetir devuelve lo mismo (repetido: true). Topes: 10 por hora por IP y tienda, 600 por hora por tienda.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PromoParticipar' }
+      responses:
+        '200':
+          description: El premio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromoResultado' }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/promos/ruleta:
+    post:
+      operationId: girarRuleta
+      summary: 'La ruleta: igual que captar, pero el servidor sortea la porción por peso (la animación cae en la que devuelve). Una vez por email y ventana.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PromoParticipar' }
+      responses:
+        '200':
+          description: La porción y su premio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromoResultado' }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '409': { $ref: '#/components/responses/Problema' }
+        '429': { $ref: '#/components/responses/Problema' }
+  /v1/publico/tiendas/{slug}/promos/eventos:
+    post:
+      operationId: eventosPromo
+      summary: 'Vistas, cierres y clics de las ventanas, en lote (navigator.sendBeacon: acepta text/plain). Se agregan por ventana y día de Argentina; lo que no es de una ventana publicada se ignora. Hasta 50 por lote; tope de 120 lotes por hora por IP.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventos]
+              properties:
+                eventos:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [ventana, tipo]
+                    properties:
+                      ventana: { type: string, pattern: '^[a-z0-9]{6,16}$' }
+                      tipo: { type: string, enum: [vista, cierre, clic] }
+                      n: { type: integer, minimum: 1, maximum: 20, description: 'Cuántas veces (por defecto 1)' }
+      responses:
+        '204': { description: Anotados }
+        '400': { $ref: '#/components/responses/Problema' }
+        '404': { $ref: '#/components/responses/Problema' }
+        '429': { description: Demasiados lotes }
+  /v1/publico/tiendas/{slug}/promos/recientes:
+    get:
+      operationId: comprasRecientes
+      summary: 'La prueba social: pedidos reales pagados de los últimos 7 días (hasta 20), con nombre de pila, provincia (vacía si no se sabe), el primer producto y cuándo. Vacío si la tienda no prendió estilo.conversion.pruebaSocial en el diseño publicado. Cacheado 5 minutos.'
+      security: []
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Compras recientes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [compras]
+                properties:
+                  compras: { type: array, maxItems: 20, items: { $ref: '#/components/schemas/PromoReciente' } }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/newsletter/baja:
     post:
@@ -2077,6 +2176,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Newsletter' }
+        '401': { $ref: '#/components/responses/Problema' }
+        '403': { $ref: '#/components/responses/Problema' }
+  /v1/panel/promos/metricas:
+    get:
+      operationId: metricasPromos
+      summary: 'Los números de las ventanas por día: vistas, cierres y clics (de la tienda), envíos (contactos captados) y ventas y monto (pedidos no cancelados con el cupón de la ventana: el único que generó o el fijo que muestra). Sin fechas, los últimos 30 días; hasta un año.'
+      parameters:
+        - { name: desde, in: query, schema: { type: string, format: date } }
+        - { name: hasta, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Métricas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromoMetricas' }
+        '400': { $ref: '#/components/responses/Problema' }
         '401': { $ref: '#/components/responses/Problema' }
         '403': { $ref: '#/components/responses/Problema' }
   /v1/panel/newsletter/suscriptores/{id}:
@@ -4145,7 +4260,9 @@ components:
             properties:
               id: { type: string }
               email: { type: string }
-              origen: { type: string, enum: [tienda, checkout], description: 'El bloque del pie de la tienda o la casilla del checkout' }
+              origen: { type: string, pattern: '^(tienda|checkout|ventana:[a-z0-9]{6,16})$', description: 'El bloque del pie de la tienda, la casilla del checkout o una ventana (ventana:<id>, captación o ruleta)' }
+              nombre: { type: string, description: 'Si la ventana que lo captó lo pidió' }
+              whatsapp: { type: string, description: 'Si la ventana que lo captó lo pidió' }
               confirmado: { type: boolean }
               creado: { type: string, format: date-time }
               confirmadoEn: { type: [string, 'null'], format: date-time }
@@ -4649,6 +4766,11 @@ components:
           description: 'Los bloques de la portada, en orden (bloques.json › limites.bloquesPorPagina)'
           items: { $ref: '#/components/schemas/Bloque' }
         paginas: { $ref: '#/components/schemas/PaginasTienda' }
+        ventanas:
+          type: array
+          maxItems: 8
+          description: 'Las ventanas (popups) de la tienda, en orden: si varias califican, sale la primera (bloques.json › limites.ventanas)'
+          items: { $ref: '#/components/schemas/Ventana' }
         secciones:
           type: array
           deprecated: true
@@ -4671,6 +4793,133 @@ components:
         variante: { type: string, description: 'Una de bloques.json › bloques[tipo].variantes' }
         oculto: { type: boolean }
         datos: { type: object, additionalProperties: true }
+    Ventana:
+      type: object
+      description: 'Una ventana de bloques.json › ventanas (docs/especificaciones/tienda-promociones.md). datos: los campos de su contenido (según tiposCampo). Válida no es completa: sale en la tienda si está completa (casos/ventanas.json).'
+      required: [id, nombre, activa, variante, contenido, datos, disparo, frecuencia, paginas]
+      properties:
+        id: { type: string, pattern: '^[a-z0-9]{6,16}$' }
+        nombre: { type: string, minLength: 1, maxLength: 40 }
+        activa: { type: boolean }
+        variante: { type: string, enum: [centrada, lateral, completa, inferior] }
+        contenido: { type: string, enum: [promo, cupon, captacion, ruleta] }
+        datos: { type: object, additionalProperties: true }
+        disparo:
+          type: object
+          required: [cuando]
+          properties:
+            cuando: { type: string, enum: [entrar, segundos, scroll, salida, carrito] }
+            valor: { type: integer, description: 'segundos: 3–120; scroll: 10–90 (%). Sólo en esos dos' }
+        frecuencia:
+          type: object
+          required: [cada]
+          properties:
+            cada: { type: string, enum: [sesion, dias, siempre, unaVez] }
+            dias: { type: integer, minimum: 1, maximum: 90, description: 'Sólo con cada = dias' }
+        publico: { type: string, enum: [todos, nuevos, recurrentes] }
+        paginas: { type: array, uniqueItems: true, items: { type: string, enum: [inicio, catalogo, producto, carrito, nosotros] }, description: 'Vacío: todas' }
+        dispositivos: { type: string, enum: [todos, celular, compu] }
+        desde: { type: string, format: date-time }
+        hasta: { type: string, format: date-time }
+    ConversionTienda:
+      type: object
+      description: 'estilo.conversion (bloques.json › conversion): lo que falta toma porDefecto'
+      additionalProperties: false
+      properties:
+        envioGratis: { type: boolean }
+        pruebaSocial:
+          type: object
+          additionalProperties: false
+          properties:
+            activa: { type: boolean }
+            cada: { type: integer, minimum: 15, maximum: 120 }
+            paginas: { type: array, uniqueItems: true, items: { type: string, enum: [inicio, catalogo, producto, carrito, nosotros] } }
+        etiquetas:
+          type: object
+          additionalProperties: false
+          properties:
+            nuevo: { type: boolean }
+            oferta: { type: boolean }
+            ultimas: { type: boolean }
+            masVendido: { type: boolean }
+        stockBajo: { type: integer, minimum: 0, maximum: 20 }
+        compraFija: { type: boolean }
+        sumaEnCarrito: { type: boolean }
+        favoritos: { type: boolean }
+    PromoParticipar:
+      type: object
+      required: [ventana, email, consentimiento]
+      properties:
+        ventana: { type: string, pattern: '^[a-z0-9]{6,16}$' }
+        email: { type: string, maxLength: 120 }
+        nombre: { type: string, maxLength: 60 }
+        whatsapp: { type: string, maxLength: 24 }
+        consentimiento: { type: boolean, description: 'La casilla con el link a privacidad: sin true, 400' }
+    PromoPremio:
+      type: object
+      required: [tipo]
+      properties:
+        tipo: { type: string, enum: [cuponFijo, cuponUnico, descarga, nada] }
+        codigo: { type: string, description: 'El cupón (fijo o único, de un uso)' }
+        descripcion: { type: string, description: '«10 % off», «$ 2.000 off», «Envío gratis»' }
+        descarga: { type: string, description: 'URL del archivo' }
+        nombreArchivo: { type: string }
+        vence: { type: string, format: date-time }
+    PromoResultado:
+      type: object
+      required: [premio, repetido]
+      properties:
+        premio: { $ref: '#/components/schemas/PromoPremio' }
+        porcion: { type: integer, minimum: 0, maximum: 7, description: 'Ruleta: la porción que salió (índice en datos.porciones)' }
+        texto: { type: string, description: 'Ruleta: el texto de esa porción' }
+        repetido: { type: boolean, description: 'Ya había participado: es lo mismo que la primera vez' }
+        demo: { type: boolean, description: 'Vitrina de demostración: el premio se muestra y no se guarda' }
+    PromoReciente:
+      type: object
+      required: [nombre, provincia, producto, productoId, foto, cuando]
+      properties:
+        nombre: { type: string, description: 'Nombre de pila' }
+        provincia: { type: string, description: 'Vacía si no se sabe' }
+        producto: { type: string }
+        productoId: { type: [string, 'null'] }
+        foto: { type: [string, 'null'] }
+        cuando: { type: string, format: date-time }
+    PromoNumeros:
+      type: object
+      required: [vistas, cierres, clics, envios, ventas, monto]
+      properties:
+        vistas: { type: integer }
+        cierres: { type: integer }
+        clics: { type: integer }
+        envios: { type: integer }
+        ventas: { type: integer }
+        monto: { type: integer }
+    PromoMetricaVentana:
+      allOf:
+        - { $ref: '#/components/schemas/PromoNumeros' }
+        - type: object
+          required: [id, nombre, contenido, activa, borrada, tasaEnvio, dias]
+          properties:
+            id: { type: string }
+            nombre: { type: string }
+            contenido: { type: string }
+            activa: { type: boolean }
+            borrada: { type: boolean, description: 'Tiene números pero ya no está en el diseño' }
+            tasaEnvio: { type: [number, 'null'], description: 'envíos / vistas (0–1); null sin vistas' }
+            dias:
+              type: array
+              items:
+                allOf:
+                  - { $ref: '#/components/schemas/PromoNumeros' }
+                  - { type: object, required: [dia], properties: { dia: { type: string, format: date } } }
+    PromoMetricas:
+      type: object
+      required: [desde, hasta, total, ventanas]
+      properties:
+        desde: { type: string, format: date }
+        hasta: { type: string, format: date }
+        total: { $ref: '#/components/schemas/PromoNumeros' }
+        ventanas: { type: array, items: { $ref: '#/components/schemas/PromoMetricaVentana' } }
     PaginasTienda:
       type: object
       description: 'Las opciones de las otras páginas (bloques.json › paginas). Vacío: lo de por defecto.'
@@ -4723,8 +4972,10 @@ components:
                 properties:
                   texto: { type: string, minLength: 1, maxLength: 100 }
                   link: { type: string, maxLength: 300, description: 'Una página, cat:<categoría>, prod:<id> o https://…' }
+                  hasta: { type: string, format: date-time, description: 'Cuenta regresiva: al vencer el mensaje se esconde' }
             fondo: { type: string, enum: [normal, superficie, acento, oscuro] }
         whatsappFlotante: { type: boolean, description: 'false: sin el botón flotante de WhatsApp' }
+        conversion: { $ref: '#/components/schemas/ConversionTienda' }
         colores:
           type: object
           additionalProperties: false

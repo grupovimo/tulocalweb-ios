@@ -12,7 +12,10 @@ export const TOPE_DIARIO = 500;
 export type SuscriptorDemo = {
 	id: string;
 	email: string;
-	origen: 'tienda' | 'checkout';
+	/** tienda, checkout o «ventana:<id>» (una ventana de captación o la ruleta). */
+	origen: 'tienda' | 'checkout' | `ventana:${string}`;
+	nombre?: string;
+	whatsapp?: string;
 	creado: number;
 	confirmadoEn: number | null;
 	token: string;
@@ -97,6 +100,8 @@ export function panelNewsletter(
 			id: s.id,
 			email: s.email,
 			origen: s.origen,
+			...(s.nombre ? { nombre: s.nombre } : {}),
+			...(s.whatsapp ? { whatsapp: s.whatsapp } : {}),
 			confirmado: s.confirmadoEn != null,
 			creado: new Date(s.creado).toISOString(),
 			confirmadoEn: s.confirmadoEn != null ? new Date(s.confirmadoEn).toISOString() : null

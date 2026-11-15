@@ -257,6 +257,26 @@ import { diasDe } from '#lib/tienda/suscripciones.ts';
 import type { CuponTienda, Historial } from '#lib/tienda/cupon.ts';
 import { validarGa4, validarPixel } from '#lib/tienda/medicion.ts';
 import {
+	codigoUnico,
+	diaAR,
+	metricas,
+	nombrePila,
+	promosDemo,
+	provinciaDe,
+	pruebaSocialActiva,
+	rango,
+	sortear,
+	tipoYDescripcion,
+	vigente,
+	type Captacion,
+	type CompraReciente,
+	type MetricaDia,
+	type MetricasPromos,
+	type Premio,
+	type ResultadoPromo,
+	type Ventana
+} from './promos.ts';
+import {
 	MAYORISTA_INICIAL,
 	problemaMayorista,
 	textoMinimo,
@@ -555,6 +575,8 @@ function disenoDemo(plantilla: string, ciudad: string): DisenoV2 {
 		}
 	};
 	const inicio = d.inicio.flatMap((b) => (extra[b.tipo] ? [b, extra[b.tipo]!] : [b]));
+	// Las promociones de las demos (como demo.Diseno en Go): Lumbre, Café Bruma y Almacén Verde.
+	const promos = promosDemo(plantilla, ENVIO_GRATIS_DESDE, Date.now());
 	inicio.push(
 		{
 			id: 'preguntas',
@@ -572,7 +594,12 @@ function disenoDemo(plantilla: string, ciudad: string): DisenoV2 {
 		},
 		{ id: 'ellocal', tipo: 'local', variante: 'mapa', datos: { titulo: 'Vení a conocernos' } }
 	);
-	return { ...d, inicio };
+	return {
+		...d,
+		inicio,
+		...(promos.ventanas.length ? { ventanas: promos.ventanas } : {}),
+		...(promos.conversion ? { estilo: { ...d.estilo, conversion: promos.conversion } } : {})
+	} as DisenoV2;
 }
 
 /** Lo guardado (v1 de antes o v2) como v2; sin nada, el de la demo. */
@@ -1828,7 +1855,7 @@ export class DatosSandbox implements Datos {
 		const c = (await this.cupones()).cupones.find(
 			(x) => x.codigo === codigo && x.estado !== 'terminado'
 		);
-		if (!c) return null;
+		if (!c) return this.cuponUnico(codigo);
 		// Los nuevos guardan sus reglas; los de ejemplo del handoff, abiertas.
 		const r = (c as Cupon & { regla?: Partial<CuponTienda> }).regla ?? {};
 		return {
@@ -1864,9 +1891,39 @@ export class DatosSandbox implements Datos {
 		};
 	}
 
+	/** Un cupón único de una ventana (de un uso, con vencimiento): como lo evalúa lib/tienda/cupon.ts. */
+	private async cuponUnico(codigo: string): Promise<CuponTienda | null> {
+		const u = (await cambiosDe(this.db, this.sb.id, 'cupon-unico')).get(codigo) as
+			| { codigo: string; tipo: CuponTienda['tipo']; valor: number; termina: string; usos: number }
+			| undefined;
+		if (!u) return null;
+		return {
+			codigo: u.codigo,
+			tipo: u.tipo,
+			valor: u.valor,
+			pausado: false,
+			usos: u.usos,
+			limite: 1,
+			canales: ['web'],
+			empieza: null,
+			termina: u.termina,
+			minimo: 0,
+			quien: 'todos',
+			porCliente: '1',
+			alcance: { tipo: 'todo', productos: [] },
+			combinable: false
+		};
+	}
+
 	private async usarCupon(codigo: string, vendio: number, desconto: number) {
 		const c = (await this.cupones()).cupones.find((x) => x.codigo === codigo);
-		if (!c) return;
+		if (!c) {
+			const u = (await cambiosDe(this.db, this.sb.id, 'cupon-unico')).get(codigo) as
+				{ usos: number } | undefined;
+			if (u)
+				await guardarCambio(this.db, this.sb.id, 'cupon-unico', codigo, { ...u, usos: u.usos + 1 });
+			return;
+		}
 		const cambio = { usos: c.usos + 1, vendio: c.vendio + vendio, desconto: c.desconto + desconto };
 		if (c.id.startsWith('n'))
 			await guardarCambio(this.db, this.sb.id, 'cupon-nuevo', c.id, { ...c, ...cambio });
@@ -2069,11 +2126,24 @@ export class DatosSandbox implements Datos {
 	 * Alta desde la tienda de la demo: queda pendiente como con Go, pero no sale el mail: devuelve el
 	 * token para que la tienda muestre el link de confirmar. null si el email no sirve.
 	 */
-	async suscribirNewsletter(email: string, origen: 'tienda' | 'checkout') {
+	async suscribirNewsletter(
+		email: string,
+		origen: SuscriptorDemo['origen'],
+		extra: { nombre?: string; whatsapp?: string } = {}
+	) {
 		const e = email.trim().toLowerCase();
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 120) return null;
 		const previo = (await this.suscriptores()).find((s) => s.email === e);
-		if (previo) return { token: previo.token, confirmado: previo.confirmadoEn != null };
+		if (previo) {
+			// Como Go: conserva su origen y su confirmación, y suma lo que no tenía.
+			if ((extra.nombre && !previo.nombre) || (extra.whatsapp && !previo.whatsapp))
+				await guardarCambio(this.db, this.sb.id, 'suscriptor', previo.id, {
+					...previo,
+					nombre: previo.nombre ?? extra.nombre,
+					whatsapp: previo.whatsapp ?? extra.whatsapp
+				} satisfies SuscriptorDemo);
+			return { token: previo.token, confirmado: previo.confirmadoEn != null };
+		}
 		const token = randomToken(24);
 		const id = `s${Date.now().toString(36)}${token.slice(0, 4)}`;
 		await guardarCambio(this.db, this.sb.id, 'suscriptor', id, {
@@ -2082,7 +2152,9 @@ export class DatosSandbox implements Datos {
 			origen,
 			creado: Date.now(),
 			confirmadoEn: null,
-			token
+			token,
+			...(extra.nombre ? { nombre: extra.nombre.slice(0, 60) } : {}),
+			...(extra.whatsapp ? { whatsapp: extra.whatsapp.slice(0, 24) } : {})
 		} satisfies SuscriptorDemo);
 		return { token, confirmado: false };
 	}
@@ -3451,6 +3523,15 @@ export class DatosSandbox implements Datos {
 		const masVendidos = [...visibles]
 			.sort((a, b) => (vendidos.get(b.id) ?? 0) - (vendidos.get(a.id) ?? 0))
 			.map((x) => x.id);
+		// Las etiquetas de estilo.conversion: los 3 con ventas en 30 días y cuándo se cargó cada uno
+		// (los dos primeros del catálogo, hace 4 días: «Nuevo»; lo que cargó el visitante, ahora).
+		const topVendidos = masVendidos.filter((id) => (vendidos.get(id) ?? 0) > 0).slice(0, 3);
+		const ordenCatalogo = new Map(d.catalogo.productos.map((x, i) => [x.id, i]));
+		const altaDe = (id: string) => {
+			const i = ordenCatalogo.get(id);
+			const dias = i === undefined ? 0 : i < 2 ? 4 : 75;
+			return new Date(Math.min(this.sb.creadoEn, Date.now()) - dias * 86_400_000).toISOString();
+		};
 		const delCatalogo = new Map(d.catalogo.productos.map((x) => [x.id, x]));
 		const categorias = [...new Set(visibles.map((x) => x.categoria).filter(Boolean))].map(
 			(nombre) => {
@@ -3522,6 +3603,7 @@ export class DatosSandbox implements Datos {
 				// Lanzamiento, oferta con fin y señas (§52), como Go (vidriera.lanzamiento.aplicar).
 				...aplicarLanzamiento(x.precio, lanz.get(x.id), mp.conectada, Date.now()),
 				stock: x.stock,
+				alta: altaDe(x.id),
 				fotos: x.fotos,
 				opciones: x.opciones,
 				// Sólo las activas, sin SKU.
@@ -3537,6 +3619,7 @@ export class DatosSandbox implements Datos {
 					}))
 			})),
 			masVendidos,
+			topVendidos,
 			resenas,
 			promedio,
 			preguntas,
@@ -3583,6 +3666,220 @@ export class DatosSandbox implements Datos {
 			medicion: { ga4: medicion?.ga4 ?? null, pixel: medicion?.pixel ?? null },
 			mayorista: may.activa ? { unidades: may.unidades, monto: may.monto } : null
 		};
+	}
+
+	// ---------------------------------------------------------------- Promociones (ventanas)
+
+	private async disenoPublicado(): Promise<DisenoV2> {
+		const [d, t, c] = await Promise.all([
+			this.demo(),
+			this.tienda(),
+			cambiosDe(this.db, this.sb.id, 'mi-tienda')
+		]);
+		return disenoDe(c.get('publicado'), t.plantilla, d.catalogo.ciudad);
+	}
+
+	private async ventanasPublicadas(): Promise<Ventana[]> {
+		return ((await this.disenoPublicado()) as DisenoV2 & { ventanas?: Ventana[] }).ventanas ?? [];
+	}
+
+	/**
+	 * Captar o girar la ruleta (como promos.Participar): una vez por email y ventana; repetir devuelve
+	 * lo mismo. El cupón único se guarda como los del visitante (sirve en el checkout de la demo, un
+	 * uso) y el contacto entra a la newsletter con origen ventana:<id>. En la vitrina no se guarda nada.
+	 */
+	async participarPromo(
+		contenido: 'captacion' | 'ruleta',
+		p: { ventana: string; email: string; nombre?: string; whatsapp?: string },
+		vitrina = false
+	): Promise<ResultadoPromo | 'no-existe' | 'terminada' | 'invalido'> {
+		const email = p.email.trim().toLowerCase();
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) return 'invalido';
+		const v = (await this.ventanasPublicadas()).find((x) => x.id === p.ventana);
+		if (!v || v.contenido !== contenido) return 'no-existe';
+		const ahora = Date.now();
+		if (!vigente(v, ahora)) return 'terminada';
+		const clave = `${v.id}:${email}`;
+		if (!vitrina) {
+			const previa = (await cambiosDe(this.db, this.sb.id, 'promo-captacion')).get(clave) as
+				Captacion | undefined;
+			if (previa) {
+				const ps = (v.datos as { porciones?: { texto: string }[] }).porciones ?? [];
+				return {
+					premio: previa.premio,
+					repetido: true,
+					...(previa.porcion != null
+						? { porcion: previa.porcion, texto: ps[previa.porcion]?.texto ?? '' }
+						: {})
+				};
+			}
+		}
+		const datos = v.datos as Record<string, unknown>;
+		let conf = datos.premio as Record<string, unknown> | undefined;
+		let porcion: number | undefined;
+		let texto = '';
+		if (contenido === 'ruleta') {
+			const ps = (datos.porciones ?? []) as {
+				texto: string;
+				peso: number;
+				premio: Record<string, unknown>;
+			}[];
+			porcion = sortear(ps.map((x) => Number(x.peso) || 0));
+			if (porcion < 0) return 'terminada';
+			conf = ps[porcion].premio;
+			texto = ps[porcion].texto;
+		}
+		const premio: Premio = { tipo: (conf?.tipo as Premio['tipo']) ?? 'nada' };
+		if (premio.tipo === 'descarga') {
+			premio.descarga = String(conf?.archivo ?? '');
+			if (conf?.nombreArchivo) premio.nombreArchivo = String(conf.nombreArchivo);
+		} else if (premio.tipo === 'cuponFijo') {
+			premio.codigo = String(conf?.cupon ?? '');
+			const c = vitrina ? null : await this.cuponTienda(premio.codigo);
+			if (!vitrina && !c) return 'terminada';
+			if (c?.termina) premio.vence = c.termina;
+		} else if (premio.tipo === 'cuponUnico') {
+			const valor = Number(conf?.valor ?? 0);
+			const t = tipoYDescripcion(conf?.descuento, valor);
+			if (!t) return 'terminada';
+			const dias = Number(conf?.dias ?? 7) || 7;
+			premio.descripcion = t.descripcion;
+			premio.vence = new Date(ahora + dias * 86_400_000).toISOString();
+			premio.codigo = vitrina ? `DEMO-${v.id.slice(0, 4).toUpperCase()}` : codigoUnico(v.nombre);
+			if (!vitrina) {
+				const id = `u${ahora.toString(36)}${premio.codigo.slice(-4).toLowerCase()}`;
+				await guardarCambio(this.db, this.sb.id, 'cupon-unico', premio.codigo, {
+					id,
+					codigo: premio.codigo,
+					tipo: t.tipo,
+					valor: t.tipo === 'envio' ? 0 : valor,
+					termina: premio.vence,
+					origen: `ventana:${v.id}`,
+					usos: 0
+				});
+			}
+		}
+		const res: ResultadoPromo = {
+			premio,
+			repetido: false,
+			...(porcion != null ? { porcion, texto } : {}),
+			...(vitrina ? { demo: true } : {})
+		};
+		if (vitrina) return res;
+		await guardarCambio(this.db, this.sb.id, 'promo-captacion', clave, {
+			ventana: v.id,
+			creado: ahora,
+			premio,
+			...(porcion != null ? { porcion } : {})
+		} satisfies Captacion);
+		await this.suscribirNewsletter(email, `ventana:${v.id}`, {
+			nombre: p.nombre?.trim() || undefined,
+			whatsapp: p.whatsapp?.trim() || undefined
+		});
+		return res;
+	}
+
+	/** Vistas, cierres y clics por ventana y día (como promos.Registrar). */
+	async eventosPromo(eventos: { ventana: string; tipo: string; n?: number }[]) {
+		const ids = new Set((await this.ventanasPublicadas()).map((v) => v.id));
+		const dia = diaAR(Date.now());
+		const previos = await cambiosDe(this.db, this.sb.id, 'promo-metrica');
+		const sumas = new Map<string, MetricaDia>();
+		for (const e of eventos.slice(0, 50)) {
+			if (!ids.has(e.ventana)) continue;
+			const clave = `${e.ventana}:${dia}`;
+			const m = sumas.get(clave) ?? {
+				vistas: 0,
+				cierres: 0,
+				clics: 0,
+				...(previos.get(clave) as MetricaDia | undefined)
+			};
+			const n = Math.min(Math.max(Math.trunc(e.n ?? 1), 1), 20);
+			if (e.tipo === 'vista') m.vistas += n;
+			else if (e.tipo === 'cierre') m.cierres += n;
+			else if (e.tipo === 'clic') m.clics += n;
+			sumas.set(clave, m);
+		}
+		for (const [clave, m] of sumas)
+			await guardarCambio(this.db, this.sb.id, 'promo-metrica', clave, m);
+	}
+
+	/** Compras pagadas de los últimos 7 días (como promos.Recientes), si la prueba social está prendida. */
+	async promosRecientes(): Promise<CompraReciente[]> {
+		const [d, diseno] = await Promise.all([this.demo(), this.disenoPublicado()]);
+		if (!pruebaSocialActiva(diseno.estilo as { conversion?: never })) return [];
+		const ahora = Date.now();
+		const clientes = new Map(d.clientes.map((c) => [c.id, c]));
+		const out: CompraReciente[] = [];
+		for (const p of [...d.pedidos].sort((a, b) => b.creado - a.creado)) {
+			if (out.length >= 20) break;
+			if (p.creado > ahora || p.creado <= ahora - 7 * 86_400_000) continue;
+			if (p.estado === 'Cancelado' || !['Aprobado', 'Acreditada', 'Cobrado'].includes(p.estadoPago))
+				continue;
+			const c = clientes.get(p.clienteId);
+			const nombre = nombrePila(c?.nombre ?? '');
+			const item = p.items[0];
+			if (!nombre || !item) continue;
+			const foto = item.productoId
+				? (d.catalogo.productos.find((x) => x.id === item.productoId)?.foto ?? null)
+				: null;
+			out.push({
+				nombre,
+				provincia: provinciaDe(p.ciudadEnvio || c?.ciudad || '', p.entrega?.cp ?? ''),
+				producto: item.nombre,
+				productoId: item.productoId ?? null,
+				foto,
+				cuando: new Date(p.creado).toISOString()
+			});
+		}
+		return out;
+	}
+
+	/** Mi tienda › Promociones: los números por ventana (como promos.LeerMetricas). null: rango inválido. */
+	async metricasPromos(
+		desde?: string | null,
+		hasta?: string | null
+	): Promise<MetricasPromos | null> {
+		const r = rango(desde ?? null, hasta ?? null, Date.now());
+		if (!r) return null;
+		const [d, t, c, eventos, captaciones, unicos] = await Promise.all([
+			this.demo(),
+			this.tienda(),
+			cambiosDe(this.db, this.sb.id, 'mi-tienda'),
+			cambiosDe(this.db, this.sb.id, 'promo-metrica'),
+			cambiosDe(this.db, this.sb.id, 'promo-captacion'),
+			cambiosDe(this.db, this.sb.id, 'cupon-unico')
+		]);
+		const ventanas = [c.get('borrador'), c.get('publicado')].flatMap(
+			(x) =>
+				(disenoDe(x, t.plantilla, d.catalogo.ciudad) as DisenoV2 & { ventanas?: Ventana[] })
+					.ventanas ?? []
+		);
+		const origenes = new Map(
+			[...unicos].flatMap(([codigo, u]) =>
+				u
+					? [
+							[codigo, String((u as { origen: string }).origen).replace('ventana:', '')] as [
+								string,
+								string
+							]
+						]
+					: []
+			)
+		);
+		const ventas = d.pedidos.flatMap((p) => {
+			const cupon = (p as { cupon?: string }).cupon;
+			return cupon ? [{ cupon, creado: p.creado, total: p.total, estado: p.estado }] : [];
+		});
+		return metricas(
+			ventanas,
+			new Map([...eventos].filter(([, v]) => v).map(([k, v]) => [k, v as MetricaDia])),
+			[...captaciones.values()].filter(Boolean) as Captacion[],
+			ventas,
+			origenes,
+			r.desde,
+			r.hasta
+		);
 	}
 
 	async guardarMiTienda(diseno: DisenoTienda) {

@@ -56,6 +56,8 @@ export type ListasPrecio = components['schemas']['ListasPrecio'];
 export type Cupon = components['schemas']['Cupon'];
 export type Marketing = components['schemas']['Marketing'];
 export type Newsletter = components['schemas']['Newsletter'];
+/** Mi tienda › Promociones: los números de las ventanas por día (docs/especificaciones/tienda-promociones.md). */
+export type MetricasPromos = components['schemas']['PromoMetricas'];
 export type EnvioNewsletter = components['schemas']['EnvioNewsletter'];
 export type NovedadNueva = components['schemas']['NovedadNueva'];
 /** Por qué no salió una novedad: sin confirmados, o un dato inválido con su texto. */
@@ -211,6 +213,11 @@ export interface Datos {
 	marketing(): Promise<Marketing>;
 	/** Crecer › Newsletter (§50): suscriptos, números y envíos. */
 	newsletter(): Promise<Newsletter>;
+	/**
+	 * Mi tienda › Promociones: vistas, cierres, clics, envíos, ventas y monto por ventana y día.
+	 * Sin fechas, los últimos 30 días (YYYY-MM-DD, hasta un año); null: rango inválido.
+	 */
+	metricasPromos(desde?: string | null, hasta?: string | null): Promise<MetricasPromos | null>;
 	borrarSuscriptor(id: string): Promise<Resultado>;
 	/** Manda la novedad a los confirmados (en la demo no sale ningún mail). */
 	mandarNovedad(n: NovedadNueva): Promise<EnvioNewsletter | ErrorNovedad>;

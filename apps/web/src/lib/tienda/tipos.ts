@@ -52,6 +52,8 @@ export type ProductoPublico = {
 	reserva?: number | null;
 	encargo?: number | null;
 	ofertaHasta?: string | null;
+	/** ISO de cuándo se cargó: la etiqueta «Nuevo» (estilo.conversion, 14 días o menos). */
+	alta?: string;
 };
 
 export type OpcionProducto = { nombre: string; valores: string[] };
@@ -113,6 +115,8 @@ export type TiendaPublica = {
 	productos: ProductoPublico[];
 	/** Ids de los más vendidos, del más al menos. */
 	masVendidos: string[];
+	/** Hasta 3 ids con ventas en 30 días: la etiqueta «Más vendido» (estilo.conversion). */
+	topVendidos?: string[];
 	/** Las visibles, de la más nueva a la más vieja. */
 	resenas: ResenaPublica[];
 	promedio: number | null;

@@ -1459,6 +1459,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/publico/tiendas/{slug}/promos/captar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Una ventana de captación (docs/especificaciones/tienda-promociones.md): suma el contacto a la newsletter con origen ventana:<id> (pendiente; el mail del premio trae el botón de confirmar) y devuelve el premio. Una vez por email y ventana: repetir devuelve lo mismo (repetido: true). Topes: 10 por hora por IP y tienda, 600 por hora por tienda. */
+        post: operations["captarPromo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/promos/ruleta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** La ruleta: igual que captar, pero el servidor sortea la porción por peso (la animación cae en la que devuelve). Una vez por email y ventana. */
+        post: operations["girarRuleta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/promos/eventos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vistas, cierres y clics de las ventanas, en lote (navigator.sendBeacon: acepta text/plain). Se agregan por ventana y día de Argentina; lo que no es de una ventana publicada se ignora. Hasta 50 por lote; tope de 120 lotes por hora por IP. */
+        post: operations["eventosPromo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publico/tiendas/{slug}/promos/recientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** La prueba social: pedidos reales pagados de los últimos 7 días (hasta 20), con nombre de pila, provincia (vacía si no se sabe), el primer producto y cuándo. Vacío si la tienda no prendió estilo.conversion.pruebaSocial en el diseño publicado. Cacheado 5 minutos. */
+        get: operations["comprasRecientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/publico/tiendas/{slug}/newsletter/baja": {
         parameters: {
             query?: never;
@@ -2014,6 +2082,23 @@ export interface paths {
         };
         /** El newsletter de la tienda (§50) — suscriptos (los más nuevos primero, hasta 5000), los números, lo enviado hoy contra el tope diario y los últimos envíos. */
         get: operations["newsletter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/panel/promos/metricas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Los números de las ventanas por día: vistas, cierres y clics (de la tienda), envíos (contactos captados) y ventas y monto (pedidos no cancelados con el cupón de la ventana: el único que generó o el fijo que muestra). Sin fechas, los últimos 30 días; hasta un año. */
+        get: operations["metricasPromos"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3996,11 +4081,12 @@ export interface components {
             suscriptores: {
                 id: string;
                 email: string;
-                /**
-                 * @description El bloque del pie de la tienda o la casilla del checkout
-                 * @enum {string}
-                 */
-                origen: "tienda" | "checkout";
+                /** @description El bloque del pie de la tienda, la casilla del checkout o una ventana (ventana:<id>, captación o ruleta) */
+                origen: string;
+                /** @description Si la ventana que lo captó lo pidió */
+                nombre?: string;
+                /** @description Si la ventana que lo captó lo pidió */
+                whatsapp?: string;
                 confirmado: boolean;
                 /** Format: date-time */
                 creado: string;
@@ -4472,6 +4558,8 @@ export interface components {
             /** @description Los bloques de la portada, en orden (bloques.json › limites.bloquesPorPagina) */
             inicio: components["schemas"]["Bloque"][];
             paginas?: components["schemas"]["PaginasTienda"];
+            /** @description Las ventanas (popups) de la tienda, en orden: si varias califican, sale la primera (bloques.json › limites.ventanas) */
+            ventanas?: components["schemas"]["Ventana"][];
             /**
              * @deprecated
              * @description Sólo v1 (hero, cats, prods, revs, ig, wa): se lee para migrar; un diseño v2 no la trae
@@ -4494,6 +4582,133 @@ export interface components {
             datos: {
                 [key: string]: unknown;
             };
+        };
+        /** @description Una ventana de bloques.json › ventanas (docs/especificaciones/tienda-promociones.md). datos: los campos de su contenido (según tiposCampo). Válida no es completa: sale en la tienda si está completa (casos/ventanas.json). */
+        Ventana: {
+            id: string;
+            nombre: string;
+            activa: boolean;
+            /** @enum {string} */
+            variante: "centrada" | "lateral" | "completa" | "inferior";
+            /** @enum {string} */
+            contenido: "promo" | "cupon" | "captacion" | "ruleta";
+            datos: {
+                [key: string]: unknown;
+            };
+            disparo: {
+                /** @enum {string} */
+                cuando: "entrar" | "segundos" | "scroll" | "salida" | "carrito";
+                /** @description segundos: 3–120; scroll: 10–90 (%). Sólo en esos dos */
+                valor?: number;
+            };
+            frecuencia: {
+                /** @enum {string} */
+                cada: "sesion" | "dias" | "siempre" | "unaVez";
+                /** @description Sólo con cada = dias */
+                dias?: number;
+            };
+            /** @enum {string} */
+            publico?: "todos" | "nuevos" | "recurrentes";
+            /** @description Vacío: todas */
+            paginas: ("inicio" | "catalogo" | "producto" | "carrito" | "nosotros")[];
+            /** @enum {string} */
+            dispositivos?: "todos" | "celular" | "compu";
+            /** Format: date-time */
+            desde?: string;
+            /** Format: date-time */
+            hasta?: string;
+        };
+        /** @description estilo.conversion (bloques.json › conversion): lo que falta toma porDefecto */
+        ConversionTienda: {
+            envioGratis?: boolean;
+            pruebaSocial?: {
+                activa?: boolean;
+                cada?: number;
+                paginas?: ("inicio" | "catalogo" | "producto" | "carrito" | "nosotros")[];
+            };
+            etiquetas?: {
+                nuevo?: boolean;
+                oferta?: boolean;
+                ultimas?: boolean;
+                masVendido?: boolean;
+            };
+            stockBajo?: number;
+            compraFija?: boolean;
+            sumaEnCarrito?: boolean;
+            favoritos?: boolean;
+        };
+        PromoParticipar: {
+            ventana: string;
+            email: string;
+            nombre?: string;
+            whatsapp?: string;
+            /** @description La casilla con el link a privacidad: sin true, 400 */
+            consentimiento: boolean;
+        };
+        PromoPremio: {
+            /** @enum {string} */
+            tipo: "cuponFijo" | "cuponUnico" | "descarga" | "nada";
+            /** @description El cupón (fijo o único, de un uso) */
+            codigo?: string;
+            /** @description «10 % off», «$ 2.000 off», «Envío gratis» */
+            descripcion?: string;
+            /** @description URL del archivo */
+            descarga?: string;
+            nombreArchivo?: string;
+            /** Format: date-time */
+            vence?: string;
+        };
+        PromoResultado: {
+            premio: components["schemas"]["PromoPremio"];
+            /** @description Ruleta: la porción que salió (índice en datos.porciones) */
+            porcion?: number;
+            /** @description Ruleta: el texto de esa porción */
+            texto?: string;
+            /** @description Ya había participado: es lo mismo que la primera vez */
+            repetido: boolean;
+            /** @description Vitrina de demostración: el premio se muestra y no se guarda */
+            demo?: boolean;
+        };
+        PromoReciente: {
+            /** @description Nombre de pila */
+            nombre: string;
+            /** @description Vacía si no se sabe */
+            provincia: string;
+            producto: string;
+            productoId: string | null;
+            foto: string | null;
+            /** Format: date-time */
+            cuando: string;
+        };
+        PromoNumeros: {
+            vistas: number;
+            cierres: number;
+            clics: number;
+            envios: number;
+            ventas: number;
+            monto: number;
+        };
+        PromoMetricaVentana: components["schemas"]["PromoNumeros"] & {
+            id: string;
+            nombre: string;
+            contenido: string;
+            activa: boolean;
+            /** @description Tiene números pero ya no está en el diseño */
+            borrada: boolean;
+            /** @description envíos / vistas (0–1); null sin vistas */
+            tasaEnvio: number | null;
+            dias: (components["schemas"]["PromoNumeros"] & {
+                /** Format: date */
+                dia: string;
+            })[];
+        };
+        PromoMetricas: {
+            /** Format: date */
+            desde: string;
+            /** Format: date */
+            hasta: string;
+            total: components["schemas"]["PromoNumeros"];
+            ventanas: components["schemas"]["PromoMetricaVentana"][];
         };
         /** @description Las opciones de las otras páginas (bloques.json › paginas). Vacío: lo de por defecto. */
         PaginasTienda: {
@@ -4544,12 +4759,18 @@ export interface components {
                     texto: string;
                     /** @description Una página, cat:<categoría>, prod:<id> o https://… */
                     link?: string;
+                    /**
+                     * Format: date-time
+                     * @description Cuenta regresiva: al vencer el mensaje se esconde
+                     */
+                    hasta?: string;
                 }[];
                 /** @enum {string} */
                 fondo?: "normal" | "superficie" | "acento" | "oscuro";
             };
             /** @description false: sin el botón flotante de WhatsApp */
             whatsappFlotante?: boolean;
+            conversion?: components["schemas"]["ConversionTienda"];
             colores?: {
                 fondo?: string;
                 superficie?: string;
@@ -8763,6 +8984,24 @@ export interface operations {
                         estilo?: {
                             [key: string]: unknown;
                         };
+                        /** @description Todos los productos, de más a menos vendido en 30 días */
+                        masVendidos?: string[];
+                        /** @description Hasta 3 ids con ventas en 30 días: la etiqueta «Más vendido» (estilo.conversion.etiquetas.masVendido) */
+                        topVendidos?: string[];
+                        /** @description Cada producto trae además stock (para «Quedan N» y «Últimas N») y alta (fecha de carga, para «Nuevo»: 14 días o menos) */
+                        productos?: ({
+                            stock?: number;
+                            /** Format: date-time */
+                            alta?: string;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        envios?: {
+                            /** @description Envío gratis desde este monto: la barra «Te faltan $ X» (estilo.conversion.envioGratis) */
+                            gratisDesde?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        };
                     } & {
                         [key: string]: unknown;
                     };
@@ -9093,6 +9332,132 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            404: components["responses"]["Problema"];
+        };
+    };
+    captarPromo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoParticipar"];
+            };
+        };
+        responses: {
+            /** @description El premio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoResultado"];
+                };
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
+    girarRuleta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoParticipar"];
+            };
+        };
+        responses: {
+            /** @description La porción y su premio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoResultado"];
+                };
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            409: components["responses"]["Problema"];
+            429: components["responses"]["Problema"];
+        };
+    };
+    eventosPromo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    eventos: {
+                        ventana: string;
+                        /** @enum {string} */
+                        tipo: "vista" | "cierre" | "clic";
+                        /** @description Cuántas veces (por defecto 1) */
+                        n?: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Anotados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+            404: components["responses"]["Problema"];
+            /** @description Demasiados lotes */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    comprasRecientes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Compras recientes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        compras: components["schemas"]["PromoReciente"][];
+                    };
+                };
             };
             404: components["responses"]["Problema"];
         };
@@ -10032,6 +10397,32 @@ export interface operations {
                     "application/json": components["schemas"]["Newsletter"];
                 };
             };
+            401: components["responses"]["Problema"];
+            403: components["responses"]["Problema"];
+        };
+    };
+    metricasPromos: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Métricas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoMetricas"];
+                };
+            };
+            400: components["responses"]["Problema"];
             401: components["responses"]["Problema"];
             403: components["responses"]["Problema"];
         };

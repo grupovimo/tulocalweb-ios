@@ -61,6 +61,7 @@ import type {
 	Canales,
 	Informes,
 	Marketing,
+	MetricasPromos,
 	Newsletter,
 	EnvioNewsletter,
 	NovedadNueva,
@@ -739,6 +740,18 @@ export class DatosApi implements Datos {
 	}
 	newsletter() {
 		return this.pedir<Newsletter>('/v1/panel/newsletter');
+	}
+	async metricasPromos(desde?: string | null, hasta?: string | null) {
+		const q = new URLSearchParams();
+		if (desde) q.set('desde', desde);
+		if (hasta) q.set('hasta', hasta);
+		const res = await this.intentar(
+			`/v1/panel/promos/metricas${q.size ? '?' + q : ''}`,
+			'GET',
+			undefined,
+			[400]
+		);
+		return res.ok ? ((await res.json()) as MetricasPromos) : null;
 	}
 	async borrarSuscriptor(id: string) {
 		return resultado(
