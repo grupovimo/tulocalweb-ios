@@ -46,12 +46,18 @@
 		onfocusout={() => (quieta = false)}
 	>
 		{#if rota}
-			<button type="button" class="tv-barra-flecha" aria-label="Anuncio anterior" onclick={() => mover(-1)}
-				>‹</button
+			<button
+				type="button"
+				class="tv-barra-flecha"
+				aria-label="Anuncio anterior"
+				onclick={() => mover(-1)}>‹</button
 			>
 			<p class="tv-barra-msj" aria-live="polite">{@render mensaje(mensajes[i])}</p>
-			<button type="button" class="tv-barra-flecha" aria-label="Anuncio siguiente" onclick={() => mover(1)}
-				>›</button
+			<button
+				type="button"
+				class="tv-barra-flecha"
+				aria-label="Anuncio siguiente"
+				onclick={() => mover(1)}>›</button
 			>
 		{:else}
 			<p class="tv-barra-msj">

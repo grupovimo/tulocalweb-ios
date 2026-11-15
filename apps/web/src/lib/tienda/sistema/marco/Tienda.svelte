@@ -45,7 +45,9 @@
 	} = $props();
 
 	const diseno = $derived(disenoDeTienda(tienda));
-	const estilo = $derived(estiloFinal(tienda.plantilla, diseno.paleta ?? tienda.paleta, diseno.estilo));
+	const estilo = $derived(
+		estiloFinal(tienda.plantilla, diseno.paleta ?? tienda.paleta, diseno.estilo)
+	);
 	const base = $derived(baseDe(tienda));
 	const carrito = $derived(carritoDe(tienda.slug));
 	const nav = $derived.by((): ItemNav[] => {
@@ -54,7 +56,13 @@
 		const cats = tienda.categorias.filter((c) => c.cantidad > 0);
 		return [
 			...(tienda.productos.length > 1
-				? [{ t: cats.length > 1 ? 'Todo' : 'Productos', href: `${base}/catalogo`, on: pagina === 'catalogo' }]
+				? [
+						{
+							t: cats.length > 1 ? 'Todo' : 'Productos',
+							href: `${base}/catalogo`,
+							on: pagina === 'catalogo'
+						}
+					]
 				: []),
 			...(cats.length > 1
 				? cats.slice(0, 4).map((c) => ({ t: c.nombre, href: categoriaHref(tienda, c.nombre) }))

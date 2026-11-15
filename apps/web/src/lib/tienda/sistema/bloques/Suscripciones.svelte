@@ -19,7 +19,12 @@
 	<Grilla items={planes} columnas={4} etiqueta="Planes de suscripción">
 		{#snippet children(p)}
 			<article class="tv-prod tv-prod--grilla">
-				<a class="tv-prod-foto" href="{ctx.base}/suscripciones/{p.id}" tabindex="-1" aria-hidden="true">
+				<a
+					class="tv-prod-foto"
+					href="{ctx.base}/suscripciones/{p.id}"
+					tabindex="-1"
+					aria-hidden="true"
+				>
 					<Foto
 						src={p.foto ?? p.productos.find((x) => x.foto)?.foto ?? null}
 						alt=""
@@ -33,8 +38,10 @@
 					<a class="tv-prod-nombre" href="{ctx.base}/suscripciones/{p.id}">{p.nombre}</a>
 					{#if queIncluye(p)}<span class="tv-prod-detalle">{queIncluye(p)}</span>{/if}
 					<span class="tv-precio"
-						><span class="tv-precio-fila"><b class="tv-precio-monto">{precio(p.precio)}</b
-							><span class="tv-suave tv-chico">{CADA[p.frecuencia]}</span></span
+						><span class="tv-precio-fila"
+							><b class="tv-precio-monto">{precio(p.precio)}</b><span class="tv-suave tv-chico"
+								>{CADA[p.frecuencia]}</span
+							></span
 						></span
 					>
 				</div>

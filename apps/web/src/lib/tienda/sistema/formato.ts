@@ -12,7 +12,7 @@ export function miles(n: number): string {
 }
 
 /** Un precio en pesos enteros: «$ 186.000» (con espacio duro: nunca se corta). */
-export const precio = (n: number) => `$ ${miles(n)}`;
+export const precio = (n: number) => `$\u00a0${miles(n)}`;
 
 /** Un promedio con un decimal y coma: 4,8 (5 → «5,0»). */
 export function promedio(n: number): string {
@@ -36,12 +36,12 @@ export const conTransferencia = (total: number, pct: number) =>
 export function descuento(actual: number, anterior: number | null | undefined): string {
 	if (!anterior || anterior <= actual) return '';
 	const pct = Math.round((1 - actual / anterior) * 100);
-	return pct >= 1 ? `−${pct} %` : '';
+	return pct >= 1 ? `−${pct}\u00a0%` : '';
 }
 
 /** «1 producto», «8 productos». */
 export const cuantos = (n: number, uno: string, varios: string) =>
-	`${miles(n)} ${n === 1 ? uno : varios}`;
+	`${miles(n)}\u00a0${n === 1 ? uno : varios}`;
 
 /**
  * La URL de una foto con el ancho pedido. Las de la demo son ids de Unsplash; las subidas, URLs.
@@ -63,5 +63,5 @@ export function sinViuda(t: string): string {
 	if (i <= 0) return s;
 	// Si la última palabra es larga y la anterior también, igual conviene pegarlas: el título no
 	// queda con una palabra sola. Sólo se evita en textos de una línea muy corta.
-	return `${s.slice(0, i)} ${s.slice(i + 1)}`;
+	return `${s.slice(0, i)}\u00a0${s.slice(i + 1)}`;
 }

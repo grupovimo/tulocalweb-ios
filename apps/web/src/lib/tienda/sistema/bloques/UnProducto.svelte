@@ -34,7 +34,11 @@
 	const directo = $derived(sumaDirecto(ctx, producto));
 	const detalle = $derived(texto || (producto.descripcion ?? '').split('\n')[0].slice(0, 200));
 	const accion = $derived(
-		ctx.estilo.gastronomia ? 'Agregar al pedido' : ctx.dir === 'mostrador' ? 'Agregar al carrito' : 'Agregar a la bolsa'
+		ctx.estilo.gastronomia
+			? 'Agregar al pedido'
+			: ctx.dir === 'mostrador'
+				? 'Agregar al carrito'
+				: 'Agregar a la bolsa'
 	);
 </script>
 
@@ -51,8 +55,9 @@
 			{#if detalle}<p class="tv-lead">{detalle}</p>{/if}
 			<Precio {producto} tam="grande" />
 			<div class="tv-botones">
-				{#if directo}<Boton onclick={() => agregar(ctx, producto, ui)}>{accion}</Boton
-					>{:else}<Boton {href}>Ver el producto</Boton>{/if}
+				{#if directo}<Boton onclick={() => agregar(ctx, producto, ui)}>{accion}</Boton>{:else}<Boton
+						{href}>Ver el producto</Boton
+					>{/if}
 			</div>
 		</div>
 	</div>

@@ -29,6 +29,7 @@
 			k: 'ok',
 			title: 'Sumaste el combo',
 			action: 'Ver carrito',
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- ruta de la tienda con su slug
 			onAction: () => goto(`${ctx.base}/carrito`)
 		});
 	}

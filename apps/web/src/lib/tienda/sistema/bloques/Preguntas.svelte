@@ -10,7 +10,9 @@
 	 */
 	let { bloque }: { bloque: Bloque } = $props();
 	const items = $derived(
-		(campo<{ p: string; r: string }[]>(bloque, 'items') ?? []).filter((x) => x.p?.trim() && x.r?.trim())
+		(campo<{ p: string; r: string }[]>(bloque, 'items') ?? []).filter(
+			(x) => x.p?.trim() && x.r?.trim()
+		)
 	);
 </script>
 

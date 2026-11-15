@@ -27,21 +27,29 @@
 	const queda = $derived(hasta - ahora);
 	const chips = $derived(queda > 0 ? partes(queda, queda >= 86_400_000 ? 4 : 3) : []);
 	const lista = $derived(productosDe(ctx.tienda, campo<SeleccionProductos>(bloque, 'productos')));
-	const ofertas = $derived(ctx.tienda.productos.filter((p) => p.anterior && p.anterior > p.precio).length);
+	const ofertas = $derived(
+		ctx.tienda.productos.filter((p) => p.anterior && p.anterior > p.precio).length
+	);
 	const fondo = $derived(campo<Fondo>(bloque, 'fondo') ?? 'superficie');
 	const link = $derived(
 		ofertas > lista.length
-			? { t: `Ver las ${cuantos(ofertas, 'oferta', 'ofertas')}`, href: `${ctx.base}/catalogo?ofertas=1` }
+			? {
+					t: `Ver las ${cuantos(ofertas, 'oferta', 'ofertas')}`,
+					href: `${ctx.base}/catalogo?ofertas=1`
+				}
 			: null
 	);
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
 {#snippet cuenta()}
-	<p class="tv-cuenta" role="timer" aria-label="Termina en {chips.map((c) => `${c.v} ${c.u}`).join(' ')}">
-		{#each chips as c, i (c.u)}{#if i}<span class="tv-cuenta-dos" aria-hidden="true">:</span>{/if}<span
-				class="tv-cuenta-chip"
-				aria-hidden="true">{c.v}</span
-			>{/each}
+	<p
+		class="tv-cuenta"
+		role="timer"
+		aria-label="Termina en {chips.map((c) => `${c.v} ${c.u}`).join(' ')}"
+	>
+		{#each chips as c, i (c.u)}{#if i}<span class="tv-cuenta-dos" aria-hidden="true">:</span
+				>{/if}<span class="tv-cuenta-chip" aria-hidden="true">{c.v}</span>{/each}
 	</p>
 {/snippet}
 

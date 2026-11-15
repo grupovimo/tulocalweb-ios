@@ -19,9 +19,17 @@
 	const ig = $derived(ctx.tienda.estilo?.redes?.instagram?.trim().replace(/^@/, '') ?? '');
 	const link = $derived(
 		href
-			? { t: href.includes('instagram.com/') ? `@${href.split('instagram.com/')[1].replace(/\/.*$/, '')}` : 'Ver más', href }
+			? {
+					t: href.includes('instagram.com/')
+						? `@${href.split('instagram.com/')[1].replace(/\/.*$/, '')}`
+						: 'Ver más',
+					href
+				}
 			: ig
-				? { t: `@${ig.replace(/^https?:\/\/[^/]+\//, '')}`, href: `https://instagram.com/${ig.replace(/^https?:\/\/[^/]+\//, '')}` }
+				? {
+						t: `@${ig.replace(/^https?:\/\/[^/]+\//, '')}`,
+						href: `https://instagram.com/${ig.replace(/^https?:\/\/[^/]+\//, '')}`
+					}
 				: null
 	);
 	const cols = $derived(n >= 6 ? 6 : n);
@@ -36,6 +44,13 @@
 		style:--cols-m={colsM}
 		aria-label="Fotos"
 	>
-		{#each fotos as f, i (f)}<li><Foto src={f} alt="" nombre={ctx.tienda.nombre} ancho={mosaico && i % 6 === 0 ? 900 : 480} /></li>{/each}
+		{#each fotos as f, i (f)}<li>
+				<Foto
+					src={f}
+					alt=""
+					nombre={ctx.tienda.nombre}
+					ancho={mosaico && i % 6 === 0 ? 900 : 480}
+				/>
+			</li>{/each}
 	</ul>
 </Seccion>

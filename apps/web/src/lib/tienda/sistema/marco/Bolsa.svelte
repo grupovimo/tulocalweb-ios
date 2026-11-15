@@ -39,17 +39,26 @@
 <aside class="tv-bolsa-lateral tv-tarjeta" aria-label={titulo}>
 	<div class="tv-bolsa-cab">
 		<h2 class="tv-h3">{titulo}</h2>
-		{#if unidades}<span class="tv-chico tv-suave">{cuantos(unidades, 'producto', 'productos')}</span>{/if}
+		{#if unidades}<span class="tv-chico tv-suave">{cuantos(unidades, 'producto', 'productos')}</span
+			>{/if}
 	</div>
 	{#if lineas.length}
 		<ul class="tv-bolsa-lineas">
 			{#each lineas as l (l.clave)}
 				<li>
-					<Foto src={l.producto.foto} alt="" nombre={l.producto.nombre} ancho={120} proporcion="4/5" />
+					<Foto
+						src={l.producto.foto}
+						alt=""
+						nombre={l.producto.nombre}
+						ancho={120}
+						proporcion="4/5"
+					/>
 					<div>
 						<p class="tv-bolsa-nombre">{l.producto.nombre}</p>
 						<p class="tv-chico tv-suave">
-							{l.variante ? `${l.variante} · ` : ''}{l.cantidad}&nbsp;×&nbsp;{precio(l.producto.precio)}
+							{l.variante ? `${l.variante} · ` : ''}{l.cantidad}&nbsp;×&nbsp;{precio(
+								l.producto.precio
+							)}
 						</p>
 					</div>
 					<b>{precio(l.subtotal)}</b>
@@ -72,7 +81,9 @@
 			<div class="tv-bolsa-fila tv-bolsa-fila--total"><span>Total</span><b>{precio(total)}</b></div>
 			{#if extra}<span class="tv-chico tv-suave">{extra}</span>{/if}
 		</div>
-		<Boton href="{ctx.base}/carrito" bloque>{ctx.estilo.gastronomia ? 'Confirmar pedido' : 'Comprar'}</Boton>
+		<Boton href="{ctx.base}/carrito" bloque
+			>{ctx.estilo.gastronomia ? 'Confirmar pedido' : 'Comprar'}</Boton
+		>
 		{#if wa}<Boton href={wa} tipo="suave" bloque externo>Consultar por WhatsApp</Boton>{/if}
 	{:else}
 		<p class="tv-bolsa-vacia">Todavía está vacía.</p>

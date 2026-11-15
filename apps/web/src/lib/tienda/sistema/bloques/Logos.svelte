@@ -22,8 +22,10 @@
 	<ul>
 		{#each items as l (l.foto)}
 			<li>
-				{#if l.href}<a href={l.href} target={l.href.startsWith('https://') ? '_blank' : undefined} rel="noopener"
-						><img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" /></a
+				{#if l.href}<a
+						href={l.href}
+						target={l.href.startsWith('https://') ? '_blank' : undefined}
+						rel="noopener"><img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" /></a
 					>{:else}<img src={urlFoto(l.foto, 320)} alt={l.nombre} loading="lazy" />{/if}
 			</li>
 		{/each}

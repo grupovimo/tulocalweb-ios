@@ -25,7 +25,10 @@
 	const link = $derived(
 		campo<boolean>(bloque, 'verTodo') !== false && total > lista.length
 			? {
-					t: ctx.dir === 'vidriera' ? `Ver los ${cuantos(total, 'producto', 'productos')}` : 'Ver todo',
+					t:
+						ctx.dir === 'vidriera'
+							? `Ver los ${cuantos(total, 'producto', 'productos')}`
+							: 'Ver todo',
 					href:
 						sel?.fuente === 'categoria' && sel.categoria
 							? `${ctx.base}/catalogo?${new URLSearchParams({ cat: sel.categoria })}`
@@ -45,11 +48,16 @@
 			</ul>
 		{:else if bloque.variante === 'lista'}
 			<ul class="tv-lista" aria-label={titulo || 'Productos'}>
-				{#each lista as p (p.id)}<li><TarjetaProducto producto={p} forma="lista" ancho={240} /></li>{/each}
+				{#each lista as p (p.id)}<li>
+						<TarjetaProducto producto={p} forma="lista" ancho={240} />
+					</li>{/each}
 			</ul>
 		{:else}
 			<Grilla items={lista} {columnas} etiqueta={titulo || 'Productos'}>
-				{#snippet children(p)}<TarjetaProducto producto={p} ancho={lista.length <= 2 ? 1000 : 600} />{/snippet}
+				{#snippet children(p)}<TarjetaProducto
+						producto={p}
+						ancho={lista.length <= 2 ? 1000 : 600}
+					/>{/snippet}
 			</Grilla>
 		{/if}
 	</Seccion>

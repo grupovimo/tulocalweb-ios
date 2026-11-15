@@ -545,6 +545,12 @@
 	.tv[data-dir='pedido'] .tv-portada-foto {
 		height: 260px;
 	}
+	.tv[data-dir='pedido'] .tv-portada-collage {
+		grid-template-rows: auto 160px;
+	}
+	.tv[data-dir='pedido'] .tv-portada-tile {
+		padding: 22px;
+	}
 	.tv[data-dir='pedido'] .tv-portada-sobre {
 		align-items: flex-end;
 		padding-bottom: 16px;

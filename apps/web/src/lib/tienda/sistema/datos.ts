@@ -7,7 +7,14 @@ import { hrefDe as hrefPagina } from '../estilo/menu.ts';
 import { proximamente } from '../lanzamiento.ts';
 import { tarjetaDe } from '../seleccion.svelte.ts';
 import type { ProductoPublico, ResenaPublica, TiendaPublica } from '../tipos.ts';
-import { campo, textoDe, type Bloque, type BotonDatos, type Icono, type SeleccionProductos } from './catalogo.ts';
+import {
+	campo,
+	textoDe,
+	type Bloque,
+	type BotonDatos,
+	type Icono,
+	type SeleccionProductos
+} from './catalogo.ts';
 import { cuantos, precio } from './formato.ts';
 
 export type Tienda = TiendaPublica;
@@ -48,7 +55,10 @@ const aLaVista = (p: ProductoPublico) => !!p.nombre;
  * Los productos de una selección («Qué productos» del bloque). Los agotados van al final; nunca
  * más de `cantidad`. Sin ninguno de la fuente elegida (ofertas, una categoría vacía), devuelve [].
  */
-export function productosDe(t: Tienda, sel: Partial<SeleccionProductos> | undefined): ProductoPublico[] {
+export function productosDe(
+	t: Tienda,
+	sel: Partial<SeleccionProductos> | undefined
+): ProductoPublico[] {
 	const fuente = sel?.fuente ?? 'vendidos';
 	const cantidad = Math.max(1, Math.min(24, sel?.cantidad ?? 8));
 	const todos = t.productos.filter(aLaVista);
@@ -74,9 +84,7 @@ export function productosDe(t: Tienda, sel: Partial<SeleccionProductos> | undefi
 			break;
 		default: {
 			const pos = new Map(t.masVendidos.map((id, i) => [id, i]));
-			lista = [...todos].sort(
-				(a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9)
-			);
+			lista = [...todos].sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9));
 		}
 	}
 	const unicos = [...new Map(lista.map((p) => [p.id, p])).values()];
@@ -90,7 +98,12 @@ export function productosDe(t: Tienda, sel: Partial<SeleccionProductos> | undefi
 
 // ---- Categorías --------------------------------------------------------------------------
 
-export type CategoriaVista = { nombre: string; cantidad: string; foto: string | null; href: string };
+export type CategoriaVista = {
+	nombre: string;
+	cantidad: string;
+	foto: string | null;
+	href: string;
+};
 
 /** Las categorías del bloque (vacío: todas), con la foto elegida o la del primer producto. */
 export function categoriasDe(
@@ -102,15 +115,15 @@ export function categoriasDe(
 		? items.map((i) => ({ c: de(i.categoria), foto: i.foto }))
 		: t.categorias.map((c) => ({ c, foto: undefined as string | undefined }));
 	return lista
-		.filter((x): x is { c: Tienda['categorias'][number]; foto: string | undefined } => !!x.c && x.c.cantidad > 0)
+		.filter(
+			(x): x is { c: Tienda['categorias'][number]; foto: string | undefined } =>
+				!!x.c && x.c.cantidad > 0
+		)
 		.map(({ c, foto }) => ({
 			nombre: c.nombre,
 			cantidad: cuantos(c.cantidad, 'producto', 'productos'),
 			foto:
-				foto ??
-				c.foto ??
-				t.productos.find((p) => p.categoria === c.nombre && p.foto)?.foto ??
-				null,
+				foto ?? c.foto ?? t.productos.find((p) => p.categoria === c.nombre && p.foto)?.foto ?? null,
 			href: categoriaHref(t, c.nombre)
 		}))
 		.slice(0, 12);
@@ -143,7 +156,7 @@ export function beneficiosAuto(t: Tienda): Beneficio[] {
 	if (t.cobros.transferencia > 0 && t.cobros.datosTransferencia)
 		out.push({
 			icono: 'transferencia',
-			titulo: `${t.cobros.transferencia} % off`,
+			titulo: `${t.cobros.transferencia}\u00a0% off`,
 			texto: 'Pagando con transferencia'
 		});
 	if (e.retiro)
@@ -275,7 +288,9 @@ export function hastaOferta(b: Bloque): number | null {
 /** El id del video y su reproductor sin cookies (YouTube) o de Vimeo. */
 export function videoDe(url: string | undefined): string | null {
 	if (!url) return null;
-	const yt = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,20})/);
+	const yt = url.match(
+		/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,20})/
+	);
 	if (yt) return `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0`;
 	const vm = url.match(/vimeo\.com\/(?:video\/)?(\d{5,12})/);
 	if (vm) return `https://player.vimeo.com/video/${vm[1]}?dnt=1`;
@@ -341,11 +356,18 @@ export function destacadoDe(t: Tienda, b: Bloque): ProductoPublico | null {
 }
 
 export function comboDe(t: Tienda, b: Bloque): ProductoPublico[] {
-	return productosDe(t, { fuente: 'elegidos', ids: campo<string[]>(b, 'productos') ?? [], cantidad: 4 });
+	return productosDe(t, {
+		fuente: 'elegidos',
+		ids: campo<string[]>(b, 'productos') ?? [],
+		cantidad: 4
+	});
 }
 
 /** Las secciones del menú para pedir: una por categoría (vacío: todas), con sus productos. */
-export function seccionesMenu(t: Tienda, b: Bloque): { nombre: string; productos: ProductoPublico[] }[] {
+export function seccionesMenu(
+	t: Tienda,
+	b: Bloque
+): { nombre: string; productos: ProductoPublico[] }[] {
 	const elegidas = campo<string[]>(b, 'categorias') ?? [];
 	const nombres = elegidas.length
 		? elegidas

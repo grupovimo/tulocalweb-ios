@@ -42,7 +42,9 @@
 		return lista;
 	});
 	const cats = $derived(tienda.categorias.filter((c) => c.cantidad > 0));
-	const local = $derived(localDe(tienda, { id: 'local', tipo: 'local', variante: 'tarjeta', datos: {} }));
+	const local = $derived(
+		localDe(tienda, { id: 'local', tipo: 'local', variante: 'tarjeta', datos: {} })
+	);
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
@@ -52,14 +54,16 @@
 			{#if cats.length >= 2}
 				<nav class="tv-pedido-cats tv-solo-compu" aria-label="Categorías">
 					{#each cats as c (c.nombre)}<a href={categoriaHref(tienda, c.nombre)}
-							>{c.nombre}<span>{cuantos(c.cantidad, 'producto', 'productos').split(' ')[0]}</span></a
+							>{c.nombre}<span>{cuantos(c.cantidad, 'producto', 'productos').split(' ')[0]}</span
+							></a
 						>{/each}
 					{#if local.direccion}
 						<div class="tv-pedido-local tv-tarjeta">
 							<b>El local</b>
 							<span>{local.direccion}</span>
 							{#each local.horarios as h, i (i)}<span>{h.dias} · {h.horas}</span>{/each}
-							{#if local.mapa}<a href={local.mapa} target="_blank" rel="noopener">Cómo llegar</a>{/if}
+							{#if local.mapa}<a href={local.mapa} target="_blank" rel="noopener">Cómo llegar</a
+								>{/if}
 						</div>
 					{/if}
 				</nav>

@@ -40,11 +40,18 @@
 	{:else if bloque.variante === 'lista'}
 		<ul class="tv-cats-lista" aria-label={titulo || 'Categorías'}>
 			{#each cats as c (c.nombre)}
-				<li><a href={c.href}><span>{c.nombre}</span><span class="tv-suave">{c.cantidad}</span></a></li>
+				<li>
+					<a href={c.href}><span>{c.nombre}</span><span class="tv-suave">{c.cantidad}</span></a>
+				</li>
 			{/each}
 		</ul>
 	{:else}
-		<Grilla items={cats} columnas={cats.length === 4 ? 4 : 3} movil={ctx.dir === 'mostrador' ? 1 : 2} etiqueta={titulo || 'Categorías'}>
+		<Grilla
+			items={cats}
+			columnas={cats.length === 4 ? 4 : 3}
+			movil={ctx.dir === 'mostrador' ? 1 : 2}
+			etiqueta={titulo || 'Categorías'}
+		>
 			{#snippet children(c)}
 				<a class="tv-cat" href={c.href}>
 					<Foto src={c.foto} alt="" nombre={c.nombre} ancho={700} />

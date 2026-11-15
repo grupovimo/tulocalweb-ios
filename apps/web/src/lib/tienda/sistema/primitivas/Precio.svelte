@@ -28,7 +28,9 @@
 	const ctx = usarTienda();
 	const t = $derived(tarjetaDe(producto));
 	const cobros = $derived(ctx.tienda.cobros);
-	const anterior = $derived(!t.desde && producto.anterior && producto.anterior > t.precio ? producto.anterior : null);
+	const anterior = $derived(
+		!t.desde && producto.anterior && producto.anterior > t.precio ? producto.anterior : null
+	);
 	const enCuotas = $derived(
 		cobros.mercadoPago ? cuotas(t.precio, cobros.cuotas, ctx.dir === 'mostrador') : ''
 	);
@@ -45,9 +47,8 @@
 		<span class="tv-precio-monto">Próximamente</span>
 	{:else}
 		<span class="tv-precio-fila"
-			><b class="tv-precio-monto">{t.desde ? 'Desde ' : ''}{precio(t.precio)}</b
-			>{#if anterior}<s class="tv-precio-antes"
-					><span class="tv-oculto">Antes </span>{precio(anterior)}</s
+			><b class="tv-precio-monto">{t.desde ? 'Desde ' : ''}{precio(t.precio)}</b>{#if anterior}<s
+					class="tv-precio-antes"><span class="tv-oculto">Antes </span>{precio(anterior)}</s
 				>{/if}</span
 		>
 		{#if ver && ctx.dir === 'mostrador'}

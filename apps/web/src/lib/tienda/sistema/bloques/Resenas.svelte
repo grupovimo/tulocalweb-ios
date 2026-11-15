@@ -29,7 +29,10 @@
 	<figure class="tv-resena tv-tarjeta" class:tv-resena--grande={grande}>
 		<Estrellas valor={r.estrellas} tam={grande ? 18 : 15} />
 		<blockquote>“{r.texto}”</blockquote>
-		{#if r.respuesta}<p class="tv-resena-resp"><b>Respuesta de {t.nombre}:</b> {r.respuesta}</p>{/if}
+		{#if r.respuesta}<p class="tv-resena-resp">
+				<b>Respuesta de {t.nombre}:</b>
+				{r.respuesta}
+			</p>{/if}
 		<figcaption>
 			{#if r.producto && fotoDe(r.producto) && !grande}<Foto
 					src={fotoDe(r.producto)}
@@ -50,7 +53,11 @@
 	{#snippet extra()}
 		{#if t.promedio && total}
 			<p class="tv-resenas-prom">
-				<Icon icon={I.phSealCheckFill} size={16} /><b>{promedio(t.promedio)}</b>&nbsp;de 5 ·
+				<span class="tv-nowrap"
+					><Icon icon={I.phSealCheckFill} size={16} /><b>{promedio(t.promedio)}</b
+					>&nbsp;de&nbsp;5</span
+				>
+				·
 				{cuantos(total, 'reseña', 'reseñas')} con compra verificada
 			</p>
 		{/if}

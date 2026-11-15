@@ -81,7 +81,11 @@ export function paleta(e: EstiloFinal): Paleta {
 	const oscuraLaTienda = esOscuro(c.fondo);
 	const sobreAcento = textoSobre(c.acento, [c.sobreAcento, c.fondo, c.texto]);
 	const acentoSuave = mezclar(c.acento, c.superficie, oscuraLaTienda ? 0.24 : 0.14);
-	const oscuro = oscuraLaTienda ? mezclar(c.superficie, '#000000', 0.75) : esOscuro(c.texto) ? c.texto : '#16150F';
+	const oscuro = oscuraLaTienda
+		? mezclar(c.superficie, '#000000', 0.75)
+		: esOscuro(c.texto)
+			? c.texto
+			: '#16150F';
 	return {
 		fondo: c.fondo,
 		superficie: c.superficie,

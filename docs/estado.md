@@ -2,6 +2,31 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 15/11/2026 · Tienda en bloques · web base
+
+- **La portada (`/t/<tienda>`) ya se dibuja con el sistema de bloques** (`lib/tienda/sistema/`): `Plantilla.svelte`
+  manda `pagina === 'inicio'` a `paginas/Inicio.svelte` con `tienda.diseno` (o el v1 migrado al vuelo,
+  `migrar.ts › disenoDeTienda`). Las demás páginas siguen con las plantillas viejas; la barra vieja
+  (`AnuncioTienda`) ya no sale en la portada.
+- Piezas: `catalogo.ts` (valibot desde `bloques.json`, tan estricto como Go), `migrar.ts` (los casos de
+  `diseno-v2.json` + convivencia: `seccionesV1`, `estiloV1`, `conVisibles`), `presets.ts` (`estiloFinal`:
+  dirección ⊕ preset ⊕ `rolesDe` ⊕ `diseno.estilo`), `tokens.ts` (variables y contraste AA), `formato.ts`,
+  `datos.ts` (`seDibuja`, productos por fuente, beneficios automáticos, galería en filas completas),
+  `base.css` + `direcciones/{vidriera,mostrador,pedido}.css`, `primitivas/`, `marco/` (Tienda, Barra, Encabezado,
+  Buscador, MenuMovil, Pie, BotonWhatsApp, Bolsa, BarraPedido) y los 19 `bloques/` con `Bloques.svelte`
+  (`data-bloque={id}`: la vista previa del editor abre el panel al tocar).
+- Portada con pocos datos: si se dibujan menos de 3 bloques suma beneficios y newsletter; con turnos activos
+  y sin el bloque, lo pone después de la portada; los planes de suscripción van después de los productos.
+  Pedido: categorías al costado, bolsa siempre visible y barra fija del pedido en el celular.
+- Sandbox: guarda v2 (lo v1 de antes se migra al leer); la demo arranca con el preset más beneficios, banner,
+  preguntas y el local (como `demo.Diseno` en Go). Onboarding: las secciones elegidas prenden o apagan bloques.
+- Fuentes nuevas: Figtree y Geist. La CSP de la tienda deja los iframes de youtube-nocookie y player.vimeo.com
+  (bloque de video).
+- Probado: check en 0, unitarios de `sistema/`, e2e `mi-tienda`, `tienda` y `plantillas` (escritorio y celular),
+  capturas a 1440 y 375 de Lumbre, Almacén Verde y Café Bruma con datos y recién abiertas (1 producto sin foto).
+- Falta: las demás páginas (Catálogo, Ficha, Carrito, Checkout, Nosotros…) sobre `marco/Tienda.svelte`; después,
+  borrar las 17 plantillas, `estilo/mapas.ts` y `AnuncioTienda`.
+
 ## 15/11/2026 · Tienda en bloques · editor web
 
 - **Mi tienda** (`routes/panel/mi-tienda`) es el editor v2: pestañas **Páginas** (Inicio, Catálogo, Ficha,

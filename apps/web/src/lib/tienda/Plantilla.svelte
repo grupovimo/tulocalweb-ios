@@ -53,7 +53,10 @@
 </script>
 
 <svelte:head>
-	{#if estilo.fuentes && props.pagina !== 'inicio'}<link rel="stylesheet" href={estilo.fuentes} />{/if}
+	{#if estilo.fuentes && props.pagina !== 'inicio'}<link
+			rel="stylesheet"
+			href={estilo.fuentes}
+		/>{/if}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -- colores #RRGGBB validados en estilo/css.ts -->
 	{#if estilo.reglas && props.pagina !== 'inicio'}{@html `<style>${estilo.reglas}</style>`}{/if}
 </svelte:head>

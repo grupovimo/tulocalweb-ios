@@ -103,7 +103,8 @@ export const FUENTES: Record<string, Fuente> = {
 	fraunces: {
 		nombre: 'Fraunces',
 		css: "'Fraunces',serif",
-		google: 'Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,300;1,9..144,400',
+		google:
+			'Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,300;1,9..144,400',
 		tipo: 'serif'
 	},
 	'dm-serif': {

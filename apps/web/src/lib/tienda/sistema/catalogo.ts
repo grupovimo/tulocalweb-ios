@@ -156,7 +156,8 @@ export type DisenoV2 = {
 // Validación (valibot), generada campo por campo desde el catálogo.
 
 const URL_HTTPS = /^https:\/\/[^\s"'<>]{3,}$/;
-const LINK = /^(inicio|catalogo|nosotros|turnos|suscripciones|cat:[^<>\n]{1,60}|prod:[0-9A-Za-z-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
+const LINK =
+	/^(inicio|catalogo|nosotros|turnos|suscripciones|cat:[^<>\n]{1,60}|prod:[0-9A-Za-z-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
 const VIDEO =
 	/^https:\/\/(youtube\.com|www\.youtube\.com|youtu\.be|vimeo\.com|www\.vimeo\.com|player\.vimeo\.com)\/[^\s"'<>]+$/;
 
@@ -293,7 +294,10 @@ export function validarBloques(lista: unknown): Bloque[] {
 }
 
 /** El valor de un campo del bloque, o su valor por defecto del catálogo. */
-export function campo<T = unknown>(b: Pick<Bloque, 'tipo' | 'datos'>, idCampo: string): T | undefined {
+export function campo<T = unknown>(
+	b: Pick<Bloque, 'tipo' | 'datos'>,
+	idCampo: string
+): T | undefined {
 	const x = b.datos[idCampo];
 	if (x !== undefined && x !== null && x !== '') return x as T;
 	return DEF[b.tipo]?.campos.find((c) => c.id === idCampo)?.porDefecto as T | undefined;

@@ -11,5 +11,11 @@
 </script>
 
 <span class="tv-solo-movil tv-menu-movil"
-	><MenuTienda tienda={ctx.tienda} base={ctx.base} nav={ctx.nav} estilo="display:grid;place-items:center;width:44px;height:44px" tam={22} /></span
+	><MenuTienda
+		tienda={ctx.tienda}
+		base={ctx.base}
+		nav={ctx.nav}
+		estilo="display:grid;place-items:center;width:44px;height:44px"
+		tam={22}
+	/></span
 >

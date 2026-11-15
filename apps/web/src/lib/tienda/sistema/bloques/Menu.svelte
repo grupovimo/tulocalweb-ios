@@ -41,7 +41,9 @@
 					<li class="tv-menu-item tv-tarjeta">
 						<div class="tv-menu-textos">
 							<a class="tv-prod-nombre" href={productoHref(ctx.tienda, p)}>{p.nombre}</a>
-							{#if p.descripcion}<span class="tv-prod-detalle">{p.descripcion.split('\n')[0].slice(0, 110)}</span>{/if}
+							{#if p.descripcion}<span class="tv-prod-detalle"
+									>{p.descripcion.split('\n')[0].slice(0, 110)}</span
+								>{/if}
 							<Precio producto={p} linea />
 						</div>
 						<div class="tv-menu-foto">

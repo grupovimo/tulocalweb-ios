@@ -44,7 +44,10 @@
 	} = $props();
 	const ctx = usarTienda();
 
-	const PIEZAS: Record<TipoBloque, Component<{ bloque: Bloque; proximos?: ProximosTurnos | null }>> = {
+	const PIEZAS: Record<
+		TipoBloque,
+		Component<{ bloque: Bloque; proximos?: ProximosTurnos | null }>
+	> = {
 		portada: Portada,
 		banner: Banner,
 		oferta: Oferta,
@@ -68,7 +71,8 @@
 	const visibles = $derived(bloques.filter((b) => seDibuja(b, ctx.tienda)));
 	const conPlanes = $derived(
 		suscripciones && ctx.tienda.suscripciones.length
-			? (visibles.find((b) => b.tipo === 'productos' || b.tipo === 'menu')?.id ?? visibles.at(-1)?.id)
+			? (visibles.find((b) => b.tipo === 'productos' || b.tipo === 'menu')?.id ??
+					visibles.at(-1)?.id)
 			: null
 	);
 </script>

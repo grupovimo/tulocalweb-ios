@@ -30,7 +30,8 @@ const CSP_TIENDA = [
 	"img-src 'self' data: https:",
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	"font-src 'self' data: https://fonts.gstatic.com",
-	'frame-src https://www.facebook.com https://www.googletagmanager.com',
+	// youtube-nocookie y Vimeo: el bloque de video de la tienda (lib/tienda/sistema/bloques/Video).
+	'frame-src https://www.facebook.com https://www.googletagmanager.com https://www.youtube-nocookie.com https://player.vimeo.com',
 	"object-src 'none'",
 	"base-uri 'self'",
 	"frame-ancestors 'self'"

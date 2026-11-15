@@ -18,7 +18,8 @@
 	--t-peso-boton: 700;
 	--t-alto-enc: 80px;
 	--t-ritmo-m: 40px;
-	--t-sombra: 0 1px 2px color-mix(in srgb, var(--t-texto) 6%, transparent),
+	--t-sombra:
+		0 1px 2px color-mix(in srgb, var(--t-texto) 6%, transparent),
 		0 8px 24px -12px color-mix(in srgb, var(--t-texto) 18%, transparent);
 	--t-btn-fondo: var(--t-acento);
 	--t-btn-texto: var(--t-sobre-acento);

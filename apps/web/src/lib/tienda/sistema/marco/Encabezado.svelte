@@ -71,7 +71,9 @@
 	<a
 		class="tv-bolsa"
 		href="{ctx.base}/carrito"
-		aria-label="{nombreBolsa}{unidades ? `, ${unidades} ${unidades === 1 ? 'producto' : 'productos'}` : ', vacío'}"
+		aria-label="{nombreBolsa}{unidades
+			? `, ${unidades} ${unidades === 1 ? 'producto' : 'productos'}`
+			: ', vacío'}"
 	>
 		<Icon icon={I.phHandbag} size={20} />
 		<span class="tv-bolsa-texto">{nombreBolsa}</span>
@@ -84,8 +86,10 @@
 		<MenuMovil />
 		<!-- En el celular, reservar turno a mano (en la compu va en el menú). Va primero en el DOM
 		para que el lector lo encuentre antes que el menú escondido; se ubica al lado de la bolsa. -->
-		{#if t.turnos}<a class="tv-enc-turnos tv-solo-movil" href="{ctx.base}/turnos" aria-label="Reservar turno"
-				><Icon icon={I.phCalendarPlusBold} size={22} /></a
+		{#if t.turnos}<a
+				class="tv-enc-turnos tv-solo-movil"
+				href="{ctx.base}/turnos"
+				aria-label="Reservar turno"><Icon icon={I.phCalendarPlusBold} size={22} /></a
 			>{/if}
 		{#if ctx.dir === 'pedido'}
 			{@render marca()}
@@ -94,17 +98,20 @@
 			<div class="tv-enc-acciones">{@render bolsa()}</div>
 		{:else if v === 'centrado'}
 			<!-- Sin pestañas, igual ocupa su columna: el logo queda al medio. -->
-			{#if menu.length}{@render nav(menu, 'tv-solo-compu')}{:else}<span class="tv-solo-compu"></span>{/if}
+			{#if menu.length}{@render nav(menu, 'tv-solo-compu')}{:else}<span class="tv-solo-compu"
+				></span>{/if}
 			{@render marca()}
 			<div class="tv-enc-acciones">
-				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a>{/if}
+				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a
+					>{/if}
 				{@render bolsa()}
 			</div>
 		{:else if v === 'buscador'}
 			{@render marca()}
 			{#if conBuscador}<div class="tv-enc-buscar tv-solo-compu"><Buscador /></div>{/if}
 			<div class="tv-enc-acciones">
-				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a>{/if}
+				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a
+					>{/if}
 				{@render bolsa()}
 			</div>
 		{:else}
@@ -118,7 +125,9 @@
 			<div class="tv-ancho">{@render nav(menu, '')}</div>
 		</div>
 	{/if}
-	{#if conBuscador}<div class="tv-enc-buscar-movil tv-solo-movil"><Buscador id="tv-buscar-m" /></div>{/if}
+	{#if conBuscador}<div class="tv-enc-buscar-movil tv-solo-movil">
+			<Buscador id="tv-buscar-m" />
+		</div>{/if}
 </header>
 
 {#if t.vitrina}

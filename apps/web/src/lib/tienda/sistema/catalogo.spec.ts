@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { BLOQUES, campo, TIPOS, validarBloque, validarBloques, type TipoBloque } from './catalogo.ts';
+import {
+	BLOQUES,
+	campo,
+	TIPOS,
+	validarBloque,
+	validarBloques,
+	type TipoBloque
+} from './catalogo.ts';
 
 const b = (tipo: TipoBloque, datos: Record<string, unknown> = {}, variante?: string) => ({
 	id: 'abc123',
@@ -25,7 +32,9 @@ describe('catálogo de bloques', () => {
 		expect(validarBloque(b('textoImagen', { titulo: 'Hola', texto: 'Uno\n\nDos' }))).not.toBeNull();
 	});
 	test('botones con texto y link; links y videos válidos', () => {
-		expect(validarBloque(b('banner', { titulo: 'x', boton: { t: 'Ver', a: 'catalogo' } }))).not.toBeNull();
+		expect(
+			validarBloque(b('banner', { titulo: 'x', boton: { t: 'Ver', a: 'catalogo' } }))
+		).not.toBeNull();
 		expect(validarBloque(b('banner', { titulo: 'x', boton: { t: '', a: 'catalogo' } }))).toBeNull();
 		expect(validarBloque(b('banner', { titulo: 'x', boton: { t: 'Ver', a: '' } }))).toBeNull();
 		expect(validarBloque(b('video', { url: 'https://youtu.be/abc123' }))).not.toBeNull();

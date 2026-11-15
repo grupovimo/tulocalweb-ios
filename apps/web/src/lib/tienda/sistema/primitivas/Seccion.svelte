@@ -37,7 +37,9 @@
 			<div class="tv-cab">
 				<div class="tv-cab-textos">
 					{#if ante}<p class="tv-ante">{ante}</p>{/if}
-					{#if titulo}<h2 class={chico ? 'tv-h2 tv-h2--chico' : 'tv-h2'}>{sinViuda(titulo)}</h2>{/if}
+					{#if titulo}<h2 class={chico ? 'tv-h2 tv-h2--chico' : 'tv-h2'}>
+							{sinViuda(titulo)}
+						</h2>{/if}
 				</div>
 				{#if extra}{@render extra()}{:else if link}<a class="tv-link" href={link.href}>{link.t}</a
 					>{/if}

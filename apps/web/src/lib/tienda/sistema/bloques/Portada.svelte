@@ -131,7 +131,9 @@
 					</div>
 				</div>
 			{:else if fotos[2]}
-				<div class="tv-portada-celda tv-c3"><Foto src={fotos[2]} alt="" nombre={t.nombre} ancho={700} /></div>
+				<div class="tv-portada-celda tv-c3">
+					<Foto src={fotos[2]} alt="" nombre={t.nombre} ancho={700} />
+				</div>
 			{/if}
 		</div>
 	{:else}

@@ -13,7 +13,9 @@
 	const ctx = usarTienda();
 	const nl = new AltaNewsletter(() => ctx.tienda.slug);
 	const fondo = $derived(campo<Fondo>(bloque, 'fondo') ?? 'oscuro');
-	const texto = $derived(textoDe(bloque, 'texto') || 'Un mail cada tanto con lo nuevo y las promos. Nada más.');
+	const texto = $derived(
+		textoDe(bloque, 'texto') || 'Un mail cada tanto con lo nuevo y las promos. Nada más.'
+	);
 	const id = $derived(`nl-${bloque.id}`);
 </script>
 
@@ -36,7 +38,8 @@
 					placeholder="Tu email"
 					bind:value={nl.email}
 				/>
-				<button type="submit" class="tv-btn tv-btn--primario" disabled={nl.enviando}>Sumarme</button>
+				<button type="submit" class="tv-btn tv-btn--primario" disabled={nl.enviando}>Sumarme</button
+				>
 			</form>
 			{#if nl.aviso}<p class="tv-chico" role="status">
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- link de confirmación -->

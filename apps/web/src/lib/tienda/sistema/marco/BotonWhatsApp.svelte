@@ -20,6 +20,7 @@
 	);
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -- link a WhatsApp -->
 {#if ver}
 	<div class="tv-reserva-wa" aria-hidden="true"></div>
 	<a class="tv-wa" {href} target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp"

@@ -63,8 +63,9 @@
 			{prioridad}
 			proporcion={forma === 'lista' ? '1/1' : 'var(--t-foto)'}
 		/>
-		{#if etiqueta && forma === 'grilla'}<span class="tv-chip tv-prod-chip" class:tv-chip--off={!!off}
-				>{etiqueta}</span
+		{#if etiqueta && forma === 'grilla'}<span
+				class="tv-chip tv-prod-chip"
+				class:tv-chip--off={!!off}>{etiqueta}</span
 			>{/if}
 	</a>
 	<div class="tv-prod-info">

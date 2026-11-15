@@ -14,11 +14,7 @@
 	const ctx = usarTienda();
 	let q = $state('');
 	let abierto = $state(false);
-	const limpio = (s: string) =>
-		s
-			.normalize('NFD')
-			.replace(/[̀-ͯ]/g, '')
-			.toLowerCase();
+	const limpio = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 	const encontrados = $derived.by(() => {
 		const b = limpio(q.trim());
 		if (b.length < 2) return [];

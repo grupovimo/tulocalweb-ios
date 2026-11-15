@@ -697,7 +697,12 @@
 	opacity: 1;
 }
 .tv-portada-foto .tv-velo {
-	background: linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.5) 45%, rgb(0 0 0 / 0) 78%);
+	background: linear-gradient(
+		90deg,
+		rgb(0 0 0 / 0.78) 0%,
+		rgb(0 0 0 / 0.5) 45%,
+		rgb(0 0 0 / 0) 78%
+	);
 }
 .tv-portada-sobre {
 	position: absolute;
@@ -1093,9 +1098,12 @@
 
 /* ---- Reseñas ------------------------------------------------------------------------- */
 
+.tv-nowrap {
+	white-space: nowrap;
+}
 .tv-resenas-prom {
 	margin: 0;
-	text-wrap: balance;
+	text-wrap: pretty;
 	font-size: 16px;
 	color: var(--t-zona-suave);
 }
