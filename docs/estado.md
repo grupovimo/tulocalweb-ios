@@ -2,6 +2,14 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 15/11/2026 · Páginas para los anuncios de Meta
+
+`/l/avisos`, `/l/una-caja` y `/l/pasate`: una página por ángulo con una sola acción (crear la cuenta),
+el origen con `utm_content` hasta `tiendas.origen`, el píxel con consentimiento y el alta por la API
+de conversiones. Las políticas de cookies (v1.6) y de privacidad (v2.7) ya lo cuentan. Falta lo de
+Meta: Business Manager, píxel, token, dominio y la modificación en la AAIP. Todo en
+`docs/anuncios-meta.md`.
+
 ## 15/11/2026 · Tienda en bloques · páginas
 
 - **Toda la tienda se dibuja con el sistema**: `Plantilla.svelte` reparte cada página a `sistema/paginas/`

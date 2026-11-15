@@ -2,7 +2,7 @@ import type { Cookies } from '@sveltejs/kit';
 
 /**
  * De dónde viene quien se crea la cuenta (/empezar: QR de flyers, roll-up, one-pager, links de
- * partners). Va en una cookie de 90 días y se guarda en la tienda al llegar al onboarding.
+ * partners; /l/: los anuncios). Va en una cookie de 90 días y se guarda en la tienda al llegar al onboarding.
  */
 export const COOKIE_ORIGEN = 'mostrador-origen';
 
@@ -10,6 +10,8 @@ export type Origen = {
 	fuente?: string;
 	medio?: string;
 	campana?: string;
+	/** utm_content: el anuncio puntual (en Meta, su id). */
+	contenido?: string;
 	ref?: string;
 	cupon?: string;
 	llego?: string;
@@ -23,6 +25,7 @@ export function origenDe(url: URL, ahora = new Date()): Origen | null {
 		fuente: valido(q.get('utm_source')),
 		medio: valido(q.get('utm_medium')),
 		campana: valido(q.get('utm_campaign')),
+		contenido: valido(q.get('utm_content')),
 		ref: valido(q.get('ref')),
 		cupon: valido(q.get('cupon'))?.toUpperCase()
 	};
@@ -48,7 +51,7 @@ export function leerOrigen(cookies: Cookies): Origen | null {
 		const r = o as Record<string, unknown>;
 		const campo = (k: string) => (typeof r[k] === 'string' ? valido(r[k] as string) : undefined);
 		const limpio = Object.fromEntries(
-			(['fuente', 'medio', 'campana', 'ref', 'cupon'] as const)
+			(['fuente', 'medio', 'campana', 'contenido', 'ref', 'cupon'] as const)
 				.map((k) => [k, campo(k)])
 				.filter(([, v]) => v)
 		) as Origen;

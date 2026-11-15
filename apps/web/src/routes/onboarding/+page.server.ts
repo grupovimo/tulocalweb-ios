@@ -3,8 +3,9 @@ import { fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import { dev } from '$app/env';
 import * as v from 'valibot';
 import { plantilla as buscarPlantilla } from '#lib/plantillas.ts';
-import { datosDe, usaSandbox } from '#lib/server/datos/index.ts';
-import { COOKIE_ORIGEN, leerOrigen } from '#lib/server/origen.ts';
+import { clienteDe, cuentasDe, datosDe, usaSandbox } from '#lib/server/datos/index.ts';
+import { COOKIE_ORIGEN, leerOrigen, type Origen } from '#lib/server/origen.ts';
+import { mandarAlta, medible } from '#lib/server/meta.ts';
 import { RUBROS } from '#lib/server/sandbox/rubros.ts';
 import { esProveedor, irAlProveedor } from '#lib/server/auth/social.ts';
 import { fapiDe } from '#lib/clerk.ts';
@@ -20,8 +21,10 @@ import type { Actions, PageServerLoad } from './$types';
  * recorre con el negocio de ejemplo y al terminar se crea el sandbox con la plantilla elegida. Con
  * la API, el paso 1 crea la cuenta (en /ingresar) y cada paso se guarda en la tienda.
  */
-export const load: PageServerLoad = async ({ locals, url, cookies }) => {
-	// La cuenta ya existe: el origen de /empezar (si lo hay) queda en la tienda, una sola vez.
+export const load: PageServerLoad = async (event) => {
+	const { locals, url, cookies } = event;
+	// La cuenta ya existe: el origen de /empezar o de un anuncio (si lo hay) queda en la tienda, una
+	// sola vez.
 	const origen = !usaSandbox() && locals.token ? leerOrigen(cookies) : null;
 	if (origen) {
 		const r = await fetch(`${String(env.API_URL)}/v1/panel/tienda/origen`, {
@@ -32,6 +35,14 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 			signal: AbortSignal.timeout(8000)
 		}).catch(() => null);
 		if (r?.ok || r?.status === 400) cookies.delete(COOKIE_ORIGEN, { path: '/' });
+		// Recién fijado = cuenta nueva: si vino de un anuncio, el alta va a Meta (sin esperarla).
+		const fijado =
+			r?.ok && ((await r.json().catch(() => null)) as { fijado?: boolean } | null)?.fijado;
+		if (fijado && medible(cookies)) {
+			const alta = altaDe(event, origen);
+			if (event.platform?.ctx) event.platform.ctx.waitUntil(alta);
+			else void alta;
+		}
 	}
 	// Sin ?paso= manda lo guardado (ojo: Number(null) es 0).
 	const crudo = url.searchParams.get('paso');
@@ -73,6 +84,25 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		paso: Number.isInteger(paso) && paso >= 0 && paso <= 7 ? paso : null
 	};
 };
+
+async function altaDe(event: RequestEvent, origen: Origen) {
+	const s = await cuentasDe(event)
+		.sesion(String(event.locals.token))
+		.catch(() => null);
+	if (!s) return;
+	const { ip, agente } = clienteDe(event);
+	await mandarAlta({
+		tiendaId: s.tiendaId,
+		email: s.usuario.email,
+		origen,
+		ip,
+		agente,
+		fbp: event.cookies.get('_fbp'),
+		fbc: event.cookies.get('_fbc'),
+		url: `${event.url.origin}/onboarding`,
+		hora: Math.floor(Date.now() / 1000)
+	});
+}
 
 const Estado = v.object({
 	plantilla: v.pipe(

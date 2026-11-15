@@ -222,7 +222,7 @@ export const LEGALES: Legal[] = [
 		corto: 'Política de privacidad',
 		miga: 'Privacidad',
 		descripcion: 'Legales de Tu Local Web, claros y sin letra chica.',
-		chips: ['Vigente desde el 12 de noviembre de 2026', 'Versión 2.6', '3 min de lectura'],
+		chips: ['Vigente desde el 15 de noviembre de 2026', 'Versión 2.7', '3 min de lectura'],
 		ilustracion: 'portapapeles',
 		indice: [
 			['s1', '1. Responsable'],
@@ -272,7 +272,8 @@ export const LEGALES: Legal[] = [
 							'Si usás el botón de arrepentimiento: tu nombre, tu email, tu DNI y el motivo, para tramitar la baja.',
 							'De uso: páginas del panel que visitás, dispositivo y dirección IP, para seguridad y para mejorar el producto.',
 							'De tus clientes: los que vos cargás o recibís en tus ventas. Ahí sos el responsable y Tu Local Web actúa como encargado (ver Tratamiento de datos).',
-							'De quienes visitan las tiendas: sólo cuántas veces se vio cada página, sin cookies y sin guardar la IP ni el navegador (ver Visitas a las tiendas).'
+							'De quienes visitan las tiendas: sólo cuántas veces se vio cada página, sin cookies y sin guardar la IP ni el navegador (ver Visitas a las tiendas).',
+							'Si llegás desde un anuncio nuestro en Instagram o Facebook: la campaña y el anuncio que te trajeron y, sólo si aceptás las cookies de marketing, las cookies del píxel de Meta (ver Política de cookies).'
 						]
 					}
 				]
@@ -303,7 +304,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Para qué los usamos',
 				cuerpo: [
 					{
-						p: 'Para prestarte el servicio, cobrarte y facturarte, darte soporte, prevenir fraudes y accesos indebidos, y mandarte novedades del producto. Las comunicaciones comerciales las podés desactivar desde Notificaciones.'
+						p: 'Para prestarte el servicio, cobrarte y facturarte, darte soporte, prevenir fraudes y accesos indebidos, mandarte novedades del producto y, si lo aceptás, saber qué anuncios nuestros traen cuentas nuevas. Las comunicaciones comerciales las podés desactivar desde Notificaciones.'
 					}
 				]
 			},
@@ -316,7 +317,10 @@ export const LEGALES: Legal[] = [
 					{
 						p: 'Con los proveedores que nos ayudan a operar, con las integraciones que vos activás y con autoridades cuando una ley o un juez lo exige. Hoy son estos:'
 					},
-					{ ul: SUBENCARGADOS }
+					{ ul: SUBENCARGADOS },
+					{
+						p: 'Además, si llegaste desde un anuncio nuestro y aceptaste las cookies de marketing, al crear tu cuenta le avisamos a Meta Platforms (Estados Unidos) que te registraste: con tu email convertido en un código que no se puede revertir (hash SHA-256), tu IP, tu navegador y las cookies de su píxel. Meta lo usa para medir nuestras campañas. Si no las aceptás, no le mandamos nada.'
+					}
 				]
 			},
 			{
@@ -326,7 +330,7 @@ export const LEGALES: Legal[] = [
 				titulo: 'Transferencias internacionales',
 				cuerpo: [
 					{
-						p: 'Algunos proveedores alojan datos fuera de la Argentina, principalmente en Brasil (Hostinger) y en Estados Unidos (Cloudflare, Clerk y GitHub). En esos casos usamos cláusulas contractuales que garantizan un nivel de protección adecuado.'
+						p: 'Algunos proveedores alojan datos fuera de la Argentina, principalmente en Brasil (Hostinger) y en Estados Unidos (Cloudflare, Clerk, GitHub y, sólo si aceptás las cookies de marketing, Meta). En esos casos usamos cláusulas contractuales que garantizan un nivel de protección adecuado.'
 					}
 				]
 			},
@@ -407,21 +411,22 @@ export const LEGALES: Legal[] = [
 		corto: 'Política de cookies',
 		miga: 'Cookies',
 		descripcion: 'Legales de Tu Local Web, claros y sin letra chica.',
-		chips: ['Vigente desde el 12 de noviembre de 2026', 'Versión 1.5', '2 min de lectura'],
+		chips: ['Vigente desde el 15 de noviembre de 2026', 'Versión 1.6', '2 min de lectura'],
 		ilustracion: 'portapapeles',
 		indice: [
 			['s1', '1. Qué son las cookies'],
 			['s2', '2. Qué cookies usamos'],
 			['s3', '3. Cómo gestionarlas'],
-			['s4', '4. Cookies en las tiendas'],
-			['s5', '5. Visitas medidas sin cookies']
+			['s3b', '4. Nuestros anuncios'],
+			['s4', '5. Cookies en las tiendas'],
+			['s5', '6. Visitas medidas sin cookies']
 		],
 		bloques: [
 			{
 				t: 'resumen',
 				items: [
 					'En el sitio de Tu Local Web sólo usamos cookies propias, para que funcione y para recordar tus preferencias.',
-					'No usamos cookies analíticas ni de marketing de terceros en el sitio.',
+					'Las de marketing (el píxel de Meta) están sólo en las páginas de nuestros anuncios, y sólo si las aceptás.',
 					'En cada tienda, la medición de Google o Meta del comercio sólo se activa si la aceptás.',
 					'Las visitas a las tiendas las contamos sin cookies: no hace falta aceptar nada.'
 				]
@@ -532,8 +537,19 @@ export const LEGALES: Legal[] = [
 			},
 			{
 				t: 'seccion',
-				id: 's4',
+				id: 's3b',
 				n: '04',
+				titulo: 'Nuestros anuncios',
+				cuerpo: [
+					{
+						p: 'Las páginas a las que llevan nuestros anuncios de Instagram y Facebook (tulocalweb.com.ar/l/…) pueden cargar el píxel de Meta, con sus cookies (_fbp y _fbc), para saber qué anuncio te trajo. Sólo se carga si aceptás las cookies de marketing. Si además creás tu cuenta, le avisamos a Meta desde nuestro servidor, como se explica en la Política de privacidad.'
+					}
+				]
+			},
+			{
+				t: 'seccion',
+				id: 's4',
+				n: '05',
 				titulo: 'Cookies en las tiendas',
 				cuerpo: [
 					{
@@ -544,7 +560,7 @@ export const LEGALES: Legal[] = [
 			{
 				t: 'seccion',
 				id: 's5',
-				n: '05',
+				n: '06',
 				titulo: 'Visitas medidas sin cookies',
 				cuerpo: [
 					{

@@ -36,11 +36,23 @@ export function leerEleccion(): Eleccion | null {
 	}
 }
 
+/**
+ * La cookie que lee el servidor al dar de alta la cuenta: con 'si', el alta va además a la API de
+ * conversiones de Meta (#lib/server/meta.ts). Refleja el permiso de marketing.
+ */
+export const COOKIE_MARKETING = 'tlw-marketing';
+
 export function guardarEleccion(v: 'all' | 'nec' | Eleccion) {
 	try {
 		localStorage.setItem(CLAVE, typeof v === 'string' ? v : JSON.stringify(v));
 	} catch {
 		// Sin almacenamiento (modo privado): la elección vale para esta visita.
+	}
+	const mk = v === 'all' || (typeof v === 'object' && v.mk);
+	try {
+		document.cookie = `${COOKIE_MARKETING}=${mk ? 'si' : 'no'}; path=/; max-age=31536000; samesite=lax; secure`;
+	} catch {
+		// Sin cookies: el alta se mide sólo desde el navegador.
 	}
 	window.dispatchEvent(new CustomEvent('mostrador:cookies'));
 }

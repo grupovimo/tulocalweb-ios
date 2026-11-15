@@ -14,6 +14,19 @@ describe('origenDe', () => {
 			llego: ahora.toISOString()
 		});
 	});
+	it('toma el anuncio (utm_content)', () => {
+		expect(
+			origenDe(
+				new URL('https://x/l/avisos?utm_source=facebook&utm_campaign=avisos&utm_content=1203'),
+				ahora
+			)
+		).toEqual({
+			fuente: 'facebook',
+			campana: 'avisos',
+			contenido: '1203',
+			llego: ahora.toISOString()
+		});
+	});
 	it('descarta lo que no es un código', () => {
 		expect(origenDe(new URL('https://x/empezar?ref=<script>&utm_source=a b'), ahora)).toBeNull();
 	});

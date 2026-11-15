@@ -17,22 +17,25 @@ func TestOrigenSeFijaUnaSolaVez(t *testing.T) {
 	if _, err := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Ref: "<script>"}); err != tiendas.ErrOrigen {
 		t.Fatalf("valor raro: %v", err)
 	}
+	if _, err := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Fuente: "facebook", Contenido: "a b"}); err != tiendas.ErrOrigen {
+		t.Fatalf("anuncio raro: %v", err)
+	}
 	// Un origen vacío ({} o null) no se fija: taparía el ref que llegue después.
 	if _, err := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Llego: "2026-10-23T08:00:00Z"}); err != tiendas.ErrOrigen {
 		t.Fatalf("origen vacío: %v", err)
 	}
-	if ok, err := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Fuente: "flyer", Ref: "BRUMA-REF"}); err != nil || !ok {
+	if ok, err := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Fuente: "flyer", Contenido: "1203", Ref: "BRUMA-REF"}); err != nil || !ok {
 		t.Fatalf("primera vez: %v %v", ok, err)
 	}
 	if ok, _ := tiendas.FijarOrigen(ctx, b.App, luna, tiendas.Origen{Ref: "OTRO"}); ok {
 		t.Fatal("se pisó el origen")
 	}
-	var ref string
+	var ref, contenido string
 	_ = b.App.EnTienda(ctx, luna, func(tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `SELECT origen->>'ref' FROM tiendas WHERE id = $1`, luna).Scan(&ref)
+		return tx.QueryRow(ctx, `SELECT origen->>'ref', origen->>'contenido' FROM tiendas WHERE id = $1`, luna).Scan(&ref, &contenido)
 	})
-	if ref != "BRUMA-REF" {
-		t.Fatalf("ref: %q", ref)
+	if ref != "BRUMA-REF" || contenido != "1203" {
+		t.Fatalf("ref: %q, contenido: %q", ref, contenido)
 	}
 }
 

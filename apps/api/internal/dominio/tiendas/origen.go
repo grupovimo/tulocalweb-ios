@@ -11,13 +11,15 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/db"
 )
 
-// Origen es lo que trajo a la persona a crearse la cuenta (/empezar).
+// Origen es lo que trajo a la persona a crearse la cuenta (/empezar o un anuncio, /l/).
 type Origen struct {
 	Fuente  string `json:"fuente,omitempty"`
 	Medio   string `json:"medio,omitempty"`
 	Campana string `json:"campana,omitempty"`
-	Ref     string `json:"ref,omitempty"`
-	Cupon   string `json:"cupon,omitempty"`
+	// utm_content: el anuncio puntual (en Meta, su id).
+	Contenido string `json:"contenido,omitempty"`
+	Ref       string `json:"ref,omitempty"`
+	Cupon     string `json:"cupon,omitempty"`
 	// Cuándo llegó a /empezar (ISO), lo pone el BFF.
 	Llego string `json:"llego,omitempty"`
 }
@@ -30,7 +32,7 @@ var ErrOrigen = errors.New("tiendas: origen inválido")
 // valido: al menos un dato de atribución (un origen vacío no se fija: taparía un ref posterior).
 func (o Origen) valido() bool {
 	alguno := false
-	for _, v := range []string{o.Fuente, o.Medio, o.Campana, o.Ref, o.Cupon} {
+	for _, v := range []string{o.Fuente, o.Medio, o.Campana, o.Contenido, o.Ref, o.Cupon} {
 		if v != "" && !valorOrigen.MatchString(v) {
 			return false
 		}

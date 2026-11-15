@@ -25,6 +25,12 @@ declare global {
 	namespace Cloudflare {
 		interface Env {
 			PUBLIC_SITE_URL: string;
+			/** Píxel de Meta de Tu Local Web (los anuncios, /l/). No es secreto. Vacío: no se mide. */
+			META_PIXEL_ID?: string;
+			/** Token de la API de conversiones de ese píxel (secreto): el alta se manda desde acá. */
+			META_CAPI_TOKEN?: string;
+			/** Código de «Probar eventos» (TEST…): mientras esté, los eventos van a la prueba. */
+			META_CODIGO_PRUEBA?: string;
 			/** sandbox: demo con datos por visitante (D1). api: la API Go del VPS. */
 			DATA_SOURCE: 'sandbox' | 'api';
 			/** URL de la API Go (DATA_SOURCE=api). */
