@@ -1,0 +1,50 @@
+name: Desplegar
+
+# Compila lo que va al VPS (API, worker, mostradorctl y la web en modo VPS) y lo deja como
+# artefacto. No despliega: lo baja y lo sube scripts/desplegar-vps.sh. Así no se compila nada en la
+# Mac (pedido de Nahuel, 15/11/2026) ni en el VPS, que comparte su única CPU con producción.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: desplegar
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+      - run: bun install --frozen-lockfile
+      - name: API, worker y mostradorctl
+        working-directory: apps/api
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          for c in api worker mostradorctl; do
+            go build -trimpath -ldflags="-s -w" -o "$GITHUB_WORKSPACE/salida/bin/$c" "./cmd/$c"
+          done
+      - name: Web (Node en el VPS)
+        working-directory: apps/web
+        env:
+          DESTINO: vps
+        run: |
+          bun run gen
+          bun run build
+          mkdir -p "$GITHUB_WORKSPACE/salida/web"
+          cp -R build migraciones-sandbox migraciones-estado "$GITHUB_WORKSPACE/salida/web/"
+      - run: git rev-parse HEAD > salida/commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: despliegue
+          path: salida
+          retention-days: 3
