@@ -19,6 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 )
 
@@ -198,6 +199,32 @@ type Panel struct {
 	Tope int `json:"tope"`
 	// Productos publicados para destacar en una novedad (por nombre).
 	Productos []Elegible `json:"productos"`
+	// Ventanas de la tienda (borrador y publicado): para nombrar el origen «ventana:<id>» de cada
+	// contacto captado y filtrar por él.
+	Ventanas []VentanaOrigen `json:"ventanas"`
+}
+
+// VentanaOrigen: una ventana que puede haber captado contactos (captación o ruleta).
+type VentanaOrigen struct {
+	ID        string `json:"id"`
+	Nombre    string `json:"nombre"`
+	Contenido string `json:"contenido"`
+}
+
+// ventanasDe junta las ventanas del borrador y las publicadas, sin repetir (gana el nombre del
+// borrador, el que la tienda ve en el editor).
+func ventanasDe(plantilla string, borrador, publicado []byte) []VentanaOrigen {
+	out := []VentanaOrigen{}
+	vistas := map[string]bool{}
+	for _, d := range []mitienda.Diseno{mitienda.LeerDiseno(borrador, plantilla), mitienda.LeerDiseno(publicado, plantilla)} {
+		for _, v := range d.Ventanas {
+			if !vistas[v.ID] {
+				vistas[v.ID] = true
+				out = append(out, VentanaOrigen{ID: v.ID, Nombre: v.Nombre, Contenido: v.Contenido})
+			}
+		}
+	}
+	return out
 }
 
 // Elegible: un producto publicado que se puede destacar.
@@ -218,7 +245,7 @@ const MaxLista = 5000
 
 // Leer arma el panel: los suscriptos (los más nuevos primero), los números y los últimos envíos.
 func Leer(ctx context.Context, pool tx, tienda string, ahora time.Time) (Panel, error) {
-	p := Panel{Suscriptores: []Suscriptor{}, Envios: []Envio{}, Tope: TopeDiario, Productos: []Elegible{}}
+	p := Panel{Suscriptores: []Suscriptor{}, Envios: []Envio{}, Tope: TopeDiario, Productos: []Elegible{}, Ventanas: []VentanaOrigen{}}
 	err := pool.EnTienda(ctx, tienda, func(t pgx.Tx) error {
 		filas, err := t.Query(ctx, `SELECT id::text, email, origen, nombre, whatsapp, creado, confirmado_en FROM suscriptores
 			WHERE tienda_id = $1 ORDER BY creado DESC, id LIMIT $2`, tienda, MaxLista)
@@ -246,6 +273,13 @@ func Leer(ctx context.Context, pool tx, tienda string, ahora time.Time) (Panel, 
 			AND enviado_en >= $2`, tienda, inicioDelDia(ahora)).Scan(&p.Hoy); err != nil {
 			return err
 		}
+		var plantilla string
+		var borrador, publicado []byte
+		if err := t.QueryRow(ctx, `SELECT plantilla, diseno_borrador, diseno_publicado FROM tiendas WHERE id = $1`, tienda).
+			Scan(&plantilla, &borrador, &publicado); err != nil {
+			return err
+		}
+		p.Ventanas = ventanasDe(plantilla, borrador, publicado)
 		pf, err := t.Query(ctx, `SELECT id::text, nombre, precio, foto FROM productos WHERE tienda_id = $1 AND publicado
 			ORDER BY nombre LIMIT 300`, tienda)
 		if err != nil {

@@ -4276,8 +4276,18 @@ components:
         automaticos: { $ref: '#/components/schemas/AutomaticosCarritos' }
     Newsletter:
       type: object
-      required: [suscriptores, confirmados, pendientes, envios, hoy, tope, productos]
+      required: [suscriptores, confirmados, pendientes, envios, hoy, tope, productos, ventanas]
       properties:
+        ventanas:
+          type: array
+          description: 'Las ventanas de la tienda (borrador y publicado, sin repetir): para nombrar el origen ventana:<id> de cada contacto y filtrar por él. Una ventana borrada ya no está: su origen se muestra como «Ventana».'
+          items:
+            type: object
+            required: [id, nombre, contenido]
+            properties:
+              id: { type: string }
+              nombre: { type: string }
+              contenido: { type: string, enum: [promo, cupon, captacion, ruleta] }
         suscriptores:
           type: array
           items:

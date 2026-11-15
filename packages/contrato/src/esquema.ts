@@ -4095,6 +4095,13 @@ export interface components {
             automaticos: components["schemas"]["AutomaticosCarritos"];
         };
         Newsletter: {
+            /** @description Las ventanas de la tienda (borrador y publicado, sin repetir): para nombrar el origen ventana:<id> de cada contacto y filtrar por él. Una ventana borrada ya no está: su origen se muestra como «Ventana». */
+            ventanas: {
+                id: string;
+                nombre: string;
+                /** @enum {string} */
+                contenido: "promo" | "cupon" | "captacion" | "ruleta";
+            }[];
             suscriptores: {
                 id: string;
                 email: string;

@@ -106,6 +106,14 @@ func TestCaptarRuletaEventosYMetricas(t *testing.T) {
 		panel.Suscriptores[0].Nombre == nil || *panel.Suscriptores[0].Nombre != "Ana" || panel.Suscriptores[0].Confirmado {
 		t.Fatalf("newsletter: %+v %v", panel.Suscriptores, err)
 	}
+	// Y el panel trae las ventanas, para nombrar el origen («Ventana: Bienvenida», «Ruleta»).
+	nombres := map[string]string{}
+	for _, v := range panel.Ventanas {
+		nombres[v.ID] = v.Nombre + "/" + v.Contenido
+	}
+	if nombres["bienve01"] != "Bienvenida/captacion" || nombres["ruleta01"] != "Ruleta/ruleta" || len(panel.Ventanas) != 3 {
+		t.Fatalf("ventanas del panel: %+v", panel.Ventanas)
+	}
 	// El mail del premio sale una vez, con el código y el botón para confirmar.
 	mails := &correo.Memoria{}
 	w := &outbox.Worker{Pool: b.Worker, Manejadores: (&promos.Mails{Pool: b.App, Correo: mails, Sitio: "https://tulocalweb.com.ar"}).Manejadores()}

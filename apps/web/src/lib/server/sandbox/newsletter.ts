@@ -79,7 +79,8 @@ export function panelNewsletter(
 	ss: SuscriptorDemo[],
 	novedades: NovedadDemo[],
 	inicioHoy: number,
-	productos: Newsletter['productos']
+	productos: Newsletter['productos'],
+	ventanas: Newsletter['ventanas'] = []
 ): Newsletter {
 	const confirmados = ss.filter((s) => s.confirmadoEn != null).length;
 	const envios: EnvioNewsletter[] = [...novedades]
@@ -111,6 +112,8 @@ export function panelNewsletter(
 		envios,
 		hoy: Math.min(hoy, TOPE_DIARIO),
 		tope: TOPE_DIARIO,
-		productos: [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).slice(0, 300)
+		productos: [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).slice(0, 300),
+		// Sin repetir: gana la del borrador (la primera), como en Go.
+		ventanas: ventanas.filter((v, i) => ventanas.findIndex((w) => w.id === v.id) === i)
 	};
 }

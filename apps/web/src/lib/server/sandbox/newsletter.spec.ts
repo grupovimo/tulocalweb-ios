@@ -32,6 +32,10 @@ describe('newsletter de la demo (§50)', () => {
 		expect(n.envios).toHaveLength(1);
 		expect(n.tope).toBe(500);
 		expect(n.productos.length).toBeGreaterThan(0);
+		// Las ventanas de la tienda, para nombrar el origen de los contactos captados (Lumbre
+		// estrena la Bienvenida 10 %).
+		expect(n.ventanas.some((v) => v.contenido === 'captacion' && v.nombre)).toBe(true);
+		expect(new Set(n.ventanas.map((v) => v.id)).size).toBe(n.ventanas.length);
 	});
 
 	it('alta pendiente, confirmar con el token, baja y borrar', async () => {

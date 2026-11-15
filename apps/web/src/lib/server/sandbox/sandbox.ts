@@ -2082,18 +2082,29 @@ export class DatosSandbox implements Datos {
 	}
 
 	async newsletter(): Promise<Newsletter> {
-		const [ss, c, t] = await Promise.all([
+		const [ss, c, t, d, tienda, mi] = await Promise.all([
 			this.suscriptores(),
 			cambiosDe(this.db, this.sb.id, 'novedad'),
-			this.tiendaPublica(false)
+			this.tiendaPublica(false),
+			this.demo(),
+			this.tienda(),
+			cambiosDe(this.db, this.sb.id, 'mi-tienda')
 		]);
+		// Las ventanas del borrador y las publicadas, para nombrar el origen de cada contacto.
+		const ventanas = [mi.get('borrador'), mi.get('publicado')].flatMap((x) =>
+			(
+				(disenoDe(x, tienda.plantilla, d.catalogo.ciudad) as DisenoV2 & { ventanas?: Ventana[] })
+					.ventanas ?? []
+			).map((v) => ({ id: v.id, nombre: v.nombre, contenido: v.contenido }))
+		);
 		const confirmados = ss.filter((s) => s.confirmadoEn != null).length;
 		const propias = [...c.values()].filter(Boolean) as NovedadDemo[];
 		return panelNewsletter(
 			ss,
 			[...novedadesDemo(this.sb.creadoEn, confirmados), ...propias],
 			inicioDelDia(Date.now()),
-			t.productos.map((p) => ({ id: p.id, nombre: p.nombre, precio: p.precio, foto: p.foto }))
+			t.productos.map((p) => ({ id: p.id, nombre: p.nombre, precio: p.precio, foto: p.foto })),
+			ventanas
 		);
 	}
 
