@@ -1086,6 +1086,11 @@
 	justify-content: space-between;
 	gap: 12px;
 }
+/* La descripción respeta los saltos de línea que escribió la tienda (párrafos, listas a mano). */
+.tv-ficha-detalles p,
+.tv-ficha-cajas p {
+	white-space: pre-line;
+}
 .tv-ficha-detalles details {
 	border-bottom: 1px solid var(--t-borde);
 }
