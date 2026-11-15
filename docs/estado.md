@@ -2,6 +2,32 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 15/11/2026 · Tienda en bloques · editor web
+
+- **Mi tienda** (`routes/panel/mi-tienda`) es el editor v2: pestañas **Páginas** (Inicio, Catálogo, Ficha,
+  Carrito, Nosotros; ajustes de cada página y lista de bloques) y **Estilo** (dirección con miniaturas, forma,
+  espacio, ancho, fotos, encabezado, pie, marca y lema, colores, tipografías, barra de anuncios fija/rotativa,
+  menú, pie/redes y WhatsApp flotante). «Punto de partida» (las 17) conserva los datos de los bloques del mismo
+  tipo y se deshace. Borrador, «Publicar cambios», «Al compartir el link» y la cola de guardado, como antes.
+- Lista: arrastrar con la manija (mouse o dedo) o flechas/Inicio/Fin en el teclado, «+» entre dos bloques,
+  ocultar; en el panel del bloque, variante con miniaturas, duplicar, borrar (toast con Deshacer) y los campos
+  generados desde `bloques.json` (todos los `tiposCampo`). Deshacer/rehacer con botones y ⌘Z/⇧⌘Z (fuera de los
+  campos). Lo escrito entra al historial y se guarda al salir del campo; mientras, sólo redibuja la vista.
+- Piezas en `lib/panel/mi-tienda/`: `bloques.ts` (operaciones puras), `historial.ts`, `faltan.ts` (por qué un
+  bloque no se ve), `partida.ts`, `guardar.ts` (`paraGuardar`: saca lo incompleto y lo que no es del catálogo
+  antes del PUT, con las reglas de Go), `vista.ts` (protocolo y `conDiseno`) y los componentes (`ListaBloques`,
+  `Biblioteca`, `PanelBloque`, `CampoBloque` y sus campos, `Miniatura`, `Estilo`, `AjustesPagina`).
+- PUT `/panel/mi-tienda`: sólo v2, hasta 64 KB, limpia con `paraGuardar` y rechaza ids repetidos o dos portadas.
+  `borrador.ts › conBorrador` arma la tienda con `conDiseno` (diseño v2 completo + secciones/portada/anuncio de
+  v1 derivados para las plantillas viejas).
+- **Vista previa** (`vista?pagina=…&marcos=1`): dibuja la página pedida con el borrador, escucha
+  `postMessage({tipo:'diseno'|'seleccionar'})` y `window.tiendaVista`, avisa `lista` y `bloque` (parent,
+  `webkit.messageHandlers.tienda`, `TiendaPuente.bloque`). En el celular el editor alterna Editar / Vista previa.
+- **Pendiente de la base**: tocar un bloque en la vista necesita que `Plantilla.svelte` dibuje los bloques con
+  `data-bloque` (sistema de bloques); el sandbox todavía lee `diseno.secciones` (`sandbox.ts › tiendaPublica`,
+  `DISENO_INICIAL`) y el onboarding guarda `secciones`: con un borrador v2 la tienda pública de la demo se rompe
+  hasta que se cablee. El e2e `mi-tienda.e2e.ts` pasa hasta «tocar en la vista» y queda esperando eso.
+
 ## 15/11/2026 · Tienda en bloques · API
 
 - `mitienda` trabaja en v2 (`docs/especificaciones/tienda-bloques.md`): `Diseno{version, inicio, paginas}`,
