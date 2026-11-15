@@ -81,8 +81,11 @@ export function paleta(e: EstiloFinal): Paleta {
 	const oscuraLaTienda = esOscuro(c.fondo);
 	const sobreAcento = textoSobre(c.acento, [c.sobreAcento, c.fondo, c.texto]);
 	const acentoSuave = mezclar(c.acento, c.superficie, oscuraLaTienda ? 0.24 : 0.14);
+	// En una tienda oscura, la zona «oscuro» (banners, destacados) tiene que despegarse del fondo:
+	// un 75 % de la superficie hacia el negro daba casi el mismo color y el banner desaparecía
+	// (Vinoteca Tres). Va un escalón más claro que la superficie.
 	const oscuro = oscuraLaTienda
-		? mezclar(c.superficie, '#000000', 0.75)
+		? mezclar(c.superficie, c.texto, 0.9)
 		: esOscuro(c.texto)
 			? c.texto
 			: '#16150F';

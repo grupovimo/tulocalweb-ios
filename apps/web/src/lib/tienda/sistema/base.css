@@ -2144,7 +2144,15 @@
 }
 .tv-enc[data-variante='centrado'] .tv-enc-fila {
 	display: grid;
-	grid-template-columns: 1fr auto 1fr;
+	/* minmax(0, …): con muchas pestañas la columna no crece hasta meterse debajo del logo. */
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+/* Las pestañas que no entran bajan a un renglón que no se ve: nunca una cortada al medio. */
+.tv-enc[data-variante='centrado'] .tv-nav {
+	flex-wrap: wrap;
+	height: 44px;
+	row-gap: 0;
+	column-gap: 28px;
 }
 .tv-enc[data-variante='centrado'] .tv-marca {
 	justify-self: center;

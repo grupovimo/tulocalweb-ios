@@ -34,7 +34,13 @@
 	);
 	// En el centrado, «Nosotros» va a la derecha (A-moda); el resto del menú, a la izquierda.
 	const nosotros = $derived(ctx.nav.find((n) => n.href.endsWith('/nosotros')) ?? null);
-	const menu = $derived(v === 'izquierda' ? ctx.nav : ctx.nav.filter((n) => n !== nosotros));
+	// Turnos, suscripciones y favoritos no son del catálogo: en el centrado van a la derecha con
+	// «Nosotros», así la columna de la izquierda (la del catálogo) no se llena hasta el logo.
+	const DERECHA = /\/(turnos|suscripciones|favoritos)$/;
+	const derecha = $derived(v === 'centrado' ? ctx.nav.filter((n) => DERECHA.test(n.href)) : []);
+	const menu = $derived(
+		v === 'izquierda' ? ctx.nav : ctx.nav.filter((n) => n !== nosotros && !derecha.includes(n))
+	);
 	const linea = $derived(
 		[
 			t.ciudad,
@@ -102,6 +108,11 @@
 				></span>{/if}
 			{@render marca()}
 			<div class="tv-enc-acciones">
+				{#each derecha as n (n.href)}<a
+						class="tv-solo-compu tv-enc-link"
+						href={n.href}
+						aria-current={n.on ? 'page' : undefined}>{n.t}</a
+					>{/each}
 				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a
 					>{/if}
 				{@render bolsa()}

@@ -59,6 +59,11 @@
 .tv[data-dir='vidriera'] .tv-prod-pie {
 	align-items: center;
 }
+/* Sin caja, el precio va pegado al nombre: abajo de todo quedaba a distinta altura en la misma fila
+   según si la tarjeta de al lado tenía la línea de cuotas o no. */
+.tv[data-dir='vidriera'] .tv-prod--grilla .tv-prod-pie {
+	margin-top: 0;
+}
 .tv[data-dir='vidriera'] .tv-prod--grilla .tv-mas {
 	display: none;
 }
