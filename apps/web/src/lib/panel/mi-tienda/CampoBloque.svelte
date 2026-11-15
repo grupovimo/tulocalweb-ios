@@ -3,6 +3,7 @@
 	import Interruptor from '#lib/components/Interruptor.svelte';
 	import * as I from '#lib/icons.ts';
 	import Self from './CampoBloque.svelte';
+	import CampoDescarga from './CampoDescarga.svelte';
 	import CampoFotos from './CampoFotos.svelte';
 	import CampoLink from './CampoLink.svelte';
 	import CampoTabla from './CampoTabla.svelte';
@@ -494,43 +495,12 @@
 			</div>
 			<span class="ayuda">Cada persona recibe un código propio, de un solo uso.</span>
 		{:else if pr.tipo === 'descarga'}
-			<label class="campo"
-				><span class="rotulo">Nombre del archivo</span><input
-					class="input"
-					maxlength="60"
-					placeholder="Guía"
-					value={(pr.nombreArchivo as string) ?? ''}
-					onchange={(e) => poner({ nombreArchivo: e.currentTarget.value.trim() })}
-				/></label
-			>
-			<label class="campo"
-				><span class="rotulo">Link del archivo</span><input
-					class="input"
-					type="url"
-					inputmode="url"
-					placeholder="https://"
-					value={(pr.archivo as string) ?? ''}
-					onchange={(e) => poner({ archivo: e.currentTarget.value.trim() })}
-				/></label
-			>
-			{#if ayuda.subirArchivo}
-				<label class="mini-btn subir-archivo">
-					Subir una imagen
-					<input
-						type="file"
-						accept="image/jpeg,image/png,image/webp"
-						class="sr-only"
-						onchange={async (e) => {
-							const f = e.currentTarget.files?.[0];
-							e.currentTarget.value = '';
-							if (f && ayuda.subirArchivo) poner({ archivo: await ayuda.subirArchivo(f) });
-						}}
-					/>
-				</label>
-			{/if}
-			<span class="ayuda"
-				>Un PDF: pegá el link (Drive, Dropbox). Se muestra al terminar y se manda por mail.</span
-			>
+			<CampoDescarga
+				archivo={(pr.archivo as string) ?? ''}
+				nombreArchivo={(pr.nombreArchivo as string) ?? ''}
+				onvalor={(v) => poner(v)}
+			/>
+			<span class="ayuda">Se muestra al terminar y se manda por mail.</span>
 		{/if}
 	</fieldset>
 {:else if campo.tipo === 'opciones'}

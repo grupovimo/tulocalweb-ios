@@ -181,8 +181,7 @@
 		nombre: data.vista.tienda,
 		lema: diseno.lema ?? '',
 		subir: subirArchivo,
-		cupones: data.cupones,
-		subirArchivo
+		cupones: data.cupones
 	});
 	const ponerLista = (l: L.Bloque[], confirmar = true) =>
 		cambiar(L.conBloquesEn(diseno, pagina, l), confirmar);
