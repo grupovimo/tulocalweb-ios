@@ -1410,3 +1410,55 @@ Handoff `docs/handoff/inicio-a` (aprobado por Nahuel el 12/11), en iOS y Android
   no va el «+»: «Vender ahora» está en la vidriera.
 - **El día en $0** (ACero) sin barras de visitas por hora: la medición propia (§36) guarda visitas por día, no
   por hora. Si algún día se miden por hora, van ahí.
+
+## 60. «Avisame cuando vuelva»: el aviso de stock repuesto (migración 00083, 15/11/2026)
+
+- **Pedirlo**: en la ficha, con el producto (o la variante elegida) sin stock, quien compra deja su
+  email y, si quiere, su WhatsApp, y marca que acepta que le escriban (`consentimiento_en`). Va en
+  `avisos_stock` (RLS por tienda), uno pendiente por persona y producto o variante: repetido no suma
+  y, si trae WhatsApp, lo guarda. Con stock no se anota (409 `hay_stock`). `POST
+  /v1/publico/tiendas/{slug}/productos/{id}/aviso-stock`, con tope de 10 por hora por IP y 20.000
+  pendientes por producto; en la demo, el sandbox del visitante.
+- **Cuándo sale**: un trigger en `productos` y `variantes` encola `stock.repuesto` cuando el stock pasa
+  de 0 a más de 0 (o una variante agotada vuelve a estar activa con stock), en la misma transacción
+  que lo repone. Así lo agarran todos los caminos: panel, apps, Inventario, importación y la
+  cancelación de un pedido. Sólo si alguien espera: una reposición común no toca el outbox.
+- **El mail**: «Volvió X» con la marca de la tienda (`dominio/marca`: logo o nombre, el acento del
+  diseño, Reply-To al negocio), la foto, el precio y el botón a la ficha. Una sola vez por pedido de
+  aviso: el worker manda de a 50, marca cada uno apenas sale y sólo a quien espera algo que hoy tiene
+  stock (si se volvió a agotar antes de salir, espera la próxima). La supresión del comprador borra
+  sus avisos.
+- **Panel y apps**: la lista de productos trae `esperan` y lo muestra («3 esperan que vuelva» en la
+  web, la etiqueta «3 esperan» en iOS y Android). La demo trae unos pocos de ejemplo en los agotados.
+
+## 61. Envío gratis con el monto de cada tienda (migración 00082, 15/11/2026)
+
+- Antes era `cupones.EnvioGratisDesde` = 40.000 para todas. Ahora `tiendas.envio_gratis_desde` (de
+  $ 1.000 a $ 100.000.000, por defecto 40.000: las que lo tenían prendido no cambian). El interruptor
+  sigue siendo la promoción automática `envio` de Cupones: una sola fuente.
+- Se configura en Envíos y retiro (panel y apps): `envioGratis` y `envioGratisMonto` en
+  `Entregas`; sin mandarlos queda como estaba (las apps de antes no los mandan). La vidriera expone
+  `envios.gratisDesde` con el de la tienda (sólo si envía en moto o por Correo) y de ahí lo toman el
+  checkout, la barra «Te faltan $X», la bolsa, el feed, Cupones y las plantillas de ventanas con
+  `{envioGratis}` (que leen `gratisDesde` de Envíos).
+
+## 62. Carrito abandonado como Shopify: tres recordatorios con cupón (migración 00084, 15/11/2026)
+
+- **El mismo worker**: `ventas.RecordatoriosAutomaticos` (antes un mail al tercer día, cada hora) corre
+  cada 5 minutos y manda hasta tres recordatorios desde que dejó el carrito, por defecto 1 h, 24 h y
+  72 h (`tiendas.carritos_recordatorios`: prendidos o no, demora de 1 h a 7 días en orden y cupón). El
+  interruptor de antes (`carritos_automaticos.email`) es el mismo; las tiendas lo conservan.
+- **Un paso por vez**: `carritos.paso` dice cuál salió; el carrito se bloquea y avanza en la misma
+  transacción que encola el mail. Si el worker estuvo parado, sale uno solo (el último que venció), y
+  nunca a menos de 6 h de un recordatorio a mano.
+- **Cupón opcional en el segundo o el tercero**: único, de un uso, vence a los días que se eligió
+  (3 por defecto) y con origen `carrito:<id>`, con el mismo `cupones.CrearUnico` de las ventanas. Uno
+  por carrito (si el tercero también lleva, repite el código). El link del mail lo deja aplicado
+  (`/carrito/recuperar/<token>?cupon=`).
+- **Se corta** si compra (`recuperado_en`, con el pedido y lo cobrado) o si se da de baja: «No quiero
+  más estos mails» y List-Unsubscribe de un clic (RFC 8058) en `/t/<slug>/carrito/baja/<token>`,
+  exceptuada del CSRF como la del newsletter. La baja vale para ese email en la tienda, también en un
+  carrito nuevo.
+- **Métricas**: `recuperados {pedidos, monto}` del mes, con lo cobrado de verdad, de quienes recibieron
+  un recordatorio antes de comprar. Panel y apps configuran los pasos y lo muestran; la demo arranca
+  con los tres prendidos y 10 % en el segundo, sin mandar mails.
