@@ -47,7 +47,8 @@ export function etiquetasDe(
 	const alta = p.alta ? Date.parse(p.alta) : NaN;
 	if (c.etiquetas.nuevo && Number.isFinite(alta) && ahora - alta <= 14 * DIA && ahora >= alta)
 		r.push({ texto: 'Nuevo', tipo: 'nuevo' });
-	const tope = c.stockBajo || 3;
+	// En la tarjeta, «Últimas N» sólo con 10 o menos: «Últimas 19» no avisa nada (la ficha usa el umbral entero).
+	const tope = Math.min(c.stockBajo || 3, 10);
 	if (c.etiquetas.ultimas && p.stock > 0 && p.stock <= tope)
 		r.push({ texto: p.stock === 1 ? 'Última' : `Últimas ${p.stock}`, tipo: 'ultimas' });
 	if (c.etiquetas.masVendido && top3(t).includes(p.id))

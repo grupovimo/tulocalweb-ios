@@ -539,6 +539,18 @@
 	gap: 8px;
 	margin-top: auto;
 }
+/* En el celular la tarjeta de la grilla mide ~165 px: el botón con texto («Elegir», «Agregar») va
+   abajo a lo ancho, y el precio con cuotas y transferencia usa todo el ancho en vez de una columna. */
+@media (max-width: 759px) {
+	.tv-prod--grilla .tv-prod-pie:has(.tv-agregar, .tv-cant) {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.tv-prod--grilla .tv-prod-pie .tv-agregar {
+		text-align: center;
+		justify-content: center;
+	}
+}
 .tv-prod--agotado .tv-prod-foto {
 	opacity: 0.7;
 }
