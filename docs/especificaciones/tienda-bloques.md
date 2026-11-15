@@ -140,3 +140,19 @@ Cambiar de preset con la tienda armada conserva los datos de los bloques del mis
   - Al tocar un bloque, avisa `{tipo:'bloque', id}`: la web por `postMessage` al padre, iOS por `webkit.messageHandlers.tienda` y Android por `TiendaPuente.bloque`.
   - El editor abre el panel de ese bloque.
 - Se mantienen el borrador y publicar.
+
+### Protocolo de la vista previa (lo comparten el editor web y las apps)
+
+- `GET /panel/mi-tienda/vista?pagina=inicio|catalogo|producto|carrito|nosotros&marcos=1`: la tienda con el borrador. En las
+  apps va con `Authorization: Bearer` (ya está en `RUTAS_APP`).
+- Para dibujar otro borrador sin recargar:
+  - Web: `iframe.contentWindow.postMessage({ tipo: 'diseno', diseno, pagina }, origin)`.
+  - Apps: `evaluateJavaScript("window.tiendaVista.mostrar(<json del diseño>, '<pagina>')")`.
+- Para seleccionar y resaltar un bloque desde el editor:
+  - Web: `postMessage({ tipo: 'seleccionar', id })`.
+  - Apps: `window.tiendaVista.seleccionar('<id>')`.
+- Cuando la persona toca un bloque en la vista (con `marcos=1`), la página avisa `{ tipo: 'bloque', id }`:
+  - Web: `parent.postMessage`.
+  - iOS: `window.webkit.messageHandlers.tienda.postMessage`.
+  - Android: `window.TiendaPuente.bloque(id)`.
+- La página avisa `{ tipo: 'lista' }` al cargar. Hasta ese momento el editor no manda nada.
