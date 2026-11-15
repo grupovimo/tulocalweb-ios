@@ -14,6 +14,7 @@
 	import Estilo from '#lib/panel/mi-tienda/Estilo.svelte';
 	import ListaBloques from '#lib/panel/mi-tienda/ListaBloques.svelte';
 	import PanelBloque from '#lib/panel/mi-tienda/PanelBloque.svelte';
+	import Promociones from '#lib/panel/mi-tienda/Promociones.svelte';
 	import * as L from '#lib/panel/mi-tienda/bloques.ts';
 	import type { Ayuda } from '#lib/panel/mi-tienda/campos.ts';
 	import {
@@ -162,7 +163,15 @@
 	}
 
 	// ── Páginas, bloques y paneles ──
-	let pestana = $state<'pagina' | 'estilo'>('pagina');
+	let pestana = $state<'pagina' | 'estilo' | 'promos'>('pagina');
+	/** La ventana abierta en Promociones. */
+	let ventanaAbierta = $state<string | null>(null);
+	/** «Ver en la vista previa»: la abre con el borrador (en el celular, pasa a la vista). */
+	function verVentana(id: string) {
+		enviar({ tipo: 'diseno', diseno, pagina });
+		enviar({ tipo: 'ventana', id });
+		if (matchMedia('(max-width: 999px)').matches) modo = 'vista';
+	}
 	let pagina = $state<PaginaId>('inicio');
 	let abierto = $state<string | null>(null);
 	const lista = $derived(L.bloquesDe(diseno, pagina));
@@ -171,7 +180,9 @@
 		cx: data.contexto,
 		nombre: data.vista.tienda,
 		lema: diseno.lema ?? '',
-		subir: subirArchivo
+		subir: subirArchivo,
+		cupones: data.cupones,
+		subirArchivo
 	});
 	const ponerLista = (l: L.Bloque[], confirmar = true) =>
 		cambiar(L.conBloquesEn(diseno, pagina, l), confirmar);
@@ -356,7 +367,8 @@
 					label="Qué editar"
 					opciones={[
 						['pagina', 'Páginas'],
-						['estilo', 'Estilo']
+						['estilo', 'Estilo'],
+						['promos', 'Promociones']
 					]}
 					bind:value={pestana}
 				/>
@@ -441,6 +453,16 @@
 						/>
 					{/if}
 				{/if}
+			{:else if pestana === 'promos'}
+				<Promociones
+					{diseno}
+					{ayuda}
+					envioGratis={data.envioGratis}
+					bind:abierta={ventanaAbierta}
+					oncambiar={cambiar}
+					onver={verVentana}
+					onborrada={(n) => ui.undoable(`Borraste la ventana ${n}`, undefined, deshacer)}
+				/>
 			{:else}
 				<Estilo {diseno} plantilla={plantillaId} {ayuda} oncambiar={cambiar} />
 			{/if}
@@ -473,7 +495,11 @@
 					onchange={(v) => (dispositivo = v)}
 				/>
 			</div>
-			<p class="c-nota centro">Tocá un bloque en la vista para editarlo.</p>
+			<p class="c-nota centro">
+				{pestana === 'promos'
+					? 'Las ventanas no salen solas acá: tocá «Ver en la vista previa».'
+					: 'Tocá un bloque en la vista para editarlo.'}
+			</p>
 		</div>
 	</div>
 

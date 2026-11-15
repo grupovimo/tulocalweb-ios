@@ -46,11 +46,20 @@ type Fila = { email: string; confirmado: boolean; creado: string; origen: string
 
 const ORIGEN: Record<string, string> = { tienda: 'Tienda online', checkout: 'Checkout' };
 
-/** El origen como lo lee la tienda. */
-export const origenDe = (o: string) => ORIGEN[o] ?? o;
+/**
+ * El origen como lo lee la tienda. Los contactos de una ventana (captación o ruleta) llegan con
+ * «ventana:<id>»: se nombra la ventana si se sabe cuál es.
+ */
+export function origenDe(o: string, ventanas: Record<string, string> = {}): string {
+	if (o.startsWith('ventana:')) {
+		const n = ventanas[o.slice(8)];
+		return n ? `Ventana «${n}»` : 'Ventana de la tienda';
+	}
+	return ORIGEN[o] ?? o;
+}
 
 /** Las filas del CSV (la primera es el encabezado), con la fecha en hora de Argentina. */
-export function filasCsv(ss: Fila[]): string[][] {
+export function filasCsv(ss: Fila[], ventanas: Record<string, string> = {}): string[][] {
 	const fecha = (iso: string) =>
 		new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
 	return [
@@ -60,7 +69,7 @@ export function filasCsv(ss: Fila[]): string[][] {
 			/^[=+\-@]/.test(s.email) ? `'${s.email}` : s.email,
 			s.confirmado ? 'Confirmado' : 'Sin confirmar',
 			fecha(s.creado),
-			origenDe(s.origen)
+			origenDe(s.origen, ventanas)
 		])
 	];
 }

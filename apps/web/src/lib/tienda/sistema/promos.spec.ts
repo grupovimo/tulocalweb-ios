@@ -112,7 +112,7 @@ describe('cuándo sale una ventana', () => {
 	test('cuenta regresiva', () => {
 		const ahora = Date.parse('2026-11-15T12:00:00Z');
 		expect(faltan('2026-11-15T11:00:00Z', ahora)).toBeNull();
-		expect(textoFaltan(faltan('2026-11-17T13:02:03Z', ahora)!)).toBe('2 d 01:02:03');
+		expect(textoFaltan(faltan('2026-11-17T13:02:03Z', ahora)!)).toBe('2\u00a0d 01:02:03');
 		expect(textoFaltan(faltan('2026-11-15T12:00:09Z', ahora)!)).toBe('00:00:09');
 	});
 });

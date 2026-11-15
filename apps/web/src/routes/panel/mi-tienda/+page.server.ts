@@ -1,4 +1,5 @@
 import { tiendaDelBorrador } from '#lib/server/compartir/borrador.ts';
+import { datosDe } from '#lib/server/datos/index.ts';
 import type { Contexto } from '#lib/panel/mi-tienda/faltan.ts';
 import { hechosDe } from '#lib/tienda/compartir.ts';
 import { migrar } from '#lib/tienda/sistema/migrar.ts';
@@ -9,7 +10,18 @@ import type { PageServerLoad } from './$types';
  * para los buscadores, lo sugerido y el aviso de qué le falta a cada bloque.
  */
 export const load: PageServerLoad = async ({ locals, cookies }) => {
-	const { mi, tienda } = await tiendaDelBorrador(locals, cookies);
+	const [{ mi, tienda }, cupones] = await Promise.all([
+		tiendaDelBorrador(locals, cookies),
+		// Promociones: los cupones que se pueden ofrecer en una ventana (los activos o programados).
+		datosDe(locals)
+			.cupones()
+			.then((c) =>
+				c.cupones
+					.filter((x) => x.estado === 'activo' || x.estado === 'programado')
+					.map((x) => ({ codigo: x.codigo, descripcion: x.descripcion, estado: x.estado }))
+			)
+			.catch(() => [])
+	]);
 	const contexto: Contexto = {
 		productos: tienda.productos.map((p) => ({
 			id: p.id,
@@ -36,6 +48,9 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		...mi,
 		diseno: migrar(mi.diseno, mi.plantillaId),
 		contexto,
-		hechos: hechosDe(tienda)
+		hechos: hechosDe(tienda),
+		cupones,
+		/** El monto de envío gratis de la tienda (las plantillas de ventanas lo usan). */
+		envioGratis: tienda.envios.gratisDesde ?? null
 	};
 };

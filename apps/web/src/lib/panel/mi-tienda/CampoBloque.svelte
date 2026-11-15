@@ -10,6 +10,14 @@
 	import { fechaLocal, isoDeLocal, URL_VIDEO, type Ayuda } from './campos.ts';
 	import { FONDOS, FUENTES_PRODUCTOS, ICONOS, LIMITES, type CampoConNombres } from './catalogo.ts';
 	import { ICONO_BENEFICIO } from './iconos.ts';
+	import { TIPOS_PREMIO } from '#lib/tienda/sistema/catalogo.ts';
+
+	const NOMBRE_PREMIO: Record<string, string> = {
+		nada: 'Sólo suscribirse',
+		cuponFijo: 'Un cupón tuyo',
+		cuponUnico: 'Un código propio',
+		descarga: 'Una descarga'
+	};
 
 	/**
 	 * Un campo del panel del bloque, armado desde su tipo en bloques.json (tiposCampo). `onvalor`
@@ -82,6 +90,30 @@
 	}
 	let abierto = $state<number | null>(null);
 </script>
+
+{#snippet elegirCupon(
+	nombre: string,
+	actual: string,
+	alElegir: (c: string) => void,
+	requerido?: boolean
+)}
+	<label class="campo">
+		<span class="rotulo"
+			>{nombre}{#if requerido}<span class="req" aria-hidden="true">&#32;·&nbsp;obligatorio</span
+				>{/if}</span
+		>
+		{#if ayuda.cupones?.length}
+			<select class="input" value={actual} onchange={(e) => alElegir(e.currentTarget.value)}>
+				<option value="">Elegí un cupón</option>
+				{#each ayuda.cupones as c (c.codigo)}<option value={c.codigo}
+						>{c.codigo}{c.descripcion ? ` · ${c.descripcion}` : ''}</option
+					>{/each}
+			</select>
+		{:else}
+			<span class="ayuda">Todavía no tenés cupones activos: creá uno en Cupones.</span>
+		{/if}
+	</label>
+{/snippet}
 
 {#snippet rotulo()}
 	<span class="rotulo"
@@ -383,6 +415,145 @@
 			{/each}
 		</div>
 	</details>
+{:else if campo.tipo === 'cupon'}
+	{@render elegirCupon(campo.nombre, str, (c) => onvalor(c, true), campo.requerido)}
+{:else if campo.tipo === 'premio'}
+	{@const tipos = campo.opciones?.length ? campo.opciones : TIPOS_PREMIO}
+	{@const pr = { tipo: 'nada', ...obj } as Record<string, unknown>}
+	{@const poner = (cambios: Record<string, unknown>) => {
+		const n: Record<string, unknown> = { ...pr, ...cambios };
+		for (const k of Object.keys(n)) if (n[k] === '' || n[k] === undefined) delete n[k];
+		onvalor(n, true);
+	}}
+	<fieldset class="campo grupo-campo">
+		<legend class="rotulo">{campo.nombre}</legend>
+		<div class="opciones" role="radiogroup" aria-label="Tipo de premio">
+			{#each tipos as t (t)}
+				<button
+					type="button"
+					role="radio"
+					aria-checked={pr.tipo === t}
+					class="opcion"
+					onclick={() => onvalor({ tipo: t }, true)}>{NOMBRE_PREMIO[t] ?? t}</button
+				>
+			{/each}
+		</div>
+		{#if pr.tipo === 'cuponFijo'}
+			{@render elegirCupon('Cupón', (pr.cupon as string) ?? '', (c) => poner({ cupon: c }), true)}
+		{:else if pr.tipo === 'cuponUnico'}
+			<div class="opciones" role="radiogroup" aria-label="Descuento">
+				{#each [['porcentaje', 'Porcentaje'], ['monto', 'Monto fijo'], ['envioGratis', 'Envío gratis']] as [d, n] (d)}
+					<button
+						type="button"
+						role="radio"
+						aria-checked={pr.descuento === d}
+						class="opcion"
+						onclick={() =>
+							poner({
+								descuento: d,
+								valor: d === 'envioGratis' ? undefined : d === 'monto' ? 5000 : 10
+							})}>{n}</button
+					>
+				{/each}
+			</div>
+			<div class="dos">
+				{#if pr.descuento && pr.descuento !== 'envioGratis'}
+					<label class="campo"
+						><span class="rotulo">{pr.descuento === 'monto' ? 'Pesos' : 'Porcentaje'}</span><input
+							class="input"
+							type="number"
+							inputmode="numeric"
+							min={pr.descuento === 'monto' ? 100 : 1}
+							max={pr.descuento === 'monto' ? 100000 : 90}
+							value={pr.valor ?? ''}
+							onchange={(e) => {
+								const lo = pr.descuento === 'monto' ? 100 : 1;
+								const hi = pr.descuento === 'monto' ? 100000 : 90;
+								const v = Math.min(hi, Math.max(lo, Math.round(+e.currentTarget.value || lo)));
+								e.currentTarget.value = String(v);
+								poner({ valor: v });
+							}}
+						/></label
+					>
+				{/if}
+				<label class="campo"
+					><span class="rotulo">Vence a los (días)</span><input
+						class="input"
+						type="number"
+						inputmode="numeric"
+						min="1"
+						max="90"
+						value={pr.dias ?? 7}
+						onchange={(e) => {
+							const v = Math.min(90, Math.max(1, Math.round(+e.currentTarget.value || 7)));
+							e.currentTarget.value = String(v);
+							poner({ dias: v });
+						}}
+					/></label
+				>
+			</div>
+			<span class="ayuda">Cada persona recibe un código propio, de un solo uso.</span>
+		{:else if pr.tipo === 'descarga'}
+			<label class="campo"
+				><span class="rotulo">Nombre del archivo</span><input
+					class="input"
+					maxlength="60"
+					placeholder="Guía"
+					value={(pr.nombreArchivo as string) ?? ''}
+					onchange={(e) => poner({ nombreArchivo: e.currentTarget.value.trim() })}
+				/></label
+			>
+			<label class="campo"
+				><span class="rotulo">Link del archivo</span><input
+					class="input"
+					type="url"
+					inputmode="url"
+					placeholder="https://"
+					value={(pr.archivo as string) ?? ''}
+					onchange={(e) => poner({ archivo: e.currentTarget.value.trim() })}
+				/></label
+			>
+			{#if ayuda.subirArchivo}
+				<label class="mini-btn subir-archivo">
+					Subir una imagen
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						class="sr-only"
+						onchange={async (e) => {
+							const f = e.currentTarget.files?.[0];
+							e.currentTarget.value = '';
+							if (f && ayuda.subirArchivo) poner({ archivo: await ayuda.subirArchivo(f) });
+						}}
+					/>
+				</label>
+			{/if}
+			<span class="ayuda"
+				>Un PDF: pegá el link (Drive, Dropbox). Se muestra al terminar y se manda por mail.</span
+			>
+		{/if}
+	</fieldset>
+{:else if campo.tipo === 'opciones'}
+	{@const elegidas = Array.isArray(valor) ? (valor as string[]) : []}
+	<fieldset class="campo grupo-campo">
+		<legend class="rotulo">{campo.nombre}</legend>
+		<div class="casillas">
+			{#each campo.opciones ?? [] as o, i (o)}
+				<label class="casilla"
+					><input
+						type="checkbox"
+						checked={elegidas.includes(o)}
+						onchange={(e) =>
+							onvalor(
+								e.currentTarget.checked ? [...elegidas, o] : elegidas.filter((x) => x !== o),
+								true
+							)}
+					/>{campo.nombres?.[i] ?? o}</label
+				>
+			{/each}
+		</div>
+		{#if campo.descripcion}<span class="ayuda">{campo.descripcion}</span>{/if}
+	</fieldset>
 {:else if campo.tipo === 'tabla'}
 	<CampoTabla nombre={campo.nombre} {valor} onvalor={(v, c) => onvalor(v, c)} />
 {:else if campo.tipo === 'lista'}
@@ -675,5 +846,34 @@
 			width: 44px;
 			min-height: 44px;
 		}
+	}
+	.dos {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 8px;
+	}
+	.casillas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 14px;
+	}
+	.casilla {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 36px;
+		font-size: 13.5px;
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.casilla input {
+		width: 18px;
+		height: 18px;
+		margin: 0;
+		accent-color: var(--terracota);
+	}
+	.subir-archivo {
+		align-self: flex-start;
+		cursor: pointer;
 	}
 </style>

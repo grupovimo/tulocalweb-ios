@@ -13,6 +13,10 @@ export type Ayuda = {
 	lema: string;
 	/** Sube una foto como las de los productos (POST /panel/fotos) y devuelve su URL. */
 	subir: (f: File) => Promise<string>;
+	/** Los cupones activos o programados (los campos `cupon` y el premio «cupón fijo»). */
+	cupones?: { codigo: string; descripcion: string }[];
+	/** Sube una imagen para descargar (el premio «descarga»); devuelve su URL. */
+	subirArchivo?: (f: File) => Promise<string>;
 };
 
 export type Destino = { valor: string; nombre: string };

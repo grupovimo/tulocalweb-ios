@@ -309,7 +309,10 @@
 				>
 				<span class="quien"
 					><span class="n">{s.email}</span><span class="s"
-						>Desde el {diaDeMes(new Date(s.creado))}&nbsp;· {origenDe(s.origen)}</span
+						>Desde el {diaDeMes(new Date(s.creado))}&nbsp;· {origenDe(
+							s.origen,
+							data.ventanas
+						)}</span
 					></span
 				>
 				<span class="estado" class:activa={s.confirmado}
