@@ -25,7 +25,8 @@
 				<h2 class="tv-h3">{sinViuda(textoDe(bloque, 'titulo'))}</h2>
 				<p>{texto}</p>
 			</div>
-			<Boton {href} tipo="wa" externo>Escribinos</Boton>
+			<!-- El verde de WhatsApp es de Mostrador y Pedido (B-moda, C-vacia); Vidriera no lo usa. -->
+			<Boton {href} tipo={ctx.dir === 'vidriera' ? 'secundario' : 'wa'} externo>Escribinos</Boton>
 		</div>
 	</section>
 {/if}

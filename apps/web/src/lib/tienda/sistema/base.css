@@ -1422,6 +1422,11 @@
 	background: #25d366;
 	color: #fff;
 }
+.tv[data-dir='vidriera'] .tv-escribinos-icono {
+	border-radius: var(--t-r-boton);
+	background: var(--t-texto);
+	color: var(--t-fondo);
+}
 .tv-escribinos-textos {
 	flex: 1;
 	min-width: 0;

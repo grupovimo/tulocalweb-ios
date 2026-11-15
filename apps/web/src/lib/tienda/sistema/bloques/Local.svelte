@@ -14,17 +14,23 @@
 	const ctx = usarTienda();
 	const l = $derived(localDe(ctx.tienda, bloque));
 	const titulo = $derived(textoDe(bloque, 'titulo') || l.direccion);
+	// Debajo del título, lo que el título no dice: la dirección (si el título es otro) y la ciudad,
+	// sin repetirla si ya está («Av. San Martín 1240, CABA» y abajo «CABA»).
+	const debajo = $derived(
+		[
+			titulo !== l.direccion ? l.direccion : '',
+			l.ciudad && !`${titulo} ${l.direccion}`.includes(l.ciudad) ? l.ciudad : ''
+		]
+			.filter(Boolean)
+			.join(', ')
+	);
 </script>
 
 <section class="tv-local tv-ancho" data-variante={bloque.variante}>
 	<div class="tv-local-datos" class:tv-tarjeta={bloque.variante === 'tarjeta'}>
 		<p class="tv-ante">El local</p>
 		<h2 class="tv-h2">{sinViuda(titulo)}</h2>
-		{#if titulo !== l.direccion || l.ciudad}<p class="tv-lead">
-				{titulo !== l.direccion ? l.direccion : ''}{titulo !== l.direccion && l.ciudad
-					? ', '
-					: ''}{l.ciudad}
-			</p>{/if}
+		{#if debajo}<p class="tv-lead">{debajo}</p>{/if}
 		{#if l.horarios.length}
 			<dl class="tv-local-horarios">
 				{#each l.horarios as h, i (i)}<dt>{h.dias}</dt>
