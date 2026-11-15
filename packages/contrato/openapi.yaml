@@ -4833,7 +4833,7 @@ components:
           properties:
             activa: { type: boolean }
             cada: { type: integer, minimum: 15, maximum: 120 }
-            paginas: { type: array, uniqueItems: true, items: { type: string, enum: [inicio, catalogo, producto, carrito, nosotros] } }
+            paginas: { type: array, uniqueItems: true, items: { type: string }, description: 'inicio, catalogo, producto, carrito o nosotros (bloques.json › conversion); vacío: todas' }
         etiquetas:
           type: object
           additionalProperties: false

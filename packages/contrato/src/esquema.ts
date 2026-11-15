@@ -4624,7 +4624,8 @@ export interface components {
             pruebaSocial?: {
                 activa?: boolean;
                 cada?: number;
-                paginas?: ("inicio" | "catalogo" | "producto" | "carrito" | "nosotros")[];
+                /** @description inicio, catalogo, producto, carrito o nosotros (bloques.json › conversion); vacío: todas */
+                paginas?: string[];
             };
             etiquetas?: {
                 nuevo?: boolean;
