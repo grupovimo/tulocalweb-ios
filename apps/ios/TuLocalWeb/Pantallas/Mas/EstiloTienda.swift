@@ -3,8 +3,9 @@ import UIKit
 import WebKit
 
 /// Mi tienda › Estilo (components/schemas/EstiloTienda), igual que en la web
-/// (apps/web/src/lib/tienda/estilo/estilo.ts): colores por rol y por zona, tipografías, logos,
-/// anuncio, títulos de las secciones, redes y el menú. Todo opcional: vacío es lo de la plantilla.
+/// (apps/web/src/lib/tienda/estilo/estilo.ts): colores por rol y por zona, tipografías, logos, redes, el
+/// menú y, desde el diseño v2, la dirección, la forma, la densidad, el encabezado, el pie, la barra de anuncios
+/// y el WhatsApp flotante. Todo opcional: vacío es lo de la dirección y el punto de partida.
 struct EstiloTienda: Codable, Equatable {
     var colores: [String: String]?
     var fuenteTitulos: String?
@@ -12,21 +13,49 @@ struct EstiloTienda: Codable, Equatable {
     var logoOscuro: String?
     var icono: String?
     var logoAlto: Int?
+    /// Sólo v1: al leer pasan a `barra` (anuncio) y a los títulos de los bloques (textos).
     var anuncio: String?
     var anuncioLink: String?
     var leyendaPie: String?
     var textos: [String: String]?
     var redes: [String: String]?
     var menu: [ItemMenu]?
+    // v2
+    var direccion: String?
+    var forma: String?
+    var densidad: String?
+    var ancho: String?
+    var fotoProducto: String?
+    var encabezado: String?
+    var pie: String?
+    var barra: Barra?
+    /// false: sin el botón flotante de WhatsApp.
+    var whatsappFlotante: Bool?
 
     struct ItemMenu: Codable, Equatable, Hashable { var t: String; var a: String }
 
-    /// Para mandarlo dentro del diseño: sin lo vacío (Go lo limpia igual).
+    /// La barra de anuncios de arriba de todo (bloques.json › barraAnuncios).
+    struct Barra: Codable, Equatable {
+        var variante: String
+        var mensajes: [Mensaje]
+        var fondo: String?
+        struct Mensaje: Codable, Equatable { var texto: String; var link: String? }
+    }
+
+    /// Para mandarlo dentro del diseño: sin lo vacío (Go lo limpia igual) y sin lo de v1.
     var json: ValorJSON {
         var e = self
         e.colores = e.colores?.filter { !$0.value.isEmpty }
-        e.textos = e.textos?.filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
         e.redes = e.redes?.filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
+        e.anuncio = nil
+        e.anuncioLink = nil
+        e.textos = nil
+        if var b = e.barra {
+            b.mensajes = b.mensajes.filter { !$0.texto.trimmingCharacters(in: .whitespaces).isEmpty }
+                .map { .init(texto: $0.texto, link: ($0.link ?? "").isEmpty ? nil : $0.link) }
+            e.barra = b.mensajes.isEmpty ? nil : b
+        }
+        if e.whatsappFlotante == true { e.whatsappFlotante = nil }
         if e.logoAlto == 0 { e.logoAlto = nil }
         guard let d = try? JSONEncoder().encode(e), let v = try? JSONDecoder().decode(ValorJSON.self, from: d) else { return .objeto([:]) }
         return v
@@ -106,7 +135,7 @@ struct EditorEstilo: View {
     @Binding var paleta: Int
     var plantilla: String
     var categorias: [String]
-    @State private var abierto: String? = "colores"
+    @State private var abierto: String? = "direccion"
     private let cat = CatalogoEstilo.shared
 
     private var original: [String: String] { cat.roles[plantilla] ?? cat.roles["litoral"] ?? [:] }
@@ -140,12 +169,112 @@ struct EditorEstilo: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            grupo("direccion", "Dirección y forma", "square.on.circle") { direccionYForma }
             grupo("colores", "Colores", "paintpalette") { colores }
             grupo("fuentes", "Tipografías", "textformat") { fuentes }
+            grupo("encabezado", "Encabezado y pie", "rectangle.topthird.inset.filled") { encabezadoYPie }
             grupo("menu", "Menú", "line.3.horizontal") { menu }
-            grupo("titulos", "Títulos de las secciones", "textformat.size") { titulos }
-            grupo("anuncio", "Anuncio y pie", "megaphone") { anuncioYPie }
-            grupo("redes", "Redes y contacto", "at") { redes }
+            grupo("barra", "Barra de anuncios", "megaphone") { barra }
+            grupo("redes", "Redes y WhatsApp", "at") { redes }
+        }
+    }
+
+    // MARK: Dirección, forma, densidad, ancho y fotos (bloques.json › estilo)
+
+    private var preset: PresetTienda? { PresetTienda.todos[plantilla] }
+    private let bloques = CatalogoBloques.shared
+
+    /// Lo que se ve: lo elegido, lo del punto de partida o lo de la dirección.
+    private func vistoEstilo(_ k: String) -> String {
+        let propio: String? = switch k {
+        case "direccion": estilo.direccion
+        case "forma": estilo.forma
+        case "densidad": estilo.densidad
+        case "ancho": estilo.ancho
+        case "fotoProducto": estilo.fotoProducto
+        case "encabezado": estilo.encabezado
+        case "pie": estilo.pie
+        default: nil
+        }
+        if let propio { return propio }
+        if k == "direccion" { return preset?.direccion ?? bloques.estilo[k]?.porDefecto ?? "vidriera" }
+        return preset?.estilo[k] ?? bloques.estilo[k]?.porDefecto ?? bloques.estilo[k]?.opciones.first ?? ""
+    }
+
+    private func ponerEstilo(_ k: String, _ v: String) {
+        switch k {
+        case "direccion": estilo.direccion = v
+        case "forma": estilo.forma = v
+        case "densidad": estilo.densidad = v
+        case "ancho": estilo.ancho = v
+        case "fotoProducto": estilo.fotoProducto = v
+        case "encabezado": estilo.encabezado = v
+        case "pie": estilo.pie = v
+        default: break
+        }
+    }
+
+    private func opcionEstilo(_ k: String, _ titulo: String) -> some View {
+        let o = bloques.estilo[k]
+        return SelectorOpcion(titulo: titulo, opciones: o?.opciones ?? [], nombres: o?.nombres ?? [],
+                              elegido: Binding(get: { vistoEstilo(k) }, set: { ponerEstilo(k, $0) }))
+    }
+
+    private var direccionYForma: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("La dirección le da el carácter: tipografía, aire y forma de botones. Cambiarla no borra nada.")
+                .estilo(.footnote).foregroundStyle(C.texto2)
+            opcionEstilo("direccion", "Dirección")
+            opcionEstilo("forma", "Forma de botones y tarjetas")
+            opcionEstilo("densidad", "Aire entre bloques")
+            opcionEstilo("ancho", "Ancho en la compu")
+            opcionEstilo("fotoProducto", "Fotos de producto")
+            if estilo.direccion != nil || estilo.forma != nil || estilo.densidad != nil || estilo.ancho != nil || estilo.fotoProducto != nil {
+                Button("Volver a lo del punto de partida") {
+                    estilo.direccion = nil; estilo.forma = nil; estilo.densidad = nil; estilo.ancho = nil; estilo.fotoProducto = nil
+                }
+                .buttonStyle(BotonTexto())
+            }
+        }
+    }
+
+    private var encabezadoYPie: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            opcionEstilo("encabezado", "Encabezado")
+            opcionEstilo("pie", "Pie")
+            CampoTexto(titulo: "Línea del pie", texto: Binding(
+                get: { estilo.leyendaPie ?? "" }, set: { estilo.leyendaPie = String($0.prefix(160)) }))
+        }
+    }
+
+    // MARK: Barra de anuncios (estilo.barra, campos de bloques.json › barraAnuncios)
+
+    private var barra: some View {
+        let b = bloques.barraAnuncios
+        let actual = estilo.barra ?? .init(variante: b.variantes.first ?? "fija", mensajes: [])
+        return VStack(alignment: .leading, spacing: 14) {
+            Text(b.descripcion).estilo(.footnote).foregroundStyle(C.texto2)
+            SelectorOpcion(titulo: "Cómo se ve", opciones: b.variantes, nombres: b.nombresVariantes, elegido: Binding(
+                get: { actual.variante }, set: { v in var n = actual; n.variante = v; estilo.barra = n }))
+            EditorCampos(campos: b.campos, datos: Binding(
+                get: {
+                    var d: [String: ValorJSON] = [:]
+                    if !actual.mensajes.isEmpty { d["mensajes"] = ValorJSON.de(actual.mensajes) }
+                    if let f = actual.fondo { d["fondo"] = .texto(f) }
+                    return d
+                },
+                set: { d in
+                    var n = actual
+                    n.mensajes = d["mensajes"]?.lista?.map { m in
+                        EstiloTienda.Barra.Mensaje(texto: m["texto"]?.texto ?? "", link: m["link"]?.texto)
+                    } ?? []
+                    n.fondo = d["fondo"]?.texto
+                    estilo.barra = n.mensajes.isEmpty && n.fondo == nil ? nil : n
+                }
+            ))
+            if actual.variante == "rotativa", actual.mensajes.count < 2 {
+                Text("Rotativa pasa de un mensaje al otro: sumá al menos dos.").estilo(.footnote).foregroundStyle(C.avisoTinta)
+            }
         }
     }
 
@@ -333,29 +462,7 @@ struct EditorEstilo: View {
         }
     }
 
-    // MARK: Textos
-    private var titulos: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(CatalogoEstilo.titulos, id: \.0) { id, nombre in
-                CampoTexto(titulo: "\(nombre) (vacío: el de la plantilla)", texto: Binding(
-                    get: { estilo.textos?[id] ?? "" },
-                    set: { v in var t = estilo.textos ?? [:]; t[id] = String(v.prefix(60)); estilo.textos = t }
-                ))
-            }
-        }
-    }
-
-    private var anuncioYPie: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            CampoTexto(titulo: "Barra de anuncio (arriba de todo)", texto: Binding(
-                get: { estilo.anuncio ?? "" }, set: { estilo.anuncio = String($0.prefix(120)) }))
-            CampoTexto(titulo: "Link del anuncio (opcional)", texto: Binding(
-                get: { estilo.anuncioLink ?? "" }, set: { estilo.anuncioLink = $0.trimmingCharacters(in: .whitespaces) }), teclado: .URL)
-            CampoTexto(titulo: "Línea del pie", texto: Binding(
-                get: { estilo.leyendaPie ?? "" }, set: { estilo.leyendaPie = String($0.prefix(160)) }))
-        }
-    }
-
+    // MARK: Redes y WhatsApp
     private var redes: some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(CatalogoEstilo.redes, id: \.0) { id, nombre, _, teclado in
@@ -365,35 +472,11 @@ struct EditorEstilo: View {
                 ), teclado: teclado)
             }
             Text("Se muestran en el pie de tu tienda.").estilo(.footnote).foregroundStyle(C.texto2)
+            Interruptor(texto: "Botón flotante de WhatsApp", prendido: Binding(
+                get: { estilo.whatsappFlotante ?? true }, set: { estilo.whatsappFlotante = $0 ? nil : false }))
+            Text("Va abajo en todas las páginas, con el WhatsApp de Datos del negocio.")
+                .estilo(.footnote).foregroundStyle(C.texto2)
         }
     }
 }
 
-// MARK: - Vista previa
-
-/// La tienda de verdad con el borrador (la misma página que el editor web, /panel/mi-tienda/vista,
-/// con el token de la app). La página misma no deja navegar los links.
-struct VistaPreviaTienda: UIViewRepresentable {
-    var token: String?
-    var vuelta: Int
-
-    final class Coordinador { var cargada = -1 }
-
-    func makeCoordinator() -> Coordinador { Coordinador() }
-
-    func makeUIView(context: Context) -> WKWebView {
-        let w = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
-        w.isOpaque = false
-        w.backgroundColor = .clear
-        return w
-    }
-
-    func updateUIView(_ w: WKWebView, context: Context) {
-        guard context.coordinator.cargada != vuelta else { return }
-        context.coordinator.cargada = vuelta
-        var r = URLRequest(url: Web.base.appending(path: "panel/mi-tienda/vista"))
-        r.cachePolicy = .reloadIgnoringLocalCacheData
-        if let token { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        w.load(r)
-    }
-}

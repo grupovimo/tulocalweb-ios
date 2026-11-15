@@ -154,6 +154,9 @@ targets:
       # Qué links abren la app (EnlacesTests), la misma lista que sirve la web.
       - path: ../pruebas/enlaces.json
         buildPhase: resources
+      # Los casos de la migración del diseño v1 → v2 (DisenoTests), los mismos que corren la web y Go.
+      - path: ../../packages/contrato/casos/diseno-v2.json
+        buildPhase: resources
     dependencies:
       - target: TuLocalWeb
     settings:

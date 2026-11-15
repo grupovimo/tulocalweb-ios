@@ -2,6 +2,28 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 15/11/2026 · Tienda en bloques · iOS
+
+- **Mi tienda** en la app (`apps/ios`, `docs/especificaciones/tienda-bloques.md`), con tres pestañas debajo de la
+  vista previa real: **Páginas** (Inicio, Catálogo, Ficha, Carrito y Nosotros; lista de bloques con arrastrar,
+  «+» entre medio, biblioteca por grupo con miniaturas, duplicar, ocultar, borrar con Deshacer, deshacer y rehacer;
+  ajustes de cada página), **Estilo** (punto de partida con las 17 plantillas, que conserva los datos y se
+  deshace; dirección, forma, aire, ancho, fotos, encabezado, pie, colores, tipografías, menú, barra de anuncios,
+  redes y WhatsApp flotante) y **Marca** (nombre, logos, al compartir y dirección). Borrador y publicar, como antes.
+- Piezas (Android las espeja con los mismos nombres):
+  - `Nucleo/CatalogoBloques.swift`: `CatalogoBloques` (lee `Recursos/bloques.json`) y `PresetTienda` (`presets.json`).
+  - `Nucleo/DisenoTienda.swift`: `Diseno`, `Bloque`, `AjustesPagina`, `Historial`, `ContextoTienda`, `FaltaBloque`
+    (por qué un bloque no se ve: «Cargá tu WhatsApp en Datos del negocio»…) y la migración v1 → v2 de respaldo.
+  - `Pantallas/Mas/EditorTienda.swift` (estado y cambios con historial), `EditorBloques.swift` (lista, biblioteca,
+    panel, variantes, ajustes de página), `CamposBloque.swift` (un editor por tipo de campo, `DatosEditor` con el
+    buscador de productos), `MiniaturaBloque.swift` (miniaturas dibujadas) y `VistaPreviaTienda.swift`.
+- **Vista previa** con el protocolo de la spec: handler `tienda` (`lista`, `bloque` → abre el panel),
+  `tiendaVista.mostrar` cada vez que cambia algo (sin guardar) y `seleccionar` al tocar un bloque en la lista. Si la
+  página no avisa `lista`, cae en lo de antes: guardar el borrador y recargar («Actualizar»).
+- `scripts/estilo/para-ios.ts` copia `bloques.json` y `presets.json` a `Recursos/` y a los assets de Android.
+- Pruebas: `DisenoTests` corre los casos de `packages/contrato/casos/diseno-v2.json`, el catálogo, el cambio de
+  preset, deshacer/rehacer y los avisos.
+
 ## 6/11/2026 · Verificación en dos pasos (§58) y demos como vitrina
 
 - **Dos pasos** (migración 00075): API, web y app de iPhone, todo desplegado. Prenderla: web › Configuración ›

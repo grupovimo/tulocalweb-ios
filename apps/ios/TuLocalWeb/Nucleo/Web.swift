@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Un JSON cualquiera: para editar un producto sin perder los campos que la app no muestra (opciones,
 /// variantes, canales) al mandarlo de vuelta.
@@ -54,6 +55,15 @@ enum Web {
         struct R: Decodable { var ruta: String }
         let ruta = try JSONDecoder().decode(R.self, from: d).ruta
         return ruta.hasPrefix("http") ? ruta : base.absoluteString + ruta
+    }
+
+    /// Una foto elegida, achicada a 1600 px de lado y en JPEG, lista para `subirFoto`.
+    static func jpegParaSubir(_ datos: Data) -> Data? {
+        guard let img = UIImage(data: datos) else { return nil }
+        let escala = min(1, 1600 / max(img.size.width, img.size.height))
+        let tam = CGSize(width: img.size.width * escala, height: img.size.height * escala)
+        let chica = UIGraphicsImageRenderer(size: tam).image { _ in img.draw(in: CGRect(origin: .zero, size: tam)) }
+        return chica.jpegData(compressionQuality: 0.85)
     }
 
     /// Una pregunta a Tincho: va devolviendo el texto a medida que llega.
