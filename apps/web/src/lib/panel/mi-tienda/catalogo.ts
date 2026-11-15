@@ -1,37 +1,16 @@
 /**
- * El catálogo de bloques visto desde el editor (packages/contrato/bloques.json): las definiciones
- * con las que se arman la biblioteca, las variantes y los campos de cada panel. La validación y
- * los valores por defecto de la tienda están en lib/tienda/sistema/catalogo.ts.
+ * El catálogo de bloques visto desde el editor: lo de la tienda (lib/tienda/sistema/catalogo.ts)
+ * más los nombres que muestra el panel (variantes, opciones, páginas y la barra de anuncios), todo
+ * desde packages/contrato/bloques.json.
  */
-import BLOQUES from '@mostrador/contrato/bloques.json';
+import CATALOGO from '@mostrador/contrato/bloques.json';
+import { DEF, type Campo, type DefBloque } from '#lib/tienda/sistema/catalogo.ts';
 
-export type TipoCampo = keyof typeof BLOQUES.tiposCampo;
+export { BLOQUES as DEFS, LIMITES, ICONOS } from '#lib/tienda/sistema/catalogo.ts';
+export type { Campo, DefBloque };
 
-export type Campo = {
-	id: string;
-	tipo: TipoCampo;
-	nombre: string;
-	max?: number;
-	min?: number;
-	requerido?: boolean;
-	porDefecto?: unknown;
-	/** De dónde sale el texto si se deja vacío: el nombre o el lema de la tienda. */
-	sugerido?: 'nombre' | 'lema';
-	opciones?: string[];
-	nombres?: string[];
-	item?: Campo[];
-};
-
-export type DefBloque = {
-	tipo: string;
-	grupo: string;
-	nombre: string;
-	descripcion: string;
-	max?: number;
-	variantes: string[];
-	nombresVariantes: string[];
-	campos: Campo[];
-};
+/** Un campo con los nombres de sus opciones (los `opcion` de las páginas). */
+export type CampoConNombres = Campo & { nombres?: string[] };
 
 export type PaginaId = 'inicio' | 'catalogo' | 'producto' | 'carrito' | 'nosotros';
 
@@ -40,32 +19,29 @@ export type DefPagina = {
 	bloques?: boolean;
 	variantes?: string[];
 	nombresVariantes?: string[];
-	campos?: Campo[];
+	campos?: CampoConNombres[];
 };
 
-export const CATALOGO = BLOQUES;
-export const LIMITES = BLOQUES.limites;
-export const DEFS = BLOQUES.bloques as DefBloque[];
-export const GRUPOS = BLOQUES.grupos;
-export const FONDOS = BLOQUES.fondos;
-export const ICONOS = BLOQUES.iconos;
-export const FUENTES_PRODUCTOS = BLOQUES.fuentesProductos;
-export const PAGINAS = BLOQUES.paginas as Record<PaginaId, DefPagina>;
+export const GRUPOS = CATALOGO.grupos;
+export const FONDOS = CATALOGO.fondos;
+export const FUENTES_PRODUCTOS = CATALOGO.fuentesProductos;
+export const PAGINAS = CATALOGO.paginas as Record<PaginaId, DefPagina>;
 export const ORDEN_PAGINAS: PaginaId[] = ['inicio', 'catalogo', 'producto', 'carrito', 'nosotros'];
-export const BARRA = BLOQUES.barraAnuncios as {
+export const BARRA = CATALOGO.barraAnuncios as {
 	nombre: string;
 	descripcion: string;
 	variantes: string[];
 	nombresVariantes: string[];
 	campos: Campo[];
 };
-export const OPCIONES_ESTILO = BLOQUES.estilo as Record<
-	'direccion' | 'forma' | 'densidad' | 'ancho' | 'fotoProducto' | 'encabezado' | 'pie',
+export type OpcionEstilo =
+	'direccion' | 'forma' | 'densidad' | 'ancho' | 'fotoProducto' | 'encabezado' | 'pie';
+export const OPCIONES_ESTILO = CATALOGO.estilo as Record<
+	OpcionEstilo,
 	{ opciones: string[]; nombres: string[]; porDefecto?: string }
 >;
 
-const POR_TIPO = new Map(DEFS.map((d) => [d.tipo, d]));
-export const defDe = (tipo: string) => POR_TIPO.get(tipo);
+export const defDe = (tipo: string): DefBloque | undefined => DEF[tipo as keyof typeof DEF];
 
 /** El nombre de una variante («Foto completa»), o el id si no está. */
 export function nombreVariante(tipo: string, variante: string) {

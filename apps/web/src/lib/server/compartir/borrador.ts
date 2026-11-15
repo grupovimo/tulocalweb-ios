@@ -9,28 +9,22 @@ import { datosDe } from '#lib/server/datos/index.ts';
 import type { MiTienda } from '#lib/server/datos/tipos.ts';
 import { COOKIE } from '#lib/server/sandbox/sandbox.ts';
 import { resolverTienda } from '#lib/server/tienda/publica.ts';
+import { conDiseno } from '#lib/panel/mi-tienda/vista.ts';
 import { COMPARTIR_VACIO } from '#lib/tienda/compartir.ts';
+import { migrar } from '#lib/tienda/sistema/migrar.ts';
 import type { TiendaPublica } from '#lib/tienda/tipos.ts';
 
 export function conBorrador(t: TiendaPublica, m: MiTienda): TiendaPublica {
-	return {
+	// La portada de lo publicado (con sus sugeridos) queda de base; el diseño del borrador manda.
+	const base = {
 		...t,
-		plantilla: m.plantillaId,
-		paleta: m.diseno.paleta,
-		secciones: m.diseno.secciones.filter((s) => s.visible).map((s) => s.id),
-		estilo: m.diseno.estilo ?? {},
-		logo: m.diseno.logo ?? '',
 		portada: {
 			titulo: m.vista.portada.titulo,
 			lema: m.vista.portada.lema ?? '',
 			foto: m.vista.portada.foto
-		},
-		compartir: {
-			titulo: m.diseno.compartirTitulo ?? '',
-			descripcion: m.diseno.compartirDescripcion ?? '',
-			foto: m.diseno.compartirFoto ?? ''
 		}
 	};
+	return conDiseno(base, migrar(m.diseno, m.plantillaId), m.plantillaId);
 }
 
 /** Sólo con lo del editor (una tienda que todavía no se ve en público). */

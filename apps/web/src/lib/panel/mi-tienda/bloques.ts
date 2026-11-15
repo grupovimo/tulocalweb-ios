@@ -3,30 +3,24 @@
  * duplicar, ocultar y borrar. Cada una devuelve una lista nueva (el editor guarda la anterior para
  * deshacer).
  */
-import { defDe, LIMITES, type PaginaId } from './catalogo.ts';
+import type { Bloque, DisenoV2, PaginasDiseno, TipoBloque } from '#lib/tienda/sistema/catalogo.ts';
+import { defDe, LIMITES, PAGINAS, type PaginaId } from './catalogo.ts';
 
-export type Bloque = {
-	id: string;
-	tipo: string;
-	variante: string;
-	oculto?: boolean;
-	datos: Record<string, unknown>;
-};
+export type { Bloque };
 
-/** Las páginas con lista propia de bloques y dónde vive cada una en el diseño. */
-export type Paginas = {
-	catalogo?: { variante?: string; filtros?: string; columnas?: number };
-	producto?: {
-		variante?: string;
-		relacionados?: boolean;
-		calcularEnvio?: boolean;
-		bloques?: Bloque[];
-	};
-	carrito?: { variante?: string; envioGratisDesde?: boolean };
-	nosotros?: { bloques?: Bloque[] };
-};
+type ConBloques = Pick<DisenoV2, 'inicio' | 'paginas'>;
 
-type ConBloques = { inicio: Bloque[]; paginas?: Paginas };
+/** Los ajustes de una página con lo que falta tomado del catálogo (variante y campos). */
+export function ajustesDe<P extends 'catalogo' | 'producto' | 'carrito'>(
+	d: Pick<DisenoV2, 'paginas'>,
+	p: P
+): NonNullable<PaginasDiseno[P]> {
+	const def = PAGINAS[p];
+	const base: Record<string, unknown> = { variante: def.variantes?.[0] };
+	for (const c of def.campos ?? []) base[c.id] = c.porDefecto;
+	if (p === 'producto') base.bloques = [];
+	return { ...base, ...d.paginas?.[p] } as NonNullable<PaginasDiseno[P]>;
+}
 
 /** La lista de bloques de una página (vacía si la página no tiene). */
 export function bloquesDe(d: ConBloques, p: PaginaId): Bloque[] {
@@ -39,11 +33,12 @@ export function bloquesDe(d: ConBloques, p: PaginaId): Bloque[] {
 /** El diseño con otra lista en esa página (sin tocar el resto). */
 export function conBloquesEn<T extends ConBloques>(d: T, p: PaginaId, lista: Bloque[]): T {
 	if (p === 'inicio') return { ...d, inicio: lista };
-	if (p === 'producto' || p === 'nosotros')
+	if (p === 'producto')
 		return {
 			...d,
-			paginas: { ...d.paginas, [p]: { ...d.paginas?.[p], bloques: lista } }
+			paginas: { ...d.paginas, producto: { ...ajustesDe(d, 'producto'), bloques: lista } }
 		};
+	if (p === 'nosotros') return { ...d, paginas: { ...d.paginas, nosotros: { bloques: lista } } };
 	return d;
 }
 
@@ -76,7 +71,7 @@ export function porQueNo(lista: Bloque[], tipo: string): string | null {
 }
 
 /** Un bloque nuevo, con su primera variante (o la pedida) y sin datos: toma lo sugerido. */
-export function crear(tipo: string, usados: Set<string>, variante?: string): Bloque {
+export function crear(tipo: TipoBloque, usados: Set<string>, variante?: string): Bloque {
 	const def = defDe(tipo);
 	if (!def) throw new Error(`No existe el bloque ${tipo}`);
 	return {

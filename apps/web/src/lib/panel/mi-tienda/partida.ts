@@ -5,26 +5,18 @@
  * al final, en su orden. El look (dirección, forma, fuentes, colores) pasa a ser el del preset; la
  * marca (logos, menú, redes, barra) queda. Se puede deshacer.
  */
-import PRESETS from '@mostrador/contrato/presets.json';
+import { PRESETS } from '#lib/tienda/sistema/presets.ts';
 import { idsDe, nuevoId, type Bloque } from './bloques.ts';
 import { defDe } from './catalogo.ts';
 import { ESTILO_DEL_PRESET, type DisenoV2 } from './diseno.ts';
 
-export type Preset = {
-	direccion: 'vidriera' | 'mostrador' | 'pedido';
-	estilo: Record<string, string>;
-	orden: string[];
-	variantes: Record<string, string>;
-	gastronomia: boolean;
-};
-
-export const PRESETS_TIENDA = PRESETS.presets as Record<string, Preset>;
+export const PRESETS_TIENDA = PRESETS;
 
 export function aplicarPreset(d: DisenoV2, id: string): DisenoV2 {
 	const p = PRESETS_TIENDA[id];
 	if (!p) return d;
 	// Los bloques de la tienda por tipo, en orden: el primero de cada tipo pasa al preset.
-	const porTipo = new Map<string, Bloque[]>();
+	const porTipo = new Map<Bloque['tipo'], Bloque[]>();
 	for (const b of d.inicio) porTipo.set(b.tipo, [...(porTipo.get(b.tipo) ?? []), b]);
 	const usados = idsDe(d);
 	const inicio: Bloque[] = p.orden
@@ -33,8 +25,9 @@ export function aplicarPreset(d: DisenoV2, id: string): DisenoV2 {
 			const viejo = porTipo.get(tipo)?.shift();
 			const variante = p.variantes[tipo] ?? defDe(tipo)!.variantes[0];
 			if (viejo) {
-				const { oculto: _, ...b } = viejo;
-				return { ...b, variante };
+				const b = { ...viejo, variante };
+				delete b.oculto;
+				return b;
 			}
 			const id = nuevoId(usados);
 			usados.add(id);

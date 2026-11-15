@@ -14,13 +14,20 @@ import {
 	porQueNo,
 	type Bloque
 } from './bloques.ts';
+import type { TipoBloque } from '#lib/tienda/sistema/catalogo.ts';
 import { DEFS, LIMITES } from './catalogo.ts';
+import { paraGuardar } from './guardar.ts';
+import { fechaLocal, isoDeLocal, buscar } from './campos.ts';
 import { limpiar, type DisenoV2 } from './diseno.ts';
 import { queFalta, type Contexto } from './faltan.ts';
 import { deshacer, registrar, rehacer, vacio } from './historial.ts';
 import { aplicarPreset, PRESETS_TIENDA } from './partida.ts';
 
-const b = (id: string, tipo = 'banner', datos: Record<string, unknown> = {}): Bloque => ({
+const b = (
+	id: string,
+	tipo: TipoBloque = 'banner',
+	datos: Record<string, unknown> = {}
+): Bloque => ({
 	id,
 	tipo,
 	variante: DEFS.find((d) => d.tipo === tipo)!.variantes[0],
@@ -213,5 +220,102 @@ describe('limpiar', () => {
 		expect(
 			limpiar({ a: '', b: {}, c: { d: '' }, inicio: [{ id: 'x', datos: {} }], e: 0, f: false })
 		).toEqual({ inicio: [{ id: 'x', datos: {} }], e: 0, f: false });
+	});
+});
+
+describe('para guardar', () => {
+	const base: DisenoV2 = { version: 2, paleta: 0, inicio: [] };
+
+	it('saca lo incompleto y lo que no es del catálogo', () => {
+		const r = paraGuardar({
+			...base,
+			inicio: [
+				b('aaaaaaaa', 'preguntas', {
+					titulo: 'Dudas <b>',
+					items: [{ p: '¿Envían?', r: 'Sí' }, { p: 'Sin respuesta' }],
+					inventado: 1
+				}),
+				b('bbbbbbbb', 'portada', {
+					titulo: 'Hola\nmundo',
+					boton: { t: 'Ver', a: '' },
+					boton2: { t: '', a: 'catalogo' },
+					fotos: ['https://x.com/a.webp', 'javascript:alert(1)']
+				}),
+				b('cccccccc', 'logos', { items: [] }),
+				b('dddddddd', 'productos', { productos: { fuente: 'elegidos', ids: ['p1', 'p 2'] } }),
+				b('eeeeeeee', 'combo', { productos: ['p1'] }),
+				b('ffffffff', 'banner', { boton: { t: 'Ver', a: 'prod:p1' }, segundo: { titulo: '' } })
+			]
+		});
+		expect(r.inicio[0].datos).toEqual({ titulo: 'Dudas b', items: [{ p: '¿Envían?', r: 'Sí' }] });
+		expect(r.inicio[1].datos).toEqual({ titulo: 'Hola mundo', fotos: ['https://x.com/a.webp'] });
+		expect(r.inicio[2].datos).toEqual({});
+		expect(r.inicio[3].datos).toEqual({
+			productos: { fuente: 'elegidos', cantidad: 8, ids: ['p1'] }
+		});
+		expect(r.inicio[4].datos).toEqual({});
+		expect(r.inicio[5].datos).toEqual({ boton: { t: 'Ver', a: 'prod:p1' } });
+	});
+
+	it('siempre v2, sin lo de v1, con la barra y el menú limpios', () => {
+		const r = paraGuardar({
+			...base,
+			lema: '  ',
+			estilo: {
+				anuncio: 'viejo',
+				textos: { prods: 'x' },
+				barra: { variante: 'fija', mensajes: [{ texto: ' ' }] },
+				menu: [
+					{ t: 'Ofertas', a: 'cat:Ofertas' },
+					{ t: 'Mal', a: 'https://' }
+				],
+				redes: { instagram: '' }
+			}
+		});
+		expect(r).toEqual({
+			version: 2,
+			paleta: 0,
+			inicio: [],
+			estilo: { menu: [{ t: 'Ofertas', a: 'cat:Ofertas' }] }
+		});
+	});
+
+	it('las páginas sólo con lo del catálogo', () => {
+		const r = paraGuardar({
+			...base,
+			paginas: {
+				catalogo: { variante: 'lista', filtros: 'arriba', columnas: 9 },
+				nosotros: { bloques: [b('aaaaaaaa', 'textoImagen', { titulo: 'Somos' })] }
+			}
+		});
+		expect(r.paginas).toEqual({
+			catalogo: { variante: 'lista', filtros: 'arriba', columnas: 5 },
+			nosotros: { bloques: [b('aaaaaaaa', 'textoImagen', { titulo: 'Somos' })] }
+		});
+	});
+});
+
+describe('campos', () => {
+	it('las fechas van y vuelven en hora de Argentina', () => {
+		expect(isoDeLocal('2026-11-20T23:59')).toBe('2026-11-20T23:59:00-03:00');
+		expect(fechaLocal('2026-11-21T02:59:00Z')).toBe('2026-11-20T23:59');
+		expect(fechaLocal('')).toBe('');
+		expect(isoDeLocal('mañana')).toBe('');
+	});
+
+	it('el buscador ignora tildes y saca los elegidos', () => {
+		const ps = [
+			{
+				id: 'a',
+				nombre: 'Café de especialidad',
+				foto: null,
+				precio: 1,
+				categoria: null,
+				oferta: false
+			},
+			{ id: 'b', nombre: 'Taza', foto: null, precio: 1, categoria: 'Cafe', oferta: false }
+		];
+		expect(buscar(ps, 'cafe').map((p) => p.id)).toEqual(['a', 'b']);
+		expect(buscar(ps, 'cafe', ['a']).map((p) => p.id)).toEqual(['b']);
 	});
 });

@@ -1,96 +1,113 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { invalidate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '#lib/components/Icon.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import Segmentado from '#lib/components/Segmentado.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
 	import { anim } from '#lib/panel/anim.ts';
-	import { getUi } from '#lib/ui.svelte.ts';
-	import { escucharTiempoReal } from '#lib/tiempo-real/panel.svelte.ts';
-	import Modal from '#lib/components/Modal.svelte';
-	import Segmentado from '#lib/components/Segmentado.svelte';
 	import { subir as subirArchivo } from '#lib/panel/fotos.ts';
-	import { PLANTILLAS, plantilla } from '#lib/plantillas.ts';
-	import { acentos, contraste } from '#lib/tienda/acentos.ts';
-	import { colorValido } from '#lib/tienda/estilo/css.ts';
-	import { FUENTES } from '#lib/tienda/estilo/fuentes.ts';
-	import { COMBINACIONES, rolesDe } from '#lib/tienda/estilo/roles.ts';
-	import { MAX_MENU, NOMBRE_PAGINA, PAGINAS, type ItemMenu } from '#lib/tienda/estilo/menu.ts';
-	import type { EstiloTienda, Redes, SeccionConTitulo, Zona } from '#lib/tienda/estilo/estilo.ts';
-	import type { Rol } from '#lib/tienda/estilo/tipos.ts';
+	import AjustesPagina from '#lib/panel/mi-tienda/AjustesPagina.svelte';
+	import Biblioteca from '#lib/panel/mi-tienda/Biblioteca.svelte';
+	import Estilo from '#lib/panel/mi-tienda/Estilo.svelte';
+	import ListaBloques from '#lib/panel/mi-tienda/ListaBloques.svelte';
+	import PanelBloque from '#lib/panel/mi-tienda/PanelBloque.svelte';
+	import * as L from '#lib/panel/mi-tienda/bloques.ts';
+	import type { Ayuda } from '#lib/panel/mi-tienda/campos.ts';
+	import {
+		conBloques,
+		defDe,
+		ORDEN_PAGINAS,
+		PAGINAS,
+		type PaginaId
+	} from '#lib/panel/mi-tienda/catalogo.ts';
+	import type { DisenoV2 } from '#lib/panel/mi-tienda/diseno.ts';
+	import { paraGuardar } from '#lib/panel/mi-tienda/guardar.ts';
+	import * as H from '#lib/panel/mi-tienda/historial.ts';
+	import { aplicarPreset } from '#lib/panel/mi-tienda/partida.ts';
+	import type { AlaVista } from '#lib/panel/mi-tienda/vista.ts';
+	import { PLANTILLAS, plantilla as plantillaDe } from '#lib/plantillas.ts';
+	import { escucharTiempoReal } from '#lib/tiempo-real/panel.svelte.ts';
 	import { LARGO_DESCRIPCION, LARGO_TITULO, textosPorDefecto } from '#lib/tienda/compartir.ts';
+	import type { TipoBloque } from '#lib/tienda/sistema/catalogo.ts';
+	import { getUi } from '#lib/ui.svelte.ts';
 
-	/** Mi tienda (design/PanelOperacion.dc.html, sStore): secciones, colores y vista previa en vivo. */
+	/**
+	 * Mi tienda, el editor en bloques (docs/especificaciones/tienda-bloques.md › Editor): elegir la
+	 * página, armar su lista de bloques, el panel de cada uno, el estilo y el punto de partida, con
+	 * deshacer y la vista previa en vivo. Cada cambio confirmado se guarda en el borrador; publicar lo
+	 * pasa a la tienda.
+	 */
 	let { data } = $props();
 	const ui = getUi();
-	type Seccion = (typeof data.diseno.secciones)[number];
 
-	const SECCIONES = {
-		hero: [I.phImageFill, 'Portada'],
-		cats: [I.phTagFill, 'Categorías'],
-		prods: [I.phStorefrontFill, 'Productos destacados'],
-		revs: [I.phStarFill, 'Reseñas'],
-		ig: [I.logosInstagramIcon, 'Instagram'],
-		wa: [I.phWhatsappLogoFill, 'Botón de WhatsApp']
-	} as const;
-	// Lo que se edita es local y se guarda en cada cambio; al recargar vuelve lo guardado.
-	let secciones = $derived<Seccion[]>(data.diseno.secciones.map((s) => ({ ...s })));
-	let paleta = $derived(data.diseno.paleta);
-	let plantillaId = $derived(data.plantillaId);
-	let titulo = $derived(data.diseno.titulo ?? '');
-	let lema = $derived(data.diseno.lema ?? '');
-	let portada = $derived(data.diseno.portada ?? '');
-	let logo = $derived(data.diseno.logo ?? '');
-	// Al compartir: vacíos, lo sugerido y la imagen armada con la plantilla.
-	let compartirTitulo = $derived(data.diseno.compartirTitulo ?? '');
-	let compartirDescripcion = $derived(data.diseno.compartirDescripcion ?? '');
-	let compartirFoto = $derived(data.diseno.compartirFoto ?? '');
-	let imagenPropia = $derived(!!data.diseno.compartirFoto);
-	// Estilo: colores por rol, tipografías, logos, anuncio, textos y redes (lib/tienda/estilo).
-	let estilo = $derived<EstiloTienda>(structuredClone(data.diseno.estilo ?? {}));
-	// Lo sugerido sigue a lo que se edita (título de la portada y lema) con los datos de la tienda.
-	const sugeridos = $derived(
-		textosPorDefecto({
-			...data.hechos,
-			titulo: titulo.trim() || (data.diseno.titulo ? data.vista.tienda : data.hechos.titulo),
-			lema: lema.trim()
-		})
-	);
-	const host = $derived(data.direccion.split('/')[0]);
-	// La vista previa de la imagen se vuelve a pedir cada vez que se guarda un cambio.
-	let vuelta = $state(0);
-	let cargandoImagen = $state(true);
-	let sinPublicar = $derived(data.sinPublicar);
-	const elegida = $derived(plantilla(plantillaId));
-	// Color de acento: el de la plantilla o una de tres alternativas (lib/tienda/acentos.ts).
-	const opciones = $derived(acentos(plantillaId));
-	const pal = $derived({
-		bg: elegida?.bg ?? '#F3E9DC',
-		ink: elegida?.tx ?? '#3B2416',
-		acc: (opciones[paleta] ?? opciones[0]).color
-	});
-	// La tienda pública, para abrirla (la dirección viene sin protocolo).
-	const enlace = $derived(data.direccion.replace(/^[^/]+/, ''));
+	// ── El diseño y su historial ──
+	// Todo cambio arma un diseño nuevo (sin mutar): el anterior queda para deshacer.
+	// svelte-ignore state_referenced_locally
+	let diseno = $state.raw<DisenoV2>(data.diseno);
+	/** El último diseño confirmado (lo que entra al historial y se guarda). */
+	// svelte-ignore state_referenced_locally
+	let confirmado = data.diseno;
+	let hist = $state.raw(H.vacio<DisenoV2>());
+	// svelte-ignore state_referenced_locally
+	let sinPublicar = $state(data.sinPublicar);
+	const plantillaId = $derived(diseno.plantilla || data.plantillaId);
+	const elegida = $derived(plantillaDe(plantillaId));
 
-	// El logo que muestra la barra del panel: al guardarse otro, se recarga el armazón.
-	let logoDelPanel = data.diseno.logo ?? '';
-	// Los guardados van en fila: si dos salen juntos, el último en llegar tiene que ser el último hecho.
+	/** Cambiar el diseño. Sin confirmar sólo se ve en la vista previa (mientras se escribe). */
+	function cambiar(d: DisenoV2, confirmar = true) {
+		diseno = d;
+		if (confirmar) confirmarCambios();
+	}
+	function confirmarCambios() {
+		if (diseno === confirmado || JSON.stringify(diseno) === JSON.stringify(confirmado)) return;
+		hist = H.registrar(hist, confirmado);
+		confirmado = diseno;
+		void guardar();
+	}
+	function deshacer() {
+		confirmarCambios();
+		const r = H.deshacer(hist, confirmado);
+		if (!r) return;
+		hist = r.h;
+		diseno = confirmado = r.estado;
+		if (abierto && !lista.some((b) => b.id === abierto)) abierto = null;
+		void guardar();
+	}
+	function rehacer() {
+		const r = H.rehacer(hist, confirmado);
+		if (!r) return;
+		hist = r.h;
+		diseno = confirmado = r.estado;
+		if (abierto && !lista.some((b) => b.id === abierto)) abierto = null;
+		void guardar();
+	}
+	function teclas(e: KeyboardEvent) {
+		if (!(e.metaKey || e.ctrlKey)) return;
+		// En un campo de texto, deshacer es el del navegador (letra por letra).
+		const t = e.target as HTMLElement;
+		if (t.closest('input,textarea,select,[contenteditable]')) return;
+		const k = e.key.toLowerCase();
+		if (k === 'z' && !e.shiftKey) {
+			e.preventDefault();
+			deshacer();
+		} else if ((k === 'z' && e.shiftKey) || k === 'y') {
+			e.preventDefault();
+			rehacer();
+		}
+	}
+
+	// ── Guardar (en fila: el último en llegar tiene que ser el último hecho) ──
 	let fila = Promise.resolve();
+	let vuelta = $state(0);
+	// svelte-ignore state_referenced_locally
+	let logoDelPanel = data.diseno.logo ?? '';
 	function guardar() {
 		sinPublicar = true;
-		const cuerpo = JSON.stringify({
-			secciones,
-			paleta,
-			plantilla: plantillaId,
-			titulo,
-			lema,
-			portada,
-			logo,
-			compartirTitulo,
-			compartirDescripcion,
-			compartirFoto,
-			estilo
-		});
+		const d = paraGuardar(diseno);
+		const cuerpo = JSON.stringify(d);
 		fila = fila.then(async () => {
 			const r = await fetch('/panel/mi-tienda', {
 				method: 'PUT',
@@ -100,8 +117,8 @@
 			if (r.ok) {
 				vuelta++;
 				// El logo nuevo se ve enseguida en la barra del panel (en vez de las iniciales).
-				if (logo !== logoDelPanel) {
-					logoDelPanel = logo;
+				if ((d.logo ?? '') !== logoDelPanel) {
+					logoDelPanel = d.logo ?? '';
 					void invalidate('tienda:armazon');
 				}
 			} else
@@ -116,58 +133,6 @@
 		return fila;
 	}
 
-	let eligiendo = $state(false);
-	function elegir(id: string) {
-		eligiendo = false;
-		if (id === plantillaId) return;
-		plantillaId = id;
-		void guardar();
-	}
-
-	// Logo y foto de portada: se suben como las fotos de los productos.
-	type Foto = 'logo' | 'portada' | 'compartir' | 'logoOscuro' | 'icono';
-	let subiendo = $state<'' | Foto>('');
-	async function subirFoto(e: Event, cual: Foto) {
-		const input = e.currentTarget as HTMLInputElement;
-		const archivo = input.files?.[0];
-		input.value = '';
-		if (!archivo) return;
-		subiendo = cual;
-		try {
-			const url = await subirArchivo(archivo);
-			if (cual === 'logo') logo = url;
-			else if (cual === 'logoOscuro' || cual === 'icono') estilo = { ...estilo, [cual]: url };
-			else if (cual === 'compartir') compartirFoto = url;
-			else portada = url;
-			await guardar();
-		} catch (err) {
-			ui.toast({
-				k: 'err',
-				title: 'No pudimos subir la foto',
-				desc: err instanceof Error ? err.message : 'Probá de nuevo en un rato.'
-			});
-		} finally {
-			subiendo = '';
-		}
-	}
-	function quitar(cual: Foto) {
-		if (cual === 'logo') logo = '';
-		else if (cual === 'logoOscuro' || cual === 'icono') estilo = { ...estilo, [cual]: '' };
-		else if (cual === 'compartir') compartirFoto = '';
-		else portada = '';
-		void guardar();
-	}
-	function subir(i: number) {
-		if (!i) return;
-		const a = [...secciones];
-		[a[i - 1], a[i]] = [a[i], a[i - 1]];
-		secciones = a;
-		void guardar();
-	}
-	function alternar(i: number) {
-		secciones = secciones.map((s, k) => (k === i ? { ...s, visible: !s.visible } : s));
-		void guardar();
-	}
 	// Si otra persona del equipo publica mientras esta pantalla está abierta (§44), se avisa: no se
 	// recarga sola para no pisar lo que se está editando acá.
 	let publiqueEn = 0;
@@ -182,10 +147,12 @@
 		});
 	});
 	async function publicar() {
+		confirmarCambios();
 		if (!sinPublicar) return;
 		await fila;
 		publiqueEn = Date.now();
 		await fetch('/panel/mi-tienda/publicar', { method: 'POST' });
+		sinPublicar = false;
 		await invalidateAll();
 		ui.toast({
 			k: 'ok',
@@ -193,146 +160,157 @@
 			desc: `${data.direccion} ya muestra la nueva versión`
 		});
 	}
-	// ── Estilo ──
-	const original = $derived(rolesDe(plantillaId));
-	const ROLES_COLOR: [Rol | Zona, string][] = [
-		['fondo', 'Fondo'],
-		['superficie', 'Tarjetas'],
-		['texto', 'Texto'],
-		['textoSuave', 'Texto suave'],
-		['borde', 'Bordes'],
-		['acento', 'Botones y precios'],
-		['sobreAcento', 'Texto de los botones'],
-		['encabezado', 'Fondo del encabezado'],
-		['encabezadoTexto', 'Texto del encabezado'],
-		['pie', 'Fondo del pie'],
-		['pieTexto', 'Texto del pie']
-	];
-	/** El color que se ve: el elegido, o el acento rápido, o el de la plantilla. */
-	function colorVisto(rol: Rol | Zona): string {
-		const c = colorValido(estilo.colores?.[rol]);
-		if (c) return c;
-		if (rol === 'acento') return (opciones[paleta] ?? opciones[0]).color;
-		// Sin color propio, el encabezado y el pie siguen al rol del que salen (fondo o texto).
-		if (rol === 'encabezado') return colorVisto('fondo');
-		if (rol === 'encabezadoTexto') return colorVisto('texto');
-		if (rol === 'pie' || rol === 'pieTexto') {
-			const o = original[rol];
-			if (o === original.texto) return colorVisto('texto');
-			if (o === original.fondo) return colorVisto('fondo');
-		}
-		return original[rol];
+
+	// ── Páginas, bloques y paneles ──
+	let pestana = $state<'pagina' | 'estilo'>('pagina');
+	let pagina = $state<PaginaId>('inicio');
+	let abierto = $state<string | null>(null);
+	const lista = $derived(L.bloquesDe(diseno, pagina));
+	const bloqueAbierto = $derived(lista.find((b) => b.id === abierto) ?? null);
+	const ayuda: Ayuda = $derived({
+		cx: data.contexto,
+		nombre: data.vista.tienda,
+		lema: diseno.lema ?? '',
+		subir: subirArchivo
+	});
+	const ponerLista = (l: L.Bloque[], confirmar = true) =>
+		cambiar(L.conBloquesEn(diseno, pagina, l), confirmar);
+	const nombreDe = (b: L.Bloque) => defDe(b.tipo)?.nombre ?? b.tipo;
+
+	let columna: HTMLElement | undefined = $state();
+	async function abrir(id: string | null) {
+		abierto = id;
+		pestana = 'pagina';
+		modo = 'editar';
+		enviar({ tipo: 'seleccionar', id });
+		await tick();
+		if (id && matchMedia('(max-width: 999px)').matches)
+			columna?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
-	function ponerColores(c: Partial<Record<Rol | Zona, string>>, guardarYa = true) {
-		const colores = { ...estilo.colores, ...c };
-		for (const k of Object.keys(colores) as (Rol | Zona)[]) if (!colores[k]) delete colores[k];
-		estilo = { ...estilo, colores };
-		if (guardarYa) void guardar();
+	function elegirPagina(p: PaginaId) {
+		pagina = p;
+		abierto = null;
+		enviar({ tipo: 'diseno', diseno, pagina: p });
 	}
-	const personalizados = $derived(Object.keys(estilo.colores ?? {}).length);
-	// Avisos de contraste (AA: 4,5 para texto; 3 para el suave).
-	const avisos = $derived(
-		[
-			contraste(colorVisto('texto'), colorVisto('fondo')) < 4.5 &&
-				'El texto casi no se lee sobre el fondo.',
-			contraste(colorVisto('textoSuave'), colorVisto('fondo')) < 3 &&
-				'El texto suave casi no se lee sobre el fondo.',
-			contraste(colorVisto('sobreAcento'), colorVisto('acento')) < 4.5 &&
-				'El texto de los botones casi no se lee sobre su color.',
-			contraste(colorVisto('pieTexto'), colorVisto('pie')) < 4.5 &&
-				'El texto del pie casi no se lee.'
-		].filter((x): x is string => !!x)
+
+	let biblioteca = $state(false);
+	let agregarEn = $state(0);
+	const donde = $derived(
+		agregarEn >= lista.length
+			? 'al final de la página'
+			: agregarEn === 0
+				? 'arriba de todo'
+				: `después de ${nombreDe(lista[agregarEn - 1])}`
 	);
-	function combinacion(c: Partial<Record<Rol, string>>) {
-		ponerColores({ ...c, encabezado: '', encabezadoTexto: '', pie: '', pieTexto: '' });
+	function pedirAgregar(en: number) {
+		agregarEn = en;
+		biblioteca = true;
 	}
-	function colorDeLaPlantilla() {
-		estilo = { ...estilo, colores: undefined };
-		paleta = 0;
-		void guardar();
+	function agregar(tipo: TipoBloque) {
+		const b = L.crear(tipo, L.idsDe(diseno));
+		ponerLista(L.agregar(lista, b, agregarEn));
+		void abrir(b.id);
 	}
-	const OPCIONES_FUENTE = Object.entries(FUENTES).sort((a, b) =>
-		a[1].nombre.localeCompare(b[1].nombre)
-	);
-	function ponerEstilo<K extends keyof EstiloTienda>(k: K, v: EstiloTienda[K]) {
-		estilo = { ...estilo, [k]: v };
-		void guardar();
+	function mover(de: number, a: number) {
+		ponerLista(L.mover(lista, de, a));
 	}
-	const TITULOS: [SeccionConTitulo, string][] = [
-		['cats', 'Categorías'],
-		['prods', 'Productos destacados'],
-		['revs', 'Reseñas'],
-		['ig', 'Fotos']
-	];
-	function ponerTitulo(id: SeccionConTitulo, v: string) {
-		estilo = { ...estilo, textos: { ...estilo.textos, [id]: v } };
-		void guardar();
+	function alternar(i: number) {
+		ponerLista(L.alternar(lista, i));
 	}
-	const REDES: [keyof Redes, string, string][] = [
-		['instagram', 'Instagram', '@tutienda'],
-		['tiktok', 'TikTok', '@tutienda'],
-		['facebook', 'Facebook', 'facebook.com/tutienda'],
-		['youtube', 'YouTube', '@tucanal'],
-		['email', 'Email', 'hola@tutienda.com'],
-		['telefono', 'Teléfono', '11 5555-5555']
-	];
-	function ponerRed(k: keyof Redes, v: string) {
-		estilo = { ...estilo, redes: { ...estilo.redes, [k]: v } };
-		void guardar();
+	function duplicar(i: number) {
+		const l = L.duplicar(lista, i, L.idsDe(diseno));
+		ponerLista(l);
+		void abrir(l[i + 1].id);
 	}
-	// Menú: las pestañas propias (vacío: las de la plantilla).
-	const menu = $derived<ItemMenu[]>(estilo.menu ?? []);
-	const DESTINOS = $derived([
-		...PAGINAS.map((p) => [p, NOMBRE_PAGINA[p]] as const),
-		...data.vista.categorias.map((c) => [`cat:${c}`, `Categoría: ${c}`] as const),
-		['link', 'Un link propio…'] as const
-	]);
-	const destinoDe = (a: string) => (a.startsWith('https://') ? 'link' : a);
-	function ponerMenu(m: ItemMenu[], guardarYa = true) {
-		estilo = { ...estilo, menu: m };
-		if (guardarYa) void guardar();
+	function borrar(i: number) {
+		const b = lista[i];
+		ponerLista(L.borrar(lista, i));
+		abierto = null;
+		ui.undoable(`Borraste ${nombreDe(b).toLowerCase()}`, undefined, deshacer);
 	}
-	function agregarPestana() {
-		const usadas = new Set(menu.map((i) => i.a));
-		const p = PAGINAS.find((x) => !usadas.has(x)) ?? 'catalogo';
-		ponerMenu([...menu, { t: NOMBRE_PAGINA[p], a: p }]);
+
+	// ── Punto de partida ──
+	let eligiendo = $state(false);
+	function partida(id: string) {
+		eligiendo = false;
+		if (id === plantillaId) return;
+		cambiar(aplicarPreset(diseno, id));
+		abierto = null;
+		ui.undoable(
+			`Punto de partida: ${plantillaDe(id)?.nombre ?? id}`,
+			'Conservamos lo que cargaste en los bloques.',
+			deshacer
+		);
 	}
-	function cambiarDestino(i: number, d: string) {
-		const nombreViejo = DESTINOS.find(([k]) => k === menu[i].a)?.[1];
-		const m = menu.map((x) => ({ ...x }));
-		// Si el texto era el nombre del destino, sigue al nuevo.
-		const nuevo = DESTINOS.find(([k]) => k === d)?.[1] ?? '';
-		if (d === 'link') m[i].a = 'https://';
-		else m[i].a = d;
-		if (
-			d !== 'link' &&
-			(!m[i].t || m[i].t === nombreViejo || m[i].t === nombreViejo?.replace('Categoría: ', ''))
-		)
-			m[i].t = nuevo.replace('Categoría: ', '');
-		ponerMenu(m, d !== 'link');
-	}
-	function moverPestana(i: number) {
-		if (!i) return;
-		const m = [...menu];
-		[m[i - 1], m[i]] = [m[i], m[i - 1]];
-		ponerMenu(m);
-	}
-	// La vista previa: la tienda de verdad con el borrador (se recarga en cada guardado).
+
+	// ── Vista previa en vivo ──
 	let dispositivo = $state<'celular' | 'compu'>('celular');
-	function elegirImagen(v: 'armada' | 'propia') {
-		imagenPropia = v === 'propia';
-		// Volver a la armada deja de usar la foto propia (si había una).
-		if (!imagenPropia && compartirFoto) {
-			compartirFoto = '';
-			void guardar();
+	let modo = $state<'editar' | 'vista'>('editar');
+	let marco: HTMLIFrameElement | undefined = $state();
+	let vistaLista = $state(false);
+	function enviar(m: AlaVista) {
+		if (vistaLista) marco?.contentWindow?.postMessage(m, location.origin);
+	}
+	$effect(() => {
+		// Cada cambio (también mientras se escribe) se redibuja sin recargar.
+		if (vistaLista) enviar({ tipo: 'diseno', diseno, pagina });
+	});
+	function deLaVista(e: MessageEvent) {
+		if (e.origin !== location.origin || !marco || e.source !== marco.contentWindow) return;
+		const m = e.data as { tipo?: string; id?: unknown };
+		if (m?.tipo === 'lista') {
+			vistaLista = true;
+			enviar({ tipo: 'diseno', diseno, pagina });
+			if (abierto) enviar({ tipo: 'seleccionar', id: abierto });
+		} else if (m?.tipo === 'bloque' && typeof m.id === 'string') {
+			if (lista.some((b) => b.id === m.id)) void abrir(m.id as string);
 		}
 	}
-	const imagenPrevia = $derived(compartirFoto || `/panel/mi-tienda/compartir?v=${vuelta}`);
+
+	// ── Al compartir el link ──
+	const sugeridos = $derived(
+		textosPorDefecto({
+			...data.hechos,
+			titulo: data.hechos.titulo,
+			lema: (diseno.lema ?? '').trim()
+		})
+	);
+	const host = $derived(data.direccion.split('/')[0]);
+	// svelte-ignore state_referenced_locally
+	let imagenPropia = $state(!!data.diseno.compartirFoto);
+	let cargandoImagen = $state(true);
+	let subiendoCompartir = $state(false);
+	const imagenPrevia = $derived(diseno.compartirFoto || `/panel/mi-tienda/compartir?v=${vuelta}`);
 	$effect(() => {
 		void imagenPrevia;
 		cargandoImagen = true;
 	});
+	function elegirImagen(v: 'armada' | 'propia') {
+		imagenPropia = v === 'propia';
+		if (!imagenPropia && diseno.compartirFoto) cambiar({ ...diseno, compartirFoto: undefined });
+	}
+	async function subirCompartir(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const archivo = input.files?.[0];
+		input.value = '';
+		if (!archivo) return;
+		subiendoCompartir = true;
+		try {
+			cambiar({ ...diseno, compartirFoto: await subirArchivo(archivo) });
+		} catch (err) {
+			ui.toast({
+				k: 'err',
+				title: 'No pudimos subir la foto',
+				desc: err instanceof Error ? err.message : 'Probá de nuevo en un rato.'
+			});
+		} finally {
+			subiendoCompartir = false;
+		}
+	}
+	const enlace = $derived(data.direccion.replace(/^[^/]+/, ''));
 </script>
+
+<svelte:window onkeydown={teclas} onmessage={deLaVista} />
 
 <Seo title="Mi tienda · Panel" description="Editor de la tienda" path="/panel/mi-tienda" noindex />
 
@@ -341,7 +319,8 @@
 		<div class="c-txt">
 			<h1>Mi tienda</h1>
 			<div class="c-s">
-				Plantilla {elegida?.nombre ?? data.plantilla} · <span class="dir">{data.direccion}</span>
+				Punto de partida {elegida?.nombre ?? data.plantilla} ·
+				<span class="dir">{data.direccion}</span>
 			</div>
 		</div>
 		<a class="cambiar" href={resolve('/panel/tarjeta-para-paquetes')}
@@ -352,326 +331,119 @@
 			><Icon icon={I.phStorefrontFill} size={14} />Ver mi tienda</a
 		>
 		<button type="button" class="cambiar" onclick={() => (eligiendo = true)}
-			><Icon icon={I.phSwapBold} size={14} />Cambiar plantilla</button
+			><Icon icon={I.phSwapBold} size={14} />Punto de partida</button
 		>
 		<button type="button" class="publicar" class:listo={!sinPublicar} onclick={publicar}
 			>{sinPublicar ? 'Publicar cambios' : 'Todo publicado'}</button
 		>
 	</div>
 
-	<div class="editor" use:anim={{ t: 'rise', delay: 60 }}>
-		<div class="panelito">
-			<div class="p-t">Marca y portada</div>
-			{#each [['logo', 'Logo', logo], ['logoOscuro', 'Logo para fondos oscuros', estilo.logoOscuro ?? ''], ['icono', 'Ícono de la pestaña', estilo.icono ?? ''], ['portada', 'Foto de portada', portada]] as const as [cual, t, url] (cual)}
-				<div class="foto-fila">
-					<div
-						class="miniatura"
-						class:logo={cual !== 'portada'}
-						class:oscura={cual === 'logoOscuro'}
-					>
-						{#if url}<img src={url} alt="" />{:else}<Icon
-								icon={cual === 'portada' ? I.phImageFill : I.phStorefrontFill}
-								size={18}
-							/>{/if}
-					</div>
-					<div class="f-txt">
-						<b>{t}</b>
-						<span
-							>{url
-								? 'Subido'
-								: {
-										logo: 'Sin logo: va el nombre en letras',
-										logoOscuro: 'Para el encabezado o el pie oscuros',
-										icono: 'Cuadrado, se ve en la pestaña',
-										portada: 'Sin foto: va la de un producto'
-									}[cual]}</span
-						>
-					</div>
-					<label class="mini-btn" class:ocupado={subiendo === cual}>
-						{subiendo === cual ? 'Subiendo…' : url ? 'Cambiar' : 'Subir'}
-						<input
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							class="sr-only"
-							disabled={!!subiendo}
-							onchange={(e) => subirFoto(e, cual)}
-						/>
-					</label>
-					{#if url}<button
-							type="button"
-							class="mini-btn icono"
-							aria-label="Quitar {t.toLowerCase()}"
-							onclick={() => quitar(cual)}><Icon icon={I.phTrash} size={15} /></button
-						>{/if}
-				</div>
-			{/each}
-			{#if logo}
-				<label class="campo"
-					><span
-						>Tamaño del logo · {estilo.logoAlto || 'el de la plantilla'}{estilo.logoAlto
-							? ' px'
-							: ''}</span
-					><input
-						type="range"
-						min="24"
-						max="72"
-						step="2"
-						value={estilo.logoAlto || 36}
-						oninput={(e) => (estilo = { ...estilo, logoAlto: +e.currentTarget.value })}
-						onchange={guardar}
-					/></label
-				>
-			{/if}
-			<label class="campo"
-				><span>Título de la portada</span><input
-					class="input"
-					maxlength="80"
-					placeholder={data.vista.tienda}
-					bind:value={titulo}
-					onchange={guardar}
-				/></label
-			>
-			<label class="campo"
-				><span>Lema</span><input
-					class="input"
-					maxlength="120"
-					placeholder="Ej.: Hecho a mano en Rosario"
-					bind:value={lema}
-					onchange={guardar}
-				/></label
-			>
-			<div class="p-t colores">Secciones</div>
-			{#each secciones as s, i (s.id)}
-				{@const [icono, t] = SECCIONES[s.id]}
-				<div class="sec">
-					<Icon icon={I.phDotsSixVerticalBold} size={15} style="color:var(--fa)" />
-					<Icon icon={icono} size={16} style="color:#b0441d" />
-					<span class="s-t" class:oculta={!s.visible}>{t}</span>
-					<button type="button" aria-label="Subir {t}" disabled={i === 0} onclick={() => subir(i)}
-						><Icon icon={I.phCaretUpBold} size={12} /></button
+	<div class="modo">
+		<Segmentado
+			label="Qué ver"
+			opciones={[
+				['editar', 'Editar'],
+				['vista', 'Vista previa']
+			]}
+			bind:value={modo}
+		/>
+	</div>
+
+	<div class="editor" class:en-vista={modo === 'vista'} use:anim={{ t: 'rise', delay: 60 }}>
+		<div class="panelito columna" bind:this={columna}>
+			<div class="herramientas">
+				<Segmentado
+					label="Qué editar"
+					opciones={[
+						['pagina', 'Páginas'],
+						['estilo', 'Estilo']
+					]}
+					bind:value={pestana}
+				/>
+				<div class="deshacer">
+					<button
+						type="button"
+						class="mini-btn icono"
+						aria-label="Deshacer"
+						title="Deshacer (⌘Z)"
+						aria-keyshortcuts="Meta+Z Control+Z"
+						disabled={!hist.pasado.length}
+						onclick={deshacer}><Icon icon={I.phArrowUUpLeftBold} size={15} /></button
 					>
 					<button
 						type="button"
-						aria-label="{s.visible ? 'Ocultar' : 'Mostrar'} {t}"
-						onclick={() => alternar(i)}
-						><Icon icon={s.visible ? I.phEye : I.phEyeSlash} size={14} /></button
+						class="mini-btn icono"
+						aria-label="Rehacer"
+						title="Rehacer (⇧⌘Z)"
+						aria-keyshortcuts="Meta+Shift+Z Control+Shift+Z"
+						disabled={!hist.futuro.length}
+						onclick={rehacer}><Icon icon={I.phArrowUUpRightBold} size={15} /></button
 					>
 				</div>
-			{/each}
-			<details class="grupo" open>
-				<summary class="p-t colores">Colores</summary>
-				<div class="sub">Acento rápido</div>
-				<div class="paletas" role="group" aria-label="Color de acento">
-					{#each opciones as o, i (o.color)}
-						<button
-							type="button"
-							aria-label={i ? 'Color ' + (i + 1) : 'El de la plantilla'}
-							title={i ? undefined : 'El de la plantilla'}
-							aria-pressed={paleta === i && !estilo.colores?.acento}
-							style:background="linear-gradient(135deg,{pal.bg} 50%,{o.color} 50%)"
-							onclick={() => {
-								paleta = i;
-								ponerColores({ acento: '', sobreAcento: '' });
-							}}
-						></button>
-					{/each}
-				</div>
-				<div class="sub">Combinaciones</div>
-				<div class="combos">
-					{#each COMBINACIONES as c (c.id)}
-						<button type="button" class="combo" onclick={() => combinacion(c.colores)}>
-							<span class="muestra" style:background={c.colores.fondo}
-								><i style:background={c.colores.superficie}></i><i
-									style:background={c.colores.texto}
-								></i><i style:background={colorVisto('acento')}></i></span
-							>{c.nombre}
-						</button>
-					{/each}
-				</div>
-				<div class="sub">Todos los colores</div>
-				<div class="lista-colores">
-					{#each ROLES_COLOR as [rol, t] (rol)}
-						<label class="color-fila">
-							<input
-								type="color"
-								value={colorVisto(rol).toLowerCase()}
-								oninput={(e) => ponerColores({ [rol]: e.currentTarget.value.toUpperCase() }, false)}
-								onchange={() => void guardar()}
-							/>
-							<span class="c-n">{t}</span>
-							<span class="c-hex">{colorVisto(rol)}</span>
-							{#if estilo.colores?.[rol]}<button
-									type="button"
-									class="mini-btn icono"
-									aria-label="Volver {t.toLowerCase()} al de la plantilla"
-									onclick={(e) => {
-										e.preventDefault();
-										ponerColores({ [rol]: '' });
-									}}><Icon icon={I.phArrowCounterClockwiseBold} size={14} /></button
-								>{/if}
-						</label>
-					{/each}
-				</div>
-				{#each avisos as a (a)}<p class="aviso">{a}</p>{/each}
-				{#if personalizados || paleta}<button
-						type="button"
-						class="enlace"
-						onclick={colorDeLaPlantilla}>Volver a los colores de la plantilla</button
-					>{/if}
-			</details>
+			</div>
 
-			<details class="grupo">
-				<summary class="p-t colores">Tipografías</summary>
-				{#each [['fuenteTitulos', 'Títulos'], ['fuenteTexto', 'Texto']] as const as [k, t] (k)}
-					<label class="campo"
-						><span>{t}</span><select
-							class="input"
-							value={estilo[k] ?? ''}
-							onchange={(e) => ponerEstilo(k, e.currentTarget.value)}
-						>
-							<option value="">La de la plantilla</option>
-							{#each OPCIONES_FUENTE as [id, f] (id)}<option value={id}>{f.nombre}</option>{/each}
-						</select></label
-					>
-				{/each}
-			</details>
-
-			<details class="grupo">
-				<summary class="p-t colores">Menú</summary>
-				<p class="c-nota">
-					{menu.length
-						? 'Así se ve el menú de tu tienda, en la compu y en el celular.'
-						: 'Va el menú de la plantilla. Armá el tuyo para sumar pestañas como Nosotros.'}
-				</p>
-				{#each menu as it, i (i)}
-					<div class="pestana">
-						<div class="p-fila">
-							<input
-								class="input"
-								maxlength="30"
-								aria-label="Texto de la pestaña {i + 1}"
-								value={it.t}
-								onchange={(e) =>
-									ponerMenu(menu.map((x, k) => (k === i ? { ...x, t: e.currentTarget.value } : x)))}
-							/>
+			{#if pestana === 'pagina'}
+				{#if bloqueAbierto}
+					{@const i = lista.indexOf(bloqueAbierto)}
+					<PanelBloque
+						bloque={bloqueAbierto}
+						{ayuda}
+						puedeDuplicar={!L.porQueNo(lista, bloqueAbierto.tipo)}
+						onbloque={(b, c) =>
+							ponerLista(
+								lista.map((x) => (x.id === b.id ? b : x)),
+								c
+							)}
+						onvolver={() => abrir(null)}
+						onduplicar={() => duplicar(i)}
+						onalternar={() => alternar(i)}
+						onborrar={() => borrar(i)}
+					/>
+				{:else}
+					<div class="paginas" role="group" aria-label="Página">
+						{#each ORDEN_PAGINAS as p (p)}
 							<button
 								type="button"
-								class="mini-btn icono"
-								aria-label="Subir la pestaña {it.t}"
-								disabled={i === 0}
-								onclick={() => moverPestana(i)}><Icon icon={I.phCaretUpBold} size={12} /></button
+								aria-pressed={pagina === p}
+								class="pag"
+								onclick={() => elegirPagina(p)}
+								>{p === 'producto' ? 'Ficha' : PAGINAS[p].nombre}</button
 							>
-							<button
-								type="button"
-								class="mini-btn icono"
-								aria-label="Quitar la pestaña {it.t}"
-								onclick={() => ponerMenu(menu.filter((_, k) => k !== i))}
-								><Icon icon={I.phTrash} size={14} /></button
-							>
-						</div>
-						<select
-							class="input"
-							aria-label="Adónde lleva {it.t}"
-							value={destinoDe(it.a)}
-							onchange={(e) => cambiarDestino(i, e.currentTarget.value)}
-						>
-							{#each DESTINOS as [k, t] (k)}<option value={k}>{t}</option>{/each}
-						</select>
-						{#if destinoDe(it.a) === 'link'}
-							<input
-								class="input"
-								type="url"
-								maxlength="300"
-								placeholder="https://"
-								aria-label="Link de {it.t}"
-								value={it.a}
-								onchange={(e) => {
-									const u = e.currentTarget.value.trim();
-									if (/^https:\/\/[^\s"'<>]+$/.test(u))
-										ponerMenu(menu.map((x, k) => (k === i ? { ...x, a: u } : x)));
-									else
-										ui.toast({
-											k: 'err',
-											title: 'Ese link no es válido',
-											desc: 'Tiene que empezar con https://'
-										});
-								}}
-							/>
-						{/if}
+						{/each}
 					</div>
-				{/each}
-				{#if menu.length < MAX_MENU}<button
-						type="button"
-						class="combo agregar"
-						onclick={agregarPestana}><Icon icon={I.phPlusBold} size={14} />Agregar pestaña</button
-					>{/if}
-				{#if menu.length}<button type="button" class="enlace" onclick={() => ponerMenu([])}
-						>Volver al menú de la plantilla</button
-					>{/if}
-			</details>
-
-			<details class="grupo">
-				<summary class="p-t colores">Títulos de las secciones</summary>
-				{#each TITULOS as [id, t] (id)}
-					<label class="campo"
-						><span>{t}</span><input
-							class="input"
-							maxlength="60"
-							placeholder="El de la plantilla"
-							value={estilo.textos?.[id] ?? ''}
-							onchange={(e) => ponerTitulo(id, e.currentTarget.value)}
-						/></label
-					>
-				{/each}
-			</details>
-
-			<details class="grupo">
-				<summary class="p-t colores">Anuncio y pie</summary>
-				<label class="campo"
-					><span>Barra de anuncio (arriba de todo)</span><input
-						class="input"
-						maxlength="120"
-						placeholder="Ej.: Envío gratis desde $ 50.000"
-						value={estilo.anuncio ?? ''}
-						onchange={(e) => ponerEstilo('anuncio', e.currentTarget.value)}
-					/></label
-				>
-				<label class="campo"
-					><span>Link del anuncio (opcional)</span><input
-						class="input"
-						type="url"
-						maxlength="300"
-						placeholder="https://"
-						value={estilo.anuncioLink ?? ''}
-						onchange={(e) => ponerEstilo('anuncioLink', e.currentTarget.value.trim())}
-					/></label
-				>
-				<label class="campo"
-					><span>Línea del pie</span><input
-						class="input"
-						maxlength="160"
-						placeholder="Ej.: Atendemos de lunes a sábado de 9 a 19"
-						value={estilo.leyendaPie ?? ''}
-						onchange={(e) => ponerEstilo('leyendaPie', e.currentTarget.value)}
-					/></label
-				>
-			</details>
-
-			<details class="grupo">
-				<summary class="p-t colores">Redes y contacto</summary>
-				{#each REDES as [k, t, ph] (k)}
-					<label class="campo"
-						><span>{t}</span><input
-							class="input"
-							maxlength={k === 'email' ? 120 : k === 'telefono' ? 30 : 100}
-							placeholder={ph}
-							value={estilo.redes?.[k] ?? ''}
-							onchange={(e) => ponerRed(k, e.currentTarget.value)}
-						/></label
-					>
-				{/each}
-				<p class="c-nota">Se muestran en el pie de tu tienda.</p>
-			</details>
+					{#if pagina === 'catalogo' || pagina === 'producto' || pagina === 'carrito'}
+						<div class="p-t">Ajustes de {PAGINAS[pagina].nombre.toLowerCase()}</div>
+						<AjustesPagina {pagina} {diseno} {ayuda} oncambiar={cambiar} />
+					{/if}
+					{#if conBloques(pagina)}
+						<div class="p-t">
+							{pagina === 'inicio'
+								? 'Bloques de la portada'
+								: pagina === 'producto'
+									? 'Bloques abajo de la ficha'
+									: 'Bloques'}
+						</div>
+						{#if !lista.length}
+							<p class="c-nota">
+								{pagina === 'nosotros'
+									? 'Contá quién está detrás: sumá un texto con imagen, el local o las preguntas frecuentes.'
+									: 'Sumá bloques para contar más debajo de cada producto.'}
+							</p>
+						{/if}
+						<ListaBloques
+							{lista}
+							seleccionado={abierto}
+							cx={data.contexto}
+							onabrir={abrir}
+							onmover={mover}
+							onalternar={alternar}
+							onagregar={pedirAgregar}
+						/>
+					{/if}
+				{/if}
+			{:else}
+				<Estilo {diseno} plantilla={plantillaId} {ayuda} oncambiar={cambiar} />
+			{/if}
 		</div>
 
 		<div class="derecha">
@@ -684,9 +456,9 @@
 				</div>
 				<div class="vista" class:compu={dispositivo === 'compu'}>
 					<iframe
+						bind:this={marco}
 						title="Vista previa de tu tienda"
-						src="/panel/mi-tienda/vista?v={vuelta}"
-						loading="lazy"
+						src="/panel/mi-tienda/vista?pagina=inicio&marcos=1"
 					></iframe>
 				</div>
 			</div>
@@ -701,6 +473,7 @@
 					onchange={(v) => (dispositivo = v)}
 				/>
 			</div>
+			<p class="c-nota centro">Tocá un bloque en la vista para editarlo.</p>
 
 			<section class="panelito compartir" aria-labelledby="t-compartir">
 				<div class="p-t" id="t-compartir">Al compartir el link</div>
@@ -711,8 +484,10 @@
 								class="input"
 								maxlength={LARGO_TITULO}
 								placeholder={sugeridos.titulo}
-								bind:value={compartirTitulo}
-								onchange={guardar}
+								value={diseno.compartirTitulo ?? ''}
+								oninput={(e) =>
+									cambiar({ ...diseno, compartirTitulo: e.currentTarget.value }, false)}
+								onchange={confirmarCambios}
 							/></label
 						>
 						<label class="campo"
@@ -721,8 +496,10 @@
 								rows="3"
 								maxlength={LARGO_DESCRIPCION}
 								placeholder={sugeridos.descripcion}
-								bind:value={compartirDescripcion}
-								onchange={guardar}></textarea></label
+								value={diseno.compartirDescripcion ?? ''}
+								oninput={(e) =>
+									cambiar({ ...diseno, compartirDescripcion: e.currentTarget.value }, false)}
+								onchange={confirmarCambios}></textarea></label
 						>
 						<div class="campo">
 							<span>Imagen</span>
@@ -739,30 +516,31 @@
 						{#if imagenPropia}
 							<div class="foto-fila">
 								<div class="miniatura">
-									{#if compartirFoto}<img src={compartirFoto} alt="" />{:else}<Icon
+									{#if diseno.compartirFoto}<img src={diseno.compartirFoto} alt="" />{:else}<Icon
 											icon={I.phImageFill}
 											size={18}
 										/>{/if}
 								</div>
 								<div class="f-txt">
 									<b>Foto para compartir</b>
-									<span>{compartirFoto ? 'Subida' : 'Se recorta a 1200 × 630'}</span>
+									<span>{diseno.compartirFoto ? 'Subida' : 'Se recorta a 1200 × 630'}</span>
 								</div>
-								<label class="mini-btn" class:ocupado={subiendo === 'compartir'}>
-									{subiendo === 'compartir' ? 'Subiendo…' : compartirFoto ? 'Cambiar' : 'Subir'}
+								<label class="mini-btn" class:ocupado={subiendoCompartir}>
+									{subiendoCompartir ? 'Subiendo…' : diseno.compartirFoto ? 'Cambiar' : 'Subir'}
 									<input
 										type="file"
 										accept="image/jpeg,image/png,image/webp"
 										class="sr-only"
-										disabled={!!subiendo}
-										onchange={(e) => subirFoto(e, 'compartir')}
+										disabled={subiendoCompartir}
+										onchange={subirCompartir}
 									/>
 								</label>
-								{#if compartirFoto}<button
+								{#if diseno.compartirFoto}<button
 										type="button"
 										class="mini-btn icono"
 										aria-label="Quitar la foto para compartir"
-										onclick={() => quitar('compartir')}><Icon icon={I.phTrash} size={15} /></button
+										onclick={() => cambiar({ ...diseno, compartirFoto: undefined })}
+										><Icon icon={I.phTrash} size={15} /></button
 									>{/if}
 							</div>
 						{/if}
@@ -784,8 +562,10 @@
 									/>
 								</div>
 								<div class="t-txt">
-									<b>{compartirTitulo.trim() || sugeridos.titulo}</b>
-									<span class="t-desc">{compartirDescripcion.trim() || sugeridos.descripcion}</span>
+									<b>{diseno.compartirTitulo?.trim() || sugeridos.titulo}</b>
+									<span class="t-desc"
+										>{diseno.compartirDescripcion?.trim() || sugeridos.descripcion}</span
+									>
 									<span class="t-host">{host}</span>
 								</div>
 							</div>
@@ -798,10 +578,15 @@
 	</div>
 </div>
 
-<Modal bind:open={eligiendo} titulo="Elegí la plantilla" ancho={860}>
+<Biblioteca bind:open={biblioteca} {lista} {donde} onelegir={agregar} />
+
+<Modal bind:open={eligiendo} titulo="Elegí el punto de partida" ancho={860}>
 	<div class="m-cab">
-		<h2>Elegí la plantilla</h2>
-		<p>Se aplica a tu tienda cuando tocás «Publicar cambios». Tus productos no cambian.</p>
+		<h2>Elegí el punto de partida</h2>
+		<p>
+			Cambia la portada, la dirección y los colores. Conservamos lo que cargaste en los bloques y lo
+			podés deshacer. Se ve en tu tienda cuando tocás «Publicar&nbsp;cambios».
+		</p>
 	</div>
 	<div class="plantillas">
 		{#each PLANTILLAS as p (p.id)}
@@ -809,7 +594,7 @@
 				type="button"
 				class="tpl"
 				aria-pressed={p.id === plantillaId}
-				onclick={() => elegir(p.id)}
+				onclick={() => partida(p.id)}
 			>
 				<span class="tpl-foto" style:background={p.bg}
 					><img src={p.img} alt="" loading="lazy" /></span
@@ -852,7 +637,7 @@
 		cursor: pointer;
 	}
 	.tpl[aria-pressed='true'] {
-		border-color: #d2582f;
+		border-color: var(--terracota);
 	}
 	.tpl-foto {
 		display: block;
@@ -873,85 +658,6 @@
 	.tpl-r {
 		font-size: 12.5px;
 		color: var(--mu);
-	}
-	.foto-fila {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 8px 10px;
-		border-radius: 14px;
-		border: 1px solid var(--ln);
-	}
-	.miniatura {
-		width: 44px;
-		height: 44px;
-		flex: none;
-		border-radius: 10px;
-		overflow: hidden;
-		display: grid;
-		place-items: center;
-		background: var(--sf2, rgba(0, 0, 0, 0.05));
-		color: var(--mu);
-	}
-	.miniatura img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.miniatura.logo img {
-		object-fit: contain;
-	}
-	.f-txt {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		font-size: 13.5px;
-	}
-	.f-txt span {
-		font-size: 12px;
-		color: var(--mu);
-	}
-	.mini-btn {
-		display: inline-grid;
-		place-items: center;
-		min-height: 36px;
-		padding: 0 12px;
-		border-radius: 999px;
-		border: 1px solid var(--ln2);
-		background: var(--sf);
-		color: var(--tx);
-		font:
-			600 13px 'Instrument Sans',
-			sans-serif;
-		cursor: pointer;
-		white-space: nowrap;
-	}
-	.mini-btn.icono {
-		width: 36px;
-		padding: 0;
-	}
-	.mini-btn.ocupado {
-		opacity: 0.6;
-	}
-	.campo {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		padding: 4px 4px 0;
-		font-size: 13px;
-		font-weight: 600;
-	}
-	@media (max-width: 760px) {
-		.sec button,
-		.mini-btn {
-			min-width: 44px;
-			min-height: 44px;
-		}
-		.paletas button {
-			min-width: 44px;
-			min-height: 44px;
-		}
 	}
 	.pagina {
 		display: flex;
@@ -990,21 +696,25 @@
 		align-items: center;
 		gap: 8px;
 		padding: 10px 16px;
+		min-height: 40px;
 		border-radius: 999px;
 		border: 1px solid var(--ln2);
 		background: var(--sf);
 		color: var(--tx);
+		font: inherit;
 		font-size: 13.5px;
 		font-weight: 600;
 		box-shadow: var(--sh);
 		white-space: nowrap;
 		text-decoration: none;
+		cursor: pointer;
 	}
 	.publicar {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		padding: 11px 20px;
+		min-height: 44px;
 		border-radius: 999px;
 		border: 0;
 		background: linear-gradient(180deg, #c24e25, #b0441d);
@@ -1013,13 +723,17 @@
 			600 14px 'Instrument Sans',
 			sans-serif;
 		white-space: nowrap;
+		cursor: pointer;
 	}
 	.publicar.listo {
 		background: #c9b6a6;
 	}
+	.modo {
+		display: none;
+	}
 	.editor {
 		display: grid;
-		grid-template-columns: 300px minmax(0, 1fr);
+		grid-template-columns: 340px minmax(0, 1fr);
 		gap: 16px;
 		align-items: start;
 	}
@@ -1031,60 +745,88 @@
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
+		min-width: 0;
+	}
+	.columna {
+		scroll-margin-top: 80px;
+	}
+	.herramientas {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding-bottom: 8px;
+		margin-bottom: 2px;
+		border-bottom: 1px solid var(--ln);
+	}
+	.deshacer {
+		display: flex;
+		gap: 4px;
+	}
+	.paginas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		padding: 2px 0 6px;
+	}
+	.pag {
+		min-height: 36px;
+		padding: 6px 12px;
+		border: 1px solid var(--ln2);
+		border-radius: 999px;
+		background: var(--sf);
+		color: var(--tx);
+		font: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.pag[aria-pressed='true'] {
+		background: var(--tx);
+		border-color: var(--tx);
+		color: var(--sf);
 	}
 	.p-t {
 		font-size: 14px;
 		font-weight: 600;
-		padding: 2px 4px 6px;
+		padding: 8px 4px 4px;
 	}
-	.p-t.colores {
-		margin-top: 8px;
-		padding-bottom: 2px;
-	}
-	.sec {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 9px 10px;
-		border-radius: 14px;
-		background: var(--sf);
-		border: 1px solid var(--ln);
-	}
-	.s-t {
-		flex: 1;
-		font-size: 13.5px;
-		font-weight: 600;
-	}
-	.s-t.oculta {
-		opacity: 0.45;
-	}
-	.sec button {
-		width: 26px;
-		height: 26px;
-		border: 0;
-		border-radius: 8px;
-		background: transparent;
-		color: var(--mu);
-		display: grid;
-		place-items: center;
-	}
-	.sec button:disabled {
-		opacity: 0.3;
-	}
-	.paletas {
-		display: flex;
-		gap: 8px;
+	.c-nota {
+		margin: 0;
 		padding: 0 4px;
+		font-size: 12px;
+		color: var(--mu);
+		text-wrap: pretty;
 	}
-	.paletas button {
+	.c-nota.centro {
+		text-align: center;
+		margin-top: -8px;
+	}
+	.mini-btn {
+		display: inline-grid;
+		place-items: center;
+		min-height: 36px;
+		padding: 0 12px;
+		border-radius: 999px;
+		border: 1px solid var(--ln2);
+		background: var(--sf);
+		color: var(--tx);
+		font:
+			600 13px 'Instrument Sans',
+			sans-serif;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.mini-btn.icono {
 		width: 36px;
-		height: 36px;
-		border-radius: 11px;
-		border: 2px solid transparent;
 		padding: 0;
 	}
-	.paletas button[aria-pressed='true'] {
-		border-color: #d2582f;
+	.mini-btn:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+	.mini-btn.ocupado {
+		opacity: 0.6;
 	}
 	.navegador {
 		border-radius: 20px;
@@ -1125,6 +867,73 @@
 		flex-direction: column;
 		gap: 16px;
 		min-width: 0;
+		position: sticky;
+		top: 16px;
+	}
+	/* La vista previa: la tienda de verdad con el borrador. */
+	.vista {
+		height: min(720px, 72vh);
+		display: flex;
+		justify-content: center;
+		background: var(--sf2, #f4efe9);
+	}
+	.vista iframe {
+		width: 390px;
+		max-width: 100%;
+		height: 100%;
+		border: 0;
+		background: #fff;
+	}
+	.vista.compu iframe {
+		width: 100%;
+	}
+	.dispositivo {
+		display: flex;
+		justify-content: center;
+		margin-top: -4px;
+	}
+	.foto-fila {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 10px;
+		border-radius: 14px;
+		border: 1px solid var(--ln);
+	}
+	.miniatura {
+		width: 44px;
+		height: 44px;
+		flex: none;
+		border-radius: 10px;
+		overflow: hidden;
+		display: grid;
+		place-items: center;
+		background: var(--sf2, rgba(0, 0, 0, 0.05));
+		color: var(--mu);
+	}
+	.miniatura img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.f-txt {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		font-size: 13.5px;
+	}
+	.f-txt span {
+		font-size: 12px;
+		color: var(--mu);
+	}
+	.campo {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 4px 4px 0;
+		font-size: 13px;
+		font-weight: 600;
 	}
 	.c-grid {
 		display: grid;
@@ -1142,13 +951,6 @@
 		resize: vertical;
 		font: inherit;
 		font-size: 15px;
-	}
-	.c-nota {
-		margin: 0;
-		padding: 0 4px;
-		font-size: 12px;
-		color: var(--mu);
-		text-wrap: pretty;
 	}
 	.chat-wa {
 		min-width: 0;
@@ -1223,6 +1025,31 @@
 		font-size: 12px;
 		color: #6b786d;
 	}
+	@media (max-width: 999px) {
+		/* En el celular y la tablet: editar o mirar la vista, una cosa por vez. */
+		.modo {
+			display: flex;
+			justify-content: center;
+			position: sticky;
+			top: 8px;
+			z-index: 5;
+		}
+		.editor {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.derecha {
+			position: static;
+		}
+		.editor:not(.en-vista) .navegador,
+		.editor:not(.en-vista) .dispositivo,
+		.editor:not(.en-vista) .c-nota.centro {
+			display: none;
+		}
+		.editor.en-vista .columna,
+		.editor.en-vista .compartir {
+			display: none;
+		}
+	}
 	@media (max-width: 760px) {
 		.c-grid {
 			grid-template-columns: minmax(0, 1fr);
@@ -1230,194 +1057,18 @@
 		.burbuja {
 			max-width: 100%;
 		}
-	}
-	@media (max-width: 999px) {
-		.editor {
-			grid-template-columns: minmax(0, 1fr);
+		.mini-btn,
+		.pag,
+		.cambiar {
+			min-width: 44px;
+			min-height: 44px;
 		}
-	}
-	@media (max-width: 560px) {
-	}
-	/* Estilo: grupos plegables con los títulos de sección de siempre (.p-t). */
-	.grupo {
-		border-top: 1px solid var(--ln);
-		padding-top: 4px;
-	}
-	.grupo > summary {
-		list-style: none;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		min-height: 36px;
-	}
-	.grupo > summary::-webkit-details-marker {
-		display: none;
-	}
-	.grupo > summary::after {
-		content: '';
-		width: 7px;
-		height: 7px;
-		border-right: 2px solid var(--mu);
-		border-bottom: 2px solid var(--mu);
-		transform: rotate(45deg);
-		margin-right: 6px;
-		transition: transform 0.15s;
-	}
-	.grupo[open] > summary::after {
-		transform: rotate(-135deg);
-	}
-	.grupo[open] {
-		padding-bottom: 8px;
-	}
-	.sub {
-		font-size: 12.5px;
-		font-weight: 600;
-		color: var(--mu);
-		padding: 8px 4px 6px;
-	}
-	.combos {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-		gap: 6px;
-	}
-	.combo {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 6px 8px;
-		border: 1px solid var(--ln);
-		border-radius: 10px;
-		background: none;
-		font: inherit;
-		font-size: 13px;
-		font-weight: 600;
-		color: inherit;
-		cursor: pointer;
-		text-align: left;
-	}
-	.combo:hover {
-		border-color: var(--mu);
-	}
-	.muestra {
-		display: flex;
-		gap: 2px;
-		padding: 4px;
-		border-radius: 7px;
-		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
-	}
-	.muestra i {
-		width: 7px;
-		height: 14px;
-		border-radius: 2px;
-	}
-	.lista-colores {
-		display: flex;
-		flex-direction: column;
-	}
-	.color-fila {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		min-height: 40px;
-		padding: 2px 4px;
-		border-radius: 8px;
-		cursor: pointer;
-	}
-	.color-fila:hover {
-		background: var(--sf2, rgba(0, 0, 0, 0.04));
-	}
-	.color-fila input[type='color'] {
-		width: 30px;
-		height: 30px;
-		flex: none;
-		padding: 0;
-		border: 0;
-		border-radius: 8px;
-		background: none;
-		cursor: pointer;
-	}
-	.color-fila input[type='color']::-webkit-color-swatch-wrapper {
-		padding: 0;
-	}
-	.color-fila input[type='color']::-webkit-color-swatch {
-		border: 1px solid rgba(0, 0, 0, 0.15);
-		border-radius: 8px;
-	}
-	.c-n {
-		flex: 1;
-		font-size: 14px;
-	}
-	.c-hex {
-		font:
-			500 12px ui-monospace,
-			monospace;
-		color: var(--mu);
-	}
-	.aviso {
-		margin: 8px 4px 0;
-		font-size: 13px;
-		color: #9a3412;
-		text-wrap: pretty;
-	}
-	.enlace {
-		margin: 8px 4px 0;
-		padding: 0;
-		border: 0;
-		background: none;
-		font: inherit;
-		font-size: 13px;
-		font-weight: 600;
-		color: #b0441d;
-		cursor: pointer;
-	}
-	.miniatura.oscura {
-		background: #1c1a17;
-	}
-	select.input {
-		appearance: auto;
-	}
-	/* La vista previa: la tienda de verdad con el borrador. */
-	.vista {
-		height: min(720px, 72vh);
-		display: flex;
-		justify-content: center;
-		background: var(--sf2, #f4efe9);
-	}
-	.vista iframe {
-		width: 390px;
-		max-width: 100%;
-		height: 100%;
-		border: 0;
-		background: #fff;
-	}
-	.vista.compu iframe {
-		width: 100%;
-	}
-	.dispositivo {
-		display: flex;
-		justify-content: center;
-		margin-top: -4px;
-	}
-	.pestana {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		padding: 10px 0;
-		border-bottom: 1px solid var(--ln);
-	}
-	.p-fila {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-	}
-	.p-fila .input {
-		flex: 1;
-		min-width: 0;
-	}
-	.agregar {
-		margin-top: 10px;
-		justify-content: center;
-		width: 100%;
+		.cambiar {
+			flex: 1 1 auto;
+			justify-content: center;
+		}
+		.vista {
+			height: calc(100dvh - 220px);
+		}
 	}
 </style>

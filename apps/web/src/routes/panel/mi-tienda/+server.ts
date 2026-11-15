@@ -1,8 +1,11 @@
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { FONDOS, LIMITES, OPCIONES_ESTILO } from '#lib/panel/mi-tienda/catalogo.ts';
+import type { DisenoV2 } from '#lib/panel/mi-tienda/diseno.ts';
+import { linkValido, paraGuardar, problema } from '#lib/panel/mi-tienda/guardar.ts';
 import { plantilla } from '#lib/plantillas.ts';
 import { FUENTES } from '#lib/tienda/estilo/fuentes.ts';
-import { hrefDe, MAX_MENU } from '#lib/tienda/estilo/menu.ts';
+import { MAX_MENU } from '#lib/tienda/estilo/menu.ts';
 import { datosDe } from '#lib/server/datos/index.ts';
 import type { RequestHandler } from './$types';
 
@@ -11,6 +14,10 @@ const foto = v.pipe(
 	v.string(),
 	v.maxLength(300),
 	v.regex(/^$|^https?:\/\/[^\s"'<>]+$/, 'Esa foto no es válida: subila de nuevo.')
+);
+const enlace = v.pipe(
+	v.string(),
+	v.check((a) => linkValido(a), 'Elegí adónde lleva el link.')
 );
 const color = v.pipe(v.string(), v.regex(/^(#[0-9A-Fa-f]{6})?$/, 'Ese color no es válido.'));
 const texto = (max: number, que: string) =>
@@ -32,6 +39,8 @@ const parcial = <T extends Record<string, v.GenericSchema<string, string>>>(camp
 			}
 		)
 	);
+const opcion = (o: string[]) =>
+	v.optional(v.picklist(o as [string, ...string[]], 'Elegí una de las opciones.'));
 const Estilo = v.object({
 	colores: parcial({
 		fondo: color,
@@ -51,16 +60,34 @@ const Estilo = v.object({
 	logoOscuro: v.optional(foto),
 	icono: v.optional(foto),
 	logoAlto: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(72))),
-	anuncio: v.optional(texto(120, 'El anuncio')),
-	anuncioLink: v.optional(foto),
 	leyendaPie: v.optional(texto(160, 'La línea del pie')),
-	textos: parcial({
-		cats: texto(60, 'El título'),
-		prods: texto(60, 'El título'),
-		revs: texto(60, 'El título'),
-		ig: texto(60, 'El título'),
-		wa: texto(60, 'El título')
-	}),
+	// v2 (bloques.json › estilo): vacío es lo de la dirección y el preset.
+	direccion: opcion(OPCIONES_ESTILO.direccion.opciones),
+	forma: opcion(OPCIONES_ESTILO.forma.opciones),
+	densidad: opcion(OPCIONES_ESTILO.densidad.opciones),
+	ancho: opcion(OPCIONES_ESTILO.ancho.opciones),
+	fotoProducto: opcion(OPCIONES_ESTILO.fotoProducto.opciones),
+	encabezado: opcion(OPCIONES_ESTILO.encabezado.opciones),
+	pie: opcion(OPCIONES_ESTILO.pie.opciones),
+	barra: v.optional(
+		v.object({
+			variante: v.picklist(['fija', 'rotativa']),
+			mensajes: v.pipe(
+				v.array(
+					v.object({
+						texto: v.pipe(
+							texto(100, 'Cada mensaje'),
+							v.minLength(1, 'Cada mensaje necesita un texto.')
+						),
+						link: v.optional(enlace)
+					})
+				),
+				v.maxLength(5, 'La barra va hasta 5 mensajes.')
+			),
+			fondo: opcion(FONDOS.opciones)
+		})
+	),
+	whatsappFlotante: v.optional(v.boolean()),
 	menu: v.optional(
 		v.pipe(
 			v.array(
@@ -74,7 +101,7 @@ const Estilo = v.object({
 					),
 					a: v.pipe(
 						v.string(),
-						v.check((a) => hrefDe(a, '') !== null, 'Elegí adónde lleva cada pestaña.')
+						v.check((a) => linkValido(a), 'Elegí adónde lleva cada pestaña.')
 					)
 				})
 			),
@@ -90,14 +117,21 @@ const Estilo = v.object({
 		telefono: texto(30, 'El teléfono')
 	})
 });
-const IDS = ['hero', 'cats', 'prods', 'revs', 'ig', 'wa'] as const;
+// Los bloques: forma mínima acá; los datos se limpian contra el catálogo en paraGuardar.
+const Bloques = v.pipe(
+	v.array(v.looseObject({ id: v.string(), tipo: v.string(), variante: v.string() })),
+	v.maxLength(LIMITES.bloquesPorPagina, `Cada página va hasta ${LIMITES.bloquesPorPagina} bloques.`)
+);
 const Diseno = v.object({
-	secciones: v.pipe(
-		v.array(v.object({ id: v.picklist(IDS), visible: v.boolean() })),
-		v.check(
-			(s) => s.length === IDS.length && new Set(s.map((x) => x.id)).size === IDS.length,
-			'Faltan secciones.'
-		)
+	version: v.literal(2, 'Recargá la página: el editor cambió.'),
+	inicio: Bloques,
+	paginas: v.optional(
+		v.object({
+			catalogo: v.optional(v.looseObject({})),
+			producto: v.optional(v.looseObject({ bloques: v.optional(Bloques) })),
+			carrito: v.optional(v.looseObject({})),
+			nosotros: v.optional(v.object({ bloques: v.optional(Bloques) }))
+		})
 	),
 	paleta: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(3)),
 	plantilla: v.optional(
@@ -126,10 +160,25 @@ const Diseno = v.object({
 	estilo: v.optional(Estilo)
 });
 
-/** Guardar el borrador del diseño. */
+/**
+ * Guardar el borrador del diseño (v2, hasta limites.bytesDiseno). Lo incompleto o fuera del
+ * catálogo se saca acá también (paraGuardar), como en el editor: la API Go no lo aceptaría.
+ */
 export const PUT: RequestHandler = async ({ locals, request }) => {
-	const r = v.safeParse(Diseno, await request.json().catch(() => null));
+	const cuerpo = await request.text();
+	if (new TextEncoder().encode(cuerpo).length > LIMITES.bytesDiseno)
+		error(413, 'El diseño quedó muy grande: sacá algunos bloques o fotos.');
+	let json: unknown = null;
+	try {
+		json = JSON.parse(cuerpo);
+	} catch {
+		error(400, 'No se entendió el diseño.');
+	}
+	const r = v.safeParse(Diseno, json);
 	if (!r.success) error(400, r.issues[0].message);
-	await datosDe(locals).guardarMiTienda(r.output);
+	const d = paraGuardar(r.output as unknown as DisenoV2);
+	const p = problema(d);
+	if (p) error(400, p);
+	await datosDe(locals).guardarMiTienda(d);
 	return new Response(null, { status: 204 });
 };
