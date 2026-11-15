@@ -128,5 +128,12 @@ internal object Simbolos {
         "wifi.slash" to '\ue648', // wifi_off
         "xmark.circle" to '\ue888', // cancel
         "xmark" to '\ue5cd', // close
+        "plus.square.on.square" to '\ue03c', // library_add
+        "eye.slash" to '\ue8f5', // visibility_off
+        "arrow.uturn.forward" to '\ue15a', // redo
+        "hand.raised" to '\ue764', // back_hand
+        "square.on.circle" to '\ue7c8', // interests
+        "text.alignleft" to '\ue236', // format_align_left
+        "paintpalette" to '\ue40a', // palette
     )
 }
