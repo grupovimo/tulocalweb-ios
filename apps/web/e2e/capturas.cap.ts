@@ -41,21 +41,23 @@ test.describe.configure({ mode: 'parallel' });
 /** Carga entera: baja hasta el fondo para que entren las fotos perezosas y cierra las ventanas. */
 async function preparar(page: Page) {
 	await page.locator('html[data-listo]').waitFor({ state: 'attached', timeout: 15_000 });
+	// Todo con tope: una foto que nunca termina (o una página que crece al bajar) no cuelga la tanda.
 	await page.evaluate(async () => {
 		const paso = innerHeight * 0.8;
-		for (let y = 0; y < document.documentElement.scrollHeight; y += paso) {
+		for (let y = 0, n = 0; y < document.documentElement.scrollHeight && n < 40; y += paso, n++) {
 			scrollTo(0, y);
 			await new Promise((r) => setTimeout(r, 120));
 		}
 		scrollTo(0, 0);
 	});
-	await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+	await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
 	await page.evaluate(async () => {
-		await Promise.all(
+		const fotos = Promise.all(
 			[...document.images].map((i) =>
-				i.complete ? null : new Promise((r) => ((i.onload = r), (i.onerror = r)))
+				i.complete ? null : new Promise((r) => i.addEventListener('load', r, { once: true }))
 			)
 		);
+		await Promise.race([fotos, new Promise((r) => setTimeout(r, 5_000))]);
 		for (const d of document.querySelectorAll('dialog[open]')) (d as HTMLDialogElement).close();
 	});
 	await page.waitForTimeout(300);
@@ -81,7 +83,7 @@ async function recorrer(page: Page, slug: string, id: string) {
 	// La primera ficha con opciones (talle, color, presentación) y la primera sin.
 	let con: string | null = null;
 	let sin: string | null = null;
-	for (const f of fichas.slice(0, 16)) {
+	for (const f of fichas.slice(0, 24)) {
 		if (con && sin) break;
 		await page.goto(f);
 		await page.locator('html[data-listo]').waitFor({ state: 'attached' });
