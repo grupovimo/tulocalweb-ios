@@ -285,8 +285,9 @@ func Diseno(t Tienda) mitienda.Diseno {
 	d.Plantilla, d.Titulo, d.Lema, d.Portada = t.Plantilla, t.Nombre, t.Lema, t.Portada
 	d.CompartirTitulo, d.CompartirDescripcion = t.Nombre, t.Lema
 	beneficios := []any{
-		map[string]any{"icono": "envio", "titulo": "Envíos a todo el país", "texto": "Gratis desde $ 80.000"},
-		map[string]any{"icono": "cuotas", "titulo": "3 cuotas sin interés", "texto": "Con todas las tarjetas"},
+		map[string]any{"icono": "envio", "titulo": "Envíos a todo el país", "texto": "Por Correo Argentino"},
+		// Sin «cuotas sin interés»: la vidriera las manda en 0 y la demo no promete lo que la tienda no ofrece.
+		map[string]any{"icono": "cuotas", "titulo": "Pagás como quieras", "texto": "Mercado Pago o transferencia"},
 		map[string]any{"icono": "retiro", "titulo": "Retiro en el local", "texto": "Sin cargo, en " + t.Ciudad},
 		map[string]any{"icono": "cambios", "titulo": "Cambios sin vueltas", "texto": "Hasta 30 días"},
 	}
@@ -766,7 +767,7 @@ var preguntas = map[string][][2]string{
 		{"¿Hacen envíos a Rosario?", "¡Hola! Sí, enviamos a todo el país por Andreani y Correo Argentino."},
 		{"¿El talle es grande o normal?", "Es de calce normal. Si dudás entre dos talles, te recomendamos el más grande."},
 		{"¿Se puede retirar por el local?", "¡Claro! Lo retirás en Gurruchaga 1840 de lunes a sábado de 11 a 20."},
-		{"¿Aceptan cuotas sin interés?", "Sí, hasta 3 cuotas sin interés con Mercado Pago."},
+		{"¿Puedo pagar con tarjeta?", "Sí, con Mercado Pago: crédito, débito o dinero en cuenta. También por transferencia."},
 	},
 	"gastronomia": {
 		{"¿El café en grano sale molido para moka?", ""},
