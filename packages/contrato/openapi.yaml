@@ -1335,7 +1335,20 @@ paths:
       parameters:
         - { name: slug, in: path, required: true, schema: { type: string } }
       responses:
-        '200': { description: Tienda, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '200':
+          description: Tienda
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                required: [diseno]
+                properties:
+                  diseno:
+                    $ref: '#/components/schemas/DisenoTienda'
+                    description: 'El publicado, siempre v2 (un v1 se migra al leer). Los productos que nombran sus bloques vienen en productos.'
+                  secciones: { type: array, items: { type: string }, deprecated: true, description: 'v1, derivado del diseño (mientras convivan las plantillas viejas)' }
+                  estilo: { type: object, additionalProperties: true, description: 'estilo del diseño con anuncio y textos de v1 derivados' }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/pedidos:
     post:
@@ -2297,7 +2310,7 @@ paths:
         '401': { $ref: '#/components/responses/Problema' }
     put:
       operationId: guardarMiTienda
-      summary: Guarda el borrador (secciones y colores).
+      summary: Guarda el borrador (diseño v2, hasta 64 KB).
       requestBody:
         required: true
         content:
@@ -4616,32 +4629,102 @@ components:
         conciliado: { type: boolean }
     DisenoTienda:
       type: object
-      required: [secciones, paleta]
+      description: 'Diseño v2, la tienda en bloques (docs/especificaciones/tienda-bloques.md). Los campos, opciones y límites de los bloques están en packages/contrato/bloques.json; el PUT acepta hasta limites.bytesDiseno (64 KB). Sin version (o 1) es un diseño v1, con secciones: la API lo migra al leer (mitienda.Migrar) y no lo acepta al guardar.'
+      required: [version, paleta, inicio]
       properties:
+        version: { type: integer, enum: [2] }
+        paleta: { type: integer, minimum: 0, maximum: 3 }
+        plantilla: { type: string, description: 'Id de la plantilla (preset) a la que se cambia al publicar (vacío o ausente: la de siempre)' }
+        titulo: { type: string, maxLength: 80, description: 'Título de la marca (vacío: el nombre de la tienda)' }
+        lema: { type: string, maxLength: 120, description: 'Lema de la marca' }
+        portada: { type: string, maxLength: 300, description: 'URL de la foto de la marca (vacío: la de un producto)' }
+        logo: { type: string, maxLength: 300, description: 'URL del logo (vacío: el nombre en letras)' }
+        compartirTitulo: { type: string, maxLength: 70, description: 'Título de la vista previa al compartir la tienda (vacío: el sugerido)' }
+        compartirDescripcion: { type: string, maxLength: 160, description: 'Descripción de la vista previa al compartir (vacío: la sugerida)' }
+        compartirFoto: { type: string, maxLength: 300, description: 'URL de una foto propia para compartir (vacío: la imagen armada con la plantilla)' }
+        estilo: { $ref: '#/components/schemas/EstiloTienda' }
+        inicio:
+          type: array
+          maxItems: 30
+          description: 'Los bloques de la portada, en orden (bloques.json › limites.bloquesPorPagina)'
+          items: { $ref: '#/components/schemas/Bloque' }
+        paginas: { $ref: '#/components/schemas/PaginasTienda' }
         secciones:
           type: array
-          minItems: 6
-          maxItems: 6
+          deprecated: true
+          description: 'Sólo v1 (hero, cats, prods, revs, ig, wa): se lee para migrar; un diseño v2 no la trae'
           items:
             type: object
             required: [id, visible]
             properties:
               id: { type: string, enum: [hero, cats, prods, revs, ig, wa] }
               visible: { type: boolean }
-        paleta: { type: integer, minimum: 0, maximum: 3 }
-        plantilla: { type: string, description: 'Id de la plantilla a la que se cambia al publicar (vacío o ausente: la de siempre)' }
-        titulo: { type: string, maxLength: 80, description: 'Título de la portada (vacío: el nombre de la tienda)' }
-        lema: { type: string, maxLength: 120, description: 'Lema bajo el título de la portada' }
-        portada: { type: string, maxLength: 300, description: 'URL de la foto de portada (vacío: la de un producto)' }
-        logo: { type: string, maxLength: 300, description: 'URL del logo (vacío: el nombre en letras)' }
-        compartirTitulo: { type: string, maxLength: 70, description: 'Título de la vista previa al compartir la tienda (vacío: el sugerido)' }
-        compartirDescripcion: { type: string, maxLength: 160, description: 'Descripción de la vista previa al compartir (vacío: la sugerida)' }
-        compartirFoto: { type: string, maxLength: 300, description: 'URL de una foto propia para compartir (vacío: la imagen armada con la plantilla)' }
-        estilo: { $ref: '#/components/schemas/EstiloTienda' }
+    Bloque:
+      type: object
+      description: 'Un bloque de bloques.json › bloques. datos: los campos del tipo (según tiposCampo); lo que falta toma porDefecto o lo sugerido. Los campos requeridos se exigen dentro de las listas; arriba, un bloque incompleto se guarda y no se dibuja.'
+      required: [id, tipo, variante, datos]
+      properties:
+        id: { type: string, pattern: '^[a-z0-9]{6,16}$', description: 'Único en todo el diseño (lo genera el editor; los migrados usan el tipo)' }
+        tipo:
+          type: string
+          enum: [portada, banner, oferta, textoImagen, video, beneficios, productos, destacado, combo, categorias, menu, local, resenas, preguntas, logos, galeria, newsletter, whatsapp, turnos]
+        variante: { type: string, description: 'Una de bloques.json › bloques[tipo].variantes' }
+        oculto: { type: boolean }
+        datos: { type: object, additionalProperties: true }
+    PaginasTienda:
+      type: object
+      description: 'Las opciones de las otras páginas (bloques.json › paginas). Vacío: lo de por defecto.'
+      properties:
+        catalogo:
+          type: object
+          properties:
+            variante: { type: string, enum: [grilla, lista] }
+            filtros: { type: string, enum: [costado, arriba] }
+            columnas: { type: integer, minimum: 2, maximum: 5 }
+        producto:
+          type: object
+          properties:
+            variante: { type: string, enum: [grilla, miniaturas, carrusel] }
+            relacionados: { type: boolean }
+            calcularEnvio: { type: boolean }
+            bloques: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/Bloque' } }
+        carrito:
+          type: object
+          properties:
+            variante: { type: string, enum: [pagina, panel] }
+            envioGratisDesde: { type: boolean }
+        nosotros:
+          type: object
+          properties:
+            bloques: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/Bloque' } }
     EstiloTienda:
       type: object
-      description: 'Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, anuncio, textos y redes. Todo opcional: vacío es lo de la plantilla (lib/tienda/estilo/estilo.ts)'
+      description: 'Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, redes, menú y las opciones de la dirección (v2). Todo opcional: vacío es lo de la dirección y el preset. anuncio, anuncioLink y textos son de v1: pasan a barra y a los títulos de los bloques.'
       properties:
+        direccion: { type: string, enum: [vidriera, mostrador, pedido] }
+        forma: { type: string, enum: [recta, redondeada, pildora] }
+        densidad: { type: string, enum: [aireada, normal, compacta] }
+        ancho: { type: string, enum: [normal, amplio] }
+        fotoProducto: { type: string, enum: [cuadrada, vertical, apaisada] }
+        encabezado: { type: string, enum: [izquierda, centrado, buscador] }
+        pie: { type: string, enum: [simple, columnas, grande] }
+        barra:
+          type: object
+          description: 'La barra de anuncios (bloques.json › barraAnuncios), arriba de todo'
+          required: [mensajes]
+          properties:
+            variante: { type: string, enum: [fija, rotativa] }
+            mensajes:
+              type: array
+              maxItems: 5
+              items:
+                type: object
+                required: [texto]
+                properties:
+                  texto: { type: string, minLength: 1, maxLength: 100 }
+                  link: { type: string, maxLength: 300, description: 'Una página, cat:<categoría>, prod:<id> o https://…' }
+            fondo: { type: string, enum: [normal, superficie, acento, oscuro] }
+        whatsappFlotante: { type: boolean, description: 'false: sin el botón flotante de WhatsApp' }
         colores:
           type: object
           additionalProperties: false
@@ -4662,11 +4745,12 @@ components:
         logoOscuro: { type: string, maxLength: 300 }
         icono: { type: string, maxLength: 300 }
         logoAlto: { type: integer, minimum: 0, maximum: 72 }
-        anuncio: { type: string, maxLength: 120 }
-        anuncioLink: { type: string, maxLength: 300 }
+        anuncio: { type: string, maxLength: 120, deprecated: true }
+        anuncioLink: { type: string, maxLength: 300, deprecated: true }
         leyendaPie: { type: string, maxLength: 160 }
         textos:
           type: object
+          deprecated: true
           additionalProperties: false
           properties:
             cats: { type: string, maxLength: 60 }
@@ -4687,7 +4771,7 @@ components:
         menu:
           type: array
           maxItems: 8
-          description: 'Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría> o https://…'
+          description: 'Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría>, prod:<id> o https://…'
           items:
             type: object
             required: [t, a]

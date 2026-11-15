@@ -2252,7 +2252,7 @@ export interface paths {
         };
         /** El editor de la tienda (borrador y si hay cambios sin publicar). */
         get: operations["miTienda"];
-        /** Guarda el borrador (secciones y colores). */
+        /** Guarda el borrador (diseño v2, hasta 64 KB). */
         put: operations["guardarMiTienda"];
         post?: never;
         delete?: never;
@@ -4447,20 +4447,18 @@ export interface components {
             }[];
             conciliado: boolean;
         };
+        /** @description Diseño v2, la tienda en bloques (docs/especificaciones/tienda-bloques.md). Los campos, opciones y límites de los bloques están en packages/contrato/bloques.json; el PUT acepta hasta limites.bytesDiseno (64 KB). Sin version (o 1) es un diseño v1, con secciones: la API lo migra al leer (mitienda.Migrar) y no lo acepta al guardar. */
         DisenoTienda: {
-            secciones: {
-                /** @enum {string} */
-                id: "hero" | "cats" | "prods" | "revs" | "ig" | "wa";
-                visible: boolean;
-            }[];
+            /** @enum {integer} */
+            version: 2;
             paleta: number;
-            /** @description Id de la plantilla a la que se cambia al publicar (vacío o ausente: la de siempre) */
+            /** @description Id de la plantilla (preset) a la que se cambia al publicar (vacío o ausente: la de siempre) */
             plantilla?: string;
-            /** @description Título de la portada (vacío: el nombre de la tienda) */
+            /** @description Título de la marca (vacío: el nombre de la tienda) */
             titulo?: string;
-            /** @description Lema bajo el título de la portada */
+            /** @description Lema de la marca */
             lema?: string;
-            /** @description URL de la foto de portada (vacío: la de un producto) */
+            /** @description URL de la foto de la marca (vacío: la de un producto) */
             portada?: string;
             /** @description URL del logo (vacío: el nombre en letras) */
             logo?: string;
@@ -4471,9 +4469,87 @@ export interface components {
             /** @description URL de una foto propia para compartir (vacío: la imagen armada con la plantilla) */
             compartirFoto?: string;
             estilo?: components["schemas"]["EstiloTienda"];
+            /** @description Los bloques de la portada, en orden (bloques.json › limites.bloquesPorPagina) */
+            inicio: components["schemas"]["Bloque"][];
+            paginas?: components["schemas"]["PaginasTienda"];
+            /**
+             * @deprecated
+             * @description Sólo v1 (hero, cats, prods, revs, ig, wa): se lee para migrar; un diseño v2 no la trae
+             */
+            secciones?: {
+                /** @enum {string} */
+                id: "hero" | "cats" | "prods" | "revs" | "ig" | "wa";
+                visible: boolean;
+            }[];
         };
-        /** @description Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, anuncio, textos y redes. Todo opcional: vacío es lo de la plantilla (lib/tienda/estilo/estilo.ts) */
+        /** @description Un bloque de bloques.json › bloques. datos: los campos del tipo (según tiposCampo); lo que falta toma porDefecto o lo sugerido. Los campos requeridos se exigen dentro de las listas; arriba, un bloque incompleto se guarda y no se dibuja. */
+        Bloque: {
+            /** @description Único en todo el diseño (lo genera el editor; los migrados usan el tipo) */
+            id: string;
+            /** @enum {string} */
+            tipo: "portada" | "banner" | "oferta" | "textoImagen" | "video" | "beneficios" | "productos" | "destacado" | "combo" | "categorias" | "menu" | "local" | "resenas" | "preguntas" | "logos" | "galeria" | "newsletter" | "whatsapp" | "turnos";
+            /** @description Una de bloques.json › bloques[tipo].variantes */
+            variante: string;
+            oculto?: boolean;
+            datos: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Las opciones de las otras páginas (bloques.json › paginas). Vacío: lo de por defecto. */
+        PaginasTienda: {
+            catalogo?: {
+                /** @enum {string} */
+                variante?: "grilla" | "lista";
+                /** @enum {string} */
+                filtros?: "costado" | "arriba";
+                columnas?: number;
+            };
+            producto?: {
+                /** @enum {string} */
+                variante?: "grilla" | "miniaturas" | "carrusel";
+                relacionados?: boolean;
+                calcularEnvio?: boolean;
+                bloques?: components["schemas"]["Bloque"][];
+            };
+            carrito?: {
+                /** @enum {string} */
+                variante?: "pagina" | "panel";
+                envioGratisDesde?: boolean;
+            };
+            nosotros?: {
+                bloques?: components["schemas"]["Bloque"][];
+            };
+        };
+        /** @description Mi tienda › Estilo: colores por rol y por zona, tipografías, logos, redes, menú y las opciones de la dirección (v2). Todo opcional: vacío es lo de la dirección y el preset. anuncio, anuncioLink y textos son de v1: pasan a barra y a los títulos de los bloques. */
         EstiloTienda: {
+            /** @enum {string} */
+            direccion?: "vidriera" | "mostrador" | "pedido";
+            /** @enum {string} */
+            forma?: "recta" | "redondeada" | "pildora";
+            /** @enum {string} */
+            densidad?: "aireada" | "normal" | "compacta";
+            /** @enum {string} */
+            ancho?: "normal" | "amplio";
+            /** @enum {string} */
+            fotoProducto?: "cuadrada" | "vertical" | "apaisada";
+            /** @enum {string} */
+            encabezado?: "izquierda" | "centrado" | "buscador";
+            /** @enum {string} */
+            pie?: "simple" | "columnas" | "grande";
+            /** @description La barra de anuncios (bloques.json › barraAnuncios), arriba de todo */
+            barra?: {
+                /** @enum {string} */
+                variante?: "fija" | "rotativa";
+                mensajes: {
+                    texto: string;
+                    /** @description Una página, cat:<categoría>, prod:<id> o https://… */
+                    link?: string;
+                }[];
+                /** @enum {string} */
+                fondo?: "normal" | "superficie" | "acento" | "oscuro";
+            };
+            /** @description false: sin el botón flotante de WhatsApp */
+            whatsappFlotante?: boolean;
             colores?: {
                 fondo?: string;
                 superficie?: string;
@@ -4493,9 +4569,12 @@ export interface components {
             logoOscuro?: string;
             icono?: string;
             logoAlto?: number;
+            /** @deprecated */
             anuncio?: string;
+            /** @deprecated */
             anuncioLink?: string;
             leyendaPie?: string;
+            /** @deprecated */
             textos?: {
                 cats?: string;
                 prods?: string;
@@ -4511,7 +4590,7 @@ export interface components {
                 email?: string;
                 telefono?: string;
             };
-            /** @description Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría> o https://… */
+            /** @description Pestañas del menú (vacío: las de la plantilla). a: inicio, catalogo, nosotros, turnos, suscripciones, cat:<categoría>, prod:<id> o https://… */
             menu?: {
                 t: string;
                 a: string;
@@ -8673,6 +8752,18 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @description El publicado, siempre v2 (un v1 se migra al leer). Los productos que nombran sus bloques vienen en productos. */
+                        diseno: components["schemas"]["DisenoTienda"];
+                        /**
+                         * @deprecated
+                         * @description v1, derivado del diseño (mientras convivan las plantillas viejas)
+                         */
+                        secciones?: string[];
+                        /** @description estilo del diseño con anuncio y textos de v1 derivados */
+                        estilo?: {
+                            [key: string]: unknown;
+                        };
+                    } & {
                         [key: string]: unknown;
                     };
                 };
