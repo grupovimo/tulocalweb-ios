@@ -83,7 +83,12 @@ export function etiquetasDe(
 	if (c.etiquetas.masVendido && sirve.top && top3(t).includes(p.id))
 		r.push({ texto: 'Más vendido', tipo: 'top' });
 	// La propia de la tienda no se repite con una automática parecida («Más vendida» y «Más vendido»).
-	const raiz = (s: string) => s.toLowerCase().replace(/[aeo]s?$/, '');
+	// Por la primera palabra: «Últimos» (la de la tienda) y «Últimas 2» dicen lo mismo.
+	const raiz = (s: string) =>
+		s
+			.toLowerCase()
+			.split(/\s+/)[0]
+			.replace(/[aeo]s?$/, '');
 	return r.filter((e, i) => r.findIndex((x) => raiz(x.texto) === raiz(e.texto)) === i);
 }
 

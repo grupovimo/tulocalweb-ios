@@ -49,6 +49,9 @@ describe('etiquetas automáticas', () => {
 			'Nuevo'
 		]);
 	});
+	test('«Últimos» de la tienda y «Últimas 2» automática no van juntas', () => {
+		expect(textos(p({ id: 'x', etiqueta: 'Últimos', stock: 2 }))).toEqual(['Últimos']);
+	});
 	test('últimas: desde el stock bajo elegido', () => {
 		const c = conversionDe({ conversion: { stockBajo: 5 } });
 		expect(textos(p({ id: 'x', stock: 5 }), c)).toEqual(['Últimas 5']);

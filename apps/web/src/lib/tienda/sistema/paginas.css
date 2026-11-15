@@ -2073,6 +2073,13 @@
 .tv[data-dir='vidriera'] .tv-cat-grilla {
 	gap: 56px 24px;
 }
+@media (max-width: 759px) {
+	/* En el celular, con dos columnas de ~165 px, 56 px entre filas separaba más las filas que los
+	   productos entre sí (el nombre parecía de la foto de abajo). */
+	.tv[data-dir='vidriera'] .tv-cat-grilla {
+		gap: 28px 12px;
+	}
+}
 .tv[data-dir='vidriera'] .tv-ficha-titulo {
 	font-size: 48px;
 	font-weight: 400;
