@@ -258,14 +258,71 @@ func combinar(opcion string, valores []string) [][]map[string]string {
 
 func redondear(c int64) int64 { return (c + 50) / 100 * 100 } // a la centena de pesos
 
+// Diseno de una demo: el inicial del preset (v2) con bloques extra que lucen la tienda armada:
+// beneficios bajo la portada, un banner después de los productos y, al final, preguntas y el local.
+func Diseno(t Tienda) mitienda.Diseno {
+	d := mitienda.Inicial(t.Plantilla)
+	d.Plantilla, d.Titulo, d.Lema, d.Portada = t.Plantilla, t.Nombre, t.Lema, t.Portada
+	d.CompartirTitulo, d.CompartirDescripcion = t.Nombre, t.Lema
+	beneficios := []any{
+		map[string]any{"icono": "envio", "titulo": "Envíos a todo el país", "texto": "Gratis desde $ 80.000"},
+		map[string]any{"icono": "cuotas", "titulo": "3 cuotas sin interés", "texto": "Con todas las tarjetas"},
+		map[string]any{"icono": "retiro", "titulo": "Retiro en el local", "texto": "Sin cargo, en " + t.Ciudad},
+		map[string]any{"icono": "cambios", "titulo": "Cambios sin vueltas", "texto": "Hasta 30 días"},
+	}
+	preguntas := []any{
+		map[string]any{"p": "¿Hacen envíos?", "r": "Sí, a todo el país por Correo Argentino y en moto en " + t.Ciudad + "."},
+		map[string]any{"p": "¿Cómo pago?", "r": "Con Mercado Pago, tarjeta o transferencia."},
+		map[string]any{"p": "¿Puedo retirar?", "r": "Sí: " + t.Direccion + ". " + t.Horario + "."},
+	}
+	banner := map[string]any{"titulo": "Nueva temporada", "texto": "Lo último que llegó, antes que nadie.",
+		"boton": map[string]any{"t": "Ver novedades", "a": "catalogo"}, "fondo": "oscuro"}
+	if presetDe(t.Plantilla).Gastronomia {
+		beneficios = []any{
+			map[string]any{"icono": "reloj", "titulo": "Listo en 20 minutos", "texto": "Pedí y pasá a buscar"},
+			beneficios[2], beneficios[1],
+		}
+		preguntas[0] = map[string]any{"p": "¿Hacen delivery?", "r": "Sí, en moto por " + t.Ciudad + ". El costo lo ves al pagar."}
+		banner["titulo"], banner["texto"] = "Desayuno para dos", "Dos cafés y dos medialunas, de 8 a 11."
+		banner["boton"] = map[string]any{"t": "Pedir ahora", "a": "catalogo"}
+	}
+	extra := map[string]mitienda.Bloque{
+		"portada":   {ID: "beneficios", Tipo: "beneficios", Variante: "fila", Datos: map[string]any{"items": beneficios}},
+		"productos": {ID: "promobanner", Tipo: "banner", Variante: "banda", Datos: banner},
+	}
+	var inicio []mitienda.Bloque
+	for _, b := range d.Inicio {
+		inicio = append(inicio, b)
+		if x, ok := extra[b.Tipo]; ok {
+			inicio = append(inicio, x)
+		}
+	}
+	d.Inicio = append(inicio,
+		mitienda.Bloque{ID: "preguntas", Tipo: "preguntas", Variante: "acordeon", Datos: map[string]any{"items": preguntas}},
+		mitienda.Bloque{ID: "ellocal", Tipo: "local", Variante: "mapa", Datos: map[string]any{"titulo": "Vení a conocernos",
+			"horarios": horarios(t.Horario)}},
+	)
+	return d
+}
+
+// presetDe: el preset de la plantilla de la demo (las tres existen).
+func presetDe(plantilla string) mitienda.Preset { return mitienda.Presets[plantilla] }
+
+// horarios: «Lunes a sábado de 11 a 20» → días «Lunes a sábado» y horas «11 a 20».
+func horarios(h string) []any {
+	dias, horas, ok := strings.Cut(h, " de ")
+	if !ok {
+		dias, horas = "Todos los días", h
+	}
+	return []any{map[string]any{"dias": dias, "horas": horas}}
+}
+
 func tienda(b *strings.Builder, t Tienda, c Catalogo, dueno string, ahora time.Time, r *rand.Rand) error {
 	tid := uuid(r)
 	creada := ahora.AddDate(0, -4, -12)
 	fmt.Fprintf(b, "\n-- %s\nINSERT INTO app.slugs (slug, creado_en) VALUES (%s, %s);\n", t.Nombre, q(t.Slug), ts(creada))
 
-	d := mitienda.Inicial()
-	d.Plantilla, d.Titulo, d.Lema, d.Portada = t.Plantilla, t.Nombre, t.Lema, t.Portada
-	d.CompartirTitulo, d.CompartirDescripcion = t.Nombre, t.Lema
+	d := Diseno(t)
 	negocio := map[string]string{
 		"nombre": t.Nombre, "razonSocial": "", "cuit": "", "condicion": "monotributo", "direccion": t.Direccion + ", " + t.Ciudad,
 		"whatsapp": t.Whatsapp, "email": "", "horario": t.Horario, "alias": "", "cbu": "", "titular": "", "politica": "",

@@ -18,9 +18,9 @@ func TestBorradorYPublicado(t *testing.T) {
 	if err != nil || v["sinPublicar"] != false || v["direccion"] != "luna.tulocalweb.com.ar" {
 		t.Fatalf("inicial: %+v %v", v, err)
 	}
-	d := mitienda.Inicial()
-	d.Secciones[0], d.Secciones[1] = d.Secciones[1], d.Secciones[0]
-	d.Secciones[5].Visible = false
+	d := mitienda.Inicial("litoral")
+	d.Inicio[0], d.Inicio[1] = d.Inicio[1], d.Inicio[0]
+	d.Inicio[2].Oculto = true
 	d.Paleta = 3
 	if err := mitienda.Guardar(ctx, b.App, id, d); err != nil {
 		t.Fatal(err)
@@ -34,10 +34,11 @@ func TestBorradorYPublicado(t *testing.T) {
 	if v, _ = mitienda.Leer(ctx, b.App, id, ""); v["sinPublicar"] != false {
 		t.Fatal("no se publicó")
 	}
-	malo := mitienda.Inicial()
-	malo.Secciones = malo.Secciones[:3]
+	malo := mitienda.Inicial("litoral")
+	malo.Version = 0
+	malo.Secciones = []mitienda.Seccion{{ID: "hero", Visible: true}}
 	if err := mitienda.Guardar(ctx, b.App, id, malo); err == nil {
-		t.Fatal("aceptó un diseño sin todas las secciones")
+		t.Fatal("aceptó un diseño v1")
 	}
 }
 
@@ -54,7 +55,7 @@ func TestPlantillaTextosYFotosAlPublicar(t *testing.T) {
 	if antes.Plantilla == otra {
 		otra = "yerbal"
 	}
-	d := mitienda.Inicial()
+	d := mitienda.Inicial("litoral")
 	d.Plantilla, d.Titulo, d.Lema = otra, "  Pan de masa madre ", "Horneado cada mañana"
 	d.Portada, d.Logo = "https://tulocalweb.com.ar/f/fotos/a.webp", "https://tulocalweb.com.ar/f/fotos/b.webp"
 	if err := mitienda.Guardar(ctx, b.App, id, d); err != nil {
@@ -87,7 +88,7 @@ func TestPlantillaTextosYFotosAlPublicar(t *testing.T) {
 		func(d *mitienda.Diseno) { d.Portada = "https://x.com/a b.webp" },
 		func(d *mitienda.Diseno) { d.Titulo = strings.Repeat("a", 81) },
 	} {
-		x := mitienda.Inicial()
+		x := mitienda.Inicial("litoral")
 		malo(&x)
 		if err := mitienda.Guardar(ctx, b.App, id, x); err == nil {
 			t.Fatalf("aceptó %+v", x)
@@ -100,7 +101,7 @@ func TestAlCompartir(t *testing.T) {
 	ctx := context.Background()
 	b := pruebadb.Nueva(t)
 	id := pruebadb.CrearTienda(t, b.App, "brisa")
-	d := mitienda.Inicial()
+	d := mitienda.Inicial("litoral")
 	d.CompartirTitulo, d.CompartirDescripcion = " Brisa · Velas de soja ", "Hechas a mano en Mendoza."
 	d.CompartirFoto = "https://tulocalweb.com.ar/f/fotos/c.webp"
 	if err := mitienda.Guardar(ctx, b.App, id, d); err != nil {
@@ -124,7 +125,7 @@ func TestAlCompartir(t *testing.T) {
 		func(x *mitienda.Diseno) { x.CompartirDescripcion = strings.Repeat("a", 161) },
 		func(x *mitienda.Diseno) { x.CompartirFoto = "javascript:alert(1)" },
 	} {
-		x := mitienda.Inicial()
+		x := mitienda.Inicial("litoral")
 		malo(&x)
 		if err := mitienda.Guardar(ctx, b.App, id, x); err == nil {
 			t.Fatalf("aceptó %+v", x)

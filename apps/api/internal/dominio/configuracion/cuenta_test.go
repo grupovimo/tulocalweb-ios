@@ -126,7 +126,7 @@ func TestEquipo(t *testing.T) {
 			t.Fatalf("sesión: %+v %v", d, err)
 		}
 		// El logo de Mi tienda viaja con las tiendas de la persona (la app lo muestra en vez de las iniciales).
-		dis := mitienda.Inicial()
+		dis := mitienda.Inicial("litoral")
 		dis.Logo = "https://tulocalweb.com.ar/f/fotos/logo.webp"
 		if err := mitienda.Guardar(ctx, b.App, leo.TiendaID, dis); err != nil {
 			t.Fatal(err)

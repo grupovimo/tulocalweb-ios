@@ -1,0 +1,460 @@
+{
+  "$comentario": "Los puntos de partida (las 17 plantillas). Lo usan la migración v1→v2 (web y Go) y el editor. El diseño guarda sólo lo que la tienda cambió; lo demás sale de acá. Los colores de cada preset son los de lib/tienda/estilo/roles.ts (rolesDe).",
+  "presets": {
+    "ceibo": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "aireada",
+        "fotoProducto": "vertical",
+        "encabezado": "centrado",
+        "pie": "grande",
+        "fuenteTitulos": "fraunces",
+        "fuenteTexto": "figtree"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "rosedal": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "aireada",
+        "fotoProducto": "vertical",
+        "encabezado": "centrado",
+        "pie": "columnas",
+        "fuenteTitulos": "cormorant",
+        "fuenteTexto": "dm-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "foto",
+        "categorias": "circulos",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "mosaico"
+      },
+      "gastronomia": false
+    },
+    "quebracho": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "aireada",
+        "fotoProducto": "apaisada",
+        "encabezado": "izquierda",
+        "pie": "grande",
+        "fuenteTitulos": "young-serif",
+        "fuenteTexto": "manrope"
+      },
+      "orden": [
+        "portada",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "mosaico"
+      },
+      "gastronomia": false
+    },
+    "malbec": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "aireada",
+        "fotoProducto": "vertical",
+        "encabezado": "centrado",
+        "pie": "grande",
+        "fuenteTitulos": "playfair",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "productos",
+        "categorias",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "foto",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "taller": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "aireada",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "columnas",
+        "fuenteTitulos": "fraunces",
+        "fuenteTexto": "dm-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "mosaico"
+      },
+      "gastronomia": false
+    },
+    "torno": {
+      "direccion": "vidriera",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "aireada",
+        "fotoProducto": "vertical",
+        "encabezado": "izquierda",
+        "pie": "grande",
+        "fuenteTitulos": "dm-serif",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "texto",
+        "categorias": "lista",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "mosaico"
+      },
+      "gastronomia": false
+    },
+    "pampa": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "recta",
+        "densidad": "normal",
+        "fotoProducto": "vertical",
+        "encabezado": "izquierda",
+        "pie": "grande",
+        "fuenteTitulos": "archivo-black",
+        "fuenteTexto": "space-grotesk"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "foto",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "yerbal": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "normal",
+        "fotoProducto": "cuadrada",
+        "encabezado": "buscador",
+        "pie": "columnas",
+        "fuenteTitulos": "bricolage",
+        "fuenteTexto": "instrument-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas"
+      ],
+      "variantes": {
+        "portada": "collage",
+        "categorias": "circulos",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "andes": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "normal",
+        "fotoProducto": "cuadrada",
+        "encabezado": "buscador",
+        "pie": "columnas",
+        "fuenteTitulos": "sora",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "patio": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "pildora",
+        "densidad": "normal",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "columnas",
+        "fuenteTitulos": "fredoka",
+        "fuenteTexto": "dm-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "collage",
+        "categorias": "circulos",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "hora": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "normal",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "columnas",
+        "fuenteTitulos": "syne",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "carrusel",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "litoral": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "normal",
+        "fotoProducto": "cuadrada",
+        "encabezado": "buscador",
+        "pie": "columnas",
+        "fuenteTitulos": "bricolage",
+        "fuenteTexto": "instrument-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "collage",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "lente": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "normal",
+        "fotoProducto": "apaisada",
+        "encabezado": "izquierda",
+        "pie": "columnas",
+        "fuenteTitulos": "space-grotesk",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "foto",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "tijera": {
+      "direccion": "mostrador",
+      "estilo": {
+        "forma": "pildora",
+        "densidad": "normal",
+        "fotoProducto": "vertical",
+        "encabezado": "izquierda",
+        "pie": "columnas",
+        "fuenteTitulos": "bricolage",
+        "fuenteTexto": "instrument-sans"
+      },
+      "orden": [
+        "portada",
+        "categorias",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "tarjetas",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": false
+    },
+    "mostaza": {
+      "direccion": "pedido",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "compacta",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "simple",
+        "fuenteTitulos": "bricolage",
+        "fuenteTexto": "instrument-sans"
+      },
+      "orden": [
+        "portada",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "collage",
+        "categorias": "circulos",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": true
+    },
+    "miga": {
+      "direccion": "pedido",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "compacta",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "simple",
+        "fuenteTitulos": "young-serif",
+        "fuenteTexto": "dm-sans"
+      },
+      "orden": [
+        "portada",
+        "productos",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "circulos",
+        "productos": "grilla",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": true
+    },
+    "miga-clasica": {
+      "direccion": "pedido",
+      "estilo": {
+        "forma": "redondeada",
+        "densidad": "compacta",
+        "fotoProducto": "cuadrada",
+        "encabezado": "izquierda",
+        "pie": "simple",
+        "fuenteTitulos": "lora",
+        "fuenteTexto": "inter"
+      },
+      "orden": [
+        "portada",
+        "productos",
+        "categorias",
+        "resenas",
+        "galeria"
+      ],
+      "variantes": {
+        "portada": "partida",
+        "categorias": "lista",
+        "productos": "lista",
+        "resenas": "tarjetas",
+        "galeria": "fila"
+      },
+      "gastronomia": true
+    }
+  }
+}

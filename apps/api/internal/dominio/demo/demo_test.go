@@ -78,3 +78,12 @@ func TestDemosSeLeenComoElPanel(t *testing.T) {
 		t.Logf("%s: tablero %+v · %d pedidos · %d productos · %d clientes", d.Slug, tab, l.Total, len(ps), len(cs))
 	}
 }
+
+// Los diseños de las demos son v2 válidos (lo mismo que se guarda desde el editor).
+func TestDisenosDeLasDemos(t *testing.T) {
+	for _, d := range demo.Tiendas {
+		if x := demo.Diseno(d); !x.Valido() || len(x.Inicio) < 7 {
+			t.Errorf("%s: diseño inválido %+v", d.Slug, x)
+		}
+	}
+}

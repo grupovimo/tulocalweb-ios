@@ -25,39 +25,86 @@ type tx interface {
 
 var ErrInvalido = errors.New("diseño inválido")
 
+// Seccion es del diseño v1 (las 6 fijas): se lee para migrar.
 type Seccion struct {
 	ID      string `json:"id"`
 	Visible bool   `json:"visible"`
 }
 
-// Diseno es components/schemas/DisenoTienda. Plantilla va sólo mientras el borrador cambia la de la
-// tienda: al publicar pasa a tiendas.plantilla y se saca del diseño. Titulo, Lema, Portada (foto) y
-// Logo vacíos: lo de siempre (el nombre de la tienda y la foto de un producto). Compartir*: la vista
-// previa al compartir la tienda (vacíos: lo sugerido y la imagen armada con la plantilla).
+// Diseno es components/schemas/DisenoTienda (v2: docs/especificaciones/tienda-bloques.md). Plantilla
+// va sólo mientras el borrador cambia la de la tienda: al publicar pasa a tiendas.plantilla y se saca
+// del diseño. Titulo, Lema, Portada (foto) y Logo vacíos: lo de siempre (el nombre de la tienda y la
+// foto de un producto). Compartir*: la vista previa al compartir la tienda (vacíos: lo sugerido y la
+// imagen armada con la plantilla). Sin Version (o 1) es un diseño v1, con Secciones: Migrar lo pasa.
 type Diseno struct {
-	Secciones []Seccion `json:"secciones"`
-	Paleta    int       `json:"paleta"`
-	Plantilla string    `json:"plantilla,omitempty"`
-	Titulo    string    `json:"titulo,omitempty"`
-	Lema      string    `json:"lema,omitempty"`
-	Portada   string    `json:"portada,omitempty"`
-	Logo      string    `json:"logo,omitempty"`
+	Version   int    `json:"version,omitempty"`
+	Paleta    int    `json:"paleta"`
+	Plantilla string `json:"plantilla,omitempty"`
+	Titulo    string `json:"titulo,omitempty"`
+	Lema      string `json:"lema,omitempty"`
+	Portada   string `json:"portada,omitempty"`
+	Logo      string `json:"logo,omitempty"`
 
 	CompartirTitulo      string `json:"compartirTitulo,omitempty"`
 	CompartirDescripcion string `json:"compartirDescripcion,omitempty"`
 	CompartirFoto        string `json:"compartirFoto,omitempty"`
 
-	// Estilo: colores, tipografías, logos, anuncio, textos y redes (estilo.go).
+	// Estilo: colores, tipografías, logos, redes, menú, barra y opciones de la dirección (estilo.go).
 	Estilo *Estilo `json:"estilo,omitempty"`
+	// Inicio: los bloques de la portada, en orden.
+	Inicio  []Bloque `json:"inicio"`
+	Paginas *Paginas `json:"paginas,omitempty"`
+
+	// Secciones: sólo v1.
+	Secciones []Seccion `json:"secciones,omitempty"`
 }
 
-var ids = []string{"hero", "cats", "prods", "revs", "ig", "wa"}
+// Bloque: uno de bloques.json › bloques. Datos son sus campos; lo que falta toma lo de por defecto o
+// lo sugerido (lo resuelve quien dibuja).
+type Bloque struct {
+	ID       string         `json:"id"`
+	Tipo     string         `json:"tipo"`
+	Variante string         `json:"variante"`
+	Oculto   bool           `json:"oculto,omitempty"`
+	Datos    map[string]any `json:"datos"`
+}
 
-// Inicial: las secciones como vienen en la plantilla.
-func Inicial() Diseno {
-	d := Diseno{}
-	for _, id := range ids {
-		d.Secciones = append(d.Secciones, Seccion{ID: id, Visible: true})
+// Paginas: las opciones de las otras páginas (bloques.json › paginas). Vacío: lo de por defecto.
+type Paginas struct {
+	Catalogo *PaginaCatalogo `json:"catalogo,omitempty"`
+	Producto *PaginaProducto `json:"producto,omitempty"`
+	Carrito  *PaginaCarrito  `json:"carrito,omitempty"`
+	Nosotros *PaginaNosotros `json:"nosotros,omitempty"`
+}
+
+type PaginaCatalogo struct {
+	Variante string `json:"variante,omitempty"`
+	Filtros  string `json:"filtros,omitempty"`
+	Columnas int    `json:"columnas,omitempty"`
+}
+
+type PaginaProducto struct {
+	Variante      string   `json:"variante,omitempty"`
+	Relacionados  *bool    `json:"relacionados,omitempty"`
+	CalcularEnvio *bool    `json:"calcularEnvio,omitempty"`
+	Bloques       []Bloque `json:"bloques"`
+}
+
+type PaginaCarrito struct {
+	Variante         string `json:"variante,omitempty"`
+	EnvioGratisDesde *bool  `json:"envioGratisDesde,omitempty"`
+}
+
+type PaginaNosotros struct {
+	Bloques []Bloque `json:"bloques"`
+}
+
+// Inicial: el diseño v2 de partida del preset de la plantilla (sus bloques, sin datos propios).
+func Inicial(plantilla string) Diseno {
+	p := presetDe(plantilla)
+	d := Diseno{Version: 2, Inicio: []Bloque{}}
+	for _, tipo := range p.Orden {
+		d.Inicio = append(d.Inicio, Bloque{ID: tipo, Tipo: tipo, Variante: p.Variantes[tipo], Datos: map[string]any{}})
 	}
 	return d
 }
@@ -68,14 +115,16 @@ func foto(u string) bool {
 		!strings.ContainsAny(u, " \"'<>"))
 }
 
-func (d Diseno) valido() bool {
-	if d.Paleta < 0 || d.Paleta > 3 || len(d.Secciones) != len(ids) {
+// Valido: un diseño v2 completo según bloques.json (los v1 no se guardan más: se migran al leer).
+func (d Diseno) Valido() bool {
+	if d.Version != 2 || len(d.Secciones) > 0 || d.Estilo.v1() || d.Paleta < 0 || d.Paleta > 3 {
 		return false
 	}
 	if d.Plantilla != "" && !slices.Contains(tiendas.Plantillas, d.Plantilla) {
 		return false
 	}
-	if utf8.RuneCountInString(d.Titulo) > 80 || utf8.RuneCountInString(d.Lema) > 120 || !foto(d.Portada) || !foto(d.Logo) {
+	if utf8.RuneCountInString(d.Titulo) > 80 || utf8.RuneCountInString(d.Lema) > 120 || strings.ContainsAny(d.Titulo+d.Lema, "<>") ||
+		!foto(d.Portada) || !foto(d.Logo) {
 		return false
 	}
 	if !d.Estilo.valido() {
@@ -85,13 +134,19 @@ func (d Diseno) valido() bool {
 		return false
 	}
 	vistos := map[string]bool{}
-	for _, s := range d.Secciones {
-		if !slices.Contains(ids, s.ID) || vistos[s.ID] {
-			return false
+	return bloquesValidos(d.Inicio, vistos) && d.Paginas.valido(vistos)
+}
+
+// leerDiseno: el jsonb de la base como diseño v2 (los v1 y los nulos se migran con la plantilla).
+func leerDiseno(crudo []byte, plantilla string) Diseno {
+	var d *Diseno
+	if len(crudo) > 0 && string(crudo) != "null" {
+		d = &Diseno{}
+		if json.Unmarshal(crudo, d) != nil {
+			d = nil
 		}
-		vistos[s.ID] = true
 	}
-	return true
+	return Migrar(d, plantilla)
 }
 
 type producto struct {
@@ -105,18 +160,14 @@ func Leer(ctx context.Context, pool tx, tiendaID, sitio string) (map[string]any,
 	var res map[string]any
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var nombre, slug, plantilla string
-		var borrador, publicado *Diseno
+		var crudoB, crudoP []byte
 		if err := t.QueryRow(ctx, `SELECT nombre, slug, plantilla, diseno_borrador, diseno_publicado FROM tiendas WHERE id = $1`,
-			tiendaID).Scan(&nombre, &slug, &plantilla, &borrador, &publicado); err != nil {
+			tiendaID).Scan(&nombre, &slug, &plantilla, &crudoB, &crudoP); err != nil {
 			return err
 		}
-		ini := Inicial()
-		if borrador == nil {
-			borrador = &ini
-		}
-		if publicado == nil {
-			publicado = &ini
-		}
+		// Un borrador v1 que cambia la plantilla se migra con la suya (Migrar la toma del diseño).
+		b0, p0 := leerDiseno(crudoB, plantilla), leerDiseno(crudoP, plantilla)
+		borrador, publicado := &b0, &p0
 		a, _ := json.Marshal(borrador)
 		b, _ := json.Marshal(publicado)
 		filas, err := t.Query(ctx, `SELECT nombre, foto, precio FROM productos WHERE tienda_id = $1 AND publicado
@@ -173,10 +224,22 @@ func Leer(ctx context.Context, pool tx, tiendaID, sitio string) (map[string]any,
 	return res, err
 }
 
-// Guardar el borrador.
+// Guardar el borrador (sólo v2 válido).
 func Guardar(ctx context.Context, pool tx, tiendaID string, d Diseno) error {
-	if !d.valido() {
+	if !d.Valido() {
 		return ErrInvalido
+	}
+	if d.Inicio == nil {
+		d.Inicio = []Bloque{}
+	}
+	limpiarBloques(d.Inicio)
+	if d.Paginas != nil {
+		if d.Paginas.Producto != nil {
+			limpiarBloques(d.Paginas.Producto.Bloques)
+		}
+		if d.Paginas.Nosotros != nil {
+			limpiarBloques(d.Paginas.Nosotros.Bloques)
+		}
 	}
 	d.Titulo, d.Lema = strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Lema)
 	d.CompartirTitulo, d.CompartirDescripcion = strings.TrimSpace(d.CompartirTitulo), strings.TrimSpace(d.CompartirDescripcion)
@@ -187,6 +250,15 @@ func Guardar(ctx context.Context, pool tx, tiendaID string, d Diseno) error {
 			THEN $2::jsonb - 'plantilla' ELSE $2::jsonb END WHERE id = $1`, tiendaID, d)
 		return err
 	})
+}
+
+// limpiarBloques: datos nunca null (la web los recorre).
+func limpiarBloques(l []Bloque) {
+	for i := range l {
+		if l[i].Datos == nil {
+			l[i].Datos = map[string]any{}
+		}
+	}
 }
 
 // Publicar copia el borrador a lo que ve la gente.
@@ -229,12 +301,12 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string, sitio
 	}))
 	mux.HandleFunc("PUT /v1/panel/mi-tienda", con(func(w http.ResponseWriter, r *http.Request, id string) {
 		var d Diseno
-		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&d); err != nil {
-			problema.Escribir(w, problema.Invalido("Mandá las secciones y los colores."))
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, int64(Catalogo.Limites.BytesDiseno))).Decode(&d); err != nil {
+			problema.Escribir(w, problema.Invalido("Mandá el diseño completo (hasta 64 KB)."))
 			return
 		}
 		if err := Guardar(r.Context(), pool, id, d); err != nil {
-			problema.Escribir(w, problema.Invalido("Revisá el diseño: las secciones, la plantilla, los textos o las fotos."))
+			problema.Escribir(w, problema.Invalido("Revisá el diseño: los bloques, la plantilla, los textos, los links o las fotos."))
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

@@ -1,0 +1,1121 @@
+{
+  "$comentario": "Catálogo único de bloques de la tienda online (docs/especificaciones/tienda-bloques.md). Lo leen la web (lib/tienda/sistema/catalogo.ts), Go (mitienda/bloques.go, embebido) y las apps (Recursos/bloques.json y assets/bloques.json, copiados por scripts/estilo/para-ios.ts). Agregar un bloque o un campo acá y correr las pruebas de las tres partes.",
+  "version": 1,
+  "limites": {
+    "bloquesPorPagina": 30,
+    "itemsPorLista": 12,
+    "bytesDiseno": 65536
+  },
+  "estilo": {
+    "direccion": {
+      "opciones": [
+        "vidriera",
+        "mostrador",
+        "pedido"
+      ],
+      "nombres": [
+        "Vidriera",
+        "Mostrador",
+        "Pedido"
+      ],
+      "porDefecto": "vidriera"
+    },
+    "forma": {
+      "opciones": [
+        "recta",
+        "redondeada",
+        "pildora"
+      ],
+      "nombres": [
+        "Recta",
+        "Redondeada",
+        "Píldora"
+      ]
+    },
+    "densidad": {
+      "opciones": [
+        "aireada",
+        "normal",
+        "compacta"
+      ],
+      "nombres": [
+        "Aireada",
+        "Normal",
+        "Compacta"
+      ]
+    },
+    "ancho": {
+      "opciones": [
+        "normal",
+        "amplio"
+      ],
+      "nombres": [
+        "Normal",
+        "Amplio"
+      ]
+    },
+    "fotoProducto": {
+      "opciones": [
+        "cuadrada",
+        "vertical",
+        "apaisada"
+      ],
+      "nombres": [
+        "Cuadrada",
+        "Vertical",
+        "Apaisada"
+      ]
+    },
+    "encabezado": {
+      "opciones": [
+        "izquierda",
+        "centrado",
+        "buscador"
+      ],
+      "nombres": [
+        "Logo a la izquierda",
+        "Logo centrado",
+        "Con buscador"
+      ]
+    },
+    "pie": {
+      "opciones": [
+        "simple",
+        "columnas",
+        "grande"
+      ],
+      "nombres": [
+        "Simple",
+        "Con columnas",
+        "Nombre en grande"
+      ]
+    }
+  },
+  "fondos": {
+    "opciones": [
+      "normal",
+      "superficie",
+      "acento",
+      "oscuro"
+    ],
+    "nombres": [
+      "Como la página",
+      "Tarjeta",
+      "Color de la marca",
+      "Oscuro"
+    ]
+  },
+  "fuentesProductos": {
+    "opciones": [
+      "vendidos",
+      "nuevos",
+      "ofertas",
+      "elegidos",
+      "categoria"
+    ],
+    "nombres": [
+      "Más vendidos",
+      "Novedades",
+      "En oferta",
+      "Elegidos a mano",
+      "De una categoría"
+    ]
+  },
+  "iconos": [
+    "envio",
+    "cuotas",
+    "transferencia",
+    "cambios",
+    "retiro",
+    "seguro",
+    "regalo",
+    "hecho-a-mano",
+    "reloj",
+    "estrella"
+  ],
+  "paginas": {
+    "inicio": {
+      "nombre": "Inicio",
+      "bloques": true
+    },
+    "catalogo": {
+      "nombre": "Catálogo",
+      "variantes": [
+        "grilla",
+        "lista"
+      ],
+      "nombresVariantes": [
+        "Grilla",
+        "Lista"
+      ],
+      "campos": [
+        {
+          "id": "filtros",
+          "tipo": "opcion",
+          "nombre": "Filtros",
+          "opciones": [
+            "costado",
+            "arriba"
+          ],
+          "nombres": [
+            "Al costado",
+            "Arriba, en chips"
+          ],
+          "porDefecto": "costado"
+        },
+        {
+          "id": "columnas",
+          "tipo": "numero",
+          "nombre": "Columnas en la compu",
+          "min": 2,
+          "max": 5,
+          "porDefecto": 4
+        }
+      ]
+    },
+    "producto": {
+      "nombre": "Ficha de producto",
+      "variantes": [
+        "grilla",
+        "miniaturas",
+        "carrusel"
+      ],
+      "nombresVariantes": [
+        "Fotos en grilla",
+        "Con miniaturas",
+        "Carrusel"
+      ],
+      "campos": [
+        {
+          "id": "relacionados",
+          "tipo": "si",
+          "nombre": "Mostrar productos relacionados",
+          "porDefecto": true
+        },
+        {
+          "id": "calcularEnvio",
+          "tipo": "si",
+          "nombre": "Calcular el envío en la ficha",
+          "porDefecto": true
+        }
+      ],
+      "bloques": true
+    },
+    "carrito": {
+      "nombre": "Carrito",
+      "variantes": [
+        "pagina",
+        "panel"
+      ],
+      "nombresVariantes": [
+        "Página",
+        "Panel al costado"
+      ],
+      "campos": [
+        {
+          "id": "envioGratisDesde",
+          "tipo": "si",
+          "nombre": "Mostrar cuánto falta para el envío gratis",
+          "porDefecto": true
+        }
+      ]
+    },
+    "nosotros": {
+      "nombre": "Nosotros",
+      "bloques": true
+    }
+  },
+  "grupos": [
+    {
+      "id": "portada",
+      "nombre": "Portada"
+    },
+    {
+      "id": "promos",
+      "nombre": "Promos"
+    },
+    {
+      "id": "marca",
+      "nombre": "Marca"
+    },
+    {
+      "id": "venta",
+      "nombre": "Venta guiada"
+    },
+    {
+      "id": "confianza",
+      "nombre": "Local y confianza"
+    }
+  ],
+  "bloques": [
+    {
+      "tipo": "portada",
+      "grupo": "portada",
+      "nombre": "Portada",
+      "max": 1,
+      "descripcion": "Título, frase y hasta dos botones. Sin foto, usa el color de la marca.",
+      "variantes": [
+        "foto",
+        "partida",
+        "collage",
+        "texto",
+        "carrusel"
+      ],
+      "nombresVariantes": [
+        "Foto completa",
+        "Partida",
+        "Collage",
+        "Sólo texto",
+        "Carrusel"
+      ],
+      "campos": [
+        {
+          "id": "etiqueta",
+          "tipo": "texto",
+          "nombre": "Antetítulo",
+          "max": 40
+        },
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 80,
+          "sugerido": "nombre"
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Frase",
+          "max": 160,
+          "sugerido": "lema"
+        },
+        {
+          "id": "fotos",
+          "tipo": "fotos",
+          "nombre": "Fotos",
+          "max": 5
+        },
+        {
+          "id": "boton",
+          "tipo": "boton",
+          "nombre": "Botón principal"
+        },
+        {
+          "id": "boton2",
+          "tipo": "boton",
+          "nombre": "Botón secundario"
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo sin foto",
+          "porDefecto": "acento"
+        }
+      ]
+    },
+    {
+      "tipo": "banner",
+      "grupo": "promos",
+      "nombre": "Banner",
+      "descripcion": "Una promo con foto o color, texto y botón.",
+      "variantes": [
+        "banda",
+        "foto",
+        "doble"
+      ],
+      "nombresVariantes": [
+        "Banda",
+        "Con foto",
+        "Doble"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 80,
+          "requerido": true
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Texto",
+          "max": 160
+        },
+        {
+          "id": "foto",
+          "tipo": "foto",
+          "nombre": "Foto"
+        },
+        {
+          "id": "boton",
+          "tipo": "boton",
+          "nombre": "Botón"
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo",
+          "porDefecto": "oscuro"
+        },
+        {
+          "id": "segundo",
+          "tipo": "grupo",
+          "nombre": "Segunda promo (Doble)",
+          "item": [
+            {
+              "id": "titulo",
+              "tipo": "texto",
+              "nombre": "Título",
+              "max": 80
+            },
+            {
+              "id": "texto",
+              "tipo": "texto",
+              "nombre": "Texto",
+              "max": 160
+            },
+            {
+              "id": "foto",
+              "tipo": "foto",
+              "nombre": "Foto"
+            },
+            {
+              "id": "boton",
+              "tipo": "boton",
+              "nombre": "Botón"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "oferta",
+      "grupo": "promos",
+      "nombre": "Oferta con cuenta regresiva",
+      "descripcion": "Los productos en oferta y cuánto falta para que termine. Se esconde sola al terminar.",
+      "variantes": [
+        "productos",
+        "banda"
+      ],
+      "nombresVariantes": [
+        "Con productos",
+        "Banda"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Ofertas que terminan pronto"
+        },
+        {
+          "id": "hasta",
+          "tipo": "fecha",
+          "nombre": "Termina",
+          "requerido": true
+        },
+        {
+          "id": "productos",
+          "tipo": "productos",
+          "nombre": "Productos",
+          "porDefecto": {
+            "fuente": "ofertas",
+            "cantidad": 4
+          }
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo",
+          "porDefecto": "superficie"
+        }
+      ]
+    },
+    {
+      "tipo": "textoImagen",
+      "grupo": "marca",
+      "nombre": "Texto con imagen",
+      "descripcion": "La historia, el taller, el equipo.",
+      "variantes": [
+        "derecha",
+        "izquierda",
+        "fondo",
+        "texto"
+      ],
+      "nombresVariantes": [
+        "Imagen a la derecha",
+        "Imagen a la izquierda",
+        "Imagen de fondo",
+        "Sólo texto"
+      ],
+      "campos": [
+        {
+          "id": "etiqueta",
+          "tipo": "texto",
+          "nombre": "Antetítulo",
+          "max": 40
+        },
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 100,
+          "requerido": true
+        },
+        {
+          "id": "texto",
+          "tipo": "textoLargo",
+          "nombre": "Texto",
+          "max": 600
+        },
+        {
+          "id": "foto",
+          "tipo": "foto",
+          "nombre": "Foto"
+        },
+        {
+          "id": "boton",
+          "tipo": "boton",
+          "nombre": "Botón"
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo",
+          "porDefecto": "superficie"
+        }
+      ]
+    },
+    {
+      "tipo": "video",
+      "grupo": "marca",
+      "nombre": "Video",
+      "descripcion": "De YouTube o Vimeo.",
+      "variantes": [
+        "ancho",
+        "conTexto"
+      ],
+      "nombresVariantes": [
+        "Ancho completo",
+        "Con texto"
+      ],
+      "campos": [
+        {
+          "id": "url",
+          "tipo": "video",
+          "nombre": "Link del video",
+          "requerido": true
+        },
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 80
+        },
+        {
+          "id": "texto",
+          "tipo": "textoLargo",
+          "nombre": "Texto",
+          "max": 400
+        }
+      ]
+    },
+    {
+      "tipo": "beneficios",
+      "grupo": "marca",
+      "nombre": "Beneficios",
+      "descripcion": "Envío, cuotas, cambios, retiro. Vacío: salen solos de la configuración de la tienda.",
+      "variantes": [
+        "fila",
+        "tarjetas"
+      ],
+      "nombresVariantes": [
+        "Fila con íconos",
+        "Tarjetas"
+      ],
+      "campos": [
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Beneficios",
+          "max": 4,
+          "item": [
+            {
+              "id": "icono",
+              "tipo": "icono",
+              "nombre": "Ícono",
+              "requerido": true
+            },
+            {
+              "id": "titulo",
+              "tipo": "texto",
+              "nombre": "Título",
+              "max": 40,
+              "requerido": true
+            },
+            {
+              "id": "texto",
+              "tipo": "texto",
+              "nombre": "Detalle",
+              "max": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "productos",
+      "grupo": "venta",
+      "nombre": "Productos",
+      "descripcion": "Más vendidos, novedades, ofertas, de una categoría o elegidos a mano.",
+      "variantes": [
+        "grilla",
+        "carrusel",
+        "lista"
+      ],
+      "nombresVariantes": [
+        "Grilla",
+        "Carrusel",
+        "Lista"
+      ],
+      "campos": [
+        {
+          "id": "etiqueta",
+          "tipo": "texto",
+          "nombre": "Antetítulo",
+          "max": 40
+        },
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Lo más elegido"
+        },
+        {
+          "id": "productos",
+          "tipo": "productos",
+          "nombre": "Qué productos",
+          "porDefecto": {
+            "fuente": "vendidos",
+            "cantidad": 8
+          }
+        },
+        {
+          "id": "columnas",
+          "tipo": "numero",
+          "nombre": "Columnas en la compu",
+          "min": 2,
+          "max": 5,
+          "porDefecto": 4
+        },
+        {
+          "id": "verTodo",
+          "tipo": "si",
+          "nombre": "Link a ver todo",
+          "porDefecto": true
+        }
+      ]
+    },
+    {
+      "tipo": "destacado",
+      "grupo": "venta",
+      "nombre": "Producto destacado",
+      "descripcion": "Uno solo, grande, con botón de compra.",
+      "variantes": [
+        "partido",
+        "foto"
+      ],
+      "nombresVariantes": [
+        "Partido",
+        "Foto completa"
+      ],
+      "campos": [
+        {
+          "id": "producto",
+          "tipo": "producto",
+          "nombre": "Producto",
+          "requerido": true
+        },
+        {
+          "id": "etiqueta",
+          "tipo": "texto",
+          "nombre": "Antetítulo",
+          "max": 40
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Texto",
+          "max": 200
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo",
+          "porDefecto": "oscuro"
+        }
+      ]
+    },
+    {
+      "tipo": "combo",
+      "grupo": "venta",
+      "nombre": "Combo",
+      "descripcion": "Varios productos que se agregan juntos, con descuento opcional.",
+      "variantes": [
+        "tarjeta"
+      ],
+      "nombresVariantes": [
+        "Con tarjeta de precio"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Llevalos juntos"
+        },
+        {
+          "id": "productos",
+          "tipo": "elegidos",
+          "nombre": "Productos",
+          "min": 2,
+          "max": 4,
+          "requerido": true
+        },
+        {
+          "id": "descuento",
+          "tipo": "numero",
+          "nombre": "Descuento (%)",
+          "min": 0,
+          "max": 50,
+          "porDefecto": 0
+        }
+      ]
+    },
+    {
+      "tipo": "categorias",
+      "grupo": "venta",
+      "nombre": "Categorías",
+      "descripcion": "Con la foto que elijas o la del primer producto.",
+      "variantes": [
+        "tarjetas",
+        "circulos",
+        "lista"
+      ],
+      "nombresVariantes": [
+        "Tarjetas",
+        "Círculos",
+        "Lista"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Comprá por categoría"
+        },
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Categorías (vacío: todas)",
+          "max": 12,
+          "item": [
+            {
+              "id": "categoria",
+              "tipo": "categoria",
+              "nombre": "Categoría",
+              "requerido": true
+            },
+            {
+              "id": "foto",
+              "tipo": "foto",
+              "nombre": "Foto"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "menu",
+      "grupo": "venta",
+      "nombre": "Menú para pedir",
+      "descripcion": "Para gastronomía: una sección por categoría, foto chica y + para agregar.",
+      "variantes": [
+        "lista",
+        "columnas"
+      ],
+      "nombresVariantes": [
+        "Lista",
+        "Dos columnas"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Menú"
+        },
+        {
+          "id": "categorias",
+          "tipo": "categorias",
+          "nombre": "Secciones (vacío: todas)"
+        }
+      ]
+    },
+    {
+      "tipo": "local",
+      "grupo": "confianza",
+      "nombre": "El local",
+      "descripcion": "Dirección, mapa, horarios, cómo llegar y WhatsApp.",
+      "variantes": [
+        "mapa",
+        "tarjeta"
+      ],
+      "nombresVariantes": [
+        "Con mapa",
+        "Tarjeta"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60
+        },
+        {
+          "id": "horarios",
+          "tipo": "lista",
+          "nombre": "Horarios",
+          "max": 7,
+          "item": [
+            {
+              "id": "dias",
+              "tipo": "texto",
+              "nombre": "Días",
+              "max": 30,
+              "requerido": true
+            },
+            {
+              "id": "horas",
+              "tipo": "texto",
+              "nombre": "Horario",
+              "max": 30,
+              "requerido": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "resenas",
+      "grupo": "confianza",
+      "nombre": "Reseñas",
+      "descripcion": "Sólo con compra verificada, con el promedio.",
+      "variantes": [
+        "tarjetas",
+        "carrusel",
+        "cita"
+      ],
+      "nombresVariantes": [
+        "Tarjetas",
+        "Carrusel",
+        "Cita grande"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Lo que dicen"
+        },
+        {
+          "id": "cantidad",
+          "tipo": "numero",
+          "nombre": "Cuántas",
+          "min": 1,
+          "max": 12,
+          "porDefecto": 3
+        }
+      ]
+    },
+    {
+      "tipo": "preguntas",
+      "grupo": "confianza",
+      "nombre": "Preguntas frecuentes",
+      "descripcion": "Las respuestas que más das por WhatsApp.",
+      "variantes": [
+        "acordeon"
+      ],
+      "nombresVariantes": [
+        "Acordeón"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Preguntas frecuentes"
+        },
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Preguntas",
+          "max": 12,
+          "min": 1,
+          "item": [
+            {
+              "id": "p",
+              "tipo": "texto",
+              "nombre": "Pregunta",
+              "max": 120,
+              "requerido": true
+            },
+            {
+              "id": "r",
+              "tipo": "textoLargo",
+              "nombre": "Respuesta",
+              "max": 600,
+              "requerido": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "logos",
+      "grupo": "confianza",
+      "nombre": "Logos",
+      "descripcion": "Prensa, marcas que vendés o con quién trabajás.",
+      "variantes": [
+        "fila"
+      ],
+      "nombresVariantes": [
+        "Fila"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60
+        },
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Logos",
+          "max": 12,
+          "min": 1,
+          "item": [
+            {
+              "id": "foto",
+              "tipo": "foto",
+              "nombre": "Logo",
+              "requerido": true
+            },
+            {
+              "id": "nombre",
+              "tipo": "texto",
+              "nombre": "Nombre",
+              "max": 40,
+              "requerido": true
+            },
+            {
+              "id": "link",
+              "tipo": "link",
+              "nombre": "Link"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tipo": "galeria",
+      "grupo": "confianza",
+      "nombre": "Galería",
+      "descripcion": "Fotos tuyas o de tus productos. Siempre llena filas completas.",
+      "variantes": [
+        "fila",
+        "mosaico"
+      ],
+      "nombresVariantes": [
+        "En fila",
+        "Mosaico"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60
+        },
+        {
+          "id": "fotos",
+          "tipo": "fotos",
+          "nombre": "Fotos (vacío: las de los productos)",
+          "max": 12
+        },
+        {
+          "id": "link",
+          "tipo": "link",
+          "nombre": "Link (por ejemplo, tu Instagram)"
+        }
+      ]
+    },
+    {
+      "tipo": "newsletter",
+      "grupo": "confianza",
+      "nombre": "Newsletter",
+      "descripcion": "Junta emails para tus campañas.",
+      "variantes": [
+        "centrado",
+        "banda"
+      ],
+      "nombresVariantes": [
+        "Centrado",
+        "Banda"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Enterate primero"
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Texto",
+          "max": 160
+        },
+        {
+          "id": "fondo",
+          "tipo": "fondo",
+          "nombre": "Fondo",
+          "porDefecto": "oscuro"
+        }
+      ]
+    },
+    {
+      "tipo": "whatsapp",
+      "grupo": "confianza",
+      "nombre": "Escribinos",
+      "descripcion": "Una invitación a consultar por WhatsApp. Sin número cargado, no se dibuja.",
+      "variantes": [
+        "banda",
+        "tarjeta"
+      ],
+      "nombresVariantes": [
+        "Banda",
+        "Tarjeta"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "¿Tenés dudas? Escribinos"
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Texto",
+          "max": 160
+        }
+      ]
+    },
+    {
+      "tipo": "turnos",
+      "grupo": "confianza",
+      "nombre": "Turnos",
+      "descripcion": "Los horarios libres de hoy y el botón para reservar. Sólo con turnos activos.",
+      "variantes": [
+        "lista"
+      ],
+      "nombresVariantes": [
+        "Lista"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Reservá tu turno"
+        }
+      ]
+    }
+  ],
+  "tiposCampo": {
+    "texto": "string corto en una línea (max)",
+    "textoLargo": "string con saltos de línea (max)",
+    "foto": "URL https de una foto subida (hasta 300 caracteres)",
+    "fotos": "lista de fotos (max)",
+    "link": "una página de la tienda (inicio|catalogo|nosotros|turnos|suscripciones), cat:<categoría>, prod:<id> o https://",
+    "boton": "{ t: texto hasta 30, a: link }",
+    "fondo": "uno de fondos.opciones",
+    "fecha": "fecha y hora ISO 8601",
+    "numero": "entero entre min y max",
+    "si": "booleano",
+    "opcion": "uno de opciones",
+    "icono": "uno de iconos",
+    "video": "URL https de YouTube o Vimeo",
+    "producto": "id de un producto",
+    "elegidos": "lista de ids de producto (min, max)",
+    "productos": "{ fuente: fuentesProductos, cantidad: 1–24, ids?: [id] (elegidos), categoria?: nombre }",
+    "categoria": "nombre de una categoría",
+    "categorias": "lista de nombres de categoría",
+    "lista": "lista de objetos con los campos de item (min, max)",
+    "grupo": "un objeto con los campos de item"
+  },
+  "barraAnuncios": {
+    "nombre": "Barra de anuncios",
+    "descripcion": "Arriba de todo, en todas las páginas. Va en estilo.barra.",
+    "variantes": [
+      "fija",
+      "rotativa"
+    ],
+    "nombresVariantes": [
+      "Fija",
+      "Rotativa"
+    ],
+    "campos": [
+      {
+        "id": "mensajes",
+        "tipo": "lista",
+        "nombre": "Mensajes",
+        "max": 5,
+        "min": 1,
+        "item": [
+          {
+            "id": "texto",
+            "tipo": "texto",
+            "nombre": "Texto",
+            "max": 100,
+            "requerido": true
+          },
+          {
+            "id": "link",
+            "tipo": "link",
+            "nombre": "Link"
+          }
+        ]
+      },
+      {
+        "id": "fondo",
+        "tipo": "fondo",
+        "nombre": "Fondo",
+        "porDefecto": "oscuro"
+      }
+    ]
+  }
+}
