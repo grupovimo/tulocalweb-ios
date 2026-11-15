@@ -313,6 +313,8 @@ data class ProductoFila(
     val publicado: Boolean = false,
     val estado: String = "",
     val vendidos30: Int? = null,
+    /** Cuántos pidieron «Avisame cuando vuelva» y esperan (§60). */
+    val esperan: Int? = null,
     val variantes: List<Variante> = emptyList(),
 ) {
     @Serializable

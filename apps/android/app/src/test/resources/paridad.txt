@@ -18,6 +18,7 @@ Mas/Cuenta.swift
 Mas/DosPasos.swift
 Mas/EditorBloques.swift
 Mas/EditorTienda.swift
+Mas/EnviosTienda.swift
 Mas/Estadisticas.swift
 Mas/EstiloTienda.swift
 Mas/Importar.swift
@@ -28,6 +29,7 @@ Mas/MiniaturaBloque.swift
 Mas/Newsletter.swift
 Mas/Plan.swift
 Mas/PromocionesTienda.swift
+Mas/RecordatoriosCarrito.swift
 Mas/Secciones.swift
 Mas/VistaPreviaTienda.swift
 Pedidos/CancelarPedido.swift

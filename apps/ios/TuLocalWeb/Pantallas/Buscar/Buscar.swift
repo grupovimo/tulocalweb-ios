@@ -53,6 +53,7 @@ struct Buscar: View {
             ir("Facturación de ARCA", "Plata", "doc.text", .facturacion, "finanzas"),
             ir("Plan", "Cuenta", "creditcard", .plan, "cuenta"),
             ir("Datos del negocio y cobro", "Configuración · alias, envíos", "building.2", .negocio, "cuenta"),
+            ir("Envíos y retiro", "Configuración · moto, retiro, envío gratis", "shippingbox", .envios, "cuenta"),
             ir("Integraciones", "Mercado Pago, Mercado Libre, Correo", "puzzlepiece.extension", .integraciones, "cuenta"),
             ir("Tincho en Telegram", "Integraciones", "paperplane", .telegram, "cuenta"),
             ir("Google y Meta", "Integraciones · Analytics, píxel", "chart.xyaxis.line", .medicion, "cuenta"),

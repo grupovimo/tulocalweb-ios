@@ -164,6 +164,7 @@ struct CajaDelDia: View {
 
 struct CarritosAbandonados: View {
     @Environment(Estado.self) private var estado
+    @State private var configurar: RecordatoriosCarrito?
 
     struct Datos: Decodable {
         struct Carrito: Decodable, Identifiable {
@@ -181,6 +182,10 @@ struct CarritosAbandonados: View {
         var monto: Int
         var recuperado: Int
         var tasa: Double
+        struct Recuperados: Decodable { var pedidos: Int; var monto: Int }
+        /// Los tres recordatorios por mail (§62) y lo que se vendió después de uno.
+        var recordatorios: RecordatoriosCarrito?
+        var recuperados: Recuperados?
     }
 
     var body: some View {
@@ -196,6 +201,44 @@ struct CarritosAbandonados: View {
                     Text("\(Formato.porcentaje(d.tasa > 1 ? d.tasa : d.tasa * 100)) recuperado").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
                 }
                 BarraProgreso(valor: d.tasa > 1 ? d.tasa / 100 : d.tasa)
+                if let r = d.recuperados, r.pedidos > 0 {
+                    Text(Formato.sinViudas("Este mes \(r.pedidos == 1 ? "volvió 1 persona" : "volvieron \(r.pedidos) personas") después del recordatorio."))
+                        .estilo(.footnote).foregroundStyle(C.texto2)
+                }
+            }
+            if let r = d.recordatorios {
+                TarjetaSeccion(titulo: "Recordatorios por mail", simbolo: "envelope") {
+                    HStack {
+                        Text(Formato.sinViudas(r.activo ? "Les llega un mail con el link a su carrito" : "Apagados: no sale ningún recordatorio"))
+                            .estilo(.texto14).foregroundStyle(C.texto2)
+                        Spacer(minLength: 8)
+                        Toggle("Recordatorios por mail", isOn: Binding(get: { r.activo }, set: { on in
+                            var n = r
+                            n.activo = on
+                            Task { _ = await guardarRecordatorios(n, on ? "Recordatorios prendidos" : "Recordatorios apagados", actualizar) }
+                        }))
+                        .labelsHidden().tint(C.ok)
+                    }
+                    ForEach(r.pasos.indices, id: \.self) { i in
+                        HStack {
+                            Text("\(RecordatoriosCarrito.orden[i]) · \(RecordatoriosCarrito.resumen(r.pasos[i]))")
+                                .estilo(.texto14).foregroundStyle(r.activo ? C.texto : C.texto3).lineLimit(2)
+                            Spacer(minLength: 8)
+                            Toggle(RecordatoriosCarrito.orden[i], isOn: Binding(get: { r.pasos[i].activo }, set: { on in
+                                var n = r
+                                n.pasos[i].activo = on
+                                Task { _ = await guardarRecordatorios(n, on ? "Recordatorio prendido" : "Recordatorio apagado", actualizar) }
+                            }))
+                            .labelsHidden().tint(C.ok).disabled(!r.activo)
+                        }
+                    }
+                    Button("Configurar demoras y cupones") { configurar = r }
+                        .buttonStyle(BotonTonal(alto: 36))
+                }
+                .sheet(item: Binding(get: { configurar.map { HojaCarritos(r: $0) } }, set: { configurar = $0?.r })) { h in
+                    HojaRecordatoriosCarrito(inicial: h.r) { n in await guardarRecordatorios(n, "Recordatorios guardados", actualizar) }
+                        .hojaTLW([.large])
+                }
             }
             if d.carritos.isEmpty {
                 EstadoTincho(tincho: .durmiendo, titulo: "No hay carritos abandonados",
@@ -233,6 +276,29 @@ struct CarritosAbandonados: View {
                 }
             }
         }
+    }
+}
+
+extension CarritosAbandonados {
+    /// La hoja de configurar, identificable para `.sheet(item:)`.
+    struct HojaCarritos: Identifiable {
+        var r: RecordatoriosCarrito
+        var id: String { "recordatorios" }
+    }
+
+    func guardarRecordatorios(_ r: RecordatoriosCarrito, _ aviso: String, _ actualizar: () async -> Void) async -> Bool {
+        do {
+            try await estado.api.hacer("PUT", "/v1/panel/carritos/recordatorios", r)
+            Haptico.exito()
+            estado.avisar(aviso)
+            await actualizar()
+            return true
+        } catch let e as ErrorApi {
+            estado.avisar(e.detalle, ok: false)
+        } catch {
+            estado.avisar("No pudimos guardar los recordatorios", ok: false)
+        }
+        return false
     }
 }
 

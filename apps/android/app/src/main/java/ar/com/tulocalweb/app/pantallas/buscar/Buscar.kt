@@ -96,6 +96,7 @@ fun Buscar() {
             ir("Facturación de ARCA", "Plata", "doc.text", Destino.facturacion, "finanzas"),
             ir("Plan", "Cuenta", "creditcard", Destino.plan, "cuenta"),
             ir("Datos del negocio y cobro", "Configuración · alias, envíos", "building.2", Destino.negocio, "cuenta"),
+            ir("Envíos y retiro", "Configuración · moto, retiro, envío gratis", "shippingbox", Destino.envios, "cuenta"),
             ir("Integraciones", "Mercado Pago, Mercado Libre, Correo", "puzzlepiece.extension", Destino.integraciones, "cuenta"),
             ir("Tincho en Telegram", "Integraciones", "paperplane", Destino.telegram, "cuenta"),
             ir("Google y Meta", "Integraciones · Analytics, píxel", "chart.xyaxis.line", Destino.medicion, "cuenta"),

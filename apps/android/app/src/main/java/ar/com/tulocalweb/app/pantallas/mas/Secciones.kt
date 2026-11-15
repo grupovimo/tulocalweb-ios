@@ -172,9 +172,28 @@ fun CarritosAbandonados() {
     val estado = LocalEstado.current
     @Serializable data class Carrito(val id: String, val nombre: String = "", val foto: String? = null, val desde: String = "", val creado: FechaApi = Instant.EPOCH,
                                      val cantidad: Int = 0, val total: Int = 0, val recordado: Boolean = false)
-    @Serializable data class Datos(val carritos: List<Carrito> = emptyList(), val abiertos: Int = 0, val monto: Int = 0, val recuperado: Int = 0, val tasa: Double = 0.0)
+    @Serializable data class Recuperados(val pedidos: Int = 0, val monto: Int = 0)
+    /** Los tres recordatorios por mail (§62) y lo que se vendió después de uno. */
+    @Serializable data class Datos(val carritos: List<Carrito> = emptyList(), val abiertos: Int = 0, val monto: Int = 0, val recuperado: Int = 0, val tasa: Double = 0.0,
+                                   val recordatorios: RecordatoriosCarrito? = null, val recuperados: Recuperados? = null)
+    var configurar by remember { mutableStateOf<RecordatoriosCarrito?>(null) }
+    var actualizarHoja by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
+
+    suspend fun guardarRecordatorios(r: RecordatoriosCarrito, aviso: String, actualizar: suspend () -> Unit): Boolean {
+        try {
+            estado.api.hacer("PUT", "/v1/panel/carritos/recordatorios", r)
+            Haptico.exito()
+            estado.avisar(aviso)
+            actualizar()
+            return true
+        } catch (e: ErrorApi) { estado.avisar(e.detalle, ok = false) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            estado.avisar("No pudimos guardar los recordatorios", ok = false)
+        }
+        return false
+    }
 
     PantallaSeccion("Carritos abandonados", "los carritos", { estado.api.get<Datos>("/v1/panel/carritos") }) { d, actualizar ->
+        actualizarHoja = actualizar
         TarjetaHeroe("En juego en carritos abiertos", Formato.pesos(d.monto), Formato.cantidad(d.abiertos, "carrito para recordar", "carritos para recordar"), Tincho.whatsapp)
         TarjetaSeccion("Lo que ya recuperaste", "arrow.uturn.backward.circle") {
             Row(verticalAlignment = Alignment.Bottom) {
@@ -182,6 +201,30 @@ fun CarritosAbandonados() {
                 Texto("${Formato.porcentaje(if (d.tasa > 1) d.tasa else d.tasa * 100)} recuperado", Estilo.footnoteFuerte, C.texto2)
             }
             BarraProgreso(if (d.tasa > 1) d.tasa / 100 else d.tasa)
+            val rec = d.recuperados
+            if (rec != null && rec.pedidos > 0) {
+                Texto(Formato.sinViudas("Este mes ${if (rec.pedidos == 1) "volvió 1 persona" else "volvieron ${rec.pedidos} personas"} después del recordatorio."), Estilo.footnote, C.texto2)
+            }
+        }
+        d.recordatorios?.let { r ->
+            TarjetaSeccion("Recordatorios por mail", "envelope") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Texto(Formato.sinViudas(if (r.activo) "Les llega un mail con el link a su carrito" else "Apagados: no sale ningún recordatorio"), Estilo.texto14, C.texto2, Modifier.weight(1f))
+                    Llave(r.activo, { on ->
+                        estado.tarea { guardarRecordatorios(r.copy(activo = on), if (on) "Recordatorios prendidos" else "Recordatorios apagados", actualizar) }
+                    })
+                }
+                r.pasos.forEachIndexed { i, p ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Texto("${RecordatoriosCarrito.orden.getOrElse(i) { "" }} · ${RecordatoriosCarrito.resumen(p)}", Estilo.texto14, if (r.activo) C.texto else C.texto3, Modifier.weight(1f), lineas = 2)
+                        Llave(p.activo, { on ->
+                            val n = r.copy(pasos = r.pasos.mapIndexed { j, x -> if (j == i) x.copy(activo = on) else x })
+                            estado.tarea { guardarRecordatorios(n, if (on) "Recordatorio prendido" else "Recordatorio apagado", actualizar) }
+                        }, habilitado = r.activo)
+                    }
+                }
+                BotonTonal("Configurar demoras y cupones", { configurar = r }, alto = 36.dp)
+            }
         }
         if (d.carritos.isEmpty()) {
             Box(Modifier.padding(top = 30.dp)) { EstadoTincho(Tincho.durmiendo, "No hay carritos abandonados", "Cuando alguien deja productos sin comprar, aparece acá para que le recuerdes.") }
@@ -208,6 +251,11 @@ fun CarritosAbandonados() {
                     }
                 }
             }
+        }
+    }
+    configurar?.let { r ->
+        Hoja(true, { configurar = null }) {
+            HojaRecordatoriosCarrito(r) { n -> guardarRecordatorios(n, "Recordatorios guardados") { actualizarHoja?.invoke() } }
         }
     }
 }

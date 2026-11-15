@@ -131,6 +131,7 @@ final class PantallasTests: XCTestCase {
     }
     func testPantallaCajaDelDia() { montar(CajaDelDia()) }
     func testPantallaCarritosAbandonados() { montar(CarritosAbandonados()) }
+    func testPantallaEnviosTienda() { montar(EnviosTienda()) }
     func testPantallaResenasYPreguntas() { montar(ResenasYPreguntas()) }
     func testPantallaDevoluciones() { montar(Devoluciones()) }
     func testPantallaCupones() { montar(Cupones()) }

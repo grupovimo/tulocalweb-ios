@@ -339,6 +339,8 @@ struct ProductoFila: Codable, Identifiable, Equatable {
     var publicado: Bool
     var estado: String
     var vendidos30: Int?
+    /// Cuántos pidieron «Avisame cuando vuelva» y esperan (§60).
+    var esperan: Int?
     var variantes: [Variante]
 }
 

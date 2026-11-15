@@ -257,6 +257,10 @@ struct FilaProducto: View {
                             EtiquetaCanal(texto: "ML", fondo: C.avisoFondo, tinta: C.bannerTinta)
                         }
                     }
+                    // «Avisame cuando vuelva» (§60): al reponer les llega un mail solo.
+                    if let n = p.esperan, n > 0 {
+                        EtiquetaCanal(texto: n == 1 ? "1 espera" : "\(n) esperan", fondo: C.errorFondo, tinta: C.errorTinta)
+                    }
                 }
             }
             Spacer(minLength: 0)

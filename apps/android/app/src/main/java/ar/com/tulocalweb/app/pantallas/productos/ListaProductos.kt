@@ -250,6 +250,9 @@ fun FilaProducto(p: ProductoFila) {
                     if ("web" in p.canales || p.canales.isEmpty()) EtiquetaCanal("Web", C.pista, C.neutroTinta)
                     if ("ml" in p.canales) EtiquetaCanal("ML", C.avisoFondo, C.bannerTinta)
                 }
+                // «Avisame cuando vuelva» (§60): al reponer les llega un mail solo.
+                val n = p.esperan ?: 0
+                if (n > 0) EtiquetaCanal(if (n == 1) "1 espera" else "$n esperan", C.errorFondo, C.errorTinta)
             }
         }
     }

@@ -891,7 +891,35 @@
   "abiertos": 2,
   "monto": 41200,
   "recuperado": 56800,
-  "tasa": 0.18
+  "tasa": 0.18,
+  "recordatorios": {
+   "activo": true,
+   "pasos": [
+    {
+     "activo": true,
+     "horas": 1,
+     "cupon": null
+    },
+    {
+     "activo": true,
+     "horas": 24,
+     "cupon": {
+      "descuento": "porcentaje",
+      "valor": 10,
+      "dias": 3
+     }
+    },
+    {
+     "activo": false,
+     "horas": 72,
+     "cupon": null
+    }
+   ]
+  },
+  "recuperados": {
+   "pedidos": 3,
+   "monto": 56800
+  }
  },
  "/v1/panel/resenas": {
   "preguntas": [
@@ -1086,5 +1114,18 @@
     "pendiente": true
    }
   ]
+ },
+ "/v1/panel/configuracion/entregas": {
+  "retiro": true,
+  "retiroDireccion": "Gorriti 4500, Palermo",
+  "retiroHorario": "Lun a vie de 10 a 19",
+  "moto": true,
+  "motoCosto": 3500,
+  "motoZona": "Palermo, Villa Crespo y Colegiales",
+  "motoDemora": "En el día",
+  "correo": false,
+  "gratisDesde": 60000,
+  "envioGratis": true,
+  "envioGratisMonto": 60000
  }
 }

@@ -251,6 +251,7 @@ class PantallasTest {
     }
     @Test fun pantallaCajaDelDia() = montar("CajaDelDia") { CajaDelDia() }
     @Test fun pantallaCarritosAbandonados() = montar("CarritosAbandonados") { CarritosAbandonados() }
+    @Test fun pantallaEnviosTienda() = montar("EnviosTienda") { EnviosTienda() }
     @Test fun pantallaResenasYPreguntas() = montar("ResenasYPreguntas") { ResenasYPreguntas() }
     @Test fun pantallaDevoluciones() = montar("Devoluciones") { Devoluciones() }
     @Test fun pantallaCupones() = montar("Cupones") { Cupones() }
