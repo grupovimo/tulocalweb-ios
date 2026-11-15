@@ -69,6 +69,8 @@ export const BARRA: Partial<Record<ClaveMarca, string>> = {
 export const ESTADOS = {
 	'Sin pagar': ['rgba(227,169,59,.18)', '#9A6A10'],
 	'Pago pendiente': ['rgba(227,169,59,.18)', '#9A6A10'],
+	// Mercado Pago de la tienda online sin acreditar: todavía no es una venta.
+	'Esperando pago': ['rgba(126,102,86,.12)', '#7E6656'],
 	'Para preparar': ['rgba(210,88,47,.13)', '#C24E25'],
 	Pagado: ['rgba(47,143,99,.13)', '#2F8F63'],
 	'Listo para despachar': ['rgba(201,138,18,.16)', '#9A6A10'],

@@ -63,6 +63,23 @@ export const CANCELADO = {
 };
 export const etapaDe = (e: EstadoPedido) => ETAPAS.find((x) => x.estado === e) ?? CANCELADO;
 
+/**
+ * Una compra de la tienda online con Mercado Pago que todavía no se acreditó: no es una venta
+ * (docs/decisiones.md §63). Se ve «Esperando pago», no se marca pagada a mano (la confirma Mercado
+ * Pago) y a las 24 h se cancela sola.
+ */
+export const esperaPago = (p: { estado: EstadoPedido; pago?: string; canal?: string }) =>
+	p.estado === 'Sin pagar' && p.pago === 'mp' && p.canal === 'web';
+export const ESPERANDO = {
+	estado: 'Sin pagar' as const,
+	t: 'Esperando pago',
+	c: '#7E6656',
+	i: I.phHourglassMediumFill
+};
+/** La etapa con que se dibuja el pedido (la de «Esperando pago» si corresponde). */
+export const etapaDePedido = (p: { estado: EstadoPedido; pago?: string; canal?: string }) =>
+	esperaPago(p) ? ESPERANDO : etapaDe(p.estado);
+
 /** El botón principal de la hoja: lleva a la etapa siguiente. */
 export const SIGUIENTE: Partial<Record<EstadoPedido, string>> = {
 	'Sin pagar': 'Marcar como pagado',
@@ -95,10 +112,14 @@ const PROXIMO_RETIRO: Partial<Record<EstadoPedido, EstadoPedido>> = {
 	'Para preparar': 'Listo para despachar',
 	'Listo para despachar': 'Entregado'
 };
-type ConEnvio = { estado: EstadoPedido; envio: string };
+type ConEnvio = { estado: EstadoPedido; envio: string; pago?: string; canal?: string };
 export const textoEstado = (p: ConEnvio) =>
-	(p.envio === 'retiro' && TEXTO_RETIRO[p.estado]) || etapaDe(p.estado).t;
+	(p.envio === 'retiro' && TEXTO_RETIRO[p.estado]) || etapaDePedido(p).t;
 export const siguienteDe = (p: ConEnvio) =>
-	p.envio === 'retiro' ? SIGUIENTE_RETIRO[p.estado] : SIGUIENTE[p.estado];
+	esperaPago(p)
+		? undefined
+		: p.envio === 'retiro'
+			? SIGUIENTE_RETIRO[p.estado]
+			: SIGUIENTE[p.estado];
 export const proximoDe = (p: ConEnvio) =>
 	p.envio === 'retiro' ? PROXIMO_RETIRO[p.estado] : PROXIMO[p.estado];

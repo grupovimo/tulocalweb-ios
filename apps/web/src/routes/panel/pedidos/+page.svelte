@@ -26,7 +26,8 @@
 	} from '#lib/panel/pedidos/filtros.ts';
 	import {
 		ETAPAS,
-		etapaDe,
+		esperaPago,
+		etapaDePedido,
 		ICONO_ENVIO,
 		ICONO_PAGO,
 		NOMBRE_CANAL,
@@ -374,7 +375,8 @@
 			return h < 20
 				? ['Despachá hoy', 'rgba(184,58,46,.1)', '#B83A2E']
 				: ['Atrasado', 'rgba(184,58,46,.1)', '#B83A2E'];
-		return p.estado === 'Sin pagar' && h > 24
+		// Esperando el pago de Mercado Pago no apura: a las 24 h se cancela solo.
+		return p.estado === 'Sin pagar' && !esperaPago(p) && h > 24
 			? ['Sin pagar +24 h', 'rgba(227,169,59,.18)', '#9A6A10']
 			: null;
 	}
@@ -642,7 +644,7 @@
 					{@const p = filas[i]}
 					<div class="fila" style:top="{i * FILA}px" role="listitem">
 						{#if p}
-							{@const e = etapaDe(p.estado)}
+							{@const e = etapaDePedido(p)}
 							{@const paso = ETAPAS.findIndex((x) => x.estado === p.estado)}
 							{@const sel = seleccion.has(p.numero)}
 							{@const u = urgencia(p)}

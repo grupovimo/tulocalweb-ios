@@ -79,6 +79,12 @@ export const VISTAS: { id: string; t: string; filtros: Partial<Filtros> }[] = [
 		filtros: { estado: ['Para preparar', 'Listo para despachar'], fecha: 'hoy' }
 	},
 	{ id: 'sin-pagar', t: 'Sin pagar', filtros: { estado: ['Sin pagar'] } },
+	// Compras de la tienda online con Mercado Pago sin acreditar (todavía no son ventas, §63).
+	{
+		id: 'esperando-pago',
+		t: 'Esperando pago',
+		filtros: { estado: ['Sin pagar'], pago: ['mp'], canal: ['web'] }
+	},
 	{ id: 'vip', t: 'Clientes VIP', filtros: { vip: true } },
 	{ id: 'mayoristas', t: 'Mayoristas', filtros: { mayorista: true } },
 	{ id: 'hornero', t: 'Vendidos por Tincho', filtros: { hornero: true } }

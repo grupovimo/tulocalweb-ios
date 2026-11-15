@@ -11,7 +11,14 @@
 	import { pesos } from '../formato.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 	import { whatsappDe, type Contexto } from './acciones.ts';
-	import { NOMBRE_CANAL, NOMBRE_ENVIO, NOMBRE_PAGO, siguienteDe, textoEstado } from './nombres.ts';
+	import {
+		NOMBRE_CANAL,
+		NOMBRE_ENVIO,
+		NOMBRE_PAGO,
+		esperaPago,
+		siguienteDe,
+		textoEstado
+	} from './nombres.ts';
 
 	type Detalle = components['schemas']['PedidoDetalle'];
 
@@ -117,7 +124,7 @@
 				<div class="c-txt">
 					<div class="c-fila">
 						<span class="c-n">Pedido #{pedido.numero}</span><ChipEstado
-							estado={pedido.estado}
+							estado={esperaPago(pedido) ? 'Esperando pago' : pedido.estado}
 							texto={textoEstado(pedido)}
 						/>
 					</div>
@@ -225,7 +232,7 @@
 										sena.falta
 									)}{:else if sena}Esperando la seña de {pesos(
 										sena.monto
-									)}{:else}{pedido.estadoPago}{/if}</span
+									)}{:else if esperaPago(pedido)}Esperando el pago · se cancela solo a las 24 h{:else}{pedido.estadoPago}{/if}</span
 							></span
 						>
 					</div>
