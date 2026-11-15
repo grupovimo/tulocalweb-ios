@@ -65,10 +65,12 @@ test('configuración: la política de cambios llega a la tienda', async ({ page 
 	await page.getByRole('button', { name: 'Guardar cambios' }).click();
 	await expect(page.getByText('Datos guardados')).toBeVisible();
 
-	// En la ficha del producto va antes del texto legal del botón de arrepentimiento.
+	// En la ficha del producto va antes del texto legal del botón de arrepentimiento. Litoral es
+	// Mostrador: los detalles van en tarjetas abiertas (en Vidriera y Pedido, en un desplegable).
 	await page.goto(`/t/${slug}/producto/bombilla-alpaca`);
 	await listo(page);
-	await page.getByRole('button', { name: 'Cambios y devoluciones' }).click();
+	const desplegable = page.locator('summary', { hasText: /Cambios y devoluciones|Detalles/ });
+	if (await desplegable.count()) await desplegable.first().click();
 	const texto = page.getByText(politica);
 	await expect(texto).toBeVisible();
 	await expect(texto).toContainText(`${politica} Tenés 10 días desde que lo recibís`);
