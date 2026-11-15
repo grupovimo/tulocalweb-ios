@@ -1,9 +1,5 @@
 package ar.com.tulocalweb.app.pantallas.mas
 
-import android.annotation.SuppressLint
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,8 +31,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import ar.com.tulocalweb.app.nucleo.Api
+import ar.com.tulocalweb.app.nucleo.CatalogoBloques
+import ar.com.tulocalweb.app.nucleo.PresetTienda
+import ar.com.tulocalweb.app.nucleo.valorDe
+import kotlinx.serialization.builtins.ListSerializer
 import ar.com.tulocalweb.app.nucleo.Recursos
 import ar.com.tulocalweb.app.nucleo.Valor
 import ar.com.tulocalweb.app.nucleo.ValorJSON
@@ -142,12 +141,6 @@ data class CatalogoEstilo(
             "encabezado" to "Fondo del encabezado", "encabezadoTexto" to "Texto del encabezado",
             "pie" to "Fondo del pie", "pieTexto" to "Texto del pie",
         )
-        /** Qué es cada dirección (Reglas.dc.html), para elegir sin probar. */
-        val direcciones = mapOf(
-            "vidriera" to "Editorial y con mucho aire: fotos grandes, letra con serifa y botones rectos.",
-            "mostrador" to "Para vender: tarjetas, precios grandes, cuotas y transferencia a la vista.",
-            "pedido" to "Para pedir rápido: compacta, con el pedido siempre visible y agregar en un toque.",
-        )
         data class Red(val id: String, val nombre: String, val ejemplo: String, val teclado: KeyboardType)
         val redes = listOf(
             Red("instagram", "Instagram", "@tutienda", KeyboardType.Text), Red("tiktok", "TikTok", "@tutienda", KeyboardType.Text),
@@ -221,7 +214,7 @@ fun SelectorDeColor(nombre: String, hexActual: String, alCambiar: (String) -> Un
 /** Los grupos del estilo, para Mi tienda (los mismos de la web). */
 @Composable
 fun EditorEstilo(estilo: EstiloTienda, alCambiar: (EstiloTienda) -> Unit, paleta: Int, alCambiarPaleta: (Int) -> Unit, plantilla: String, categorias: List<String>) {
-    var abierto by remember { mutableStateOf<String?>("forma") }
+    var abierto by remember { mutableStateOf<String?>("direccion") }
     val cat = CatalogoEstilo.compartido
     val original = cat.roles[plantilla] ?: cat.roles["litoral"] ?: emptyMap()
 
@@ -263,38 +256,33 @@ fun EditorEstilo(estilo: EstiloTienda, alCambiar: (EstiloTienda) -> Unit, paleta
 
     val destinos = cat.paginas.map { it.id to it.nombre } + categorias.map { "cat:$it" to "Categoría: $it" } + listOf("link" to "Un link propio…")
 
+    // MARK: Dirección, forma, densidad, ancho y fotos (bloques.json › estilo)
+    val preset = PresetTienda.todos[plantilla]
+    val bloques = CatalogoBloques.shared
+
+    /** Lo que se ve: lo elegido, lo del punto de partida o lo de la dirección. */
+    fun vistoEstilo(k: String): String {
+        estilo.opcion(k)?.let { return it }
+        if (k == "direccion") return preset?.direccion ?: bloques.estilo[k]?.porDefecto ?: "vidriera"
+        return preset?.estilo?.get(k) ?: bloques.estilo[k]?.porDefecto ?: bloques.estilo[k]?.opciones?.firstOrNull() ?: ""
+    }
+
+    @Composable
+    fun OpcionEstilo(k: String, titulo: String) {
+        val o = bloques.estilo[k]
+        SelectorOpcion(titulo, o?.opciones ?: emptyList(), o?.nombres ?: emptyList(), vistoEstilo(k)) { alCambiar(estilo.conOpcion(k, it)) }
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Grupo("forma", "Dirección y forma", "square.on.circle") {
-            val ce = CatalogoBloques.compartido.estilo
-            val preset = PresetTienda.de(plantilla)
-            ce["direccion"]?.let { d ->
-                Texto("Dirección", Estilo.footnoteFuerte, C.texto2)
-                val actual = estilo.direccion ?: preset.direccion
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    d.pares.forEach { (id, nombre) ->
-                        val on = actual == id
-                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(if (on) 2.dp else 1.dp, if (on) C.acento else C.linea2, RoundedCornerShape(14.dp))
-                            .clickable { alCambiar(estilo.copy(direccion = if (id == preset.direccion) null else id)) }.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Texto(nombre, Estilo.fila, C.texto)
-                                Texto(CatalogoEstilo.direcciones[id] ?: "", Estilo.footnote, C.texto2)
-                            }
-                            if (on) Icono("checkmark.circle.fill", 20f, C.acento)
-                        }
-                    }
-                }
-                Texto("Cambiar de dirección no borra nada: los bloques toman la letra, los botones y el aire de la nueva.", Estilo.footnote, C.texto2)
-            }
-            listOf("forma" to "Forma de botones y fotos", "densidad" to "Aire entre bloques", "ancho" to "Ancho de la página", "fotoProducto" to "Fotos de producto",
-                "encabezado" to "Encabezado", "pie" to "Pie").forEach { (id, titulo) ->
-                val o = ce[id] ?: return@forEach
-                val base = preset.estilo[id] ?: o.porDefecto ?: o.opciones.firstOrNull() ?: ""
-                val opciones = o.pares.map { (v, n) -> v to if (v == base) "$n (la de tu plantilla)" else n }
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Texto(titulo, Estilo.body16, C.texto, Modifier.weight(1f))
-                    SelectorMenu(opciones, estilo.opcion(id) ?: base, { alCambiar(estilo.conOpcion(id, if (it == base) null else it)) }, titulo)
-                }
+        Grupo("direccion", "Dirección y forma", "square.on.circle") {
+            Texto("La dirección le da el carácter: tipografía, aire y forma de botones. Cambiarla no borra nada.", Estilo.footnote, C.texto2)
+            OpcionEstilo("direccion", "Dirección")
+            OpcionEstilo("forma", "Forma de botones y tarjetas")
+            OpcionEstilo("densidad", "Aire entre bloques")
+            OpcionEstilo("ancho", "Ancho en la compu")
+            OpcionEstilo("fotoProducto", "Fotos de producto")
+            if (estilo.direccion != null || estilo.forma != null || estilo.densidad != null || estilo.ancho != null || estilo.fotoProducto != null) {
+                BotonTexto("Volver a lo del punto de partida", { alCambiar(estilo.copy(direccion = null, forma = null, densidad = null, ancho = null, fotoProducto = null)) })
             }
         }
         Grupo("colores", "Colores", "paintpalette") {
@@ -354,6 +342,11 @@ fun EditorEstilo(estilo: EstiloTienda, alCambiar: (EstiloTienda) -> Unit, paleta
                 SelectorMenu(opciones, estilo.fuenteTexto ?: "", { alCambiar(estilo.copy(fuenteTexto = it.ifEmpty { null })) }, "Texto")
             }
         }
+        Grupo("encabezado", "Encabezado y pie", "rectangle.topthird.inset.filled") {
+            OpcionEstilo("encabezado", "Encabezado")
+            OpcionEstilo("pie", "Pie")
+            CampoTexto("Línea del pie", estilo.leyendaPie ?: "", { alCambiar(estilo.copy(leyendaPie = it.take(160))) })
+        }
         Grupo("menu", "Menú", "line.3.horizontal") {
             val items = estilo.menu ?: emptyList()
             fun cambiarItem(i: Int, f: (EstiloTienda.ItemMenu) -> EstiloTienda.ItemMenu) {
@@ -399,121 +392,33 @@ fun EditorEstilo(estilo: EstiloTienda, alCambiar: (EstiloTienda) -> Unit, paleta
             if (items.isNotEmpty()) BotonTexto("Volver al menú de la plantilla", { alCambiar(estilo.copy(menu = null)) })
         }
         Grupo("barra", "Barra de anuncios", "megaphone") {
-            val cb = CatalogoBloques.compartido.barraAnuncios
-            val barra = estilo.barra ?: EstiloTienda.Barra()
-            Texto(cb.descripcion.ifEmpty { "Arriba de todo, en todas las páginas." }, Estilo.footnote, C.texto2)
-            SelectorVariante("barra", cb.variantes, cb.nombresVariantes, barra.variante) { alCambiar(estilo.copy(barra = barra.copy(variante = it))) }
-            if (barra.variante == "rotativa" && barra.mensajes.size < 2) Texto("Con dos mensajes o más, van pasando solos.", Estilo.footnote, C.texto2)
-            cb.campos.forEach { c ->
-                val valor: ValorJSON? = when (c.id) {
-                    "mensajes" -> Valor.lista(barra.mensajes.map { m -> Valor.objeto(listOfNotNull("texto" to Valor.texto(m.texto), m.link?.let { "link" to Valor.texto(it) }).toMap()) })
-                    "fondo" -> barra.fondo?.let { Valor.texto(it) }
-                    else -> null
-                }
-                CampoDeBloque(c, valor) { v ->
-                    val nueva = when (c.id) {
-                        "mensajes" -> barra.copy(mensajes = v?.lista?.map { m -> EstiloTienda.Barra.Mensaje(m.objeto?.get("texto")?.texto ?: "", m.objeto?.get("link")?.texto?.ifEmpty { null }) } ?: emptyList())
-                        "fondo" -> barra.copy(fondo = v?.texto)
-                        else -> barra
-                    }
-                    alCambiar(estilo.copy(barra = if (nueva.mensajes.isEmpty() && nueva.fondo == null && nueva.variante == "fija") null else nueva))
-                }
+            val b = bloques.barraAnuncios
+            val actual = estilo.barra ?: EstiloTienda.Barra(b.variantes.firstOrNull() ?: "fija", emptyList())
+            Texto(b.descripcion, Estilo.footnote, C.texto2)
+            SelectorOpcion("Cómo se ve", b.variantes, b.nombresVariantes, actual.variante) { v -> alCambiar(estilo.copy(barra = actual.copy(variante = v))) }
+            val datos = buildMap {
+                if (actual.mensajes.isNotEmpty()) put("mensajes", valorDe(ListSerializer(EstiloTienda.Barra.Mensaje.serializer()), actual.mensajes))
+                actual.fondo?.let { put("fondo", Valor.texto(it)) }
+            }
+            EditorCampos(b.campos, datos) { d ->
+                val n = actual.copy(
+                    mensajes = d["mensajes"]?.lista?.map { m -> EstiloTienda.Barra.Mensaje(m["texto"]?.texto ?: "", m["link"]?.texto) } ?: emptyList(),
+                    fondo = d["fondo"]?.texto,
+                )
+                alCambiar(estilo.copy(barra = if (n.mensajes.isEmpty() && n.fondo == null) null else n))
+            }
+            if (actual.variante == "rotativa" && actual.mensajes.size < 2) {
+                Texto("Rotativa pasa de un mensaje al otro: sumá al menos dos.", Estilo.footnote, C.avisoTinta)
             }
         }
-        Grupo("pie", "Pie y WhatsApp", "text.alignleft") {
-            CampoTexto("Línea del pie", estilo.leyendaPie ?: "", { alCambiar(estilo.copy(leyendaPie = it.take(160))) })
-            Interruptor("Botón flotante de WhatsApp", estilo.whatsappFlotante != false, { alCambiar(estilo.copy(whatsappFlotante = if (it) null else false)) })
-            Texto("Va abajo a la derecha en todas las páginas, con el número de tu tienda.", Estilo.footnote, C.texto2)
-        }
-        Grupo("redes", "Redes y contacto", "at") {
+        Grupo("redes", "Redes y WhatsApp", "at") {
             CatalogoEstilo.redes.forEach { r ->
                 CampoTexto(r.nombre, estilo.redes?.get(r.id) ?: "", { v -> alCambiar(estilo.copy(redes = (estilo.redes ?: emptyMap()) + (r.id to v))) }, teclado = r.teclado)
             }
             Texto("Se muestran en el pie de tu tienda.", Estilo.footnote, C.texto2)
+            Interruptor("Botón flotante de WhatsApp", estilo.whatsappFlotante ?: true, { alCambiar(estilo.copy(whatsappFlotante = if (it) null else false)) })
+            Texto("Va abajo en todas las páginas, con el WhatsApp de Datos del negocio.", Estilo.footnote, C.texto2)
         }
     }
-}
-
-// MARK: - Vista previa
-
-/** La vista previa y el editor se hablan así (docs/especificaciones/tienda-bloques.md › Protocolo de la vista previa):
- *  la página avisa que está lista y qué bloque tocaron (window.TiendaPuente), y el editor le manda el borrador con
- *  window.tiendaVista.mostrar(...) sin recargar. Si la página todavía no sabe hacerlo, `lista` queda en false y el
- *  editor recarga como antes. */
-class PuenteVista {
-    internal var web: WebView? = null
-    /** La página respondió: se le puede mandar el borrador sin recargar. */
-    var lista by mutableStateOf(false)
-        internal set
-
-    fun mostrar(diseno: ValorJSON, pagina: String) {
-        if (!lista) return
-        web?.evaluateJavascript("window.tiendaVista && window.tiendaVista.mostrar($diseno, '${pagina.filter { it.isLetter() }}')", null)
-    }
-
-    fun seleccionar(id: String) {
-        if (!lista) return
-        web?.evaluateJavascript("window.tiendaVista && window.tiendaVista.seleccionar('${id.filter { it.isLetterOrDigit() }}')", null)
-    }
-}
-
-/** window.TiendaPuente: lo que la página le avisa a la app (corre en otro hilo: se pasa al principal). */
-private class TiendaPuente(private val alBloque: (String) -> Unit, private val alLista: () -> Unit) {
-    private val principal = android.os.Handler(android.os.Looper.getMainLooper())
-
-    @JavascriptInterface fun bloque(id: String) { principal.post { alBloque(id) } }
-    @JavascriptInterface fun lista() { principal.post { alLista() } }
-
-    /** Por si la página manda el mensaje entero ({ tipo: 'bloque', id } o { tipo: 'lista' }). */
-    @JavascriptInterface fun postMessage(mensaje: String) {
-        val o = runCatching { Api.json.parseToJsonElement(mensaje) }.getOrNull()
-        when (o?.get("tipo")?.texto) {
-            "bloque" -> o["id"]?.texto?.let { bloque(it) }
-            "lista" -> lista()
-        }
-    }
-}
-
-/** La tienda de verdad con el borrador (la misma página que el editor web, /panel/mi-tienda/vista, con el token de la
- *  app y los marcos para tocar un bloque). La página misma no deja navegar los links. `vuelta` recarga. */
-@SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
-@Composable
-fun VistaPreviaTienda(
-    token: String?,
-    vuelta: Int,
-    modifier: Modifier = Modifier,
-    pagina: String = "inicio",
-    puente: PuenteVista = remember { PuenteVista() },
-    alTocarBloque: (String) -> Unit = {},
-    alEstarLista: () -> Unit = {},
-) {
-    var cargada by remember { mutableStateOf(-1) }
-    var paginaCargada by remember { mutableStateOf("") }
-    val tocar by androidx.compose.runtime.rememberUpdatedState(alTocarBloque)
-    val lista by androidx.compose.runtime.rememberUpdatedState(alEstarLista)
-    fun avisarLista() { if (!puente.lista) { puente.lista = true; lista() } }
-    AndroidView({ c ->
-        WebView(c).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            addJavascriptInterface(TiendaPuente({ tocar(it) }, { avisarLista() }), "TiendaPuente")
-            webViewClient = object : WebViewClient() {
-                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) { puente.lista = false }
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    // Si la página no avisó, se pregunta si sabe dibujar sin recargar.
-                    view?.evaluateJavascript("!!(window.tiendaVista && window.tiendaVista.mostrar)") { r -> if (r == "true") avisarLista() }
-                }
-            }
-            puente.web = this
-        }
-    }, modifier, onRelease = { w -> if (puente.web === w) { puente.web = null; puente.lista = false } }, update = { w ->
-        puente.web = w
-        if (cargada != vuelta || (paginaCargada != pagina && !puente.lista)) {
-            cargada = vuelta; paginaCargada = pagina
-            w.clearCache(true)
-            w.loadUrl("${Web.base}/panel/mi-tienda/vista?pagina=$pagina&marcos=1", token?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap())
-        }
-    })
 }
 
