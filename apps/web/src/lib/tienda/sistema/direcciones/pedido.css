@@ -175,10 +175,23 @@
 	gap: 8px;
 }
 .tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-info {
-	display: grid;
-	grid-template-columns: 1fr auto;
-	align-items: start;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: flex-start;
 	gap: 4px 8px;
+}
+.tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-nombre {
+	flex: 1 1 8em;
+	min-width: 0;
+}
+.tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-detalle {
+	order: 3;
+	flex-basis: 100%;
+}
+.tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-pie {
+	flex: 0 1 auto;
+	margin-left: auto;
 }
 .tv[data-dir='pedido'] .tv-prod--grilla .tv-prod-pie {
 	margin-top: 0;
@@ -473,7 +486,6 @@
 /* Pie simple, en tarjeta. */
 .tv[data-dir='pedido'] .tv-pie[data-variante='simple'] {
 	padding: 24px 0;
-	background: var(--t-superficie);
 }
 .tv[data-dir='pedido'] .tv-pie {
 	padding-top: 56px;

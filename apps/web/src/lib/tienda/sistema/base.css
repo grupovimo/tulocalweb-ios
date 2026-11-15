@@ -40,10 +40,10 @@
 .tv *::after {
 	box-sizing: border-box;
 }
-.tv a {
+:where(.tv) a {
 	color: inherit;
 }
-.tv img {
+:where(.tv) img {
 	max-width: 100%;
 }
 .tv :focus-visible {
@@ -580,9 +580,13 @@
 	}
 }
 
-/* Mitades y destacados de la grilla: con 1 o 2, la tarjeta crece. */
+/* Mitades de la grilla: con 2, la tarjeta crece (en Mostrador y Pedido, la foto apaisada para
+   que no ocupe toda la pantalla). */
 .tv-grilla[data-n='2'] .tv-prod-nombre {
 	font-size: 19px;
+}
+.tv:not([data-dir='vidriera']) .tv-grilla[data-n='2'] .tv-prod-foto {
+	aspect-ratio: 4/3;
 }
 
 /* ---- Un producto (destacado y la grilla con uno solo) ------------------------------------ */
@@ -756,7 +760,12 @@
 }
 .tv-portada-fotos {
 	display: grid;
+	grid-template-rows: minmax(0, 1fr);
 	gap: 8px;
+	min-height: 0;
+	overflow: hidden;
+}
+.tv-portada-fotos > * {
 	min-height: 0;
 }
 .tv-portada-fotos[data-n='2'] {
@@ -764,7 +773,7 @@
 }
 .tv-portada-fotos[data-n='3'] {
 	grid-template-columns: 3fr 2fr;
-	grid-template-rows: 1fr 1fr;
+	grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 .tv-portada-fotos[data-n='3'] > :first-child {
 	grid-row: 1 / span 2;

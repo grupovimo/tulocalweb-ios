@@ -139,10 +139,6 @@
 .tv[data-dir='vidriera'] .tv-portada-partida .tv-h1 {
 	line-height: 0.98;
 }
-.tv[data-dir='vidriera'] .tv-portada-partida {
-	padding-right: 0;
-	margin-right: 0;
-}
 .tv[data-dir='vidriera'] .tv-portada-fotos .tv-foto {
 	border-radius: 0;
 }
