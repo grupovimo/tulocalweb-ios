@@ -13,7 +13,7 @@ enum Destino: Hashable {
     case cuenta
     case clientes
     case cliente(ClienteFila)
-    case caja, carritos, resenas, devoluciones, cupones, finanzas, facturacion, plan, integraciones, usuarios
+    case caja, carritos, resenas, devoluciones, cupones, newsletter, finanzas, facturacion, plan, integraciones, usuarios
     case editorProducto(String), nuevoProducto(String?), pedidoManual, preferenciasAvisos, negocio, links, inventario, ayuda, miTienda, estadisticas, compartir, importar, telegram, medicion, ia
 }
 
@@ -230,6 +230,7 @@ struct Principal: View {
                     case .resenas: ResenasYPreguntas()
                     case .devoluciones: Devoluciones()
                     case .cupones: Cupones()
+                    case .newsletter: Newsletter()
                     case .finanzas: Finanzas()
                     case .facturacion: FacturacionArca()
                     case .plan: PlanCuenta()

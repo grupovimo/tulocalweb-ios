@@ -42,7 +42,7 @@ object Vinculos {
         "cupones" to Destino.cupones, "finanzas" to Destino.finanzas, "facturacion" to Destino.facturacion, "plan-y-facturacion" to Destino.plan,
         "integraciones" to Destino.integraciones, "usuarios-y-permisos" to Destino.usuarios, "mis-datos" to Destino.cuenta,
         "notificaciones" to Destino.preferenciasAvisos, "informes" to Destino.estadisticas, "mi-tienda" to Destino.miTienda,
-        "links" to Destino.links, "importar" to Destino.importar,
+        "links" to Destino.links, "importar" to Destino.importar, "newsletter" to Destino.newsletter,
     )
 }
 

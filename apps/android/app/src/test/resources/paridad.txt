@@ -25,6 +25,7 @@ Mas/IntegracionesMas.swift
 Mas/Mas.swift
 Mas/MiTienda.swift
 Mas/MiniaturaBloque.swift
+Mas/Newsletter.swift
 Mas/Plan.swift
 Mas/PromocionesTienda.swift
 Mas/Secciones.swift

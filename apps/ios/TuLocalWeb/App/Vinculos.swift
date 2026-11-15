@@ -36,7 +36,7 @@ enum Vinculos {
         ("cupones", .cupones), ("finanzas", .finanzas), ("facturacion", .facturacion), ("plan-y-facturacion", .plan),
         ("integraciones", .integraciones), ("usuarios-y-permisos", .usuarios), ("mis-datos", .cuenta),
         ("notificaciones", .preferenciasAvisos), ("informes", .estadisticas), ("mi-tienda", .miTienda),
-        ("links", .links), ("importar", .importar),
+        ("links", .links), ("importar", .importar), ("newsletter", .newsletter),
     ]
 }
 

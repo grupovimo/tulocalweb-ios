@@ -87,6 +87,7 @@ fun Buscar() {
             ir("Reseñas y preguntas", "Crecer", "star.bubble", Destino.resenas, "clientes"),
             ir("Devoluciones", "Ventas", "arrow.uturn.backward", Destino.devoluciones, "pedidos"),
             ir("Cupones", "Crecer", "ticket", Destino.cupones, "catalogo"),
+            ir("Newsletter", "Crecer · contactos y su origen", "envelope", Destino.newsletter, "clientes"),
             ir("Links de pago", "Ventas", "link", Destino.links, "pedidos"),
             ir("Estadísticas", "Crecer", "chart.bar.xaxis", Destino.estadisticas, "pedidos"),
             ir("Compartí tu tienda", "Tienda online", "square.and.arrow.up", Destino.compartir),

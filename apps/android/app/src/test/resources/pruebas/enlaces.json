@@ -54,6 +54,7 @@
     "/panel/devoluciones": "destino:devoluciones",
     "/panel/cupones": "destino:cupones",
     "/panel/cupones?tab=activos": "destino:cupones",
+    "/panel/newsletter": "destino:newsletter",
     "/panel/finanzas": "destino:finanzas",
     "/panel/facturacion": "destino:facturacion",
     "/panel/plan-y-facturacion": "destino:plan",

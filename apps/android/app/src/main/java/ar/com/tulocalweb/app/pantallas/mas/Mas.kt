@@ -153,6 +153,7 @@ fun Mas() {
             FilaMas("Reseñas y preguntas", "star.bubble", Destino.resenas, "clientes"),
             FilaMas("Devoluciones", "arrow.uturn.backward", Destino.devoluciones, "pedidos"),
             FilaMas("Cupones", "ticket", Destino.cupones, "catalogo"),
+            FilaMas("Newsletter", "envelope", Destino.newsletter, "clientes"),
             FilaMas("Links de pago", "link", Destino.links, "pedidos"),
             FilaMas("Inventario", "barcode.viewfinder", Destino.inventario, "catalogo"),
         ))

@@ -32,6 +32,7 @@ struct Mas: View {
                     Fila(texto: "Reseñas y preguntas", simbolo: "star.bubble", destino: .resenas, permiso: "clientes"),
                     Fila(texto: "Devoluciones", simbolo: "arrow.uturn.backward", destino: .devoluciones, permiso: "pedidos"),
                     Fila(texto: "Cupones", simbolo: "ticket", destino: .cupones, permiso: "catalogo"),
+                    Fila(texto: "Newsletter", simbolo: "envelope", destino: .newsletter, permiso: "clientes"),
                     Fila(texto: "Links de pago", simbolo: "link", destino: .links, permiso: "pedidos"),
                     Fila(texto: "Inventario", simbolo: "barcode.viewfinder", destino: .inventario, permiso: "catalogo"),
                 ])

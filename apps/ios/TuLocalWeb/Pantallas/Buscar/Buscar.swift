@@ -44,6 +44,7 @@ struct Buscar: View {
             ir("Reseñas y preguntas", "Crecer", "star.bubble", .resenas, "clientes"),
             ir("Devoluciones", "Ventas", "arrow.uturn.backward", .devoluciones, "pedidos"),
             ir("Cupones", "Crecer", "ticket", .cupones, "catalogo"),
+            ir("Newsletter", "Crecer · contactos y su origen", "envelope", .newsletter, "clientes"),
             ir("Links de pago", "Ventas", "link", .links, "pedidos"),
             ir("Estadísticas", "Crecer", "chart.bar.xaxis", .estadisticas, "pedidos"),
             ir("Compartí tu tienda", "Tienda online", "square.and.arrow.up", .compartir),
