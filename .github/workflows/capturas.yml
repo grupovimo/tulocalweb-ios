@@ -1,0 +1,51 @@
+name: Capturas
+
+# Capturas de página entera de las 17 vitrinas (inicio, catálogo, fichas, nosotros, carrito y
+# checkout) a 375, 1440 y 2560, más una demo casi vacía por dirección. Se levanta la web en modo
+# sandbox como en el job e2e de CI y quedan como artefacto.
+on:
+  workflow_dispatch:
+    inputs:
+      presets:
+        description: "Presets separados por coma (vacío = los 17)"
+        required: false
+        default: ""
+      anchos:
+        description: "Anchos separados por coma"
+        required: false
+        default: "375,1440,2560"
+      vacia:
+        description: "Sumar la tienda casi vacía (1 o 0)"
+        required: false
+        default: "1"
+      etiqueta:
+        description: "Nombre del artefacto (por ejemplo antes o despues)"
+        required: false
+        default: "capturas"
+
+jobs:
+  capturas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+        working-directory: .
+      - run: bun run gen
+      - run: bun run build
+      - run: bunx playwright install --with-deps chromium
+      - run: bunx playwright test -c playwright.capturas.config.ts
+        env:
+          CAPTURAS_PRESETS: ${{ inputs.presets }}
+          CAPTURAS_ANCHOS: ${{ inputs.anchos }}
+          CAPTURAS_VACIA: ${{ inputs.vacia }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.etiqueta }}
+          path: apps/web/capturas
+          retention-days: 14

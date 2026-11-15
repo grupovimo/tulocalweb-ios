@@ -17,6 +17,7 @@ vite.config.ts.timestamp-*
 
 # Playwright
 test-results
+capturas/
 playwright-report
 .playwright-mcp/
 
