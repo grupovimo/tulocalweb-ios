@@ -1,0 +1,115 @@
+{
+	"ceibo": {
+		"blazer-lumbre": "https://tulocalweb.com.ar/demo/lumbre/blazer-lumbre.webp",
+		"camisa-oversize": "https://tulocalweb.com.ar/demo/lumbre/camisa-oversize.webp",
+		"conjunto-tejido": "https://tulocalweb.com.ar/demo/lumbre/conjunto-tejido.webp",
+		"remera-basica-negra": "https://tulocalweb.com.ar/demo/lumbre/remera-basica-negra.webp",
+		"sweater-trenzado": "https://tulocalweb.com.ar/demo/lumbre/sweater-trenzado.webp",
+		"tapado-merino-ceibo": "https://tulocalweb.com.ar/demo/lumbre/tapado-merino-ceibo.webp",
+		"tote-de-cuero": "https://tulocalweb.com.ar/demo/lumbre/tote-de-cuero.webp"
+	},
+	"hora": {
+		"automatico-clasico-40": "https://tulocalweb.com.ar/demo/hora/automatico-clasico-40.webp",
+		"automatico-esqueleto": "https://tulocalweb.com.ar/demo/hora/automatico-esqueleto.webp",
+		"cronografo-norte": "1522312346375-d1a52e2b99b3",
+		"diver-300-m": "https://tulocalweb.com.ar/demo/hora/diver-300-m.webp",
+		"dress-watch-acero": "https://tulocalweb.com.ar/demo/hora/dress-watch-acero.webp",
+		"malla-de-cuero": "https://tulocalweb.com.ar/demo/hora/malla-de-cuero.webp"
+	},
+	"lente": {
+		"clip-on-polarizado": "https://tulocalweb.com.ar/demo/lente/clip-on-polarizado.webp",
+		"estuche-rigido": "https://tulocalweb.com.ar/demo/lente/estuche-rigido.webp",
+		"recetado-redondo": "https://tulocalweb.com.ar/demo/lente/recetado-redondo.webp",
+		"sol-aviador-dorado": "https://tulocalweb.com.ar/demo/lente/sol-aviador-dorado.webp",
+		"sol-cat-eye-carey": "https://tulocalweb.com.ar/demo/lente/sol-cat-eye-carey.webp",
+		"sol-deportivo": "https://tulocalweb.com.ar/demo/lente/sol-deportivo.webp",
+		"sol-wayfarer": "1572635196237-14b3f281503f"
+	},
+	"litoral": {
+		"dulce-de-mamon": "https://tulocalweb.com.ar/demo/litoral/dulce-de-mamon.webp"
+	},
+	"malbec": {
+		"caja-6-seleccion": "1516594915697-87eb3b1c14ea",
+		"chardonnay-sin-madera": "https://tulocalweb.com.ar/demo/malbec/chardonnay-sin-madera.webp",
+		"espumante-nature": "https://tulocalweb.com.ar/demo/malbec/espumante-nature.webp",
+		"rosado-de-malbec": "1547595628-c61a29f496f0"
+	},
+	"miga": {
+		"budin-de-limon": "1691242720281-9269de4d9f86",
+		"cookies-x6": "https://tulocalweb.com.ar/demo/miga/cookies-x6.webp",
+		"croissant": "https://tulocalweb.com.ar/demo/miga/croissant.webp",
+		"focaccia": "https://tulocalweb.com.ar/demo/miga/focaccia.webp",
+		"rol-de-canela": "https://tulocalweb.com.ar/demo/miga/rol-de-canela.webp"
+	},
+	"mostaza": {
+		"alfajor-de-maicena": "https://tulocalweb.com.ar/demo/cafebruma/alfajor-de-maicena.webp",
+		"budin-de-limon": "1691242720281-9269de4d9f86",
+		"cafe-blend-de-la-casa": "https://tulocalweb.com.ar/demo/cafebruma/cafe-blend-de-la-casa.webp",
+		"cafe-cerrado-mineiro": "https://tulocalweb.com.ar/demo/cafebruma/cafe-cerrado-mineiro.webp",
+		"cafe-finca-la-esperanza": "https://tulocalweb.com.ar/demo/cafebruma/cafe-finca-la-esperanza.webp",
+		"cafe-huehuetenango": "https://tulocalweb.com.ar/demo/cafebruma/cafe-huehuetenango.webp"
+	},
+	"pampa": {
+		"buzo-heavy-frisa": "https://tulocalweb.com.ar/demo/pampa/buzo-heavy-frisa.webp",
+		"campera-coach": "https://tulocalweb.com.ar/demo/pampa/campera-coach.webp",
+		"cargo-ripstop": "https://tulocalweb.com.ar/demo/pampa/cargo-ripstop.webp",
+		"zapa-court-blanca": "https://tulocalweb.com.ar/demo/pampa/zapa-court-blanca.webp"
+	},
+	"patio": {
+		"arena-aglomerante": "https://tulocalweb.com.ar/demo/patio/arena-aglomerante.webp",
+		"cama-redonda": "https://tulocalweb.com.ar/demo/patio/cama-redonda.webp",
+		"comedero-doble": "https://tulocalweb.com.ar/demo/patio/comedero-doble.webp",
+		"correa-extensible": "https://tulocalweb.com.ar/demo/patio/correa-extensible.webp",
+		"pelota-mordible": "https://tulocalweb.com.ar/demo/patio/pelota-mordible.webp",
+		"rascador-torre": "https://tulocalweb.com.ar/demo/patio/rascador-torre.webp",
+		"snacks-dentales": "https://tulocalweb.com.ar/demo/patio/snacks-dentales.webp"
+	},
+	"quebracho": {
+		"mesa-ratona-paraiso": "https://tulocalweb.com.ar/demo/quebracho/mesa-ratona-paraiso.webp",
+		"silla-quebracho": "https://tulocalweb.com.ar/demo/quebracho/silla-quebracho.webp",
+		"velador-ceramica": "https://tulocalweb.com.ar/demo/quebracho/velador-ceramica.webp"
+	},
+	"rosedal": {
+		"balsamo-labial": "https://tulocalweb.com.ar/demo/rosedal/balsamo-labial.webp",
+		"contorno-de-ojos": "https://tulocalweb.com.ar/demo/rosedal/contorno-de-ojos.webp",
+		"crema-de-noche": "https://tulocalweb.com.ar/demo/rosedal/crema-de-noche.webp",
+		"kit-rutina-completa": "https://tulocalweb.com.ar/demo/rosedal/kit-rutina-completa.webp",
+		"limpiador-en-gel": "https://tulocalweb.com.ar/demo/rosedal/limpiador-en-gel.webp",
+		"serum-de-rosa-mosqueta": "https://tulocalweb.com.ar/demo/rosedal/serum-de-rosa-mosqueta.webp",
+		"tonico-de-rosas": "https://tulocalweb.com.ar/demo/rosedal/tonico-de-rosas.webp"
+	},
+	"taller": {
+		"bowl-de-cipres": "https://tulocalweb.com.ar/demo/taller/bowl-de-cipres.webp",
+		"fuente-ovalada": "https://tulocalweb.com.ar/demo/taller/fuente-ovalada.webp",
+		"kit-regalo-asador": "https://tulocalweb.com.ar/demo/taller/kit-regalo-asador.webp",
+		"posafuentes-x4": "https://tulocalweb.com.ar/demo/taller/posafuentes-x4.webp",
+		"set-de-cucharas-x3": "https://tulocalweb.com.ar/demo/taller/set-de-cucharas-x3.webp",
+		"tabla-de-asado-lenga": "https://tulocalweb.com.ar/demo/taller/tabla-de-asado-lenga.webp",
+		"tabla-de-picada": "https://tulocalweb.com.ar/demo/taller/tabla-de-picada.webp"
+	},
+	"tijera": {
+		"aceite-para-barba": "https://tulocalweb.com.ar/demo/tijera/aceite-para-barba.webp",
+		"cera-brillo": "https://tulocalweb.com.ar/demo/tijera/cera-brillo.webp",
+		"kit-barba-completo": "https://tulocalweb.com.ar/demo/tijera/kit-barba-completo.webp",
+		"pomada-mate": "https://tulocalweb.com.ar/demo/tijera/pomada-mate.webp",
+		"proraso-crema-de-afeitar": "https://tulocalweb.com.ar/demo/tijera/proraso-crema-de-afeitar.webp",
+		"reuzel-shampoo-diario": "1585751119414-ef2636f8aede",
+		"spray-texturizador": "1598524374912-6b0b0bab43dd"
+	},
+	"torno": {
+		"bowl-esmaltado": "https://tulocalweb.com.ar/demo/torno/bowl-esmaltado.webp",
+		"florero-mini": "1565193566173-7a0ee3dbe261",
+		"fuente-tierra": "https://tulocalweb.com.ar/demo/torno/fuente-tierra.webp"
+	},
+	"yerbal": {
+		"arroz-yamani": "https://tulocalweb.com.ar/demo/almacenverde/arroz-yamani.webp",
+		"cafe-de-especialidad": "https://tulocalweb.com.ar/demo/almacenverde/cafe-de-especialidad.webp",
+		"harina-integral-agroecologica": "https://tulocalweb.com.ar/demo/almacenverde/harina-integral-agroecologica.webp",
+		"lentejas": "https://tulocalweb.com.ar/demo/almacenverde/lentejas.webp",
+		"miel-de-monte": "https://tulocalweb.com.ar/demo/almacenverde/miel-de-monte.webp",
+		"mix-energetico": "https://tulocalweb.com.ar/demo/almacenverde/mix-energetico.webp",
+		"nueces-mariposa": "https://tulocalweb.com.ar/demo/almacenverde/nueces-mariposa.webp",
+		"pasas-de-uva-rubias": "https://tulocalweb.com.ar/demo/almacenverde/pasas-de-uva-rubias.webp",
+		"semillas-de-chia": "https://tulocalweb.com.ar/demo/almacenverde/semillas-de-chia.webp"
+	}
+}

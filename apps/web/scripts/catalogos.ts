@@ -52,7 +52,7 @@ type Producto = {
 	categoria: string | null;
 	precio: number;
 	anterior: number | null;
-	/** Id de la foto en Unsplash. */
+	/** Id de la foto en Unsplash o URL completa (las fotos propias de static/demo). */
 	foto: string;
 	etiqueta: string | null;
 	detalle: string | null;
@@ -343,6 +343,24 @@ for (const c of catalogos) {
 		if (n > 1) p.id = `${p.id}-${n}`;
 	}
 }
+/*
+ * Fotos que muestran el producto: en el handoff muchas no coincidían (una sandía para la miel, un
+ * lavarropas para la tabla de asado). fotos-demo.json las reemplaza por plantilla y id de producto:
+ * un id de Unsplash que ya estaba en el catálogo o una foto libre propia en static/demo (créditos en
+ * static/demo/CREDITOS.md). La API usa las mismas en internal/dominio/demo/catalogos.json.
+ */
+const FOTOS: Record<string, Record<string, string>> = JSON.parse(
+	readFileSync(join(import.meta.dirname, 'fotos-demo.json'), 'utf8')
+);
+for (const c of catalogos)
+	for (const p of c.productos) {
+		const foto = FOTOS[c.plantilla]?.[p.id];
+		if (foto) p.foto = foto;
+	}
+for (const [plantilla, fotos] of Object.entries(FOTOS))
+	for (const id of Object.keys(fotos))
+		if (!catalogos.some((c) => c.plantilla === plantilla && c.productos.some((p) => p.id === id)))
+			throw new Error(`fotos-demo.json: no existe ${plantilla}/${id}`);
 // Miga Clásica (la otra versión de Miga en el handoff) vende lo mismo que Miga.
 const miga = catalogos.find((c) => c.plantilla === 'miga');
 if (miga)
@@ -361,7 +379,7 @@ export type ProductoEjemplo = {
 	categoria: string | null;
 	precio: number;
 	anterior: number | null;
-	/** Id de la foto en Unsplash. */
+	/** Id de la foto en Unsplash o URL completa (las fotos propias de static/demo). */
 	foto: string;
 	etiqueta: string | null;
 	detalle: string | null;

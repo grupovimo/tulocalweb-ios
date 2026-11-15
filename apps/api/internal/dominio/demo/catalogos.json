@@ -16,7 +16,7 @@
 				"categoria": "Abrigos",
 				"precio": 186000,
 				"anterior": 248000,
-				"foto": "1525507119028-ed4c629a60a3",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/tapado-merino-ceibo.webp",
 				"etiqueta": "Hot Sale",
 				"detalle": null
 			},
@@ -66,7 +66,7 @@
 				"categoria": "Abrigos",
 				"precio": 74800,
 				"anterior": null,
-				"foto": "1576566588028-4147f3842f27",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/sweater-trenzado.webp",
 				"etiqueta": "Nuevo",
 				"detalle": null
 			},
@@ -76,7 +76,7 @@
 				"categoria": "Accesorios",
 				"precio": 118000,
 				"anterior": null,
-				"foto": "1548036328-c9fa89d128fa",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/tote-de-cuero.webp",
 				"etiqueta": null,
 				"detalle": null
 			},
@@ -96,7 +96,7 @@
 				"categoria": "Básicos",
 				"precio": 52600,
 				"anterior": null,
-				"foto": "1594633312681-425c7b97ccd1",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/camisa-oversize.webp",
 				"etiqueta": null,
 				"detalle": null
 			},
@@ -106,7 +106,7 @@
 				"categoria": "Abrigos",
 				"precio": 168000,
 				"anterior": 224000,
-				"foto": "1591047139829-d91aecb6caea",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/blazer-lumbre.webp",
 				"etiqueta": "Hot Sale",
 				"detalle": null
 			},
@@ -116,7 +116,7 @@
 				"categoria": "Básicos",
 				"precio": 24500,
 				"anterior": null,
-				"foto": "1503342217505-b0a15ec3261c",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/remera-basica-negra.webp",
 				"etiqueta": null,
 				"detalle": null
 			},
@@ -126,7 +126,7 @@
 				"categoria": "Básicos",
 				"precio": 132000,
 				"anterior": null,
-				"foto": "1485968579580-b6d095142e6e",
+				"foto": "https://tulocalweb.com.ar/demo/lumbre/conjunto-tejido.webp",
 				"etiqueta": "Últimos",
 				"detalle": null
 			}
@@ -210,7 +210,7 @@
 				"categoria": "Panadería",
 				"precio": 2400,
 				"anterior": null,
-				"foto": "1558961363-fa8fdf82db35",
+				"foto": "https://tulocalweb.com.ar/demo/cafebruma/alfajor-de-maicena.webp",
 				"etiqueta": "Sin TACC",
 				"detalle": "Dulce de leche y coco"
 			},
@@ -250,7 +250,7 @@
 				"categoria": "Café en grano",
 				"precio": 17500,
 				"anterior": null,
-				"foto": "1559056199-641a0ac8b55e",
+				"foto": "https://tulocalweb.com.ar/demo/cafebruma/cafe-finca-la-esperanza.webp",
 				"etiqueta": null,
 				"detalle": "Colombia · Panela · durazno · cacao"
 			},
@@ -270,7 +270,7 @@
 				"categoria": "Café en grano",
 				"precio": 14900,
 				"anterior": null,
-				"foto": "1514432324607-a09d9b4aefdd",
+				"foto": "https://tulocalweb.com.ar/demo/cafebruma/cafe-cerrado-mineiro.webp",
 				"etiqueta": null,
 				"detalle": "Brasil · Chocolate · avellana"
 			},
@@ -280,7 +280,7 @@
 				"categoria": "Café en grano",
 				"precio": 13500,
 				"anterior": null,
-				"foto": "1495474472287-4d71bcdd2085",
+				"foto": "https://tulocalweb.com.ar/demo/cafebruma/cafe-blend-de-la-casa.webp",
 				"etiqueta": null,
 				"detalle": "Brasil + Colombia · Dulce de leche · nuez"
 			},
@@ -290,7 +290,7 @@
 				"categoria": "Café en grano",
 				"precio": 19400,
 				"anterior": null,
-				"foto": "1559056199-641a0ac8b55e",
+				"foto": "https://tulocalweb.com.ar/demo/cafebruma/cafe-huehuetenango.webp",
 				"etiqueta": null,
 				"detalle": "Guatemala · Caramelo · manzana roja"
 			},
@@ -333,7 +333,7 @@
 				"categoria": "Frutos secos",
 				"precio": 12800,
 				"anterior": null,
-				"foto": "1563412885-139e4045ec60",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/nueces-mariposa.webp",
 				"etiqueta": null,
 				"detalle": "500 g"
 			},
@@ -353,7 +353,7 @@
 				"categoria": "Frutos secos",
 				"precio": 8400,
 				"anterior": null,
-				"foto": "1599599810769-bcde5a160d32",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/mix-energetico.webp",
 				"etiqueta": null,
 				"detalle": "500 g"
 			},
@@ -373,7 +373,7 @@
 				"categoria": "Orgánicos",
 				"precio": 2900,
 				"anterior": 3400,
-				"foto": "1574323347407-f5e1ad6d020b",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/harina-integral-agroecologica.webp",
 				"etiqueta": null,
 				"detalle": "1 kg"
 			},
@@ -393,7 +393,7 @@
 				"categoria": "Orgánicos",
 				"precio": 7600,
 				"anterior": null,
-				"foto": "1587049352846-4a222e784d38",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/miel-de-monte.webp",
 				"etiqueta": null,
 				"detalle": "500 g"
 			},
@@ -413,7 +413,7 @@
 				"categoria": "Orgánicos",
 				"precio": 3600,
 				"anterior": null,
-				"foto": "1586201375761-83865001e31c",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/arroz-yamani.webp",
 				"etiqueta": null,
 				"detalle": "1 kg"
 			},
@@ -423,7 +423,7 @@
 				"categoria": "Almacén",
 				"precio": 3200,
 				"anterior": null,
-				"foto": "1515543904379-3d757afe72e4",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/lentejas.webp",
 				"etiqueta": null,
 				"detalle": "1 kg"
 			},
@@ -433,7 +433,7 @@
 				"categoria": "Orgánicos",
 				"precio": 4800,
 				"anterior": 5600,
-				"foto": "1514733670139-4d87a1941d55",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/semillas-de-chia.webp",
 				"etiqueta": null,
 				"detalle": "500 g"
 			},
@@ -443,7 +443,7 @@
 				"categoria": "Frutos secos",
 				"precio": 5200,
 				"anterior": null,
-				"foto": "1596591868231-05e808fd131d",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/pasas-de-uva-rubias.webp",
 				"etiqueta": null,
 				"detalle": "500 g"
 			},
@@ -453,7 +453,7 @@
 				"categoria": "Almacén",
 				"precio": 17500,
 				"anterior": null,
-				"foto": "1559056199-641a0ac8b55e",
+				"foto": "https://tulocalweb.com.ar/demo/almacenverde/cafe-de-especialidad.webp",
 				"etiqueta": null,
 				"detalle": "250 g"
 			}

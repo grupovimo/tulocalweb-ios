@@ -6,7 +6,7 @@ export type ProductoEjemplo = {
 	categoria: string | null;
 	precio: number;
 	anterior: number | null;
-	/** Id de la foto en Unsplash. */
+	/** Id de la foto en Unsplash o URL completa (las fotos propias de static/demo). */
 	foto: string;
 	etiqueta: string | null;
 	detalle: string | null;
@@ -124,7 +124,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Abrigos',
 				precio: 186000,
 				anterior: 248000,
-				foto: '1525507119028-ed4c629a60a3',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/tapado-merino-ceibo.webp',
 				etiqueta: 'Hot Sale',
 				detalle: null
 			},
@@ -174,7 +174,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Abrigos',
 				precio: 74800,
 				anterior: null,
-				foto: '1576566588028-4147f3842f27',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/sweater-trenzado.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -184,7 +184,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Accesorios',
 				precio: 118000,
 				anterior: null,
-				foto: '1548036328-c9fa89d128fa',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/tote-de-cuero.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -204,7 +204,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Básicos',
 				precio: 52600,
 				anterior: null,
-				foto: '1594633312681-425c7b97ccd1',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/camisa-oversize.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -214,7 +214,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Abrigos',
 				precio: 168000,
 				anterior: 224000,
-				foto: '1591047139829-d91aecb6caea',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/blazer-lumbre.webp',
 				etiqueta: 'Hot Sale',
 				detalle: null
 			},
@@ -224,7 +224,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Básicos',
 				precio: 24500,
 				anterior: null,
-				foto: '1503342217505-b0a15ec3261c',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/remera-basica-negra.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -234,7 +234,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Básicos',
 				precio: 132000,
 				anterior: null,
-				foto: '1485968579580-b6d095142e6e',
+				foto: 'https://tulocalweb.com.ar/demo/lumbre/conjunto-tejido.webp',
 				etiqueta: 'Últimos',
 				detalle: null
 			}
@@ -253,7 +253,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Automáticos',
 				precio: 642000,
 				anterior: null,
-				foto: '1523275335684-37898b6baf30',
+				foto: 'https://tulocalweb.com.ar/demo/hora/automatico-clasico-40.webp',
 				etiqueta: 'Garantía 2 años',
 				detalle: null
 			},
@@ -263,7 +263,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Cuarzo',
 				precio: 498000,
 				anterior: null,
-				foto: '1524592094714-0f0654e20314',
+				foto: '1522312346375-d1a52e2b99b3',
 				etiqueta: null,
 				detalle: null
 			},
@@ -273,7 +273,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Automáticos',
 				precio: 356000,
 				anterior: null,
-				foto: '1522312346375-d1a52e2b99b3',
+				foto: 'https://tulocalweb.com.ar/demo/hora/dress-watch-acero.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -283,7 +283,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Automáticos',
 				precio: 724000,
 				anterior: 812000,
-				foto: '1547996160-81dfa63595aa',
+				foto: 'https://tulocalweb.com.ar/demo/hora/diver-300-m.webp',
 				etiqueta: '−11%',
 				detalle: null
 			},
@@ -303,7 +303,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Mallas',
 				precio: 48000,
 				anterior: null,
-				foto: '1508685096489-7aacd43bd3b1',
+				foto: 'https://tulocalweb.com.ar/demo/hora/malla-de-cuero.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -313,7 +313,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Automáticos',
 				precio: 812000,
 				anterior: null,
-				foto: '1612817159949-195b6eb9e31a',
+				foto: 'https://tulocalweb.com.ar/demo/hora/automatico-esqueleto.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -342,7 +342,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'De sol',
 				precio: 86000,
 				anterior: null,
-				foto: '1511499767150-a48a237f0083',
+				foto: 'https://tulocalweb.com.ar/demo/lente/sol-aviador-dorado.webp',
 				etiqueta: '2×1',
 				detalle: null
 			},
@@ -352,7 +352,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'De sol',
 				precio: 78000,
 				anterior: null,
-				foto: '1572635196237-14b3f281503f',
+				foto: 'https://tulocalweb.com.ar/demo/lente/sol-cat-eye-carey.webp',
 				etiqueta: '2×1',
 				detalle: null
 			},
@@ -362,7 +362,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Recetados',
 				precio: 64000,
 				anterior: null,
-				foto: '1574258495973-f010dfbb5371',
+				foto: 'https://tulocalweb.com.ar/demo/lente/recetado-redondo.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -372,7 +372,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'De sol',
 				precio: 72000,
 				anterior: 84000,
-				foto: '1577803645773-f96470509666',
+				foto: '1572635196237-14b3f281503f',
 				etiqueta: '−14%',
 				detalle: null
 			},
@@ -392,7 +392,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'De sol',
 				precio: 94000,
 				anterior: null,
-				foto: '1511499767150-a48a237f0083',
+				foto: 'https://tulocalweb.com.ar/demo/lente/sol-deportivo.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -402,7 +402,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Accesorios',
 				precio: 9800,
 				anterior: null,
-				foto: '1574258495973-f010dfbb5371',
+				foto: 'https://tulocalweb.com.ar/demo/lente/estuche-rigido.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -412,7 +412,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Accesorios',
 				precio: 24000,
 				anterior: null,
-				foto: '1577803645773-f96470509666',
+				foto: 'https://tulocalweb.com.ar/demo/lente/clip-on-polarizado.webp',
 				etiqueta: null,
 				detalle: null
 			}
@@ -501,7 +501,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Dulces',
 				precio: 5900,
 				anterior: null,
-				foto: '1558642452-9d2a7deb7f62',
+				foto: 'https://tulocalweb.com.ar/demo/litoral/dulce-de-mamon.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			}
@@ -550,7 +550,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Blancos',
 				precio: 15600,
 				anterior: null,
-				foto: '1474722883778-792e7990302f',
+				foto: 'https://tulocalweb.com.ar/demo/malbec/chardonnay-sin-madera.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -560,7 +560,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Espumantes',
 				precio: 21900,
 				anterior: null,
-				foto: '1547595628-c61a29f496f0',
+				foto: 'https://tulocalweb.com.ar/demo/malbec/espumante-nature.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -580,7 +580,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rosados',
 				precio: 12800,
 				anterior: null,
-				foto: '1516594915697-87eb3b1c14ea',
+				foto: '1547595628-c61a29f496f0',
 				etiqueta: null,
 				detalle: null
 			},
@@ -590,7 +590,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Cajas',
 				precio: 118000,
 				anterior: 147500,
-				foto: '1444157545135-c045be691b05',
+				foto: '1516594915697-87eb3b1c14ea',
 				etiqueta: 'Caja',
 				detalle: null
 			}
@@ -639,7 +639,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Facturas',
 				precio: 2800,
 				anterior: null,
-				foto: '1568254183919-78a4f43a2877',
+				foto: 'https://tulocalweb.com.ar/demo/miga/rol-de-canela.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -659,7 +659,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Dulces',
 				precio: 7200,
 				anterior: 8400,
-				foto: '1483695028939-5bb13f8648b0',
+				foto: 'https://tulocalweb.com.ar/demo/miga/cookies-x6.webp',
 				etiqueta: '−15%',
 				detalle: null
 			},
@@ -669,7 +669,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Facturas',
 				precio: 2400,
 				anterior: null,
-				foto: '1517433670267-08bbd4be890f',
+				foto: 'https://tulocalweb.com.ar/demo/miga/croissant.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -679,7 +679,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Panes',
 				precio: 6200,
 				anterior: null,
-				foto: '1509440159596-0249088772ff',
+				foto: 'https://tulocalweb.com.ar/demo/miga/focaccia.webp',
 				etiqueta: null,
 				detalle: null
 			}
@@ -728,7 +728,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Facturas',
 				precio: 2800,
 				anterior: null,
-				foto: '1568254183919-78a4f43a2877',
+				foto: 'https://tulocalweb.com.ar/demo/miga/rol-de-canela.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -748,7 +748,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Dulces',
 				precio: 7200,
 				anterior: 8400,
-				foto: '1483695028939-5bb13f8648b0',
+				foto: 'https://tulocalweb.com.ar/demo/miga/cookies-x6.webp',
 				etiqueta: '−15%',
 				detalle: null
 			},
@@ -758,7 +758,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Facturas',
 				precio: 2400,
 				anterior: null,
-				foto: '1517433670267-08bbd4be890f',
+				foto: 'https://tulocalweb.com.ar/demo/miga/croissant.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -768,7 +768,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Panes',
 				precio: 6200,
 				anterior: null,
-				foto: '1509440159596-0249088772ff',
+				foto: 'https://tulocalweb.com.ar/demo/miga/focaccia.webp',
 				etiqueta: null,
 				detalle: null
 			}
@@ -847,7 +847,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Panadería',
 				precio: 2400,
 				anterior: null,
-				foto: '1558961363-fa8fdf82db35',
+				foto: 'https://tulocalweb.com.ar/demo/cafebruma/alfajor-de-maicena.webp',
 				etiqueta: 'Sin TACC',
 				detalle: 'Dulce de leche y coco'
 			},
@@ -887,7 +887,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Café en grano',
 				precio: 17500,
 				anterior: null,
-				foto: '1559056199-641a0ac8b55e',
+				foto: 'https://tulocalweb.com.ar/demo/cafebruma/cafe-finca-la-esperanza.webp',
 				etiqueta: null,
 				detalle: 'Colombia · Panela · durazno · cacao'
 			},
@@ -907,7 +907,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Café en grano',
 				precio: 14900,
 				anterior: null,
-				foto: '1514432324607-a09d9b4aefdd',
+				foto: 'https://tulocalweb.com.ar/demo/cafebruma/cafe-cerrado-mineiro.webp',
 				etiqueta: null,
 				detalle: 'Brasil · Chocolate · avellana'
 			},
@@ -917,7 +917,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Café en grano',
 				precio: 13500,
 				anterior: null,
-				foto: '1495474472287-4d71bcdd2085',
+				foto: 'https://tulocalweb.com.ar/demo/cafebruma/cafe-blend-de-la-casa.webp',
 				etiqueta: null,
 				detalle: 'Brasil + Colombia · Dulce de leche · nuez'
 			},
@@ -927,7 +927,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Café en grano',
 				precio: 19400,
 				anterior: null,
-				foto: '1559056199-641a0ac8b55e',
+				foto: 'https://tulocalweb.com.ar/demo/cafebruma/cafe-huehuetenango.webp',
 				etiqueta: null,
 				detalle: 'Guatemala · Caramelo · manzana roja'
 			},
@@ -956,7 +956,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Buzos',
 				precio: 68900,
 				anterior: null,
-				foto: '1556905055-8f358a7a47b2',
+				foto: 'https://tulocalweb.com.ar/demo/pampa/buzo-heavy-frisa.webp',
 				etiqueta: 'Drop 07',
 				detalle: null
 			},
@@ -996,7 +996,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Pantalones',
 				precio: 74900,
 				anterior: 89900,
-				foto: '1624378439575-d8705ad7ae80',
+				foto: 'https://tulocalweb.com.ar/demo/pampa/cargo-ripstop.webp',
 				etiqueta: '−17%',
 				detalle: null
 			},
@@ -1006,7 +1006,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Zapatillas',
 				precio: 128000,
 				anterior: null,
-				foto: '1600185365483-26d7a4cc7519',
+				foto: 'https://tulocalweb.com.ar/demo/pampa/zapa-court-blanca.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1016,7 +1016,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Camperas',
 				precio: 112000,
 				anterior: null,
-				foto: '1551028719-00167b16eac5',
+				foto: 'https://tulocalweb.com.ar/demo/pampa/campera-coach.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -1055,7 +1055,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Perros',
 				precio: 42500,
 				anterior: null,
-				foto: '1583337130417-3346a1be7dee',
+				foto: 'https://tulocalweb.com.ar/demo/patio/cama-redonda.webp',
 				etiqueta: 'Más vendido',
 				detalle: null
 			},
@@ -1065,7 +1065,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Juguetes',
 				precio: 8900,
 				anterior: null,
-				foto: '1548199973-03cce0bbc87b',
+				foto: 'https://tulocalweb.com.ar/demo/patio/pelota-mordible.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1075,7 +1075,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Gatos',
 				precio: 54000,
 				anterior: null,
-				foto: '1514888286974-6c03e2ca1dba',
+				foto: 'https://tulocalweb.com.ar/demo/patio/rascador-torre.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1085,7 +1085,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Perros',
 				precio: 18600,
 				anterior: null,
-				foto: '1601758228041-f3b2795255f1',
+				foto: 'https://tulocalweb.com.ar/demo/patio/correa-extensible.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1095,7 +1095,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Perros',
 				precio: 7400,
 				anterior: null,
-				foto: '1587300003388-59208cc962cb',
+				foto: 'https://tulocalweb.com.ar/demo/patio/snacks-dentales.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -1105,7 +1105,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Gatos',
 				precio: 14900,
 				anterior: null,
-				foto: '1543466835-00a7907e9de1',
+				foto: 'https://tulocalweb.com.ar/demo/patio/comedero-doble.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1115,7 +1115,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Gatos',
 				precio: 16800,
 				anterior: null,
-				foto: '1450778869180-41d0601e046e',
+				foto: 'https://tulocalweb.com.ar/demo/patio/arena-aglomerante.webp',
 				etiqueta: null,
 				detalle: null
 			}
@@ -1144,7 +1144,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Comedor',
 				precio: 128000,
 				anterior: null,
-				foto: '1503602642458-232111445657',
+				foto: 'https://tulocalweb.com.ar/demo/quebracho/silla-quebracho.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1154,7 +1154,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Living',
 				precio: 214000,
 				anterior: 252000,
-				foto: '1532372320572-cda25653a26d',
+				foto: 'https://tulocalweb.com.ar/demo/quebracho/mesa-ratona-paraiso.webp',
 				etiqueta: '−15%',
 				detalle: null
 			},
@@ -1194,7 +1194,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Iluminación',
 				precio: 58900,
 				anterior: null,
-				foto: '1538688525198-9b88f6f53126',
+				foto: 'https://tulocalweb.com.ar/demo/quebracho/velador-ceramica.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1223,7 +1223,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rostro',
 				precio: 18900,
 				anterior: null,
-				foto: '1620916566398-39f1143ab7be',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/serum-de-rosa-mosqueta.webp',
 				etiqueta: 'Más vendido',
 				detalle: null
 			},
@@ -1233,7 +1233,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rostro',
 				precio: 21400,
 				anterior: null,
-				foto: '1598440947619-2c35fc9aa908',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/crema-de-noche.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1243,7 +1243,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rostro',
 				precio: 12600,
 				anterior: 15800,
-				foto: '1608248543803-ba4f8c70ae0b',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/tonico-de-rosas.webp',
 				etiqueta: '−20%',
 				detalle: null
 			},
@@ -1253,7 +1253,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Kits',
 				precio: 46800,
 				anterior: 58500,
-				foto: '1556228578-8c89e6adf883',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/kit-rutina-completa.webp',
 				etiqueta: 'Kit',
 				detalle: null
 			},
@@ -1273,7 +1273,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Cuerpo',
 				precio: 6400,
 				anterior: null,
-				foto: '1596462502278-27bfdc403348',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/balsamo-labial.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1283,7 +1283,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rostro',
 				precio: 13800,
 				anterior: null,
-				foto: '1620916566398-39f1143ab7be',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/limpiador-en-gel.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -1293,7 +1293,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Rostro',
 				precio: 16900,
 				anterior: null,
-				foto: '1571781926291-c477ebfd024b',
+				foto: 'https://tulocalweb.com.ar/demo/rosedal/contorno-de-ojos.webp',
 				etiqueta: null,
 				detalle: null
 			}
@@ -1312,7 +1312,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Cocina',
 				precio: 38900,
 				anterior: null,
-				foto: '1604335399105-a0c585fd81a1',
+				foto: 'https://tulocalweb.com.ar/demo/taller/tabla-de-asado-lenga.webp',
 				etiqueta: 'Pieza única',
 				detalle: null
 			},
@@ -1322,7 +1322,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Cocina',
 				precio: 18400,
 				anterior: null,
-				foto: '1556760544-74068565f05c',
+				foto: 'https://tulocalweb.com.ar/demo/taller/set-de-cucharas-x3.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1332,7 +1332,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Mesa',
 				precio: 26500,
 				anterior: null,
-				foto: '1610701596007-11502861dcfa',
+				foto: 'https://tulocalweb.com.ar/demo/taller/bowl-de-cipres.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1342,7 +1342,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Mesa',
 				precio: 32000,
 				anterior: 36800,
-				foto: '1565193566173-7a0ee3dbe261',
+				foto: 'https://tulocalweb.com.ar/demo/taller/tabla-de-picada.webp',
 				etiqueta: '−13%',
 				detalle: null
 			},
@@ -1362,7 +1362,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Mesa',
 				precio: 12600,
 				anterior: null,
-				foto: '1595428774223-ef52624120d2',
+				foto: 'https://tulocalweb.com.ar/demo/taller/posafuentes-x4.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -1372,7 +1372,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Mesa',
 				precio: 44000,
 				anterior: null,
-				foto: '1578749556568-bc2c40e68b61',
+				foto: 'https://tulocalweb.com.ar/demo/taller/fuente-ovalada.webp',
 				etiqueta: null,
 				detalle: null
 			},
@@ -1382,7 +1382,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Regalos',
 				precio: 64000,
 				anterior: null,
-				foto: '1604335399105-a0c585fd81a1',
+				foto: 'https://tulocalweb.com.ar/demo/taller/kit-regalo-asador.webp',
 				etiqueta: 'Kit',
 				detalle: null
 			}
@@ -1401,7 +1401,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Pelo',
 				precio: 14900,
 				anterior: null,
-				foto: '1626808642875-0aa545482dfb',
+				foto: 'https://tulocalweb.com.ar/demo/tijera/pomada-mate.webp',
 				etiqueta: 'Más vendido',
 				detalle: 'Navaja Studio'
 			},
@@ -1411,7 +1411,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Barba',
 				precio: 11800,
 				anterior: null,
-				foto: '1621607512214-68297480165e',
+				foto: 'https://tulocalweb.com.ar/demo/tijera/aceite-para-barba.webp',
 				etiqueta: null,
 				detalle: 'Navaja Studio'
 			},
@@ -1421,7 +1421,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Pelo',
 				precio: 16500,
 				anterior: null,
-				foto: '1608248597279-f99d160bfcbc',
+				foto: '1585751119414-ef2636f8aede',
 				etiqueta: null,
 				detalle: 'Reuzel'
 			},
@@ -1431,7 +1431,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Pelo',
 				precio: 13200,
 				anterior: null,
-				foto: '1597354984706-fac992d9306f',
+				foto: 'https://tulocalweb.com.ar/demo/tijera/cera-brillo.webp',
 				etiqueta: 'Nuevo',
 				detalle: 'Navaja Studio'
 			},
@@ -1441,7 +1441,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Barba',
 				precio: 9800,
 				anterior: null,
-				foto: '1621607512022-6aecc4fed814',
+				foto: 'https://tulocalweb.com.ar/demo/tijera/proraso-crema-de-afeitar.webp',
 				etiqueta: null,
 				detalle: 'Proraso'
 			},
@@ -1451,7 +1451,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Kits',
 				precio: 38900,
 				anterior: null,
-				foto: '1598524374912-6b0b0bab43dd',
+				foto: 'https://tulocalweb.com.ar/demo/tijera/kit-barba-completo.webp',
 				etiqueta: 'Combo −20%',
 				detalle: 'Navaja Studio'
 			},
@@ -1471,7 +1471,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Pelo',
 				precio: 12600,
 				anterior: null,
-				foto: '1585751119414-ef2636f8aede',
+				foto: '1598524374912-6b0b0bab43dd',
 				etiqueta: null,
 				detalle: 'Navaja Studio'
 			}
@@ -1520,7 +1520,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Platos',
 				precio: 18200,
 				anterior: 21400,
-				foto: '1565193566173-7a0ee3dbe261',
+				foto: 'https://tulocalweb.com.ar/demo/torno/bowl-esmaltado.webp',
 				etiqueta: '−15%',
 				detalle: null
 			},
@@ -1550,7 +1550,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Platos',
 				precio: 46000,
 				anterior: null,
-				foto: '1595428774223-ef52624120d2',
+				foto: 'https://tulocalweb.com.ar/demo/torno/fuente-tierra.webp',
 				etiqueta: 'Nuevo',
 				detalle: null
 			},
@@ -1560,7 +1560,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Jarrones',
 				precio: 12400,
 				anterior: null,
-				foto: '1493106641515-6b5631de4bb9',
+				foto: '1565193566173-7a0ee3dbe261',
 				etiqueta: null,
 				detalle: null
 			}
@@ -1589,7 +1589,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Frutos secos',
 				precio: 12800,
 				anterior: null,
-				foto: '1563412885-139e4045ec60',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/nueces-mariposa.webp',
 				etiqueta: null,
 				detalle: '500 g'
 			},
@@ -1609,7 +1609,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Frutos secos',
 				precio: 8400,
 				anterior: null,
-				foto: '1599599810769-bcde5a160d32',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/mix-energetico.webp',
 				etiqueta: null,
 				detalle: '500 g'
 			},
@@ -1629,7 +1629,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Orgánicos',
 				precio: 2900,
 				anterior: 3400,
-				foto: '1574323347407-f5e1ad6d020b',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/harina-integral-agroecologica.webp',
 				etiqueta: null,
 				detalle: '1 kg'
 			},
@@ -1649,7 +1649,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Orgánicos',
 				precio: 7600,
 				anterior: null,
-				foto: '1587049352846-4a222e784d38',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/miel-de-monte.webp',
 				etiqueta: null,
 				detalle: '500 g'
 			},
@@ -1669,7 +1669,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Orgánicos',
 				precio: 3600,
 				anterior: null,
-				foto: '1586201375761-83865001e31c',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/arroz-yamani.webp',
 				etiqueta: null,
 				detalle: '1 kg'
 			},
@@ -1679,7 +1679,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Almacén',
 				precio: 3200,
 				anterior: null,
-				foto: '1515543904379-3d757afe72e4',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/lentejas.webp',
 				etiqueta: null,
 				detalle: '1 kg'
 			},
@@ -1689,7 +1689,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Orgánicos',
 				precio: 4800,
 				anterior: 5600,
-				foto: '1514733670139-4d87a1941d55',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/semillas-de-chia.webp',
 				etiqueta: null,
 				detalle: '500 g'
 			},
@@ -1699,7 +1699,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Frutos secos',
 				precio: 5200,
 				anterior: null,
-				foto: '1596591868231-05e808fd131d',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/pasas-de-uva-rubias.webp',
 				etiqueta: null,
 				detalle: '500 g'
 			},
@@ -1709,7 +1709,7 @@ export const CATALOGOS: Catalogo[] = [
 				categoria: 'Almacén',
 				precio: 17500,
 				anterior: null,
-				foto: '1559056199-641a0ac8b55e',
+				foto: 'https://tulocalweb.com.ar/demo/almacenverde/cafe-de-especialidad.webp',
 				etiqueta: null,
 				detalle: '250 g'
 			}

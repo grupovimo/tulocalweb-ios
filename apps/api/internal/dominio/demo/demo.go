@@ -88,7 +88,7 @@ var Tiendas = []Tienda{
 	},
 	{
 		Slug: "almacenverde", Nombre: "Almacén Verde", Rubro: "almacen", Plantilla: "yerbal",
-		Lema: "Natural, a granel y de productores locales", Portada: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=72",
+		Lema: "Natural, a granel y de productores locales", Portada: "https://tulocalweb.com.ar/demo/almacenverde/portada.webp",
 		Ciudad: "Córdoba", Provincia: "Córdoba", Direccion: "Bv. San Juan 640, Nueva Córdoba", Horario: "Lunes a sábado de 9 a 19",
 		Whatsapp: "+54 9 351 555-0103", PorDia: [2]int{2, 6}, FinDeSemana: 1.2,
 		Canales: map[string]int{"web": 40, "wa": 40, "pos": 20},

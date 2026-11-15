@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { CATALOGOS } from '#lib/catalogos.ts';
 import { PLANTILLAS } from '#lib/plantillas.ts';
@@ -16,7 +18,16 @@ describe('datos de la demo', () => {
 			expect(c.productos.length).toBeGreaterThanOrEqual(8);
 			for (const p of c.productos) {
 				expect(c.categorias).toContain(p.categoria);
-				expect(p.foto).toMatch(/^\d{10,}-[0-9a-f]+$/);
+				// Un id de Unsplash o una foto propia de static/demo (que tiene que estar en el repo).
+				const propia = p.foto.match(
+					/^https:\/\/tulocalweb\.com\.ar\/(demo\/[a-z0-9-]+\/[a-z0-9-]+\.webp)$/
+				);
+				if (propia)
+					expect(
+						existsSync(fileURLToPath(new URL(`../../../../static/${propia[1]}`, import.meta.url))),
+						p.foto
+					).toBe(true);
+				else expect(p.foto).toMatch(/^\d{10,}-[0-9a-f]+$/);
 				expect(p.precio).toBeGreaterThan(0);
 			}
 			expect(new Set(c.productos.map((p) => p.id)).size).toBe(c.productos.length);
