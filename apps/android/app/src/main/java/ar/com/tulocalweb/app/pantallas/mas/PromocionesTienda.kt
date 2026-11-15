@@ -38,7 +38,7 @@ import ar.com.tulocalweb.app.nucleo.FaltaVentana
 import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.MetricaVentana
 import ar.com.tulocalweb.app.nucleo.Valor
-import ar.com.tulocalweb.app.nucleo.Ventana
+import ar.com.tulocalweb.app.nucleo.VentanaTienda
 import ar.com.tulocalweb.app.nucleo.get
 import ar.com.tulocalweb.app.nucleo.texto
 import ar.com.tulocalweb.app.tema.*
@@ -88,7 +88,7 @@ fun cifrasVentana(m: MetricaVentana, contenido: String): String {
 
 /** Una ventana en la lista: miniatura, nombre, qué muestra y cuándo, qué le falta o cómo le va, el interruptor y el menú. */
 @Composable
-fun FilaVentana(editor: EditorTienda, ventana: Ventana, metrica: MetricaVentana?, primera: Boolean, ultima: Boolean, verEnVista: (String) -> Unit) {
+fun FilaVentana(editor: EditorTienda, ventana: VentanaTienda, metrica: MetricaVentana?, primera: Boolean, ultima: Boolean, verEnVista: (String) -> Unit) {
     val estado = LocalEstado.current
     val cat = CatalogoBloques.shared.ventanas
     val falta = FaltaVentana.de(ventana)
@@ -183,7 +183,7 @@ fun PlantillasVentana(editor: EditorTienda, cerrar: () -> Unit) {
     val estado = LocalEstado.current
     val datos = LocalDatosEditor.current
     val cat = CatalogoBloques.shared.ventanas
-    fun crear(v: Ventana) {
+    fun crear(v: VentanaTienda) {
         Haptico.seleccion()
         cerrar()
         editor.creandoVentana = false
@@ -216,10 +216,10 @@ fun PlantillasVentana(editor: EditorTienda, cerrar: () -> Unit) {
             Texto("Elegí una para empezar: después cambiás todo.", Estilo.subhead, C.texto2)
             (cat?.plantillas ?: emptyList()).forEach { p ->
                 Tarjeta(p.nombre, p.descripcion, simboloContenido(p.ventana["contenido"]?.texto ?: "promo"), p.ventana["variante"]?.texto ?: "centrada") {
-                    crear(Ventana.dePlantilla(p, editor.idNuevo(), datos.envioGratis))
+                    crear(VentanaTienda.dePlantilla(p, editor.idNuevo(), datos.envioGratis))
                 }
             }
-            Tarjeta("En blanco", "Una promo centrada al entrar. La armás a tu gusto.", "plus", "centrada") { crear(Ventana.enBlanco(editor.idNuevo())) }
+            Tarjeta("En blanco", "Una promo centrada al entrar. La armás a tu gusto.", "plus", "centrada") { crear(VentanaTienda.enBlanco(editor.idNuevo())) }
         }
     }
 }
@@ -233,7 +233,7 @@ fun PanelVentana(editor: EditorTienda, id: String, verEnVista: (String) -> Unit,
     val estado = LocalEstado.current
     val cat = CatalogoBloques.shared.ventanas
     val v = editor.ventana(id)
-    fun editar(clave: String? = null, f: (Ventana) -> Ventana) = editor.editarVentana(id, clave, f)
+    fun editar(clave: String? = null, f: (VentanaTienda) -> VentanaTienda) = editor.editarVentana(id, clave, f)
     Column(Modifier.fillMaxSize().background(C.elevado).imePadding()) {
         Grabber()
         Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 16.dp)) {

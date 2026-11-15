@@ -87,10 +87,10 @@ final class DisenoTests: XCTestCase {
         for c in casos where c["valida"]?.bool == true {
             guard let completa = c["completa"]?.bool, let v = c["ventana"] else { continue }
             let nombre = c["nombre"]?.texto ?? ""
-            let ventana = Ventana(json: v)
+            let ventana = VentanaTienda(json: v)
             XCTAssertEqual(FaltaVentana.de(ventana, ahora: ahora) == nil, completa, nombre)
             // Leer y volver a escribir no cambia lo que Go valida.
-            XCTAssertEqual(Ventana(json: ventana.json).json, ventana.json, nombre)
+            XCTAssertEqual(VentanaTienda(json: ventana.json).json, ventana.json, nombre)
         }
     }
 
@@ -100,7 +100,7 @@ final class DisenoTests: XCTestCase {
         let e = EditorTienda()
         e.empezar(Diseno(json: [:], plantillaTienda: "litoral"), plantilla: "litoral")
         for p in cat.plantillas {
-            let v = Ventana.dePlantilla(p, id: e.idNuevo(), envioGratis: 50000)
+            let v = VentanaTienda.dePlantilla(p, id: e.idNuevo(), envioGratis: 50000)
             XCTAssertNotNil(cat.contenido(v.contenido), p.id)
             XCTAssertFalse(v.json["datos"].map { "\($0)" }?.contains("{envioGratis}") ?? true, p.id)
             e.agregarVentana(v, abrir: false)

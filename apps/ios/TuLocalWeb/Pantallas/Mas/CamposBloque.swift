@@ -68,7 +68,7 @@ final class DatosEditor {
         metricasCargadas = true
     }
 
-    private static func dia(_ f: Date) -> String { String(Ventana.isoAR(f).prefix(10)) }
+    private static func dia(_ f: Date) -> String { String(VentanaTienda.isoAR(f).prefix(10)) }
 }
 
 /// Todos los campos de un bloque (o de un elemento de una lista).

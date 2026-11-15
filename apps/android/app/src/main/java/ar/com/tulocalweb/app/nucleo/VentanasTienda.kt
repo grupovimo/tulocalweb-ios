@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter
 // JSON de la especificación; las opciones, los campos y las plantillas salen de bloques.json › ventanas.
 
 /** Una ventana: qué muestra (contenido y sus datos), cómo se ve (variante), cuándo sale, a quién, dónde y entre qué fechas. */
-data class Ventana(
+data class VentanaTienda(
     val id: String,
     val nombre: String,
     val activa: Boolean = true,
@@ -52,14 +52,14 @@ data class Ventana(
     }
 
     /** Al cambiar de contenido quedan sólo los datos que el nuevo también tiene (título, texto, foto…). */
-    fun conContenido(c: String): Ventana {
+    fun conContenido(c: String): VentanaTienda {
         if (c == contenido) return this
         val campos = CatalogoBloques.shared.ventanas?.contenido(c)?.campos?.map { it.id }?.toSet() ?: emptySet()
         return copy(contenido = c, datos = datos.filterKeys { it in campos })
     }
 
     companion object {
-        fun desde(v: ValorJSON): Ventana = Ventana(
+        fun desde(v: ValorJSON): VentanaTienda = VentanaTienda(
             id = v["id"]?.texto ?: Bloque.nuevoId(),
             nombre = v["nombre"]?.texto ?: "",
             activa = v["activa"]?.bool ?: true,
@@ -78,11 +78,11 @@ data class Ventana(
         )
 
         /** Una en blanco: una promo centrada al entrar, una vez por visita. */
-        fun enBlanco(id: String): Ventana = Ventana(id, "Ventana nueva")
+        fun enBlanco(id: String): VentanaTienda = VentanaTienda(id, "Ventana nueva")
 
         /** Desde una plantilla del catálogo: id nuevo, el monto del envío gratis en los textos y, si la trae, la cuenta
          *  regresiva a tantos días. */
-        fun dePlantilla(p: CatalogoBloques.Ventanas.Plantilla, id: String, envioGratis: Int?, ahora: Instant = Instant.now()): Ventana {
+        fun dePlantilla(p: CatalogoBloques.Ventanas.Plantilla, id: String, envioGratis: Int?, ahora: Instant = Instant.now()): VentanaTienda {
             val monto = envioGratis?.let { Formato.pesos(it) } ?: "un monto"
             var v = desde(reemplazar(p.ventana, "{envioGratis}", monto)).copy(id = id)
             p.hastaEnDias?.let { d -> v = v.copy(datos = v.datos + ("hasta" to Valor.texto(isoAR(ahora.atZone(zonaAR).plusDays(d.toLong()))))) }
@@ -104,10 +104,10 @@ data class Ventana(
 
 // MARK: - Qué le falta
 
-/** Por qué una ventana no va a salir en la tienda, en una frase. Las mismas reglas que Go (Ventana.Completa) y la web: los
+/** Por qué una ventana no va a salir en la tienda, en una frase. Las mismas reglas que Go (VentanaTienda.Completa) y la web: los
  *  requeridos del contenido cargados, el premio con lo suyo y, en la ruleta, algún peso mayor a 0. */
 object FaltaVentana {
-    fun de(v: Ventana, ahora: Instant = Instant.now()): String? {
+    fun de(v: VentanaTienda, ahora: Instant = Instant.now()): String? {
         val cont = CatalogoBloques.shared.ventanas?.contenido(v.contenido) ?: return null
         for (c in cont.campos) {
             val x = v.datos[c.id]

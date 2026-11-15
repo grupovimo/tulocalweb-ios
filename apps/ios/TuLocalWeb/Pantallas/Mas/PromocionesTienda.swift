@@ -52,7 +52,7 @@ struct PestanaPromociones: View {
 /// Una ventana en la lista: miniatura, nombre, qué muestra y cuándo, qué le falta o cómo le va, el interruptor y el menú.
 struct FilaVentana: View {
     var editor: EditorTienda
-    var ventana: Ventana
+    var ventana: VentanaTienda
     var metrica: MetricaVentana?
     var primera: Bool
     var ultima: Bool
@@ -201,11 +201,11 @@ struct PlantillasVentana: View {
                     ForEach(cat?.plantillas ?? []) { p in
                         let contenido = p.ventana["contenido"]?.texto ?? "promo"
                         tarjeta(p.nombre, p.descripcion, simbolo: Self.simbolo(contenido), variante: p.ventana["variante"]?.texto ?? "centrada") {
-                            crear(Ventana.dePlantilla(p, id: editor.idNuevo(), envioGratis: datos.envioGratis))
+                            crear(VentanaTienda.dePlantilla(p, id: editor.idNuevo(), envioGratis: datos.envioGratis))
                         }
                     }
                     tarjeta("En blanco", "Una promo centrada al entrar. La armás a tu gusto.", simbolo: "plus", variante: "centrada") {
-                        crear(Ventana.enBlanco(id: editor.idNuevo()))
+                        crear(VentanaTienda.enBlanco(id: editor.idNuevo()))
                     }
                 }
                 .margenPantalla().padding(.vertical, 12)
@@ -235,7 +235,7 @@ struct PlantillasVentana: View {
         .buttonStyle(.plain)
     }
 
-    private func crear(_ v: Ventana) {
+    private func crear(_ v: VentanaTienda) {
         Haptico.seleccion()
         cerrar()
         editor.creandoVentana = false
@@ -271,9 +271,9 @@ struct PanelVentana: View {
         }
     }
 
-    private func editar(_ clave: String? = nil, _ f: @escaping (inout Ventana) -> Void) { editor.editarVentana(id, clave: clave, f) }
+    private func editar(_ clave: String? = nil, _ f: @escaping (inout VentanaTienda) -> Void) { editor.editarVentana(id, clave: clave, f) }
 
-    private func contenido(_ v: Ventana, _ cat: CatalogoBloques.Ventanas) -> some View {
+    private func contenido(_ v: VentanaTienda, _ cat: CatalogoBloques.Ventanas) -> some View {
         let cont = cat.contenido(v.contenido)
         return ScrollView {
             VStack(alignment: .leading, spacing: 22) {

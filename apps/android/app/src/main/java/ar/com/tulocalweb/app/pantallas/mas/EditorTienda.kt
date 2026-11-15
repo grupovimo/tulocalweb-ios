@@ -10,7 +10,7 @@ import ar.com.tulocalweb.app.nucleo.CatalogoBloques
 import ar.com.tulocalweb.app.nucleo.Diseno
 import ar.com.tulocalweb.app.nucleo.Historial
 import ar.com.tulocalweb.app.nucleo.ValorJSON
-import ar.com.tulocalweb.app.nucleo.Ventana
+import ar.com.tulocalweb.app.nucleo.VentanaTienda
 
 // Clon de Pantallas/Mas/EditorTienda.swift.
 
@@ -197,7 +197,7 @@ class EditorTienda {
     val topeVentanas: Int get() = cat.limites.ventanas
     val puedeSumarVentana: Boolean get() = diseno.ventanas.size < topeVentanas
 
-    fun ventana(id: String): Ventana? = diseno.ventanas.firstOrNull { it.id == id }
+    fun ventana(id: String): VentanaTienda? = diseno.ventanas.firstOrNull { it.id == id }
 
     /** Un id que no usa ningún bloque ni otra ventana. */
     fun idNuevo(): String {
@@ -207,14 +207,14 @@ class EditorTienda {
     }
 
     /** Suma una ventana al final y abre su panel. */
-    fun agregarVentana(v: Ventana, abrir: Boolean = true): String? {
+    fun agregarVentana(v: VentanaTienda, abrir: Boolean = true): String? {
         if (!puedeSumarVentana) return null
         cambiar { it.copy(ventanas = it.ventanas + v) }
         if (abrir) ventanaAbierta = v.id
         return v.id
     }
 
-    fun editarVentana(id: String, clave: String? = null, f: (Ventana) -> Ventana) {
+    fun editarVentana(id: String, clave: String? = null, f: (VentanaTienda) -> VentanaTienda) {
         cambiar(clave) { d -> d.copy(ventanas = d.ventanas.map { if (it.id == id) f(it) else it }) }
     }
 

@@ -87,7 +87,7 @@ data class Diseno(
     val inicio: List<Bloque> = emptyList(),
     val paginas: Map<String, AjustesPagina> = emptyMap(),
     /** Las ventanas (popups), en orden: si varias califican, sale la primera. */
-    val ventanas: List<Ventana> = emptyList(),
+    val ventanas: List<VentanaTienda> = emptyList(),
     /** Lo que la app no edita (compartirFoto y lo que venga): vuelve igual en el PUT. */
     val resto: Map<String, ValorJSON> = emptyMap(),
 ) {
@@ -175,7 +175,7 @@ data class Diseno(
                 compartirTitulo = o["compartirTitulo"]?.texto ?: "",
                 compartirDescripcion = o["compartirDescripcion"]?.texto ?: "",
                 estilo = EstiloTienda.desde(o["estilo"]),
-                ventanas = o["ventanas"]?.lista?.map { Ventana.desde(it) } ?: emptyList(),
+                ventanas = o["ventanas"]?.lista?.map { VentanaTienda.desde(it) } ?: emptyList(),
             )
             return if (o["version"]?.entero == 2) {
                 d.copy(inicio = o["inicio"]?.como(ListSerializer(Bloque.serializer())) ?: emptyList(),

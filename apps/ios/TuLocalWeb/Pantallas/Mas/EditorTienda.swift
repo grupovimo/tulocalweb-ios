@@ -190,7 +190,7 @@ final class EditorTienda {
     var topeVentanas: Int { cat.limites.ventanas ?? 8 }
     var puedeSumarVentana: Bool { diseno.ventanas.count < topeVentanas }
 
-    func ventana(_ id: String) -> Ventana? { diseno.ventanas.first { $0.id == id } }
+    func ventana(_ id: String) -> VentanaTienda? { diseno.ventanas.first { $0.id == id } }
 
     /// Un id que no usa ningún bloque ni otra ventana.
     func idNuevo() -> String {
@@ -201,14 +201,14 @@ final class EditorTienda {
 
     /// Suma una ventana al final y abre su panel.
     @discardableResult
-    func agregarVentana(_ v: Ventana, abrir: Bool = true) -> String? {
+    func agregarVentana(_ v: VentanaTienda, abrir: Bool = true) -> String? {
         guard puedeSumarVentana else { return nil }
         cambiar { $0.ventanas.append(v) }
         if abrir { ventanaAbierta = v.id }
         return v.id
     }
 
-    func editarVentana(_ id: String, clave: String? = nil, _ f: @escaping (inout Ventana) -> Void) {
+    func editarVentana(_ id: String, clave: String? = nil, _ f: @escaping (inout VentanaTienda) -> Void) {
         cambiar(clave: clave) { d in
             if let i = d.ventanas.firstIndex(where: { $0.id == id }) { f(&d.ventanas[i]) }
         }

@@ -53,7 +53,7 @@ import ar.com.tulocalweb.app.nucleo.ContextoTienda
 import ar.com.tulocalweb.app.nucleo.Fecha
 import ar.com.tulocalweb.app.nucleo.Fotos
 import ar.com.tulocalweb.app.nucleo.MetricaVentana
-import ar.com.tulocalweb.app.nucleo.Ventana
+import ar.com.tulocalweb.app.nucleo.VentanaTienda
 import ar.com.tulocalweb.app.nucleo.numero
 import ar.com.tulocalweb.app.nucleo.Formato
 import ar.com.tulocalweb.app.nucleo.PaginaProductos
@@ -137,8 +137,8 @@ class DatosEditor {
 
     suspend fun cargarMetricas(api: Api) {
         val hoy = Instant.now()
-        val desde = hoy.atZone(Ventana.zonaAR).minusDays(29)
-        api.opcional<ValorJSON>("/v1/panel/promos/metricas", listOf("desde" to Ventana.isoAR(desde).take(10), "hasta" to Ventana.isoAR(hoy).take(10)))
+        val desde = hoy.atZone(VentanaTienda.zonaAR).minusDays(29)
+        api.opcional<ValorJSON>("/v1/panel/promos/metricas", listOf("desde" to VentanaTienda.isoAR(desde).take(10), "hasta" to VentanaTienda.isoAR(hoy).take(10)))
             ?.let { metricas = MetricaVentana.leer(it) }
         metricasCargadas = true
     }

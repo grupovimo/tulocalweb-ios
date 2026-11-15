@@ -8,7 +8,7 @@ import ar.com.tulocalweb.app.nucleo.Diseno
 import ar.com.tulocalweb.app.nucleo.FaltaBloque
 import ar.com.tulocalweb.app.nucleo.FaltaVentana
 import ar.com.tulocalweb.app.nucleo.Fecha
-import ar.com.tulocalweb.app.nucleo.Ventana
+import ar.com.tulocalweb.app.nucleo.VentanaTienda
 import ar.com.tulocalweb.app.nucleo.bool
 import ar.com.tulocalweb.app.nucleo.get
 import ar.com.tulocalweb.app.nucleo.lista
@@ -117,10 +117,10 @@ class DisenoTest {
             val completa = c["completa"]?.bool ?: continue
             val v = c["ventana"] ?: continue
             val nombre = c["nombre"]?.texto ?: ""
-            val ventana = Ventana.desde(v)
+            val ventana = VentanaTienda.desde(v)
             assertEquals(nombre, completa, FaltaVentana.de(ventana, ahora) == null)
             // Leer y volver a escribir no cambia lo que Go valida.
-            assertEquals(nombre, ventana.json, Ventana.desde(ventana.json).json)
+            assertEquals(nombre, ventana.json, VentanaTienda.desde(ventana.json).json)
         }
     }
 
@@ -130,7 +130,7 @@ class DisenoTest {
         val e = EditorTienda()
         e.empezar(Diseno.desde(emptyMap(), "litoral"), "litoral")
         for (p in cat.plantillas) {
-            val v = Ventana.dePlantilla(p, e.idNuevo(), 50000)
+            val v = VentanaTienda.dePlantilla(p, e.idNuevo(), 50000)
             assertNotNull(p.id, cat.contenido(v.contenido))
             assertFalse(p.id, v.json.toString().contains("{envioGratis}"))
             e.agregarVentana(v, abrir = false)

@@ -4,7 +4,7 @@ import Foundation
 // el JSON de la especificación; las opciones, los campos y las plantillas salen de bloques.json › ventanas.
 
 /// Una ventana: qué muestra (contenido y sus datos), cómo se ve (variante), cuándo sale, a quién, dónde y entre qué fechas.
-struct Ventana: Equatable, Identifiable {
+struct VentanaTienda: Equatable, Identifiable {
     var id: String
     var nombre: String
     var activa = true
@@ -67,13 +67,13 @@ struct Ventana: Equatable, Identifiable {
     }
 
     /// Una en blanco: una promo centrada al entrar, una vez por visita.
-    static func enBlanco(id: String) -> Ventana { Ventana(id: id, nombre: "Ventana nueva") }
+    static func enBlanco(id: String) -> VentanaTienda { VentanaTienda(id: id, nombre: "Ventana nueva") }
 
     /// Desde una plantilla del catálogo: id nuevo, el monto del envío gratis en los textos y, si la trae, la cuenta
     /// regresiva a tantos días.
-    static func dePlantilla(_ p: CatalogoBloques.Ventanas.Plantilla, id: String, envioGratis: Int?, ahora: Date = Date()) -> Ventana {
+    static func dePlantilla(_ p: CatalogoBloques.Ventanas.Plantilla, id: String, envioGratis: Int?, ahora: Date = Date()) -> VentanaTienda {
         let monto = envioGratis.map { Formato.pesos($0) } ?? "un monto"
-        var v = Ventana(json: reemplazar(p.ventana, "{envioGratis}", monto))
+        var v = VentanaTienda(json: reemplazar(p.ventana, "{envioGratis}", monto))
         v.id = id
         if let d = p.hastaEnDias {
             let f = Calendar.current.date(byAdding: .day, value: d, to: ahora) ?? ahora
@@ -111,10 +111,10 @@ struct Ventana: Equatable, Identifiable {
 
 // MARK: - Qué le falta
 
-/// Por qué una ventana no va a salir en la tienda, en una frase. Las mismas reglas que Go (Ventana.Completa) y la web:
+/// Por qué una ventana no va a salir en la tienda, en una frase. Las mismas reglas que Go (VentanaTienda.Completa) y la web:
 /// los requeridos del contenido cargados, el premio con lo suyo y, en la ruleta, algún peso mayor a 0.
 enum FaltaVentana {
-    static func de(_ v: Ventana, ahora: Date = Date()) -> String? {
+    static func de(_ v: VentanaTienda, ahora: Date = Date()) -> String? {
         guard let cont = CatalogoBloques.shared.ventanas?.contenido(v.contenido) else { return nil }
         for c in cont.campos {
             let x = v.datos[c.id]
