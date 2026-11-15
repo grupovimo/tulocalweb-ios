@@ -361,7 +361,7 @@
 				{/if}
 				{#if dir === 'pedido' && (producto.categoria || prom)}
 					<p class="tv-chico tv-suave tv-ficha-sobre">
-						{producto.categoria ?? ''}{#if producto.categoria && prom}&nbsp;·{/if}{#if prom}
+						{producto.categoria ?? ''}{#if producto.categoria && prom}&#32;·&#32;{/if}{#if prom}
 							{promedio(prom)}&nbsp;<Icon icon={I.phStarFill} size={12} /> ({resenas.length}){/if}
 					</p>
 				{/if}
@@ -388,9 +388,8 @@
 							{#if transf}<p class="tv-ficha-transf">{transf} pagando con transferencia</p>{/if}
 						{:else}
 							<p class="tv-ficha-cuotas">
-								{enCuotas}{#if enCuotas && transf}&nbsp;·
-								{/if}{#if transf}<span class={dir === 'vidriera' ? 'tv-ok' : ''}
-										>{transf} con transferencia</span
+								{enCuotas}{#if enCuotas && transf}&#32;·&#32;{/if}{#if transf}<span
+										class={dir === 'vidriera' ? 'tv-ok' : ''}>{transf} con transferencia</span
 									>{/if}
 							</p>
 						{/if}
@@ -546,7 +545,9 @@
 			{#each resenas.slice(0, 6) as r, i (i)}
 				<figure class="tv-ficha-resena">
 					<figcaption>
-						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave"> · compra verificada</span>{/if}
+						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave"
+								>&#32;·&#32;compra verificada</span
+							>{/if}
 					</figcaption>
 					<Estrellas valor={r.estrellas} tam={14} />
 					<blockquote>{r.texto}</blockquote>

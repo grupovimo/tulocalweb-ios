@@ -439,6 +439,20 @@
 .tv-cat-filas .tv-prod-pie {
 	align-items: center;
 }
+/* El catálogo siempre con las columnas elegidas: con pocos productos no se agrandan (A/B/C-vacia). */
+.tv-cat-res .tv-cat-grilla {
+	grid-template-columns: repeat(var(--cat-cols, 4), minmax(0, 1fr)) !important;
+}
+@media (max-width: 999px) {
+	.tv-cat-res .tv-cat-grilla {
+		grid-template-columns: repeat(min(var(--cat-cols, 4), 3), minmax(0, 1fr)) !important;
+	}
+}
+@media (max-width: 759px) {
+	.tv-cat-res .tv-cat-grilla {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+}
 .tv-cat-mas {
 	display: flex;
 	justify-content: center;
@@ -854,9 +868,9 @@
 }
 .tv-ficha-sobre {
 	margin: 0;
-	display: flex;
-	align-items: center;
-	gap: 4px;
+}
+.tv-ficha-sobre svg {
+	vertical-align: -1px;
 }
 .tv-ficha-titulo {
 	font-size: var(--t-h2);

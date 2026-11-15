@@ -379,7 +379,7 @@
 				{/if}
 				<div class="tv-cat-cuerpo" class:tv-cat-cuerpo--costado={op.filtros === 'costado'}>
 					{#if op.filtros === 'costado'}<div class="tv-solo-compu">{@render costado()}</div>{/if}
-					<div class="tv-cat-res">{@render resultados()}</div>
+					<div class="tv-cat-res" style:--cat-cols={op.columnas}>{@render resultados()}</div>
 				</div>
 			</div>
 			{#if dir === 'pedido'}<div class="tv-pag-lado tv-solo-compu"><Bolsa /></div>{/if}
