@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 // Los campos del panel de un bloque, generados desde bloques.json › campos (tiposCampo): un editor por tipo.
 // Lo vacío se saca de los datos, así la tienda usa lo de por defecto o lo sugerido.
@@ -879,6 +880,9 @@ struct SelectorCupon: View {
 struct EditorPremio: View {
     var campo: CatalogoBloques.Campo
     @Binding var valor: ValorJSON?
+    @Environment(Estado.self) private var estado
+    @State private var eligiendo = false
+    @State private var subiendo = false
 
     static let nombres = ["cuponFijo": "Un cupón tuyo", "cuponUnico": "Un código único", "descarga": "Una descarga", "nada": "Nada, sólo sumarse"]
     static let descuentos = [("porcentaje", "Porcentaje"), ("monto", "Monto fijo"), ("envioGratis", "Envío gratis")]
@@ -909,6 +913,34 @@ struct EditorPremio: View {
         }
         .padding(12)
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(C.linea2))
+        .fileImporter(isPresented: $eligiendo, allowedContentTypes: [.pdf, .epub, .zip]) { r in
+            if case let .success(u) = r { Task { await subir(u) } }
+        }
+    }
+
+    /// Si el archivo es uno subido a Tu Local Web (y no un link de afuera).
+    private static func esSubido(_ a: String) -> Bool { a.contains("/f/archivos/") }
+
+    /// Sube el archivo elegido y completa `archivo` (y `nombreArchivo` si estaba vacío).
+    private func subir(_ u: URL) async {
+        let acceso = u.startAccessingSecurityScopedResource()
+        defer { if acceso { u.stopAccessingSecurityScopedResource() } }
+        guard let d = try? Data(contentsOf: u) else { estado.avisar("No pudimos leer el archivo", ok: false); return }
+        guard d.count <= Web.maximoArchivo else { estado.avisar("El archivo pesa más de 20 MB", ok: false); return }
+        subiendo = true
+        defer { subiendo = false }
+        do {
+            let url = try await Web.subirArchivo(d, token: estado.api.token)
+            var o = actual
+            o["archivo"] = .texto(url)
+            if (o["nombreArchivo"]?.texto ?? "").isEmpty { o["nombreArchivo"] = .texto(Web.nombreDeArchivo(u.lastPathComponent)) }
+            valor = .objeto(o)
+            Haptico.exito()
+        } catch let e as Web.ErrorSubida {
+            estado.avisar(e.mensaje, ok: false)
+        } catch {
+            estado.avisar("No pudimos subir el archivo", ok: false)
+        }
     }
 
     @ViewBuilder private var detalle: some View {
@@ -932,12 +964,41 @@ struct EditorPremio: View {
             numero("Vence a los", clave: "dias", rango: 1...90, paso: 1, porDefecto: 7) { $0 == 1 ? "1 día" : "\($0) días" }
             Text("Cada persona recibe su propio código, de un solo uso.").estilo(.footnote).foregroundStyle(C.texto2)
         case "descarga":
-            CampoLinea(titulo: "Link del archivo (PDF, guía, catálogo)", texto: Binding(
-                get: { actual["archivo"]?.texto ?? "" },
-                set: { v in let t = v.trimmingCharacters(in: .whitespaces); poner("archivo", t.isEmpty ? nil : .texto(String(t.prefix(300)))) }),
-                       sugerencia: "https://", teclado: .URL)
-            if let a = actual["archivo"]?.texto, !a.isEmpty, !a.hasPrefix("https://") {
-                Text("Tiene que empezar con https://").estilo(.footnote).foregroundStyle(C.errorTinta)
+            let a = actual["archivo"]?.texto ?? ""
+            let nombre = actual["nombreArchivo"]?.texto ?? ""
+            if Self.esSubido(a) {
+                HStack(spacing: 10) {
+                    Image(systemName: "doc").font(.system(size: 18)).foregroundStyle(C.primarioTinta)
+                    Text(nombre.isEmpty ? "Tu archivo" : nombre)
+                        .estilo(.fila).foregroundStyle(C.texto).lineLimit(1)
+                    Spacer(minLength: 0)
+                    Button { poner("archivo", nil) } label: {
+                        Image(systemName: "trash").font(.system(size: 15)).foregroundStyle(C.texto2).frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Quitar el archivo")
+                }
+                .padding(.leading, 12)
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(C.linea2))
+            }
+            HStack(spacing: 10) {
+                Button { eligiendo = true } label: {
+                    HStack(spacing: 6) {
+                        if subiendo { ProgressView().tint(C.primarioTinta) } else { Image(systemName: "arrow.up") }
+                        Text(subiendo ? "Subiendo…" : Self.esSubido(a) ? "Cambiar el archivo" : "Subir archivo")
+                    }
+                }
+                .buttonStyle(BotonTonal(alto: 44))
+                .disabled(subiendo)
+                Text("PDF, EPUB o ZIP de hasta 20 MB.").estilo(.footnote).foregroundStyle(C.texto2)
+            }
+            if !Self.esSubido(a) {
+                CampoLinea(titulo: "O pegá un link", texto: Binding(
+                    get: { actual["archivo"]?.texto ?? "" },
+                    set: { v in let t = v.trimmingCharacters(in: .whitespaces); poner("archivo", t.isEmpty ? nil : .texto(String(t.prefix(300)))) }),
+                           sugerencia: "https://", teclado: .URL)
+                if !a.isEmpty, !a.hasPrefix("https://") {
+                    Text("Tiene que empezar con https://").estilo(.footnote).foregroundStyle(C.errorTinta)
+                }
             }
             CampoLinea(titulo: "Cómo se llama", texto: Binding(
                 get: { actual["nombreArchivo"]?.texto ?? "" }, set: { poner("nombreArchivo", $0.isEmpty ? nil : .texto(String($0.prefix(60)))) }),

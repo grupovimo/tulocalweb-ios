@@ -1,6 +1,7 @@
 package ar.com.tulocalweb.app.pantallas.mas
 
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -719,6 +720,37 @@ fun EditorPremio(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Va
         if (t == "descarga") actual["nombreArchivo"]?.let { o["nombreArchivo"] = it }
         alCambiar(Valor.objeto(o))
     }
+    val estado = LocalEstado.current
+    val ctx = LocalContext.current
+    val alcance = rememberCoroutineScope()
+    var subiendo by remember { mutableStateOf(false) }
+    val ahora by rememberUpdatedState(actual)
+    val cambiar by rememberUpdatedState(alCambiar)
+    /** Sube el archivo elegido y completa `archivo` (y `nombreArchivo` si estaba vacío). */
+    val elegir = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { u ->
+        if (u == null) return@rememberLauncherForActivityResult
+        val datos = runCatching { ctx.contentResolver.openInputStream(u)?.use { it.readBytes() } }.getOrNull()
+        if (datos == null) { estado.avisar("No pudimos leer el archivo", ok = false); return@rememberLauncherForActivityResult }
+        if (datos.size > Web.maximoArchivo) { estado.avisar("El archivo pesa más de 20 MB", ok = false); return@rememberLauncherForActivityResult }
+        val nombreOriginal = runCatching {
+            ctx.contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: ""
+        subiendo = true
+        alcance.launch {
+            try {
+                val url = Web.subirArchivo(datos, estado.api.token)
+                val o = ahora.toMutableMap()
+                o["archivo"] = Valor.texto(url)
+                if ((o["nombreArchivo"]?.texto ?: "").isEmpty()) o["nombreArchivo"] = Valor.texto(Web.nombreDeArchivo(nombreOriginal))
+                cambiar(Valor.objeto(o))
+                Haptico.exito()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Web.ErrorSubida) {
+                estado.avisar(e.mensaje, ok = false)
+            } catch (e: Exception) {
+                estado.avisar("No pudimos subir el archivo", ok = false)
+            } finally { subiendo = false }
+        }
+    }
     @Composable
     fun Numero(titulo: String, clave: String, rango: IntRange, paso: Int, porDefecto: Int, texto: (Int) -> String) {
         val n = actual[clave]?.entero ?: porDefecto
@@ -747,15 +779,38 @@ fun EditorPremio(campo: CatalogoBloques.Campo, valor: ValorJSON?, alCambiar: (Va
             }
             "descarga" -> {
                 val a = actual["archivo"]?.texto ?: ""
-                CampoLinea("Link del archivo (PDF, guía, catálogo)", a, { v -> val t = v.trim(); poner("archivo", if (t.isEmpty()) null else Valor.texto(t.take(300))) },
-                    "https://", teclado = KeyboardType.Uri)
-                if (a.isNotEmpty() && !a.startsWith("https://")) Texto("Tiene que empezar con https://", Estilo.footnote, C.errorTinta)
+                val nombre = actual["nombreArchivo"]?.texto ?: ""
+                val subido = esArchivoSubido(a)
+                if (subido) {
+                    Row(Modifier.fillMaxWidth().border(1.dp, C.linea2, RoundedCornerShape(12.dp)).padding(start = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icono("doc", 18f, C.primarioTinta)
+                        Texto(nombre.ifEmpty { "Tu archivo" }, Estilo.fila, C.texto, Modifier.weight(1f), lineas = 1)
+                        Box(Modifier.size(44.dp).clickable { poner("archivo", null) }.semantics { contentDescription = "Quitar el archivo" },
+                            contentAlignment = Alignment.Center) { Icono("trash", 15f, C.texto2) }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    BotonTonal(if (subiendo) "Subiendo…" else if (subido) "Cambiar el archivo" else "Subir archivo", {
+                        estado.abrioOtraApp = true
+                        elegir.launch(arrayOf("application/pdf", "application/epub+zip", "application/zip"))
+                    }, alto = 44.dp, simbolo = if (subiendo) null else "arrow.up", habilitado = !subiendo)
+                    Texto("PDF, EPUB o ZIP de hasta 20 MB.", Estilo.footnote, C.texto2, Modifier.weight(1f))
+                }
+                if (!subido) {
+                    CampoLinea("O pegá un link", a, { v -> val t = v.trim(); poner("archivo", if (t.isEmpty()) null else Valor.texto(t.take(300))) },
+                        "https://", teclado = KeyboardType.Uri)
+                    if (a.isNotEmpty() && !a.startsWith("https://")) Texto("Tiene que empezar con https://", Estilo.footnote, C.errorTinta)
+                }
                 CampoLinea("Cómo se llama", actual["nombreArchivo"]?.texto ?: "", { v -> poner("nombreArchivo", if (v.isEmpty()) null else Valor.texto(v.take(60))) }, "Guía", 60)
             }
             "nada" -> Texto("Sólo se suma a tu newsletter.", Estilo.footnote, C.texto2)
         }
     }
 }
+
+/** Si el archivo es uno subido a Tu Local Web (y no un link de afuera). */
+private fun esArchivoSubido(a: String) = a.contains("/f/archivos/")
 
 /** Varias opciones de una lista (tiposCampo › opciones; vacía = todas), como chips que se prenden. */
 @Composable

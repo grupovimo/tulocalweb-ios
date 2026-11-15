@@ -57,6 +57,40 @@ enum Web {
         return ruta.hasPrefix("http") ? ruta : base.absoluteString + ruta
     }
 
+    /// El tope de un archivo para descargar (el mismo que pone la web en /panel/archivos).
+    static let maximoArchivo = 20 * 1024 * 1024
+
+    /// Sube un archivo para descargar (el premio «descarga»: PDF, EPUB o ZIP de hasta 20 MB, tal cual) y
+    /// devuelve su URL pública (https://tulocalweb.com.ar/f/archivos/…). El tipo lo mira la web por los
+    /// primeros bytes. Si la web lo rechaza, el error trae su mensaje.
+    static func subirArchivo(_ datos: Data, token: String?) async throws -> String {
+        var r = URLRequest(url: base.appending(path: "panel/archivos"), timeoutInterval: 120)
+        r.httpMethod = "POST"
+        r.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        if let token { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        r.httpBody = datos
+        let (d, resp) = try await URLSession.shared.data(for: r)
+        struct M: Decodable { var message: String }
+        guard let h = resp as? HTTPURLResponse, (200..<300).contains(h.statusCode) else {
+            throw ErrorSubida(mensaje: (try? JSONDecoder().decode(M.self, from: d))?.message ?? "Probá de nuevo en un rato.")
+        }
+        struct R: Decodable { var ruta: String }
+        let ruta = try JSONDecoder().decode(R.self, from: d).ruta
+        return ruta.hasPrefix("http") ? ruta : base.absoluteString + ruta
+    }
+
+    /// Lo que dijo la web al rechazar un archivo («El archivo pesa más de 20 MB.»).
+    struct ErrorSubida: Error { var mensaje: String }
+
+    /// El nombre que ve quien lo baja: sin la extensión, hasta 60 letras (nombreDeArchivo en la web).
+    static func nombreDeArchivo(_ nombre: String) -> String {
+        let sin = nombre.replacingOccurrences(of: #"\.(pdf|epub|zip)$"#, with: "", options: [.regularExpression, .caseInsensitive])
+            .replacingOccurrences(of: #"[_-]+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        return String(sin.prefix(60))
+    }
+
     /// Una foto elegida, achicada a 1600 px de lado y en JPEG, lista para `subirFoto`.
     static func jpegParaSubir(_ datos: Data) -> Data? {
         guard let img = UIImage(data: datos) else { return nil }

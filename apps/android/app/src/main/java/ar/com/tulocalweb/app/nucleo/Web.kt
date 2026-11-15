@@ -67,6 +67,37 @@ object Web {
         if (ruta.startsWith("http")) ruta else base + ruta
     }
 
+    /** El tope de un archivo para descargar (el mismo que pone la web en /panel/archivos). */
+    const val maximoArchivo = 20 * 1024 * 1024
+
+    /** Lo que dijo la web al rechazar un archivo («El archivo pesa más de 20 MB.»). */
+    class ErrorSubida(val mensaje: String) : Exception(mensaje)
+
+    /** Sube un archivo para descargar (el premio «descarga»: PDF, EPUB o ZIP de hasta 20 MB, tal cual) y devuelve su
+     *  URL pública (https://tulocalweb.com.ar/f/archivos/…). El tipo lo mira la web por los primeros bytes. Si la web lo
+     *  rechaza, el error trae su mensaje. */
+    suspend fun subirArchivo(datos: ByteArray, token: String?): String = withContext(Dispatchers.IO) {
+        val r = Request.Builder().url("$base/panel/archivos").post(datos.toRequestBody("application/octet-stream".toMediaType()))
+        token?.let { r.header("Authorization", "Bearer $it") }
+        @Serializable data class E(val message: String)
+        val largo = http.newBuilder().writeTimeout(120, TimeUnit.SECONDS).readTimeout(120, TimeUnit.SECONDS).callTimeout(120, TimeUnit.SECONDS).build()
+        val texto = try {
+            largo.newCall(r.build()).execute().use {
+                val cuerpo = it.body?.string().orEmpty()
+                if (!it.isSuccessful) throw ErrorSubida(runCatching { Api.json.decodeFromString<E>(cuerpo).message }.getOrNull() ?: "Probá de nuevo en un rato.")
+                cuerpo
+            }
+        } catch (e: java.io.IOException) { throw ErrorApi.sinRed }
+        @Serializable data class R(val ruta: String)
+        val ruta = runCatching { Api.json.decodeFromString<R>(texto).ruta }.getOrNull() ?: throw ErrorApi.desconocido
+        if (ruta.startsWith("http")) ruta else base + ruta
+    }
+
+    /** El nombre que ve quien lo baja: sin la extensión, hasta 60 letras (nombreDeArchivo en la web). */
+    fun nombreDeArchivo(nombre: String): String =
+        nombre.replace(Regex("\\.(pdf|epub|zip)$", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("[_-]+"), " ").replace(Regex("\\s+"), " ").trim().take(60)
+
     @Serializable private data class M(val rol: String, val texto: String)
     @Serializable private data class CuerpoBloques(val mensajes: List<M>, val formato: String = "bloques")
     @Serializable private data class Cuerpo(val mensajes: List<M>)
