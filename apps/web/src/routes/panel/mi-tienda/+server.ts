@@ -7,6 +7,7 @@ import { plantilla } from '#lib/plantillas.ts';
 import { FUENTES } from '#lib/tienda/estilo/fuentes.ts';
 import { MAX_MENU } from '#lib/tienda/estilo/menu.ts';
 import { datosDe } from '#lib/server/datos/index.ts';
+import { MAX_VENTANAS } from '#lib/tienda/sistema/promos.ts';
 import type { RequestHandler } from './$types';
 
 // Las fotos subidas a /panel/fotos vuelven con su origen (https en producción, http en local).
@@ -79,7 +80,8 @@ const Estilo = v.object({
 							texto(100, 'Cada mensaje'),
 							v.minLength(1, 'Cada mensaje necesita un texto.')
 						),
-						link: v.optional(enlace)
+						link: v.optional(enlace),
+						hasta: v.optional(v.pipe(v.string(), v.isoTimestamp('Esa fecha no es válida.')))
 					})
 				),
 				v.maxLength(5, 'La barra va hasta 5 mensajes.')
@@ -88,6 +90,8 @@ const Estilo = v.object({
 		})
 	),
 	whatsappFlotante: v.optional(v.boolean()),
+	// Las herramientas de conversión: los campos se limpian contra el catálogo en paraGuardar.
+	conversion: v.optional(v.looseObject({})),
 	menu: v.optional(
 		v.pipe(
 			v.array(
@@ -157,7 +161,21 @@ const Diseno = v.object({
 		)
 	),
 	compartirFoto: v.optional(foto),
-	estilo: v.optional(Estilo)
+	estilo: v.optional(Estilo),
+	// Las ventanas: forma mínima acá; cada una se valida contra el catálogo en paraGuardar.
+	ventanas: v.optional(
+		v.pipe(
+			v.array(
+				v.looseObject({
+					id: v.string(),
+					contenido: v.string(),
+					variante: v.string(),
+					datos: v.optional(v.looseObject({}))
+				})
+			),
+			v.maxLength(MAX_VENTANAS, `Van hasta ${MAX_VENTANAS} ventanas.`)
+		)
+	)
 });
 
 /**

@@ -64,11 +64,25 @@ export type EstiloTienda = {
 	barra?: {
 		/** Vacío: fija. */
 		variante?: 'fija' | 'rotativa';
-		mensajes: { texto: string; link?: string }[];
+		/** `hasta` (ISO): cuenta regresiva en el mensaje, que se esconde al vencer. */
+		mensajes: { texto: string; link?: string; hasta?: string }[];
 		fondo?: 'normal' | 'superficie' | 'acento' | 'oscuro';
 	};
 	/** false: sin el botón flotante de WhatsApp (la sección «wa» oculta de v1). */
 	whatsappFlotante?: boolean;
+	/** Las herramientas para vender más (bloques.json › conversion; lo que falta, su porDefecto). */
+	conversion?: ConversionGuardada;
+};
+
+/** estilo.conversion como se guarda (todo opcional): sistema/promos.ts › conversionDe lo completa. */
+export type ConversionGuardada = {
+	envioGratis?: boolean;
+	pruebaSocial?: { activa?: boolean; cada?: number; paginas?: string[] };
+	etiquetas?: { nuevo?: boolean; oferta?: boolean; ultimas?: boolean; masVendido?: boolean };
+	stockBajo?: number;
+	compraFija?: boolean;
+	sumaEnCarrito?: boolean;
+	favoritos?: boolean;
 };
 
 /** El título de una sección: el propio o el de la plantilla. */

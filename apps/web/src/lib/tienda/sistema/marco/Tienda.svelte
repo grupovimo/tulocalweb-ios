@@ -16,11 +16,13 @@
 	import Encabezado from './Encabezado.svelte';
 	import PanelCarrito from './PanelCarrito.svelte';
 	import Pie from './Pie.svelte';
+	import Ventanas from './Ventanas.svelte';
 	import '../base.css';
 	import '../paginas.css';
 	import '../direcciones/vidriera.css';
 	import '../direcciones/mostrador.css';
 	import '../direcciones/pedido.css';
+	import '../ventanas.css';
 
 	/**
 	 * El marco de cualquier página de la tienda en el sistema de bloques: pone el contexto (tienda,
@@ -135,4 +137,6 @@
 	{#if funciones.comparador}<Comparador />{/if}
 	{#if funciones.mayor18}<Aviso18 />{/if}
 	{#if panel}<PanelCarrito envioGratis={opciones.carrito.envioGratisDesde} />{/if}
+	<!-- Las ventanas (popups): una por página, nunca en el checkout ni en los legales. -->
+	<Ventanas />
 </div>

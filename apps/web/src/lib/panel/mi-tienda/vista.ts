@@ -14,7 +14,9 @@ export const paginaVista = (p: unknown): PaginaVista =>
 /** Lo que manda el editor y lo que avisa la página. */
 export type AlaVista =
 	| { tipo: 'diseno'; diseno: DisenoV2; pagina?: PaginaVista }
-	| { tipo: 'seleccionar'; id: string | null };
+	| { tipo: 'seleccionar'; id: string | null }
+	/** Abrir una ventana (popup) con el borrador; id null la cierra. */
+	| { tipo: 'ventana'; id: string | null };
 export type DeLaVista = { tipo: 'lista' } | { tipo: 'bloque'; id: string };
 
 type Seccion = TiendaPublica['secciones'][number];
@@ -83,5 +85,6 @@ export function leerMensaje(x: unknown): AlaVista | null {
 		};
 	if (m.tipo === 'seleccionar')
 		return { tipo: 'seleccionar', id: typeof m.id === 'string' ? m.id : null };
+	if (m.tipo === 'ventana') return { tipo: 'ventana', id: typeof m.id === 'string' ? m.id : null };
 	return null;
 }

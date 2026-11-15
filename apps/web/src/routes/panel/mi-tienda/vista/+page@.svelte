@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import Plantilla from '#lib/tienda/Plantilla.svelte';
+	import { vistaVentanas } from '#lib/tienda/sistema/vista-ventanas.svelte.ts';
 	import {
 		avisar,
 		conDiseno,
@@ -46,29 +47,36 @@
 		marcar();
 	}
 
+	// En la vista las ventanas no salen solas: las abre el editor.
+	if (typeof window !== 'undefined') vistaVentanas.vista = true;
 	onMount(() => {
 		const w = window as unknown as {
 			tiendaVista?: {
 				mostrar: (d: DisenoV2 | string, p?: string) => void;
 				seleccionar: (id: string | null) => void;
+				ventana: (id: string | null) => void;
 			};
 		};
 		// Las apps: evaluateJavaScript("window.tiendaVista.mostrar(<json>, '<pagina>')").
 		w.tiendaVista = {
 			mostrar: (d, p) => void mostrar(typeof d === 'string' ? JSON.parse(d) : d, p),
-			seleccionar: (id) => void seleccionar(id)
+			seleccionar: (id) => void seleccionar(id),
+			// Abre esa ventana (popup) con el borrador; null la cierra.
+			ventana: (id) => vistaVentanas.abrir(id)
 		};
 		const alMensaje = (e: MessageEvent) => {
 			if (e.origin !== location.origin || e.source !== window.parent) return;
 			const m = leerMensaje(e.data);
 			if (m?.tipo === 'diseno') void mostrar(m.diseno, m.pagina);
 			else if (m?.tipo === 'seleccionar') void seleccionar(m.id);
+			else if (m?.tipo === 'ventana') vistaVentanas.abrir(m.id);
 		};
 		addEventListener('message', alMensaje);
 		avisar({ tipo: 'lista' });
 		return () => {
 			removeEventListener('message', alMensaje);
 			delete w.tiendaVista;
+			vistaVentanas.vista = false;
 		};
 	});
 

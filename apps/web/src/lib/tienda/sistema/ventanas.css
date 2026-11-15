@@ -1,0 +1,463 @@
+/*
+ * Las ventanas de la tienda (marco/Ventana.svelte): las 4 variantes con las primitivas de la
+ * dirección. La caja es una .tv-tarjeta (borde en Vidriera y Pedido, sombra en Mostrador; el radio
+ * de cada una); el título, el antetítulo, los campos y los botones son los de siempre.
+ */
+
+.tv-vent {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	max-width: 100%;
+	height: 100%;
+	max-height: 100%;
+	margin: 0;
+	padding: 16px;
+	border: 0;
+	background: transparent;
+	color: var(--t-texto);
+	font-family: var(--t-f-texto);
+	overflow: hidden;
+}
+.tv-vent[open] {
+	display: grid;
+	place-items: center;
+}
+.tv .tv-vent-caja:focus-visible {
+	outline: 0;
+}
+.tv-vent::backdrop {
+	background: rgb(0 0 0 / 0.45);
+}
+.tv-vent-caja {
+	position: relative;
+	outline: 0;
+	display: flex;
+	flex-direction: column;
+	width: min(480px, 100%);
+	max-height: calc(100dvh - 32px);
+	overflow: auto;
+	overscroll-behavior: contain;
+	background: var(--t-fondo);
+	animation: tv-vent-entra 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tv[data-dir='mostrador'] .tv-vent-caja {
+	background: var(--t-superficie);
+}
+.tv-vent-x {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 2;
+	color: var(--t-texto);
+	background: color-mix(in srgb, var(--t-fondo) 88%, transparent);
+	border-radius: 999px;
+}
+.tv-vent--foto .tv-vent-x {
+	color: #fff;
+	background: rgb(0 0 0 / 0.38);
+}
+.tv-vent-cuerpo {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 36px 32px 28px;
+}
+.tv-vent--foto .tv-vent-cuerpo {
+	padding-top: 24px;
+}
+.tv-vent-cuerpo > .tv-ante + .tv-vent-titulo {
+	margin-top: -6px;
+}
+.tv-vent-titulo {
+	font-size: var(--t-h3);
+	padding-right: 32px;
+}
+.tv-vent-texto {
+	font-size: var(--t-cuerpo);
+}
+
+/* Con foto: el antetítulo y el título van sobre la foto, con velo (regla 4). */
+.tv-vent-foto {
+	position: relative;
+	flex: none;
+	aspect-ratio: 16 / 9;
+	overflow: hidden;
+}
+.tv-vent-foto .tv-foto,
+.tv-vent-foto .tv-ph {
+	position: absolute;
+	inset: 0;
+	border-radius: 0;
+}
+.tv-vent-sobre {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 24px 32px 20px;
+	color: #fff;
+}
+.tv-vent-sobre .tv-ante {
+	color: #fff;
+}
+.tv-vent-sobre .tv-vent-titulo {
+	color: #fff;
+	padding-right: 0;
+}
+
+/* La cuenta regresiva en cajitas. */
+.tv-cuenta--caja {
+	display: flex;
+	gap: 8px;
+}
+.tv-cuenta-celda {
+	display: grid;
+	justify-items: center;
+	min-width: 56px;
+	padding: 8px 6px 6px;
+	border-radius: min(var(--t-r-tarjeta), 12px);
+	background: color-mix(in srgb, var(--t-texto) 6%, transparent);
+	line-height: 1;
+}
+.tv-cuenta-celda b {
+	font: var(--t-peso-titulos) 22px/1 var(--t-f-titulos);
+	font-variant-numeric: tabular-nums;
+}
+.tv-cuenta-celda small {
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--t-suave);
+}
+.tv-cuenta {
+	font-variant-numeric: tabular-nums;
+}
+
+/* El cupón: el código con «Copiar». */
+.tv-vent-cupon {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 8px 8px 18px;
+	border: 1.5px dashed var(--t-texto);
+	border-radius: min(var(--t-r-boton), 16px);
+}
+.tv-vent-codigo {
+	flex: 1;
+	min-width: 0;
+	font: 700 20px/1.2 var(--t-f-titulos);
+	letter-spacing: 0.08em;
+	overflow-wrap: anywhere;
+	user-select: all;
+}
+.tv-vent-estado {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 20px;
+	margin: -4px 0 0;
+	font-size: var(--t-chico);
+	color: var(--t-ok);
+}
+.tv-vent-estado:empty {
+	display: none;
+}
+
+/* Captación y ruleta. */
+.tv-vent-form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.tv-vent-acepto {
+	align-items: flex-start;
+	font-size: var(--t-chico);
+	line-height: 1.45;
+	color: var(--t-suave);
+}
+.tv-vent-acepto input {
+	margin-top: 1px;
+}
+.tv-vent-acepto a {
+	color: var(--t-texto);
+}
+.tv-vent-error {
+	margin: 0;
+	padding: 10px 12px;
+	border-radius: min(var(--t-r-tarjeta), 10px);
+	background: color-mix(in srgb, var(--t-error, #b42318) 10%, var(--t-fondo));
+	color: var(--t-error, #b42318);
+	font-size: var(--t-chico);
+}
+.tv-vent-listo {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	outline: 0;
+}
+.tv-vent-seguir {
+	align-self: center;
+	min-height: 44px;
+	padding: 0 12px;
+	border: 0;
+	background: none;
+	color: var(--t-texto);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+/* La ruleta. */
+.tv-ruleta {
+	position: relative;
+	width: min(260px, 70%);
+	margin: 4px auto 2px;
+}
+.tv-ruleta-rueda {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 50%;
+	box-shadow: 0 0 0 4px var(--t-texto);
+	transition: transform 4.2s cubic-bezier(0.12, 0.7, 0.12, 1);
+}
+.tv-ruleta-quieta {
+	transition: none;
+}
+.tv-ruleta-a {
+	fill: var(--t-acento);
+}
+.tv-ruleta-b {
+	fill: var(--t-superficie);
+}
+.tv-ruleta text {
+	font: 700 10.5px var(--t-f-texto);
+}
+.tv-ruleta-ta {
+	fill: var(--t-sobre-acento);
+}
+.tv-ruleta-tb {
+	fill: var(--t-texto);
+}
+.tv-ruleta-centro {
+	fill: var(--t-texto);
+}
+.tv-ruleta-flecha {
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	width: 0;
+	height: 0;
+	transform: translateX(-50%);
+	border: 12px solid transparent;
+	border-top: 20px solid var(--t-texto);
+	border-bottom: 0;
+}
+
+/* ---- Variantes ------------------------------------------------------------------------------- */
+
+/* Lateral: chica, abajo a la izquierda (WhatsApp está a la derecha), sin cortar la compra. */
+.tv-vent--lateral {
+	inset: auto auto 24px 24px;
+	width: min(380px, calc(100vw - 32px));
+	height: auto;
+	padding: 0;
+	overflow: visible;
+	z-index: 40;
+}
+.tv-vent--lateral[open] {
+	display: block;
+}
+.tv-vent--lateral .tv-vent-caja {
+	width: 100%;
+	max-height: calc(100dvh - 48px);
+	box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.35);
+	animation-name: tv-vent-sube;
+}
+.tv-vent--lateral .tv-vent-cuerpo {
+	gap: 12px;
+	padding: 24px 22px 22px;
+}
+.tv-vent--lateral .tv-vent-sobre {
+	padding: 18px 22px 16px;
+}
+.tv-vent--lateral .tv-vent-titulo {
+	font-size: calc(var(--t-h3) * 0.8);
+}
+.tv-vent--lateral .tv-vent-foto {
+	aspect-ratio: 2 / 1;
+}
+
+/* Completa: ocupa todo; con foto, la foto es el fondo y todo va encima con velo. */
+.tv-vent--completa {
+	padding: 0;
+}
+.tv-vent--completa .tv-vent-caja {
+	width: 100%;
+	height: 100%;
+	max-height: 100%;
+	border: 0;
+	border-radius: 0;
+	justify-content: center;
+}
+.tv-vent--completa .tv-vent-cuerpo {
+	width: min(560px, 100%);
+	margin: 0 auto;
+	align-items: center;
+	text-align: center;
+	gap: 18px;
+}
+.tv-vent--completa .tv-vent-titulo {
+	font-size: var(--t-h2);
+	padding-right: 0;
+}
+.tv-vent--completa .tv-lead {
+	margin: 0 auto;
+}
+.tv-vent--completa .tv-vent-cuerpo > .tv-btn,
+.tv-vent--completa .tv-vent-form,
+.tv-vent--completa .tv-vent-cupon {
+	width: min(400px, 100%);
+}
+.tv-vent-fondo {
+	position: absolute;
+	inset: 0;
+}
+.tv-vent-fondo .tv-foto,
+.tv-vent-fondo .tv-ph {
+	position: absolute;
+	inset: 0;
+	border-radius: 0;
+}
+.tv-vent-fondo .tv-velo {
+	background: rgb(0 0 0 / 0.56);
+}
+/* Sobre la foto todo va en claro (texto, antetítulo, botones y campos con su fondo). */
+.tv-vent--completa.tv-vent--foto .tv-vent-caja {
+	--t-zona-texto: #fff;
+	--t-zona-suave: rgb(255 255 255 / 0.88);
+	--t-suave: rgb(255 255 255 / 0.88);
+	--t-acento-texto: #fff;
+	--t-btn-fondo: #fff;
+	--t-btn-texto: #141414;
+	--t-btn-borde: #fff;
+	color: #fff;
+}
+.tv-vent--completa.tv-vent--foto .tv-vent-cuerpo {
+	position: relative;
+	z-index: 1;
+}
+.tv-vent--completa.tv-vent--foto .tv-vent-x {
+	color: #fff;
+}
+.tv-vent--completa.tv-vent--foto .tv-campo input {
+	color: var(--t-texto);
+}
+.tv-vent--completa.tv-vent--foto .tv-vent-cupon {
+	border-color: #fff;
+}
+.tv-vent--completa.tv-vent--foto .tv-cuenta-celda {
+	background: rgb(255 255 255 / 0.16);
+}
+.tv-vent--completa.tv-vent--foto .tv-vent-acepto a,
+.tv-vent--completa.tv-vent--foto .tv-vent-seguir {
+	color: #fff;
+}
+
+/* Inferior: una hoja que sube desde abajo y deja ver la tienda; por encima de la barra fija. */
+.tv-vent--inferior {
+	padding: 0;
+}
+.tv-vent--inferior[open] {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+.tv-vent--inferior .tv-vent-caja {
+	width: min(560px, 100%);
+	max-height: min(86dvh, calc(100dvh - var(--tv-vent-abajo, 0px) - 24px));
+	margin-bottom: var(--tv-vent-abajo, 0px);
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	padding-bottom: env(safe-area-inset-bottom);
+	animation-name: tv-vent-sube;
+}
+.tv-vent--inferior .tv-vent-cuerpo {
+	padding: 30px 22px 22px;
+}
+.tv-vent--inferior .tv-vent-sobre {
+	padding: 18px 22px 16px;
+}
+.tv-vent--inferior .tv-vent-foto {
+	aspect-ratio: 2 / 1;
+}
+
+@media (max-width: 759px) {
+	.tv-vent {
+		padding: 12px;
+	}
+	.tv-vent--inferior,
+	.tv-vent--completa {
+		padding: 0;
+	}
+	.tv-vent-cuerpo {
+		padding: 32px 20px 22px;
+	}
+	.tv-vent-sobre {
+		padding: 18px 20px 16px;
+	}
+	.tv-vent-titulo {
+		font-size: calc(var(--t-h3) * 0.92);
+	}
+	.tv-vent--completa .tv-vent-titulo {
+		font-size: var(--t-h3);
+	}
+	.tv-cuenta-celda {
+		min-width: 50px;
+	}
+}
+
+/* Pedido: la escala es más chica (44 · 22 · 17): el título de la ventana es su h2. */
+.tv[data-dir='pedido'] .tv-vent-titulo {
+	font-size: var(--t-h2);
+}
+.tv[data-dir='pedido'] .tv-vent--completa .tv-vent-titulo {
+	font-size: var(--t-h1);
+}
+/* Mostrador: los campos van con el tono del fondo dentro de la tarjeta blanca (como en la ficha). */
+.tv[data-dir='mostrador'] .tv-vent .tv-campo input {
+	border-color: transparent;
+	background: var(--t-fondo);
+	box-shadow: none;
+}
+/* Vidriera: sin radio, todo con borde fino; el cupón con borde recto. */
+.tv[data-dir='vidriera'] .tv-vent-caja {
+	background: var(--t-fondo);
+}
+.tv[data-dir='vidriera'] .tv-vent-cupon {
+	border-style: solid;
+	border-width: 1px;
+}
+
+@keyframes tv-vent-entra {
+	from {
+		opacity: 0;
+		transform: translateY(8px) scale(0.98);
+	}
+}
+@keyframes tv-vent-sube {
+	from {
+		opacity: 0.4;
+		transform: translateY(40px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.tv-vent-caja {
+		animation: none;
+	}
+	.tv-ruleta-rueda {
+		transition: none;
+	}
+}

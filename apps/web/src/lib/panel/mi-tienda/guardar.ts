@@ -8,6 +8,13 @@ import { defDe, LIMITES, PAGINAS, type Campo } from './catalogo.ts';
 import { URL_VIDEO } from './campos.ts';
 import { bloquesDe, type Bloque } from './bloques.ts';
 import type { DisenoV2, EstiloV2 } from './diseno.ts';
+import {
+	CONTENIDO,
+	conversionParaGuardar,
+	MAX_VENTANAS,
+	validarVentana,
+	type Ventana
+} from '#lib/tienda/sistema/promos.ts';
 
 const LINK =
 	/^(inicio|catalogo|nosotros|turnos|suscripciones|cat:.{1,60}|prod:[0-9A-Za-z-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
@@ -119,7 +126,76 @@ export function valorCampo(c: Campo, v: unknown): unknown {
 		}
 		case 'tabla':
 			return tablaParaGuardar(v);
+		case 'cupon':
+			return typeof v === 'string' && /^[A-Z0-9-]{3,20}$/.test(v) ? v : undefined;
+		case 'opciones': {
+			const r = Array.isArray(v)
+				? [...new Set(v.filter((x) => typeof x === 'string' && (c.opciones ?? []).includes(x)))]
+				: [];
+			return r;
+		}
+		case 'premio':
+			return premioParaGuardar(c, v);
 	}
+}
+
+/** Un premio con sólo las claves de su tipo (lo incompleto queda: la ventana no sale hasta estar). */
+function premioParaGuardar(c: Campo, v: unknown): Record<string, unknown> | undefined {
+	if (!v || typeof v !== 'object') return undefined;
+	const p = v as Record<string, unknown>;
+	const tipos = c.opciones?.length ? c.opciones : ['cuponFijo', 'cuponUnico', 'descarga', 'nada'];
+	if (typeof p.tipo !== 'string' || !tipos.includes(p.tipo)) return undefined;
+	const r: Record<string, unknown> = { tipo: p.tipo };
+	const entero = (x: unknown, min: number, max: number) =>
+		typeof x === 'number' && Number.isFinite(x)
+			? Math.min(max, Math.max(min, Math.round(x)))
+			: undefined;
+	if (p.tipo === 'cuponFijo' && typeof p.cupon === 'string' && /^[A-Z0-9-]{3,20}$/.test(p.cupon))
+		r.cupon = p.cupon;
+	if (p.tipo === 'cuponUnico') {
+		const d = p.descuento;
+		if (d === 'porcentaje' || d === 'monto' || d === 'envioGratis') r.descuento = d;
+		const valor =
+			d === 'porcentaje'
+				? entero(p.valor, 1, 90)
+				: d === 'monto'
+					? entero(p.valor, 100, 100000)
+					: undefined;
+		if (valor !== undefined) r.valor = valor;
+		const dias = entero(p.dias, 1, 90);
+		if (dias !== undefined) r.dias = dias;
+	}
+	if (p.tipo === 'descarga') {
+		if (typeof p.archivo === 'string' && FOTO.test(p.archivo) && p.archivo.length <= 300)
+			r.archivo = p.archivo;
+		const n = linea(p.nombreArchivo, 60);
+		if (n) r.nombreArchivo = n;
+	}
+	return r;
+}
+
+/**
+ * Las ventanas listas para guardar: los datos con sólo los campos de su contenido y el resto
+ * validado contra el catálogo (promos.ts). Una a medias se guarda igual (no sale hasta estar
+ * completa); una que no vale ni así, no va.
+ */
+export function ventanasParaGuardar(l: Ventana[] | undefined): Ventana[] {
+	const ids = new Set<string>();
+	const out: Ventana[] = [];
+	for (const w of l ?? []) {
+		const def = CONTENIDO[w?.contenido];
+		if (!def) continue;
+		const limpia = validarVentana({
+			...w,
+			nombre: linea(w.nombre, 40) || 'Ventana',
+			datos: objeto(def.campos, w.datos, false) ?? {}
+		});
+		if (!limpia || ids.has(limpia.id)) continue;
+		ids.add(limpia.id);
+		out.push(limpia);
+		if (out.length >= MAX_VENTANAS) break;
+	}
+	return out;
 }
 
 /**
@@ -187,7 +263,14 @@ function estiloParaGuardar(e: EstiloV2 | undefined): EstiloV2 | undefined {
 		const mensajes = (r.barra.mensajes ?? [])
 			.map((m) => {
 				const texto = linea(m.texto, 100);
-				return texto ? { texto, ...(linkValido(m.link) ? { link: m.link } : {}) } : null;
+				const hasta = valorCampo({ id: 'hasta', tipo: 'fecha', nombre: '' }, m.hasta);
+				return texto
+					? {
+							texto,
+							...(linkValido(m.link) ? { link: m.link } : {}),
+							...(hasta ? { hasta: hasta as string } : {})
+						}
+					: null;
 			})
 			.filter((m) => !!m)
 			.slice(0, 5);
@@ -207,6 +290,7 @@ function estiloParaGuardar(e: EstiloV2 | undefined): EstiloV2 | undefined {
 		if (menu.length) r.menu = menu;
 		else delete r.menu;
 	}
+	if (r.conversion !== undefined) r.conversion = conversionParaGuardar(r.conversion);
 	if (r.leyendaPie !== undefined) r.leyendaPie = linea(r.leyendaPie, 160) || undefined;
 	if (r.redes) {
 		const redes = Object.fromEntries(
@@ -268,6 +352,8 @@ export function paraGuardar(d: DisenoV2): DisenoV2 {
 	if (estilo) r.estilo = estilo;
 	const paginas = paginasParaGuardar(d);
 	if (paginas) r.paginas = paginas;
+	const ventanas = ventanasParaGuardar(d.ventanas);
+	if (ventanas.length) r.ventanas = ventanas;
 	return r;
 }
 

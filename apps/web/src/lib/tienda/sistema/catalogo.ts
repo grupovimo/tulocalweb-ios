@@ -7,6 +7,7 @@
 import * as v from 'valibot';
 import CATALOGO from '@mostrador/contrato/bloques.json';
 import type { EstiloTienda } from '../estilo/estilo.ts';
+import type { Ventana } from './promos.ts';
 
 export type TipoCampo =
 	| 'texto'
@@ -29,7 +30,10 @@ export type TipoCampo =
 	| 'categorias'
 	| 'lista'
 	| 'grupo'
-	| 'tabla';
+	| 'tabla'
+	| 'cupon'
+	| 'premio'
+	| 'opciones';
 
 export type Campo = {
 	id: string;
@@ -42,6 +46,9 @@ export type Campo = {
 	/** Lo que toma si está vacío: «nombre» o «lema» de la tienda (lo resuelve datos.ts). */
 	sugerido?: 'nombre' | 'lema';
 	opciones?: string[];
+	/** Los nombres de las opciones (`opcion` y `opciones`), para el panel. */
+	nombres?: string[];
+	descripcion?: string;
 	item?: Campo[];
 };
 
@@ -157,6 +164,8 @@ export type DisenoV2 = {
 	estilo?: EstiloV2;
 	inicio: Bloque[];
 	paginas?: PaginasDiseno;
+	/** Las ventanas (popups) de la tienda, en orden (tienda-promociones.md › Ventanas). */
+	ventanas?: Ventana[];
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -177,7 +186,7 @@ const foto = v.pipe(v.string(), v.maxLength(300), v.regex(URL_HTTPS));
 const link = v.pipe(v.string(), v.maxLength(300), v.regex(LINK));
 const id = v.pipe(v.string(), v.regex(/^[0-9A-Za-z-]{1,64}$/));
 
-function esquemaCampo(c: Campo): v.GenericSchema {
+export function esquemaCampo(c: Campo): v.GenericSchema {
 	switch (c.tipo) {
 		case 'texto':
 			return lleno(texto(c.max), c.requerido);
@@ -235,7 +244,67 @@ function esquemaCampo(c: Campo): v.GenericSchema {
 			return objeto(c.item ?? []);
 		case 'tabla':
 			return tabla;
+		case 'cupon':
+			return CUPON;
+		case 'premio':
+			return esquemaPremio(c.opciones);
+		case 'opciones':
+			return v.pipe(
+				v.array(v.picklist(c.opciones ?? [])),
+				v.check((l) => new Set(l).size === l.length)
+			);
 	}
+}
+
+/** El código de un cupón de la tienda (bloques.json › tiposCampo.cupon). */
+export const CUPON = v.pipe(v.string(), v.regex(/^[A-Z0-9-]{3,20}$/));
+export const TIPOS_PREMIO = ['cuponFijo', 'cuponUnico', 'descarga', 'nada'] as const;
+export type TipoPremio = (typeof TIPOS_PREMIO)[number];
+
+/**
+ * Un premio (tiposCampo.premio): las claves de otro tipo se ignoran y lo que falta no lo invalida
+ * (el borrador se guarda a medias; la ventana no sale hasta estar completa: promos.ts).
+ */
+function esquemaPremio(opciones?: string[]) {
+	const tipos = (opciones?.length ? opciones : TIPOS_PREMIO) as string[];
+	return v.pipe(
+		v.strictObject({
+			tipo: v.picklist(tipos),
+			cupon: v.optional(CUPON),
+			descuento: v.optional(v.picklist(['porcentaje', 'monto', 'envioGratis'])),
+			valor: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100000))),
+			dias: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(90))),
+			archivo: v.optional(foto),
+			nombreArchivo: v.optional(texto(60))
+		}),
+		v.check(
+			(p) =>
+				p.valor === undefined || p.descuento !== 'porcentaje' || (p.valor >= 1 && p.valor <= 90),
+			'El porcentaje va de 1 a 90.'
+		),
+		v.check(
+			(p) => p.valor === undefined || p.descuento !== 'monto' || p.valor >= 100,
+			'El monto va desde $ 100.'
+		),
+		v.check(
+			(p) => p.valor === undefined || p.descuento !== 'envioGratis',
+			'El envío gratis no lleva valor.'
+		),
+		v.transform((p) => {
+			const r: Record<string, unknown> = { tipo: p.tipo };
+			if (p.tipo === 'cuponFijo' && p.cupon) r.cupon = p.cupon;
+			if (p.tipo === 'cuponUnico') {
+				if (p.descuento) r.descuento = p.descuento;
+				if (p.valor !== undefined && p.descuento !== 'envioGratis') r.valor = p.valor;
+				if (p.dias !== undefined) r.dias = p.dias;
+			}
+			if (p.tipo === 'descarga') {
+				if (p.archivo) r.archivo = p.archivo;
+				if (p.nombreArchivo) r.nombreArchivo = p.nombreArchivo;
+			}
+			return r;
+		})
+	);
 }
 
 // Una tabla (la guía de talles): de 2 a filasTabla filas y de 1 a columnasTabla columnas, todas del
