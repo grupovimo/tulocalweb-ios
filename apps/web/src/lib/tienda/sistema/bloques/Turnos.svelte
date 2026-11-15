@@ -14,8 +14,10 @@
 	const ctx = usarTienda();
 	const turnos = $derived(ctx.tienda.turnos);
 	const servicios = $derived((turnos?.servicios ?? []).slice(0, 4));
-	const reservar = (q: Record<string, string>) =>
-		`${ctx.base}/turnos?${new URLSearchParams(q).toString()}`;
+	const reservar = (q: Record<string, string>) => {
+		const s = new URLSearchParams(q).toString();
+		return `${ctx.base}/turnos${s ? `?${s}` : ''}`;
+	};
 	const hoy = $derived(
 		(proximos?.hoy ?? []).slice(0, 6).map((inicio) => ({
 			t: inicio.slice(11, 16),

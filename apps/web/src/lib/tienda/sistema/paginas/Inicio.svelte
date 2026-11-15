@@ -29,6 +29,12 @@
 	];
 	const bloques = $derived.by(() => {
 		const lista = [...diseno.inicio];
+		// Con turnos activos y sin el bloque en la portada, va igual después de la portada: si no,
+		// reservar queda escondido en el menú (las plantillas viejas los mostraban siempre).
+		if (tienda.turnos?.servicios.length && !lista.some((b) => b.tipo === 'turnos')) {
+			const i = lista.findIndex((b) => b.tipo === 'portada');
+			lista.splice(i + 1, 0, { id: 'turnosauto', tipo: 'turnos', variante: 'lista', datos: {} });
+		}
 		for (const r of RELLENO) {
 			if (lista.filter((b) => seDibuja(b, tienda)).length >= 3) break;
 			if (!lista.some((b) => b.tipo === r.tipo && !b.oculto)) lista.push(r);

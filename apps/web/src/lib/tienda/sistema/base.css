@@ -814,6 +814,12 @@
 .tv-portada-collage[data-n='1'] .tv-c1 {
 	grid-row: 1 / span 2;
 }
+.tv-portada-collage[data-n='1'][data-nota='true'] {
+	grid-template-columns: 5fr 4fr 3fr;
+}
+.tv-portada-collage[data-n='1'][data-nota='true'] .tv-c3 {
+	grid-row: 1 / span 2;
+}
 .tv-portada-nota-tile {
 	display: flex;
 	flex-direction: column;
@@ -1088,10 +1094,8 @@
 /* ---- Reseñas ------------------------------------------------------------------------- */
 
 .tv-resenas-prom {
-	display: flex;
-	align-items: center;
-	gap: 6px;
 	margin: 0;
+	text-wrap: balance;
 	font-size: 16px;
 	color: var(--t-zona-suave);
 }
@@ -1099,6 +1103,8 @@
 	color: var(--t-zona-texto);
 }
 .tv-resenas-prom svg {
+	margin-right: 4px;
+	vertical-align: -3px;
 	color: var(--t-ok);
 }
 .tv-resena {
@@ -2200,6 +2206,12 @@
 		gap: 8px;
 		height: 56px;
 	}
+	.tv-marca {
+		flex: 1 1 auto;
+	}
+	.tv-enc[data-variante='centrado'] .tv-marca {
+		flex: 0 1 auto;
+	}
 	.tv-marca-nombre {
 		font-size: 22px;
 	}
@@ -2220,6 +2232,17 @@
 	}
 	.tv-bolsa-texto {
 		display: none;
+	}
+	.tv-enc-turnos {
+		order: 9;
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		flex: none;
+	}
+	.tv-enc-acciones {
+		order: 10;
 	}
 	.tv-bolsa {
 		justify-content: flex-end;

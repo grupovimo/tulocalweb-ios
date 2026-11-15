@@ -147,8 +147,10 @@
 }
 
 /* Destacado y texto con imagen: en mitades con aire. */
-.tv[data-dir='vidriera'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto {
-	aspect-ratio: 4/5;
+@media (min-width: 760px) {
+	.tv[data-dir='vidriera'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto {
+		aspect-ratio: 4/5;
+	}
 }
 .tv[data-dir='vidriera'] .tv-uno-info .tv-h2 {
 	font-size: calc(var(--t-h2) * 1.08);

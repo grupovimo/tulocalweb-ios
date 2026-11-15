@@ -34,7 +34,7 @@
 	);
 	// En el centrado, «Nosotros» va a la derecha (A-moda); el resto del menú, a la izquierda.
 	const nosotros = $derived(ctx.nav.find((n) => n.href.endsWith('/nosotros')) ?? null);
-	const menu = $derived(v === 'centrado' ? ctx.nav.filter((n) => n !== nosotros) : ctx.nav);
+	const menu = $derived(v === 'izquierda' ? ctx.nav : ctx.nav.filter((n) => n !== nosotros));
 	const linea = $derived(
 		[
 			t.ciudad,
@@ -82,13 +82,19 @@
 <header class="tv-enc" data-variante={ctx.dir === 'pedido' ? 'pedido' : v} data-t-enc>
 	<div class="tv-enc-fila tv-ancho">
 		<MenuMovil />
+		<!-- En el celular, reservar turno a mano (en la compu va en el menú). Va primero en el DOM
+		para que el lector lo encuentre antes que el menú escondido; se ubica al lado de la bolsa. -->
+		{#if t.turnos}<a class="tv-enc-turnos tv-solo-movil" href="{ctx.base}/turnos" aria-label="Reservar turno"
+				><Icon icon={I.phCalendarPlusBold} size={22} /></a
+			>{/if}
 		{#if ctx.dir === 'pedido'}
 			{@render marca()}
 			{#if linea}<span class="tv-enc-linea tv-solo-compu">{linea}</span>{/if}
 			{#if conBuscador}<div class="tv-enc-buscar tv-solo-compu"><Buscador /></div>{/if}
 			<div class="tv-enc-acciones">{@render bolsa()}</div>
 		{:else if v === 'centrado'}
-			{@render nav(menu, 'tv-solo-compu')}
+			<!-- Sin pestañas, igual ocupa su columna: el logo queda al medio. -->
+			{#if menu.length}{@render nav(menu, 'tv-solo-compu')}{:else}<span class="tv-solo-compu"></span>{/if}
 			{@render marca()}
 			<div class="tv-enc-acciones">
 				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a>{/if}
@@ -107,7 +113,7 @@
 			<div class="tv-enc-acciones">{@render bolsa()}</div>
 		{/if}
 	</div>
-	{#if v === 'buscador' && ctx.dir !== 'pedido'}
+	{#if v === 'buscador' && ctx.dir !== 'pedido' && menu.length}
 		<div class="tv-enc-pestanas tv-solo-compu">
 			<div class="tv-ancho">{@render nav(menu, '')}</div>
 		</div>

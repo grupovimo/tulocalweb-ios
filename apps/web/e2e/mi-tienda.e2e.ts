@@ -55,9 +55,9 @@ test('mi tienda en bloques: agregar, reordenar, variante, tocar en la vista, edi
 	await expect(page.getByRole('radio', { name: 'Doble' })).toHaveAttribute('aria-checked', 'true');
 	await expect.poll(() => guardados).toBe(3);
 
-	// Reordenar con el teclado: el banner sube arriba de todo.
+	// Reordenar con el teclado: el banner sube arriba de todo (el último: la demo ya trae uno).
 	await page.getByRole('button', { name: 'Bloques', exact: true }).click();
-	await page.getByRole('button', { name: 'Mover Banner (con las flechas)' }).press('Home');
+	await page.getByRole('button', { name: 'Mover Banner (con las flechas)' }).last().press('Home');
 	await expect.poll(nombres).toEqual(['Banner', ...inicial]);
 
 	// Deshacer (vuelve al final) y rehacer.

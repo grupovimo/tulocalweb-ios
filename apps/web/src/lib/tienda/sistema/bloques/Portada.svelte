@@ -113,7 +113,11 @@
 			</div>
 		</div>
 	{:else if variante === 'collage'}
-		<div class="tv-portada-collage tv-ancho" data-n={Math.min(fotos.length, 3)}>
+		<div
+			class="tv-portada-collage tv-ancho"
+			data-n={Math.min(fotos.length, 3)}
+			data-nota={!!promedioVisible}
+		>
 			<div class="tv-portada-tile tv-z" data-fondo="oscuro">{@render textos(true)}</div>
 			{#each fotos.slice(0, 2) as f, i (f)}<div class="tv-portada-celda tv-c{i + 1}">
 					<Foto src={f} alt="" nombre={t.nombre} ancho={900} prioridad={i === 0} />

@@ -354,12 +354,15 @@
 
 /* Un producto: tarjeta blanca con la foto adentro (B-vacia). */
 .tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] {
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: 5fr 7fr;
 	gap: 40px;
 	padding: 14px;
 	border-radius: 28px;
 	background: var(--t-superficie);
 	box-shadow: var(--t-sombra);
+}
+.tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto {
+	aspect-ratio: 1;
 }
 .tv[data-dir='mostrador'] .tv-uno-caja[data-fondo='normal'] .tv-uno-foto .tv-foto {
 	border-radius: 14px;
@@ -431,6 +434,9 @@
 	}
 	.tv[data-dir='mostrador'] .tv-marca-nombre {
 		font-size: 20px;
+	}
+	.tv[data-dir='mostrador'] .tv-enc-fila {
+		gap: 8px;
 	}
 	.tv[data-dir='mostrador'] .tv-bolsa {
 		padding: 0 6px 0 6px;
