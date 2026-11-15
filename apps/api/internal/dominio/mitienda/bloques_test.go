@@ -144,7 +144,9 @@ func TestDisenoValido(t *testing.T) {
 		{"barra con seis", con(func(d *Diseno) {
 			d.Estilo = &Estilo{Barra: &Barra{Mensajes: slices.Repeat([]MensajeBarra{{Texto: "x"}}, 6)}}
 		}), false},
-		{"barra a otro lado", con(func(d *Diseno) { d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{Texto: "x", Link: "ftp://x"}}}} }), false},
+		{"barra a otro lado", con(func(d *Diseno) {
+			d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{Texto: "x", Link: "ftp://x"}}}}
+		}), false},
 		{"páginas bien", con(func(d *Diseno) {
 			d.Paginas = &Paginas{Catalogo: &PaginaCatalogo{"lista", "arriba", 3}, Carrito: &PaginaCarrito{"panel", &si},
 				Producto: &PaginaProducto{Variante: "carrusel", Relacionados: &si,

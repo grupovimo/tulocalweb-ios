@@ -249,7 +249,7 @@ func Marketing(ctx context.Context, pool tx, tiendaID string) (map[string]any, e
 			Descripcion string `json:"descripcion"`
 			Usos        string `json:"usos"`
 		}
-		filas, err := t.Query(ctx, `SELECT codigo, descripcion, usos::text || ' usos' FROM cupones WHERE tienda_id = $1 AND NOT pausado
+		filas, err := t.Query(ctx, `SELECT codigo, descripcion, usos::text || ' usos' FROM cupones WHERE tienda_id = $1 AND NOT pausado AND origen IS NULL
 			AND (empieza IS NULL OR empieza <= now()) AND (termina IS NULL OR termina > now()) AND (limite = 0 OR usos < limite)
 			ORDER BY usos DESC, creado_en DESC LIMIT 3`, tiendaID)
 		if err != nil {
@@ -260,7 +260,7 @@ func Marketing(ctx context.Context, pool tx, tiendaID string) (map[string]any, e
 			return err
 		}
 		var cupon *string
-		_ = t.QueryRow(ctx, `SELECT codigo FROM cupones WHERE tienda_id = $1 AND tipo = 'pct' AND NOT pausado
+		_ = t.QueryRow(ctx, `SELECT codigo FROM cupones WHERE tienda_id = $1 AND tipo = 'pct' AND NOT pausado AND origen IS NULL
 			AND (termina IS NULL OR termina > now()) ORDER BY usos DESC LIMIT 1`, tiendaID).Scan(&cupon)
 		que := "lo nuevo"
 		var foto *string

@@ -341,7 +341,7 @@ func pesosTxt(n int64) string {
 func Leer(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (map[string]any, error) {
 	res := map[string]any{}
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		filas, err := t.Query(ctx, `SELECT `+columnas+` FROM cupones WHERE tienda_id = $1 ORDER BY creado_en DESC LIMIT 500`, tiendaID)
+		filas, err := t.Query(ctx, `SELECT `+columnas+` FROM cupones WHERE tienda_id = $1 AND origen IS NULL ORDER BY creado_en DESC LIMIT 500`, tiendaID)
 		if err != nil {
 			return err
 		}

@@ -80,6 +80,8 @@ type ProductoPublico struct {
 	Reserva     *int       `json:"reserva"`
 	Encargo     *int       `json:"encargo"`
 	OfertaHasta *time.Time `json:"ofertaHasta"`
+	// Alta: cuándo se cargó (la etiqueta «Nuevo» de estilo.conversion: 14 días o menos).
+	Alta time.Time `json:"alta"`
 }
 
 // VariantePublica: sólo las activas, sin SKU. Precio nil = el del producto.
@@ -126,6 +128,9 @@ type Tienda struct {
 	Categorias  []Categoria       `json:"categorias"`
 	Productos   []ProductoPublico `json:"productos"`
 	MasVendidos []string          `json:"masVendidos"`
+	// TopVendidos: hasta 3 ids de los que más se vendieron en 30 días (con alguna venta): la etiqueta
+	// «Más vendido» de estilo.conversion. MasVendidos, en cambio, ordena todo el catálogo.
+	TopVendidos []string `json:"topVendidos"`
 	Resenas     []ResenaPublica   `json:"resenas"`
 	// Preguntas respondidas, por producto.
 	Preguntas []PreguntaPublica `json:"preguntas"`
@@ -225,7 +230,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		return Tienda{}, err
 	}
 	out := Tienda{Slug: slug, Resenas: []ResenaPublica{}, Preguntas: []PreguntaPublica{},
-		Fotos: []string{}, MasVendidos: []string{}}
+		Fotos: []string{}, MasVendidos: []string{}, TopVendidos: []string{}}
 	// Los más vendidos de los últimos 30 días (los ítems de los pedidos guardan el nombre).
 	vendidos := map[string]int{}
 	err = pool.EnTienda(ctx, id, func(t pgx.Tx) error {
@@ -332,7 +337,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		// Todo el catálogo visible (los 500 más nuevos) y, si los bloques nombran alguno más viejo
 		// (destacado, combo, elegidos a mano, links prod:), también ese.
 		const columnas = `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
-				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista FROM productos
+				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista, creado_en FROM productos
 			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true)`
 		filas, err := t.Query(ctx, columnas+` ORDER BY creado_en DESC LIMIT 500`, id)
 		if err != nil {
@@ -419,6 +424,9 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 	var nombres []string
 	for _, p := range orden {
 		out.MasVendidos = append(out.MasVendidos, p.ID)
+		if len(out.TopVendidos) < 3 && vendidos[p.Nombre] > 0 {
+			out.TopVendidos = append(out.TopVendidos, p.ID)
+		}
 		if p.Foto != nil && len(out.Fotos) < 6 && !contiene(out.Fotos, *p.Foto) {
 			out.Fotos = append(out.Fotos, *p.Foto)
 		}
@@ -466,7 +474,7 @@ func leerProductos(filas pgx.Rows, out *Tienda, variantes map[string][]listas.Va
 		var p ProductoPublico
 		var l lanzamiento
 		if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
-			&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista); err != nil {
+			&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista, &p.Alta); err != nil {
 			return err
 		}
 		p.Mayorista = soloSi(p.Mayorista)

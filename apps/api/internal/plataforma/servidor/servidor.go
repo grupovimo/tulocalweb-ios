@@ -33,6 +33,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/partners"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/precios"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/promos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/roles"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
@@ -248,6 +249,8 @@ func Nuevo(d Dependencias) http.Handler {
 			d.CorreoArgentino.Rutas(mux, d.App, ip)
 		}
 		vidriera.Rutas(mux, d.App, pagador, d.Sitio, dev, ip, correo)
+		// Ventanas de la tienda (captar, ruleta, eventos, compras recientes) y sus números en el panel.
+		promos.Rutas(mux, d.App, tienda, ip)
 		// Lanzamientos, ofertas con fin y señas (§52): el editor, «saldado» y «Avisame cuando salga».
 		lanzamientos.Rutas(mux, d.App, tienda, ip)
 		// Las visitas de las tiendas las manda la web por lotes, con su clave.

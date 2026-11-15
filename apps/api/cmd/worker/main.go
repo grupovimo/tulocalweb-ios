@@ -20,6 +20,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/lanzamientos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/notificaciones"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/promos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/visitas"
@@ -102,6 +103,8 @@ func correr() error {
 	av := &avisos.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	// Newsletter de cada tienda (§50): la confirmación y las tandas de cada novedad, con tope diario.
 	nl := &newsletter.Mails{Pool: app, Correo: mails, Sitio: cfg.Sitio}
+	// Ventanas de la tienda: el mail con el premio de quien dejó su email.
+	pr := &promos.Mails{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	// Aviso de cada venta al Telegram de la dueña. Sin token, el manejador no manda nada.
 	tg := &telegram.Servicio{Pool: app, Bot: &telegram.Bot{Token: cfg.TelegramToken}}
 	// Importación desde otra plataforma: cada paso guarda una página y encola el siguiente.
@@ -136,7 +139,7 @@ func correr() error {
 	// Lanzamientos (§52): «Ya salió» a quienes pidieron aviso, de a tandas.
 	lz := &lanzamientos.Servicio{Pool: app, Correo: mails, Sitio: cfg.Sitio}
 	for _, ms := range []map[string]outbox.Manejador{mp.Manejadores(), ml.Manejadores(), av.Manejadores(), mc.Manejadores(), tg.Manejadores(), equipo.Manejadores(mails), imp.Manejadores(),
-		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores(), lz.Manejadores(), nl.Manejadores()} {
+		cuentas.Manejadores(mails, cfg.Sitio), ps.Manejadores(), conv.Manejadores(), lz.Manejadores(), nl.Manejadores(), pr.Manejadores()} {
 		for tipo, m := range ms {
 			w.Manejadores[tipo] = m
 		}

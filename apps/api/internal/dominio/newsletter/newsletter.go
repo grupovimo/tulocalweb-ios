@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -95,6 +96,32 @@ func SuscribirEnTx(ctx context.Context, t pgx.Tx, tienda, email, origen string) 
 	return outbox.Publicar(ctx, t, tienda, "newsletter.confirmar", map[string]string{"id": id})
 }
 
+// Captado: el resultado de sumar un contacto desde una ventana de la tienda.
+type Captado struct {
+	ID, Token string
+	// Pendiente: todavía no confirmó (el mail del premio lleva el botón para confirmar).
+	Pendiente bool
+}
+
+var reOrigenVentana = regexp.MustCompile(`^ventana:[a-z0-9]{6,16}$`)
+
+// SuscribirDesdeVentana suma el contacto que dejó su email en una ventana (con su consentimiento),
+// pendiente hasta confirmar como siempre, pero sin el mail de confirmación aparte: lo lleva el mail del
+// premio (promos). Si ya estaba, conserva su origen y su confirmación, y suma el nombre y el WhatsApp
+// que no tenía.
+func SuscribirDesdeVentana(ctx context.Context, t pgx.Tx, tienda, email, origen string, nombre, whatsapp *string) (Captado, error) {
+	e, ok := Email(email)
+	if !ok || !reOrigenVentana.MatchString(origen) {
+		return Captado{}, ErrInvalido
+	}
+	var c Captado
+	err := t.QueryRow(ctx, `INSERT INTO suscriptores (tienda_id, email, origen, token, nombre, whatsapp) VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (tienda_id, lower(email)) DO UPDATE SET nombre = coalesce(suscriptores.nombre, EXCLUDED.nombre),
+			whatsapp = coalesce(suscriptores.whatsapp, EXCLUDED.whatsapp)
+		RETURNING id::text, token, confirmado_en IS NULL`, tienda, e, origen, nuevoToken(), nombre, whatsapp).Scan(&c.ID, &c.Token, &c.Pendiente)
+	return c, err
+}
+
 func tokenValido(token string) bool {
 	if len(token) < 20 || len(token) > 64 {
 		return false
@@ -137,9 +164,13 @@ func Baja(ctx context.Context, pool tx, tienda, token string) error {
 
 // Suscriptor es una fila de la lista del panel (components/schemas/Newsletter).
 type Suscriptor struct {
-	ID           string     `json:"id"`
-	Email        string     `json:"email"`
-	Origen       string     `json:"origen"`
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	// Origen: tienda, checkout o «ventana:<id>» (una ventana de captación o la ruleta).
+	Origen string `json:"origen"`
+	// Nombre y WhatsApp: si la ventana que lo captó los pidió.
+	Nombre       *string    `json:"nombre,omitempty"`
+	Whatsapp     *string    `json:"whatsapp,omitempty"`
 	Confirmado   bool       `json:"confirmado"`
 	Creado       time.Time  `json:"creado"`
 	ConfirmadoEn *time.Time `json:"confirmadoEn"`
@@ -189,14 +220,14 @@ const MaxLista = 5000
 func Leer(ctx context.Context, pool tx, tienda string, ahora time.Time) (Panel, error) {
 	p := Panel{Suscriptores: []Suscriptor{}, Envios: []Envio{}, Tope: TopeDiario, Productos: []Elegible{}}
 	err := pool.EnTienda(ctx, tienda, func(t pgx.Tx) error {
-		filas, err := t.Query(ctx, `SELECT id::text, email, origen, creado, confirmado_en FROM suscriptores
+		filas, err := t.Query(ctx, `SELECT id::text, email, origen, nombre, whatsapp, creado, confirmado_en FROM suscriptores
 			WHERE tienda_id = $1 ORDER BY creado DESC, id LIMIT $2`, tienda, MaxLista)
 		if err != nil {
 			return err
 		}
 		for filas.Next() {
 			var s Suscriptor
-			if err := filas.Scan(&s.ID, &s.Email, &s.Origen, &s.Creado, &s.ConfirmadoEn); err != nil {
+			if err := filas.Scan(&s.ID, &s.Email, &s.Origen, &s.Nombre, &s.Whatsapp, &s.Creado, &s.ConfirmadoEn); err != nil {
 				filas.Close()
 				return err
 			}
