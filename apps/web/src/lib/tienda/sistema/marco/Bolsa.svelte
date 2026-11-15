@@ -100,6 +100,6 @@
 		>
 		{#if wa}<Boton href={wa} tipo="suave" bloque externo>Consultar por WhatsApp</Boton>{/if}
 	{:else}
-		<p class="tv-bolsa-vacia">Todavía está vacía.</p>
+		<p class="tv-bolsa-vacia">Todavía no sumaste&nbsp;nada.</p>
 	{/if}
 </aside>

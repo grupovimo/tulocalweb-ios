@@ -2,7 +2,7 @@
 	import PieEstilo from '../../PieEstilo.svelte';
 	import { AltaNewsletter } from '../../newsletter.svelte.ts';
 	import { usarTienda } from '../contexto.ts';
-	import { categoriaHref, waHref } from '../datos.ts';
+	import { categoriaHref, productoHref, waHref } from '../datos.ts';
 	import type { Pie } from '../presets.ts';
 	import Boton from '../primitivas/Boton.svelte';
 
@@ -33,13 +33,24 @@
 			...(t.cobros.datosTransferencia ? ['Transferencia'] : [])
 		].join(' · ')
 	);
-	const tiendaLinks = $derived([
-		{ t: 'Todos los productos', href: `${ctx.base}/catalogo` },
-		...t.categorias
-			.filter((c) => c.cantidad > 0)
-			.slice(0, 4)
-			.map((c) => ({ t: c.nombre, href: categoriaHref(t, c.nombre) }))
-	]);
+	// Igual que el menú: con un producto, su ficha; las categorías, sólo si hay más de una (una sola
+	// repetía «Todos los productos» con otro nombre).
+	const cats = $derived(t.categorias.filter((c) => c.cantidad > 0));
+	const tiendaLinks = $derived(
+		t.productos.length === 1
+			? [
+					{
+						t: t.productos[0].nombre.length <= 24 ? t.productos[0].nombre : 'El producto',
+						href: productoHref(t, t.productos[0])
+					}
+				]
+			: [
+					{ t: 'Todos los productos', href: `${ctx.base}/catalogo` },
+					...(cats.length > 1
+						? cats.slice(0, 4).map((c) => ({ t: c.nombre, href: categoriaHref(t, c.nombre) }))
+						: [])
+				]
+	);
 	const ayuda = $derived([
 		{ t: 'Envíos', href: `${ctx.base}/nosotros` },
 		{ t: 'Cambios y devoluciones', href: `${ctx.base}/arrepentimiento` },
@@ -99,7 +110,7 @@
 				<div class="tv-pie-marca">
 					<p class="tv-pie-nombre">{t.nombre}</p>
 					{#if ctx.dir === 'vidriera'}
-						<p class="tv-pie-texto">Te avisamos cuando hay novedades. Un mail por mes, nada más.</p>
+						<p class="tv-pie-texto">Te avisamos cuando hay novedades.</p>
 						{@render newsletter()}
 					{:else}
 						{#if lema}<p class="tv-pie-texto">{lema}</p>{/if}

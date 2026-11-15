@@ -4,13 +4,14 @@
 	import { menuPropio } from '../../estilo/menu.ts';
 	import type { TiendaPublica } from '../../tipos.ts';
 	import { ponerTienda, type ItemNav } from '../contexto.ts';
-	import { baseDe, categoriaHref } from '../datos.ts';
+	import { baseDe, categoriaHref, productoHref } from '../datos.ts';
 	import { disenoDeTienda } from '../migrar.ts';
 	import { estiloFinal } from '../presets.ts';
 	import { hojaFuentes, variables } from '../tokens.ts';
 	import { funcionesDe, opcionesPaginas } from '../paginas.ts';
 	import { favoritosDe } from '../favoritos.svelte.ts';
 	import { conversionDe } from '../promos.ts';
+	import { colorValido, esOscuro } from '../../estilo/css.ts';
 	import PruebaSocial from './PruebaSocial.svelte';
 	import Aviso18 from './Aviso18.svelte';
 	import Barra from './Barra.svelte';
@@ -72,7 +73,19 @@
 		const propio = menuPropio({ estilo: diseno.estilo ?? tienda.estilo }, base);
 		if (propio) return propio;
 		const cats = tienda.categorias.filter((c) => c.cantidad > 0);
+		// Con un solo producto, el menú lleva a su ficha con su nombre (si es corto): si no, quedaba
+		// sólo «Nosotros» y no había por dónde ir a comprar.
+		const unico = tienda.productos.length === 1 ? tienda.productos[0] : null;
 		return [
+			...(unico && unico.nombre
+				? [
+						{
+							t: unico.nombre.length <= 24 ? unico.nombre : 'El producto',
+							href: productoHref(tienda, unico),
+							on: pagina === 'producto'
+						}
+					]
+				: []),
 			...(tienda.productos.length > 1
 				? [
 						{
@@ -133,10 +146,20 @@
 		}
 	});
 	const fuentes = $derived(hojaFuentes(estilo));
+	// El fondo de la página entera (el canal de la barra de desplazamiento, el rebote del celular) con
+	// el de la tienda: si no, quedaba la crema de Tu Local Web al costado de una tienda oscura.
+	const fondoPagina = $derived.by(() => {
+		const f = colorValido(estilo.colores.fondo);
+		return f
+			? `<style>html{background:${f};color-scheme:${esOscuro(f) ? 'dark' : 'light'}}</style>`
+			: '';
+	});
 </script>
 
 <svelte:head>
 	{#if fuentes}<link rel="stylesheet" href={fuentes} />{/if}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- un color ya validado -->
+	{@html fondoPagina}
 </svelte:head>
 
 <div

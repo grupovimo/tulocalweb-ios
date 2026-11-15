@@ -83,6 +83,18 @@
 .tv-bloques > .tv-b + .tv-b {
 	margin-top: var(--t-ritmo);
 }
+/* El ritmo según el peso de lo que se separa: una franja liviana (beneficios, logos) no necesita
+   el aire entero de la dirección arriba y abajo (en Vidriera aireada quedaban 240 px de vacío
+   alrededor de una línea de texto), y las cajas de la misma clase seguidas (textos con foto,
+   banners) se leen como una serie. */
+.tv-bloques > .tv-b + .tv-b:is([data-tipo='beneficios'], [data-tipo='logos']),
+.tv-bloques > .tv-b:is([data-tipo='beneficios'], [data-tipo='logos']) + .tv-b {
+	margin-top: calc(var(--t-ritmo) * 0.6);
+}
+.tv-bloques > .tv-b[data-tipo='textoImagen'] + .tv-b[data-tipo='textoImagen'],
+.tv-bloques > .tv-b[data-tipo='banner'] + .tv-b[data-tipo='banner'] {
+	margin-top: calc(var(--t-ritmo) * 0.5);
+}
 @media (max-width: 999px) {
 	.tv {
 		--t-margen: 24px !important;
@@ -2494,9 +2506,12 @@
 	place-items: center;
 	width: 30px;
 	height: 64px;
-	border-radius: 12px 0 0 12px;
-	background: #25d366;
-	color: #fff;
+	/* Con los colores y la forma de la tienda (el handoff no lo dibuja: se arma con el acento y el
+	   radio de sus botones); el ícono ya dice que es WhatsApp. El verde de la marca chocaba con
+	   muchas paletas. */
+	border-radius: min(var(--t-r-boton), 12px) 0 0 min(var(--t-r-boton), 12px);
+	background: var(--t-acento);
+	color: var(--t-sobre-acento);
 	box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.4);
 	transition: width 0.15s;
 }
