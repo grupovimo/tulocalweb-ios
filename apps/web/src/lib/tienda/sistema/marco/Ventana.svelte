@@ -181,6 +181,7 @@
 			accion = true;
 			anotarHecha(ctx.tienda.slug, w.id);
 			porcion = r.porcion ?? null;
+			ganado = r.texto ?? (porcion !== null ? (porciones[porcion] ?? '') : '');
 			if (porcion === null) return void ganar(r.premio);
 			girando = true;
 			premioPendiente = r.premio;
@@ -194,6 +195,8 @@
 		}
 	}
 	let premioPendiente: PremioGanado | null = null;
+	/** El texto de la porción que salió en la ruleta («10 % off»). */
+	let ganado = $state('');
 	async function ganar(p: PremioGanado) {
 		premio = p;
 		girando = false;
@@ -210,7 +213,9 @@
 			? ''
 			: premio.tipo === 'nada' && w.contenido === 'ruleta'
 				? '¡Gracias por jugar!'
-				: '¡Listo!'
+				: w.contenido === 'ruleta' && ganado
+					? `¡Ganaste ${ganado}!`
+					: '¡Listo!'
 	);
 </script>
 
@@ -287,7 +292,9 @@
 {#snippet resultado()}
 	{#if premio}
 		<div class="tv-vent-listo" id="{uid}-listo" tabindex="-1">
-			<p class="tv-h3">{tituloPremio}</p>
+			{#if !listo || premio.tipo === 'nada' || w.contenido === 'ruleta'}<p class="tv-h3">
+					{tituloPremio}
+				</p>{/if}
 			{#if premio.tipo === 'nada'}
 				<p class="tv-lead">
 					{w.contenido === 'ruleta'

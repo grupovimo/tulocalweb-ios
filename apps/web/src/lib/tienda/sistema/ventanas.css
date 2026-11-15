@@ -139,6 +139,7 @@
 /* El cupón: el código con «Copiar». */
 .tv-vent-cupon {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 10px;
 	padding: 8px 8px 8px 18px;
@@ -146,11 +147,10 @@
 	border-radius: min(var(--t-r-boton), 16px);
 }
 .tv-vent-codigo {
-	flex: 1;
-	min-width: 0;
-	font: 700 20px/1.2 var(--t-f-titulos);
-	letter-spacing: 0.08em;
-	overflow-wrap: anywhere;
+	flex: 1 1 auto;
+	font: 700 clamp(16px, 4.6vw, 20px) / 1.2 var(--t-f-titulos);
+	letter-spacing: 0.06em;
+	white-space: nowrap;
 	user-select: all;
 }
 .tv-vent-estado {
@@ -479,7 +479,7 @@
 	position: static;
 	white-space: nowrap;
 }
-.tv .tv-prod-chips .tv-chip--nuevo {
+.tv[data-dir] .tv-prod-chips .tv-prod-chip.tv-chip--nuevo {
 	background: var(--t-texto);
 	color: var(--t-fondo);
 }
@@ -494,7 +494,7 @@
 		display: none;
 	}
 }
-.tv .tv-prod-chips .tv-chip--ultimas {
+.tv[data-dir] .tv-prod-chips .tv-prod-chip.tv-chip--ultimas {
 	background: color-mix(in srgb, var(--t-error, #b42318) 12%, var(--t-fondo));
 	color: var(--t-error, #b42318);
 }
@@ -601,6 +601,9 @@
 }
 .tv-social a {
 	font-weight: 600;
+}
+.tv-social-hace {
+	white-space: nowrap;
 }
 .tv:has(.tv-reserva-barra) .tv-social-zona {
 	bottom: calc(100px + env(safe-area-inset-bottom));

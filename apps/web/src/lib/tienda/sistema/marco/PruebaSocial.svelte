@@ -80,7 +80,7 @@
 			<p>
 				<b>{c.nombre}{c.provincia ? ` de ${c.provincia}` : ''}</b> compró
 				{#if href}<a {href}>{c.producto}</a>{:else}{c.producto}{/if}
-				<span class="tv-suave">· {hace(c.cuando)}</span>
+				<span class="tv-suave tv-social-hace">·&nbsp;{hace(c.cuando)}</span>
 			</p>
 			<button
 				type="button"
