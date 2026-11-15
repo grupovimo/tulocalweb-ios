@@ -162,7 +162,8 @@ export function variables(e: EstiloFinal): string {
 		'--t-r-grande': `${rg}px`,
 		'--t-ritmo': `${ritmo}px`,
 		'--t-margen': `${MARGEN[e.direccion]}px`,
-		'--t-ancho': e.ancho === 'amplio' ? '1920px' : '1440px',
+		// Normal como un max-w-7xl (1280): en un monitor grande la tienda no se desparrama.
+		'--t-ancho': e.ancho === 'amplio' ? '1536px' : '1280px',
 		'--t-foto': foto
 	};
 	return Object.entries(vars)

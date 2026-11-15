@@ -695,6 +695,16 @@
 	height: 720px;
 	overflow: hidden;
 }
+/* En un monitor grande la portada a todo el ancho se recortaba hasta perder el producto (a 2560 px
+   quedaba una franja de 2560 × 720): desde 1600 px queda contenida al ancho de la página, con el
+   radio de las fotos de la marca. */
+@media (min-width: 1600px) {
+	.tv-portada-foto.tv-ancho-foto {
+		max-width: calc(var(--t-ancho) - 2 * var(--t-margen));
+		margin-inline: auto;
+		border-radius: var(--t-r-grande);
+	}
+}
 .tv-portada-foto .tv-foto,
 .tv-portada-slide {
 	position: absolute;
