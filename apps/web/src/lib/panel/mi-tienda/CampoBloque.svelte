@@ -84,8 +84,8 @@
 
 {#snippet rotulo()}
 	<span class="rotulo"
-		>{campo.nombre}{#if campo.requerido}<span class="req" aria-hidden="true">
-				·&nbsp;obligatorio</span
+		>{campo.nombre}{#if campo.requerido}<span class="req" aria-hidden="true"
+				>&#32;·&nbsp;obligatorio</span
 			>{/if}</span
 	>
 {/snippet}

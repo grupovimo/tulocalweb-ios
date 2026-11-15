@@ -314,7 +314,7 @@
 
 <Seo title="Mi tienda · Panel" description="Editor de la tienda" path="/panel/mi-tienda" noindex />
 
-<div class="pagina">
+<div class="pagina" class:en-vista={modo === 'vista'}>
 	<div class="cab" use:anim={{ t: 'rise' }}>
 		<div class="c-txt">
 			<h1>Mi tienda</h1>
@@ -349,7 +349,7 @@
 		/>
 	</div>
 
-	<div class="editor" class:en-vista={modo === 'vista'} use:anim={{ t: 'rise', delay: 60 }}>
+	<div class="editor" use:anim={{ t: 'rise', delay: 60 }}>
 		<div class="panelito columna" bind:this={columna}>
 			<div class="herramientas">
 				<Segmentado
@@ -474,108 +474,107 @@
 				/>
 			</div>
 			<p class="c-nota centro">Tocá un bloque en la vista para editarlo.</p>
-
-			<section class="panelito compartir" aria-labelledby="t-compartir">
-				<div class="p-t" id="t-compartir">Al compartir el link</div>
-				<div class="c-grid">
-					<div class="c-campos">
-						<label class="campo"
-							><span>Título</span><input
-								class="input"
-								maxlength={LARGO_TITULO}
-								placeholder={sugeridos.titulo}
-								value={diseno.compartirTitulo ?? ''}
-								oninput={(e) =>
-									cambiar({ ...diseno, compartirTitulo: e.currentTarget.value }, false)}
-								onchange={confirmarCambios}
-							/></label
-						>
-						<label class="campo"
-							><span>Descripción</span><textarea
-								class="textarea"
-								rows="3"
-								maxlength={LARGO_DESCRIPCION}
-								placeholder={sugeridos.descripcion}
-								value={diseno.compartirDescripcion ?? ''}
-								oninput={(e) =>
-									cambiar({ ...diseno, compartirDescripcion: e.currentTarget.value }, false)}
-								onchange={confirmarCambios}></textarea></label
-						>
-						<div class="campo">
-							<span>Imagen</span>
-							<Segmentado
-								label="Imagen al compartir"
-								opciones={[
-									['armada', 'La de tu plantilla'],
-									['propia', 'Una foto tuya']
-								]}
-								value={imagenPropia ? 'propia' : 'armada'}
-								onchange={elegirImagen}
-							/>
-						</div>
-						{#if imagenPropia}
-							<div class="foto-fila">
-								<div class="miniatura">
-									{#if diseno.compartirFoto}<img src={diseno.compartirFoto} alt="" />{:else}<Icon
-											icon={I.phImageFill}
-											size={18}
-										/>{/if}
-								</div>
-								<div class="f-txt">
-									<b>Foto para compartir</b>
-									<span>{diseno.compartirFoto ? 'Subida' : 'Se recorta a 1200 × 630'}</span>
-								</div>
-								<label class="mini-btn" class:ocupado={subiendoCompartir}>
-									{subiendoCompartir ? 'Subiendo…' : diseno.compartirFoto ? 'Cambiar' : 'Subir'}
-									<input
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										class="sr-only"
-										disabled={subiendoCompartir}
-										onchange={subirCompartir}
-									/>
-								</label>
-								{#if diseno.compartirFoto}<button
-										type="button"
-										class="mini-btn icono"
-										aria-label="Quitar la foto para compartir"
-										onclick={() => cambiar({ ...diseno, compartirFoto: undefined })}
-										><Icon icon={I.phTrash} size={15} /></button
-									>{/if}
-							</div>
-						{/if}
-						<p class="c-nota">
-							Vacíos, van los sugeridos. Se aplica al publicar; en un chat donde ya estaba el link,
-							WhatsApp puede seguir mostrando la vista&nbsp;anterior.
-						</p>
-					</div>
-					<div class="chat-wa">
-						<div class="wa-t">Así se ve en WhatsApp</div>
-						<div class="burbuja">
-							<div class="tarjeta-wa">
-								<div class="t-img" class:cargando={cargandoImagen}>
-									<img
-										src={imagenPrevia}
-										alt="Imagen al compartir {data.vista.tienda}"
-										onload={() => (cargandoImagen = false)}
-										onerror={() => (cargandoImagen = false)}
-									/>
-								</div>
-								<div class="t-txt">
-									<b>{diseno.compartirTitulo?.trim() || sugeridos.titulo}</b>
-									<span class="t-desc"
-										>{diseno.compartirDescripcion?.trim() || sugeridos.descripcion}</span
-									>
-									<span class="t-host">{host}</span>
-								</div>
-							</div>
-							<span class="b-url">https://{data.direccion}</span>
-						</div>
-					</div>
-				</div>
-			</section>
 		</div>
 	</div>
+
+	<section class="panelito compartir" aria-labelledby="t-compartir">
+		<div class="p-t" id="t-compartir">Al compartir el link</div>
+		<div class="c-grid">
+			<div class="c-campos">
+				<label class="campo"
+					><span>Título</span><input
+						class="input"
+						maxlength={LARGO_TITULO}
+						placeholder={sugeridos.titulo}
+						value={diseno.compartirTitulo ?? ''}
+						oninput={(e) => cambiar({ ...diseno, compartirTitulo: e.currentTarget.value }, false)}
+						onchange={confirmarCambios}
+					/></label
+				>
+				<label class="campo"
+					><span>Descripción</span><textarea
+						class="textarea"
+						rows="3"
+						maxlength={LARGO_DESCRIPCION}
+						placeholder={sugeridos.descripcion}
+						value={diseno.compartirDescripcion ?? ''}
+						oninput={(e) =>
+							cambiar({ ...diseno, compartirDescripcion: e.currentTarget.value }, false)}
+						onchange={confirmarCambios}></textarea></label
+				>
+				<div class="campo">
+					<span>Imagen</span>
+					<Segmentado
+						label="Imagen al compartir"
+						opciones={[
+							['armada', 'La de tu plantilla'],
+							['propia', 'Una foto tuya']
+						]}
+						value={imagenPropia ? 'propia' : 'armada'}
+						onchange={elegirImagen}
+					/>
+				</div>
+				{#if imagenPropia}
+					<div class="foto-fila">
+						<div class="miniatura">
+							{#if diseno.compartirFoto}<img src={diseno.compartirFoto} alt="" />{:else}<Icon
+									icon={I.phImageFill}
+									size={18}
+								/>{/if}
+						</div>
+						<div class="f-txt">
+							<b>Foto para compartir</b>
+							<span>{diseno.compartirFoto ? 'Subida' : 'Se recorta a 1200 × 630'}</span>
+						</div>
+						<label class="mini-btn" class:ocupado={subiendoCompartir}>
+							{subiendoCompartir ? 'Subiendo…' : diseno.compartirFoto ? 'Cambiar' : 'Subir'}
+							<input
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								class="sr-only"
+								disabled={subiendoCompartir}
+								onchange={subirCompartir}
+							/>
+						</label>
+						{#if diseno.compartirFoto}<button
+								type="button"
+								class="mini-btn icono"
+								aria-label="Quitar la foto para compartir"
+								onclick={() => cambiar({ ...diseno, compartirFoto: undefined })}
+								><Icon icon={I.phTrash} size={15} /></button
+							>{/if}
+					</div>
+				{/if}
+				<p class="c-nota">
+					Vacíos, van los sugeridos. Se aplica al publicar; en un chat donde ya estaba el link,
+					WhatsApp puede seguir mostrando la vista&nbsp;anterior.
+				</p>
+			</div>
+			<div class="chat-wa">
+				<div class="wa-t">Así se ve en WhatsApp</div>
+				<div class="burbuja">
+					<div class="tarjeta-wa">
+						<div class="t-img" class:cargando={cargandoImagen}>
+							<img
+								src={imagenPrevia}
+								alt="Imagen al compartir {data.vista.tienda}"
+								onload={() => (cargandoImagen = false)}
+								onerror={() => (cargandoImagen = false)}
+							/>
+						</div>
+						<div class="t-txt">
+							<b>{diseno.compartirTitulo?.trim() || sugeridos.titulo}</b>
+							<span class="t-desc"
+								>{diseno.compartirDescripcion?.trim() || sugeridos.descripcion}</span
+							>
+							<span class="t-host">{host}</span>
+						</div>
+					</div>
+					<span class="b-url">https://{data.direccion}</span>
+				</div>
+			</div>
+		</div>
+	</section>
 </div>
 
 <Biblioteca bind:open={biblioteca} {lista} {donde} onelegir={agregar} />
@@ -1040,13 +1039,13 @@
 		.derecha {
 			position: static;
 		}
-		.editor:not(.en-vista) .navegador,
-		.editor:not(.en-vista) .dispositivo,
-		.editor:not(.en-vista) .c-nota.centro {
+		.pagina:not(.en-vista) .navegador,
+		.pagina:not(.en-vista) .dispositivo,
+		.pagina:not(.en-vista) .c-nota.centro {
 			display: none;
 		}
-		.editor.en-vista .columna,
-		.editor.en-vista .compartir {
+		.pagina.en-vista .columna,
+		.pagina.en-vista .compartir {
 			display: none;
 		}
 	}
