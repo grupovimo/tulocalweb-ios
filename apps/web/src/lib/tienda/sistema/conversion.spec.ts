@@ -53,4 +53,27 @@ describe('etiquetas automáticas', () => {
 		const c = conversionDe({ conversion: { stockBajo: 5 } });
 		expect(textos(p({ id: 'x', stock: 5 }), c)).toEqual(['Últimas 5']);
 	});
+	test('Nuevo no sale si casi todos serían nuevos: no distingue', () => {
+		const alta = '2026-11-10T00:00:00Z';
+		const productos = [
+			p({ id: 'a', alta }),
+			p({ id: 'b', alta }),
+			p({ id: 'c', alta }),
+			p({ id: 'd' })
+		];
+		const de = (x: ProductoPublico) =>
+			etiquetasDe(x, { ...t, productos }, conversionDe({}), ahora).map((e) => e.texto);
+		expect(de(productos[0])).toEqual([]);
+		const pocos = [p({ id: 'a', alta }), p({ id: 'b' }), p({ id: 'c' }), p({ id: 'd' })];
+		expect(
+			etiquetasDe(pocos[0], { ...t, productos: pocos }, conversionDe({}), ahora).map((e) => e.texto)
+		).toEqual(['Nuevo']);
+	});
+	test('Más vendido no sale con 1 a 3 productos', () => {
+		const tres = [p({ id: 'p1' }), p({ id: 'p2' }), p({ id: 'p3' })];
+		const de = (productos: ProductoPublico[]) =>
+			etiquetasDe(productos[0], { ...t, productos }, conversionDe({}), ahora).map((e) => e.texto);
+		expect(de(tres)).toEqual([]);
+		expect(de([...tres, p({ id: 'p4' })])).toEqual(['Más vendido']);
+	});
 });

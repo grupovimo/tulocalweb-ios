@@ -25,14 +25,43 @@ export const top3 = (t: Pick<TiendaPublica, 'masVendidos' | 'topVendidos'>) =>
 /** Desde cuántas unidades se avisa que quedan pocas (0: nunca). */
 export const umbralStock = (c: Conversion) => c.stockBajo;
 
+const esNuevo = (p: ProductoPublico, ahora: number) => {
+	const alta = p.alta ? Date.parse(p.alta) : NaN;
+	return Number.isFinite(alta) && ahora - alta <= 14 * DIA && ahora >= alta;
+};
+
+/** Con menos de 4 productos, «Más vendido» no distingue a nadie (el top 3 es casi toda la tienda). */
+export const MIN_PRODUCTOS_TOP = 4;
+
+const distinguen = new WeakMap<ProductoPublico[], { nuevo: boolean; top: boolean }>();
+/**
+ * Si las etiquetas automáticas distinguen algo en esta tienda: una etiqueta que llevan todos es
+ * ruido. «Nuevo» no sale si más de la mitad de los productos lo serían (una tienda recién abierta
+ * o recién importada); «Más vendido», con menos de 4 productos.
+ */
+export function etiquetasQueDistinguen(productos: ProductoPublico[] | undefined, ahora: number) {
+	if (!productos) return { nuevo: true, top: true };
+	const ya = distinguen.get(productos);
+	if (ya) return ya;
+	const vivos = productos.filter((p) => !!p.nombre && !proximamente(p));
+	const nuevos = vivos.filter((p) => esNuevo(p, ahora)).length;
+	const r = {
+		nuevo: vivos.length >= 2 && nuevos * 2 <= vivos.length,
+		top: vivos.length >= MIN_PRODUCTOS_TOP
+	};
+	distinguen.set(productos, r);
+	return r;
+}
+
 /**
  * Las etiquetas de un producto, en orden de importancia: la oferta (−X %), la propia de la tienda,
  * Nuevo (cargado hace 14 días o menos), Últimas N (con poco stock) y Más vendido (top 3 de 30
- * días). Próximamente o sin stock no llevan otra.
+ * días). Próximamente o sin stock no llevan otra. Con los productos de la tienda, Nuevo y Más
+ * vendido sólo salen si distinguen (etiquetasQueDistinguen).
  */
 export function etiquetasDe(
 	p: ProductoPublico,
-	t: Pick<TiendaPublica, 'masVendidos' | 'topVendidos'>,
+	t: Pick<TiendaPublica, 'masVendidos' | 'topVendidos'> & { productos?: ProductoPublico[] },
 	c: Conversion,
 	ahora = Date.now()
 ): Etiqueta[] {
@@ -44,14 +73,14 @@ export function etiquetasDe(
 	if (off && c.etiquetas.oferta) r.push({ texto: off, tipo: 'off' });
 	const propia = p.etiqueta?.trim();
 	if (propia) r.push({ texto: propia, tipo: 'propia' });
-	const alta = p.alta ? Date.parse(p.alta) : NaN;
-	if (c.etiquetas.nuevo && Number.isFinite(alta) && ahora - alta <= 14 * DIA && ahora >= alta)
+	const sirve = etiquetasQueDistinguen(t.productos, ahora);
+	if (c.etiquetas.nuevo && sirve.nuevo && esNuevo(p, ahora))
 		r.push({ texto: 'Nuevo', tipo: 'nuevo' });
 	// En la tarjeta, «Últimas N» sólo con 10 o menos: «Últimas 19» no avisa nada (la ficha usa el umbral entero).
 	const tope = Math.min(c.stockBajo || 3, 10);
 	if (c.etiquetas.ultimas && p.stock > 0 && p.stock <= tope)
 		r.push({ texto: p.stock === 1 ? 'Última' : `Últimas ${p.stock}`, tipo: 'ultimas' });
-	if (c.etiquetas.masVendido && top3(t).includes(p.id))
+	if (c.etiquetas.masVendido && sirve.top && top3(t).includes(p.id))
 		r.push({ texto: 'Más vendido', tipo: 'top' });
 	// La propia de la tienda no se repite con una automática parecida («Más vendida» y «Más vendido»).
 	const raiz = (s: string) => s.toLowerCase().replace(/[aeo]s?$/, '');
