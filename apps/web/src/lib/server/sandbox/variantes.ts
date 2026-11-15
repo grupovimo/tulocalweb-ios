@@ -22,8 +22,6 @@ type Regla = {
 	opciones: (p: ProductoEjemplo) => OpcionProducto[];
 	/** Precio de la variante (null: el del producto). */
 	precio?: (v: Valores, p: ProductoEjemplo) => number | null;
-	/** La opción que cambia la foto (colores con las fotos de su categoría). */
-	foto?: string;
 };
 
 const en =
@@ -63,8 +61,7 @@ const REGLAS: Regla[] = [
 				: [])
 		],
 		// El XL lleva más tela.
-		precio: (v, p) => (v['Talle'] === 'XL' ? redondo(p.precio * 1.12) : null),
-		foto: 'Color'
+		precio: (v, p) => (v['Talle'] === 'XL' ? redondo(p.precio * 1.12) : null)
 	},
 	{
 		si: en('sweater-trenzado', 'buzo-heavy-frisa', 'tapado-merino-ceibo'),
@@ -75,8 +72,7 @@ const REGLAS: Regla[] = [
 				valores:
 					p.id === 'buzo-heavy-frisa' ? ['Negro', 'Gris melange'] : ['Crudo', 'Camel', 'Negro']
 			}
-		],
-		foto: 'Color'
+		]
 	},
 	{
 		si: en('jean-recto-delta', 'cargo-ripstop'),
@@ -108,8 +104,7 @@ const REGLAS: Regla[] = [
 				nombre: 'Color',
 				valores: p.categoria === 'Gorras' ? ['Negro', 'Arena', 'Verde'] : ['Suela', 'Negro']
 			}
-		],
-		foto: 'Color'
+		]
 	},
 	// ---- Cosmética (Rosedal)
 	{
@@ -169,19 +164,16 @@ const REGLAS: Regla[] = [
 	},
 	{
 		si: en('mate-de-calabaza'),
-		opciones: () => [{ nombre: 'Color', valores: ['Natural', 'Negro', 'Marrón'] }],
-		foto: 'Color'
+		opciones: () => [{ nombre: 'Color', valores: ['Natural', 'Negro', 'Marrón'] }]
 	},
 	{
 		si: en('termo-acero-1-l'),
-		opciones: () => [{ nombre: 'Color', valores: ['Negro', 'Verde', 'Blanco'] }],
-		foto: 'Color'
+		opciones: () => [{ nombre: 'Color', valores: ['Negro', 'Verde', 'Blanco'] }]
 	},
 	// ---- Tecnología (Andes)
 	{
 		si: en('auricular-over-ear-anc', 'in-ear-inalambricos'),
-		opciones: () => [{ nombre: 'Color', valores: ['Negro', 'Blanco', 'Azul marino'] }],
-		foto: 'Color'
+		opciones: () => [{ nombre: 'Color', valores: ['Negro', 'Blanco', 'Azul marino'] }]
 	},
 	// ---- Vinos (Malbec): la caja de 6 con 10% menos por botella.
 	{
@@ -192,8 +184,7 @@ const REGLAS: Regla[] = [
 	// ---- Muebles (Quebracho)
 	{
 		si: en('silla-quebracho', 'butaca-pampa'),
-		opciones: () => [{ nombre: 'Color', valores: ['Natural', 'Chocolate', 'Negro'] }],
-		foto: 'Color'
+		opciones: () => [{ nombre: 'Color', valores: ['Natural', 'Chocolate', 'Negro'] }]
 	},
 	{
 		si: en('mesa-ratona-paraiso'),
@@ -219,8 +210,7 @@ const REGLAS: Regla[] = [
 				valores:
 					p.id === 'correa-extensible' ? ['Negro', 'Rojo', 'Azul'] : ['Arena', 'Blanco', 'Verde']
 			}
-		],
-		foto: 'Color'
+		]
 	},
 	{
 		si: en('tabla-de-asado-lenga', 'tabla-de-picada'),
@@ -239,8 +229,7 @@ const REGLAS: Regla[] = [
 				nombre: 'Color',
 				valores: p.id === 'sol-wayfarer' ? ['Negro', 'Carey'] : ['Dorado', 'Plateado']
 			}
-		],
-		foto: 'Color'
+		]
 	}
 ];
 
@@ -256,19 +245,15 @@ export function variantesDemo(catalogo: Catalogo): Map<string, VariantesDemo> {
 		const regla = REGLAS.find((x) => x.si(p, catalogo));
 		if (!regla) continue;
 		const opciones = regla.opciones(p);
-		// La galería: su foto y, si cambia con el color, las de su categoría (otro color, otra toma).
-		const hermanas = catalogo.productos
-			.filter((x) => x.id !== p.id && x.categoria === p.categoria && x.foto !== p.foto)
-			.map((x) => x.foto);
-		const porColor = regla.foto ? opciones.find((o) => o.nombre === regla.foto) : undefined;
-		const fotos = [p.foto, ...hermanas.slice(0, porColor ? porColor.valores.length - 1 : 2)];
+		// La galería sólo muestra este producto: su foto. Ningún color toma la foto de otro modelo
+		// (antes salían las de su categoría); sin foto propia, la variante queda con la principal.
+		const fotos = [p.foto];
 		const talle = opciones.find((o) => o.nombre === 'Talle' || o.nombre === 'Número');
 		// La remera de Ceibo, la de la prueba de punta a punta, también tiene el S agotado.
 		const agotar = talle && (!tachado || p.id === 'remera-pima') ? talle.valores[0] : null;
 		if (agotar) tachado = true;
 		const variantes = combinaciones(opciones).map((valores, i): Variante => {
 			const s = semilla(`${p.id}:${i}`);
-			const color = porColor ? porColor.valores.indexOf(valores[porColor.nombre]) : -1;
 			return {
 				id: `${p.id}-v${i + 1}`,
 				valores,
@@ -278,7 +263,7 @@ export function variantesDemo(catalogo: Catalogo): Map<string, VariantesDemo> {
 				precio: regla.precio?.(valores, p) ?? null,
 				stock:
 					agotar && valores[talle!.nombre] === agotar ? 0 : s < 0.14 ? 0 : 2 + Math.floor(s * 14),
-				foto: color >= 0 ? (fotos[color] ?? null) : null,
+				foto: null,
 				activa: true
 			};
 		});

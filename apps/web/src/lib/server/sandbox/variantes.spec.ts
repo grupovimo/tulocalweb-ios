@@ -48,8 +48,9 @@ describe('variantes de la demo', () => {
 		const p = (await datos.producto('remera-pima'))!;
 		expect(p.opciones.map((o) => o.nombre)).toEqual(['Talle', 'Color']);
 		expect(p.variantes).toHaveLength(12);
-		expect(p.fotos.length).toBeGreaterThan(1);
-		expect(p.foto).toBe(p.fotos[0]);
+		// La galería sólo muestra este producto: ningún color toma la foto de otro modelo.
+		expect(p.fotos).toEqual([p.foto]);
+		expect(p.variantes.every((v) => v.foto === null || v.foto === p.foto)).toBe(true);
 		expect(p.variantes.filter((v) => v.valores.Talle === 'S').every((v) => v.stock === 0)).toBe(
 			true
 		);
@@ -120,10 +121,12 @@ describe('variantes de la demo', () => {
 		const datos = await moda();
 		const p = (await datos.producto('remera-pima'))!;
 		const m = p.variantes.find((v) => v.valores.Talle === 'M' && v.valores.Color === 'Negro')!;
+		// Una segunda foto que sube el dueño pasa a ser la principal.
+		const espalda = 'https://tulocalweb.com.ar/demo/lumbre/remera-pima-espalda.webp';
 		const g = (await datos.guardarProducto(p.id, {
 			nombre: p.nombre,
 			precio: p.precio,
-			fotos: [p.fotos[1], p.fotos[0]],
+			fotos: [espalda, p.foto!],
 			opciones: [
 				{ nombre: 'Talle', valores: ['M', 'L'] },
 				{ nombre: 'Color', valores: ['Negro', 'Verde'] }
@@ -131,7 +134,7 @@ describe('variantes de la demo', () => {
 			// Sólo la que se toca, por sus valores (el id no cuenta).
 			variantes: [{ valores: m.valores, stock: 7, activa: false }]
 		}))!;
-		expect(g.foto).toBe(p.fotos[1]);
+		expect(g.foto).toBe(espalda);
 		expect(g.variantes).toHaveLength(4);
 		const mNegro = g.variantes.find((v) => v.id === m.id)!;
 		expect(mNegro).toMatchObject({ stock: 7, activa: false });
