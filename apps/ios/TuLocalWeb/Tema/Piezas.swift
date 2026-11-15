@@ -257,6 +257,9 @@ struct AccionRapida: View {
 struct ChipEstado: View {
     var estado: String
     var envio: String = ""
+    /// Con el pago y el canal, la compra de Mercado Pago sin acreditar se ve «Esperando pago».
+    var pago: String = ""
+    var canal: String = ""
     var grande = false
 
     static func texto(_ estado: String, envio: String) -> String {
@@ -280,8 +283,9 @@ struct ChipEstado: View {
     }
 
     var body: some View {
-        let (fondo, tinta) = ChipEstado.colores(estado)
-        Text(ChipEstado.texto(estado, envio: envio))
+        let espera = Marcas.esperaPago(estado, pago: pago, canal: canal)
+        let (fondo, tinta) = espera ? (C.apagadoFondo, C.texto2) : ChipEstado.colores(estado)
+        Text(espera ? "Esperando pago" : ChipEstado.texto(estado, envio: envio))
             .font((grande ? Estilo.footnoteFuerte : Estilo.chip).font)
             .foregroundStyle(tinta)
             .lineLimit(1)

@@ -144,7 +144,7 @@ fun DetallePedido(numero: Int) {
                         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 10.dp).margenPantalla().padding(bottom = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                ChipEstado(p.estado, p.envio, grande = true)
+                                ChipEstado(p.estado, p.envio, p.pago, p.canal, grande = true)
                                 Texto(Formato.pesos(p.total), Estilo.montoPantalla, C.texto, numeros = true)
                                 Texto("${Formato.cuando(p.creado)} · ${Marcas.canal(p.canal)} · ${Formato.cantidad(p.cantidadProductos, "producto", "productos")}", Estilo.subhead, C.texto2)
                             }
@@ -171,7 +171,7 @@ fun DetallePedido(numero: Int) {
                             if (puedeCancelar(p)) BotonTexto("Cancelar pedido", { cancelar = true }, alto = 50.dp, color = C.errorTinta)
                         }
                     }
-                    val sig = Marcas.siguiente(p.estado, p.envio)
+                    val sig = if (Marcas.esperaPago(p.estado, p.pago, p.canal)) null else Marcas.siguiente(p.estado, p.envio)
                     if (sig != null) {
                         Column(Modifier.fillMaxWidth().background(tema(0xFBF7F2, 0x22140D, alfa = 0.94f).actual)) {
                             Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea2))
@@ -274,7 +274,10 @@ private fun Pago(p: PedidoDetalle) {
             Texto(Marcas.pago(p.pago), Estilo.fila, C.texto, Modifier.weight(1f))
             ChipPago(p.estadoPago)
         }
-        if (p.estado == "Sin pagar") {
+        if (Marcas.esperaPago(p.estado, p.pago, p.canal)) {
+            Texto(Formato.sinViudas("Esperando que se acredite el pago con Mercado Pago. Si no se paga en 24 horas, se cancela solo y el stock vuelve."),
+                Estilo.texto14, C.texto2)
+        } else if (p.estado == "Sin pagar") {
             Texto(if (p.pago == "transf") Formato.sinViudas("Cuando veas la transferencia en tu cuenta, marcalo como cobrado.")
                 else Formato.sinViudas("Todavía no se acreditó. Si te pagó por otro lado, marcalo como cobrado."), Estilo.texto14, C.texto2)
         }

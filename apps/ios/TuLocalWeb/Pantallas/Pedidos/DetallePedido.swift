@@ -67,7 +67,7 @@ struct DetallePedido: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    ChipEstado(estado: p.estado, envio: p.envio, grande: true)
+                    ChipEstado(estado: p.estado, envio: p.envio, pago: p.pago, canal: p.canal, grande: true)
                     Text(Formato.pesos(p.total)).estilo(.montoPantalla).monospacedDigit().foregroundStyle(C.texto)
                     Text("\(Formato.cuando(p.creado)) · \(Marcas.canal(p.canal)) · \(Formato.cantidad(p.cantidadProductos, "producto", "productos"))")
                         .estilo(.subhead).foregroundStyle(C.texto2)
@@ -105,7 +105,7 @@ struct DetallePedido: View {
             .padding(.bottom, 16)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let sig = Marcas.siguiente(p.estado, envio: p.envio) {
+            if !Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal), let sig = Marcas.siguiente(p.estado, envio: p.envio) {
                 Button {
                     Task { await mover(p, a: sig.estado) }
                 } label: {
@@ -233,7 +233,10 @@ struct DetallePedido: View {
                 Spacer()
                 ChipPago(estado: p.estadoPago)
             }
-            if p.estado == "Sin pagar" {
+            if Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal) {
+                Text(Formato.sinViudas("Esperando que se acredite el pago con Mercado Pago. Si no se paga en 24 horas, se cancela solo y el stock vuelve."))
+                    .estilo(.texto14).foregroundStyle(C.texto2)
+            } else if p.estado == "Sin pagar" {
                 Text(p.pago == "transf"
                      ? Formato.sinViudas("Cuando veas la transferencia en tu cuenta, marcalo como cobrado.")
                      : Formato.sinViudas("Todavía no se acreditó. Si te pagó por otro lado, marcalo como cobrado."))

@@ -223,7 +223,8 @@ struct ListaPedidos: View {
                 Task { await mover(p, a: sig.estado) }
             })
         }
-        if p.estado == "Sin pagar" {
+        // Esperando el pago de Mercado Pago no se marca cobrado a mano: lo confirma Mercado Pago.
+        if p.estado == "Sin pagar" && !Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal) {
             izquierda.append(AccionFila(texto: "Cobrado", simbolo: "banknote", color: C.ok) {
                 Task { await mover(p, a: "Para preparar", texto: "#\(p.numero) cobrado") }
             })
@@ -348,7 +349,7 @@ struct FilaPedido: View {
                     Text("#\(p.numero) · \(Marcas.canalCorto(p.canal)) · \(Formato.horaDe(p.creado))")
                         .estilo(.footnote).foregroundStyle(C.texto2).lineLimit(1)
                     Spacer(minLength: 6)
-                    ChipEstado(estado: p.estado, envio: p.envio)
+                    ChipEstado(estado: p.estado, envio: p.envio, pago: p.pago, canal: p.canal)
                 }
             }
         }

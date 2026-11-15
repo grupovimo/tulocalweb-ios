@@ -317,7 +317,8 @@ private fun FilaConAcciones(p: PedidoFila, mas: () -> Unit, mover: (String, Stri
         val sig = Marcas.siguiente(p.estado, p.envio)
         if (p.estado != "Sin pagar" && sig != null) add(AccionFila(sig.corto, "checkmark", hex(0xB0441D)) { mover(sig.estado, null) })
     }
-    val izquierda = if (p.estado == "Sin pagar") listOf(AccionFila("Cobrado", "banknote", T.ok.claro) { mover("Para preparar", "#${p.numero} cobrado") }) else emptyList()
+    // Esperando el pago de Mercado Pago no se marca cobrado a mano: lo confirma Mercado Pago.
+    val izquierda = if (p.estado == "Sin pagar" && !Marcas.esperaPago(p.estado, p.pago, p.canal)) listOf(AccionFila("Cobrado", "banknote", T.ok.claro) { mover("Para preparar", "#${p.numero} cobrado") }) else emptyList()
     FilaDeslizable(izquierda, derecha) {
         Box(Modifier.clickable(onClick = abrir)) { FilaPedido(p) }
     }
@@ -341,7 +342,7 @@ fun FilaPedido(p: PedidoFila) {
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Texto("#${p.numero} · ${Marcas.canalCorto(p.canal)} · ${Formato.horaDe(p.creado)}", Estilo.footnote, C.texto2, Modifier.weight(1f).padding(end = 6.dp), lineas = 1)
-                ChipEstado(p.estado, p.envio)
+                ChipEstado(p.estado, p.envio, p.pago, p.canal)
             }
         }
     }

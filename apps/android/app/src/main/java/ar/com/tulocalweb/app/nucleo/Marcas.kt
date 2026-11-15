@@ -60,6 +60,12 @@ object Marcas {
         else -> capitalizado(e)
     }
 
+    /** Una compra de la tienda online con Mercado Pago que todavía no se acreditó: no es una venta
+     *  (docs/decisiones.md §63). Se ve «Esperando pago», no se marca cobrada a mano (la confirma Mercado Pago)
+     *  y a las 24 h se cancela sola. */
+    fun esperaPago(estado: String, pago: String, canal: String): Boolean =
+        estado == "Sin pagar" && pago == "mp" && canal == "web"
+
     data class Siguiente(val estado: String, val boton: String, val corto: String)
 
     /** El siguiente estado de un pedido y el texto del botón (la barra de acción de 3b y el swipe de 3a). null si ya

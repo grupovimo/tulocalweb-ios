@@ -68,6 +68,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import ar.com.tulocalweb.app.nucleo.Acceso
 import ar.com.tulocalweb.app.nucleo.Formato
+import ar.com.tulocalweb.app.nucleo.Marcas
 import coil3.compose.AsyncImage
 
 // Clon de Tema/Piezas.swift: las piezas del handoff, para armar cada pantalla (y lo que el handoff no dibuja) con lo mismo.
@@ -276,10 +277,12 @@ object ChipEstado {
 }
 
 @Composable
-fun ChipEstado(estado: String, envio: String = "", grande: Boolean = false) {
-    val (fondo, tinta) = ChipEstado.colores(estado)
+fun ChipEstado(estado: String, envio: String = "", pago: String = "", canal: String = "", grande: Boolean = false) {
+    // Con el pago y el canal, la compra de Mercado Pago sin acreditar se ve «Esperando pago».
+    val espera = Marcas.esperaPago(estado, pago, canal)
+    val (fondo, tinta) = if (espera) C.apagadoFondo to C.texto2 else ChipEstado.colores(estado)
     Texto(
-        ChipEstado.texto(estado, envio), if (grande) Estilo.footnoteFuerte else Estilo.chip, tinta,
+        if (espera) "Esperando pago" else ChipEstado.texto(estado, envio), if (grande) Estilo.footnoteFuerte else Estilo.chip, tinta,
         Modifier.clip(Capsula).background(fondo).padding(horizontal = if (grande) 10.dp else 8.dp, vertical = if (grande) 3.dp else 2.dp), lineas = 1,
     )
 }

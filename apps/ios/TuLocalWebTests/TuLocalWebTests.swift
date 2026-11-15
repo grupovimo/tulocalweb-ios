@@ -68,6 +68,13 @@ final class PedidosTests: XCTestCase {
         XCTAssertEqual(Marcas.anterior("Entregado", envio: "retiro"), "Listo para despachar")
     }
 
+    func testEsperandoElPagoDeMercadoPago() {
+        XCTAssertTrue(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "web"))
+        XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "transf", canal: "web"))
+        XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "wa"))
+        XCTAssertFalse(Marcas.esperaPago("Para preparar", pago: "mp", canal: "web"))
+    }
+
     func testChipsDeRetiro() {
         XCTAssertEqual(ChipEstado.texto("Listo para despachar", envio: "retiro"), "Listo para retirar")
         XCTAssertEqual(ChipEstado.texto("Entregado", envio: "retiro"), "Retirado")

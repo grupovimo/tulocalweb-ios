@@ -12,6 +12,7 @@ import ar.com.tulocalweb.app.pantallas.ingreso.mensajeClave
 import ar.com.tulocalweb.app.pantallas.pedidos.urlWhatsApp
 import ar.com.tulocalweb.app.tema.ChipEstado
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -86,6 +87,13 @@ class NucleoTest {
         assertNull(Marcas.siguiente("Entregado", "moto"))
         assertEquals("Listo para despachar", Marcas.anterior("En camino", "moto"))
         assertEquals("Listo para despachar", Marcas.anterior("Entregado", "retiro"))
+    }
+
+    @Test fun esperandoElPagoDeMercadoPago() {
+        assertTrue(Marcas.esperaPago("Sin pagar", "mp", "web"))
+        assertFalse(Marcas.esperaPago("Sin pagar", "transf", "web"))
+        assertFalse(Marcas.esperaPago("Sin pagar", "mp", "wa"))
+        assertFalse(Marcas.esperaPago("Para preparar", "mp", "web"))
     }
 
     @Test fun chipsDeRetiro() {
