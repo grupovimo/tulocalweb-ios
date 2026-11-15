@@ -43,6 +43,21 @@
 - Pruebas: `DisenoTests` corre los casos de `packages/contrato/casos/diseno-v2.json`, el catálogo, el cambio de
   preset, deshacer/rehacer y los avisos.
 
+## 15/11/2026 · Tienda en bloques · Android
+
+- **Mi tienda** igual que iOS, un `.kt` por `.swift` con los mismos tipos y textos: `nucleo/CatalogoBloques.kt`,
+  `nucleo/DisenoTienda.kt`, `pantallas/mas/EditorTienda.kt`, `EditorBloques.kt`, `CamposBloque.kt`,
+  `MiniaturaBloque.kt`, `VistaPreviaTienda.kt`, y `MiTienda.kt`/`EstiloTienda.kt` reescritos. Lee
+  `assets/bloques.json` y `assets/presets.json` (los copia `scripts/estilo/para-ios.ts`).
+- **Vista previa**: `addJavascriptInterface(…, "TiendaPuente")` con `bloque(id)` (abre el panel), `lista()` y
+  `postMessage(json)`; `evaluateJavascript("window.tiendaVista.mostrar(…)")` un cuarto de segundo después de cada
+  cambio y `seleccionar` al elegir un bloque. Sin `lista`, «Actualizar» guarda el borrador y recarga, como antes.
+- Diferencias de plataforma: arrastrar es mantener apretado y mover (Compose no tiene `draggable`/`dropDestination`;
+  el menú también tiene Subir y Bajar); el menú de links es una lista sin secciones; el DatePicker es
+  `RenglonFecha` + `RenglonHora`. Íconos nuevos en `herramientas/simbolos.txt` (fuentes regeneradas).
+- Pruebas: `DisenoTest` (los mismos cinco casos que `DisenoTests`); `app/src/test/resources/diseno-v2.json` es copia
+  de `packages/contrato/casos/diseno-v2.json` (copiarla si cambian los casos).
+
 ## 6/11/2026 · Verificación en dos pasos (§58) y demos como vitrina
 
 - **Dos pasos** (migración 00075): API, web y app de iPhone, todo desplegado. Prenderla: web › Configuración ›
