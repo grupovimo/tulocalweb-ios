@@ -179,13 +179,13 @@ data class MetricaVentana(
     }
 
     companion object {
-        /** Por ventana, sumando los días. Acepta una lista de filas ({ventana|id, dia?, vistas…}), {ventanas: […]} o un
-         *  objeto por id. */
+        /** Por ventana (GET /panel/promos/metricas › ventanas[]: id, vistas, cierres, envios, clics, ventas, monto, dias[]).
+         *  También acepta una lista de filas por día o un objeto por id. */
         fun leer(v: ValorJSON): Map<String, MetricaVentana> {
             val r = mutableMapOf<String, MetricaVentana>()
             fun sumar(id: String, o: ValorJSON) {
-                // Con el detalle por día, se suman los días (la fila puede traer además el total).
-                o["dias"]?.lista?.let { dias -> dias.forEach { sumar(id, it) }; return }
+                // La fila de la API (PromoMetricaVentana) trae el total del período; si sólo trae los días, se suman.
+                if (o["vistas"] == null) o["dias"]?.lista?.let { dias -> dias.forEach { sumar(id, it) }; return }
                 val m = r[id] ?: MetricaVentana()
                 r[id] = m.copy(
                     vistas = m.vistas + (o["vistas"]?.entero ?: 0), cierres = m.cierres + (o["cierres"]?.entero ?: 0),

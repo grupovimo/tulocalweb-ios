@@ -176,13 +176,13 @@ struct MetricaVentana: Equatable {
         return Double(n) / Double(vistas) * 100
     }
 
-    /// Por ventana, sumando los días. Acepta una lista de filas ({ventana|id, dia?, vistas…}), {ventanas: […]} o
-    /// un objeto por id.
+    /// Por ventana (GET /panel/promos/metricas › ventanas[]: id, vistas, cierres, envios, clics, ventas, monto, dias[]).
+    /// También acepta una lista de filas por día o un objeto por id.
     static func leer(_ v: ValorJSON) -> [String: MetricaVentana] {
         var r: [String: MetricaVentana] = [:]
         func sumar(_ id: String, _ o: ValorJSON) {
-            // Con el detalle por día, se suman los días (la fila puede traer además el total).
-            if let dias = o["dias"]?.lista { for d in dias { sumar(id, d) }; return }
+            // La fila de la API (PromoMetricaVentana) trae el total del período; si sólo trae los días, se suman.
+            if o["vistas"] == nil, let dias = o["dias"]?.lista { for d in dias { sumar(id, d) }; return }
             var m = r[id] ?? MetricaVentana()
             m.vistas += o["vistas"]?.entero ?? 0
             m.cierres += o["cierres"]?.entero ?? 0
