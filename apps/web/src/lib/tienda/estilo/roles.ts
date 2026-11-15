@@ -1,13 +1,24 @@
-import { MAPAS } from './mapas.ts';
 import type { Rol } from './tipos.ts';
 import type { Zona } from './estilo.ts';
 
 /**
- * Los colores de cada plantilla por rol y zona: lo que muestra el editor antes de cambiar nada. Las
- * con archivo propio salen de mapas.ts; las del motor, de sus tokens (Motor.svelte, TH: fondo, tinta,
- * acento, tinta sobre acento, superficie, apagado, línea, panel y tinta del panel).
+ * Los colores de cada punto de partida por rol y zona: lo que muestra el editor antes de cambiar
+ * nada (fondo, texto, acento, texto sobre el acento, superficie, texto suave, borde, fondo y texto del
+ * pie). Fuente: los mapas que tenían las 17 plantillas (estilo/mapas.ts, ya borrado).
  */
-const MOTOR: Record<string, string[]> = {
+// prettier-ignore
+const ROLES: Record<string, string[]> = {
+	andes: ['#F3F5F8', '#0E1116', '#2F6BFF', '#FFFFFF', '#FFFFFF', '#69717E', '#E3E8EF', '#0E1116', '#FFFFFF'],
+	ceibo: ['#F4EFEA', '#1C1A17', '#9C4A2F', '#F4EFEA', '#F8F4EF', '#6E655C', '#E2D9CF', '#F4EFEA', '#1C1A17'],
+	malbec: ['#1E0E12', '#F4E9E1', '#E8B86A', '#1E0E12', '#24121A', '#BFA9A3', '#3A2026', '#1E0E12', '#F4E9E1'],
+	miga: ['#F4EADB', '#2A1C12', '#D9452B', '#F4EADB', '#FFFFFF', '#7A5F4C', '#E2CDB6', '#2A1C12', '#F4EADB'],
+	'miga-clasica': ['#FBF1E6', '#3A2414', '#B5651D', '#FBF1E6', '#FFFFFF', '#7A5F4C', '#E2CDB6', '#3A2414', '#FBF1E6'],
+	mostaza: ['#FBF3E4', '#3B2416', '#C9821A', '#2A170C', '#FFFFFF', '#7A5A44', '#E9D6B8', '#3B2416', '#FBF3E4'],
+	pampa: ['#0B0B0B', '#F2F2F2', '#E6FF4D', '#111111', '#161616', '#8A8A8A', '#2A2A2A', '#0B0B0B', '#F2F2F2'],
+	quebracho: ['#EFE9E1', '#2B2520', '#4F5B3A', '#FFFFFF', '#F7F3EE', '#6F6358', '#D8CCBC', '#2B2520', '#EFE9E1'],
+	rosedal: ['#FBF4F1', '#3A1F25', '#B4475B', '#FFFFFF', '#FFFFFF', '#8C6A70', '#EAD3CF', '#F3D9DE', '#3A1F25'],
+	tijera: ['#F6F4F1', '#1E1B2E', '#5B3FD6', '#FFFFFF', '#FFFFFF', '#5A566B', '#E4E1EA', '#1E1B2E', '#F6F4F1'],
+	yerbal: ['#EEF1E8', '#1E2B22', '#2F5D50', '#FFFFFF', '#FFFFFF', '#6B7A6E', '#DDE8DF', '#1E2B22', '#EEF1E8'],
 	patio: [
 		'#FFF7E8',
 		'#2A1E10',
@@ -77,17 +88,8 @@ const MOTOR: Record<string, string[]> = {
 };
 
 export function rolesDe(plantilla: string): Record<Rol | Zona, string> {
-	const m = MAPAS[plantilla];
-	if (m)
-		return {
-			...m.roles,
-			encabezado: m.roles.fondo,
-			encabezadoTexto: m.roles.texto,
-			pie: m.pie?.fondo ?? m.roles.fondo,
-			pieTexto: m.pie?.texto ?? m.roles.texto
-		};
 	const [fondo, texto, acento, sobreAcento, superficie, textoSuave, borde, pie, pieTexto] =
-		MOTOR[plantilla] ?? MOTOR.litoral;
+		ROLES[plantilla] ?? ROLES.litoral;
 	return {
 		fondo,
 		superficie,

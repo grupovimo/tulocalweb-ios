@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import AnuncioTienda from '#lib/tienda/AnuncioTienda.svelte';
 	import Plantilla from '#lib/tienda/Plantilla.svelte';
 	import {
 		avisar,
@@ -96,7 +95,6 @@
 </svelte:head>
 
 <div class="vista" class:marcos={data.marcos} onclickcapture={tocar}>
-	<AnuncioTienda {tienda} />
 	{#if pagina === 'producto'}
 		{#if data.producto}
 			<Plantilla {tienda} pagina="producto" producto={data.producto} />
