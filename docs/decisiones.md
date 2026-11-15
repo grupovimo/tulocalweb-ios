@@ -1462,3 +1462,43 @@ Handoff `docs/handoff/inicio-a` (aprobado por Nahuel el 12/11), en iOS y Android
 - **Métricas**: `recuperados {pedidos, monto}` del mes, con lo cobrado de verdad, de quienes recibieron
   un recordatorio antes de comprar. Panel y apps configuran los pasos y lo muestran; la demo arranca
   con los tres prendidos y 10 % en el segundo, sin mandar mails.
+
+## 63. «Esperando pago»: un Mercado Pago sin pagar no es una venta (migración 00085, 15/11/2026)
+
+Como en Shopify: el pedido de la tienda online con Mercado Pago (`canal = 'web'`, `pago = 'mp'`) que
+todavía no se pagó no es una venta. Antes avisaba por todos lados al crearse aunque quien compraba se
+saliera de Mercado Pago sin pagar. Con transferencia no cambia nada: avisa al crearse (falta el
+comprobante).
+
+- **El criterio** es uno, en la base: `app.esperando_pago(canal, pago, estado_pago)` (tienda online,
+  Mercado Pago y el pago ni acreditado ni con la seña paga) y `app.mp_confirmado(...)` para el UPDATE
+  que lo confirma (y que no está cancelado: un pago que llega tarde lo devuelve la tienda). En Go,
+  `pedidos.EsperaPago`.
+- **Avisos al crearse, salvo que espere el pago; si esperaba, al confirmarse, una sola vez**:
+  Telegram (`app.avisar_venta_telegram`, ahora también AFTER UPDATE OF estado_pago), «Nueva venta #N»
+  por mail y push (`app.avisar_venta_tienda`, que ahora cubre también la seña paga: Go ya no lo
+  encola), la campanita (sale de `tienda.venta`) y la Live Activity (cuenta «Para preparar»).
+- **A quien compra, un solo mail**: esperando el pago no sale nada; al acreditarse sale la
+  confirmación con el pago adentro («Se acreditó tu pago con Mercado Pago»), no «Gracias por tu
+  compra» y después «Recibimos tu pago». Si ya había salido una confirmación (pedidos de antes), sale
+  el de pago. La seña sigue con «Recibimos tu seña» y el resto pago con «pago».
+- **Tiempo real**: el INSERT que espera el pago sale como `pedido.cambio` (la lista se refresca, el
+  panel no lo anuncia ni suena); `app.tr_tiempo_real_pago` emite `pedido.nuevo` al confirmarse. El panel
+  no cambió: anuncia `pedido.nuevo` como siempre.
+- **Cupón**: al crearse se reserva el uso (`usos + 1`, así un cupón único no lo usan dos a la vez); lo
+  vendido y lo descontado los suma `app.sumar_cupon_confirmado` al confirmarse.
+- **Ventas y métricas**: clientes, la historia de quien compra, lo más vendido, la velocidad de venta,
+  la conversión de visitas, Crecer, las ventas por cupón de las promociones y la exportación de
+  clientes dejan afuera lo que está `Sin pagar` con Mercado Pago en la tienda online. El tablero y
+  Finanzas ya dejaban afuera todo lo `Sin pagar`; la factura de ARCA sólo se encola con el pago.
+- **Vencimiento**: el worker (cada minuto, junto a las señas) cancela a las 24 h las compras de la
+  tienda online (con código público) que siguen esperando el pago (`app.mp_sin_pagar_vencidos`,
+  `pedidos.VencerSinPago`): devuelve el stock, libera el cupón y lo anota en la Actividad como
+  «sistema». No avisa a nadie: no fue una venta. La preferencia de Mercado Pago vence a la misma hora
+  (`expiration_date_to`), así nadie paga un pedido ya cancelado. La seña que vence ahora también
+  libera el cupón.
+- **Cómo se ve**: en Pedidos del panel y de las apps el pedido dice «Esperando pago» (no «Sin pagar»),
+  sin «Marcar pagado»/«Cobrado» (lo confirma Mercado Pago), y el panel tiene la vista «Esperando pago».
+- **Lo que queda igual**: el stock se reserva al crearse (lo que se vende tiene que estar), así que
+  «Te quedaste sin stock» puede salir por una reserva; si vence, vuelve y avisa a quienes esperaban.
+  La compra se mide en Meta (píxel y API de conversiones) al crearse, como hasta ahora.

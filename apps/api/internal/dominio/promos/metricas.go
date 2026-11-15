@@ -170,7 +170,7 @@ func LeerMetricas(ctx context.Context, pool tx, tiendaID string, desde, hasta ti
 		}
 		filas, err = x.Query(ctx, `SELECT p.cupon, coalesce(c.origen, ''), (p.creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires')::date::text, p.total
 			FROM pedidos p LEFT JOIN cupones c ON c.tienda_id = p.tienda_id AND c.codigo = p.cupon AND c.origen IS NOT NULL
-			WHERE p.tienda_id = $1 AND p.cupon IS NOT NULL AND p.estado <> 'Cancelado' AND p.creado_en >= $2 AND p.creado_en < $3
+			WHERE p.tienda_id = $1 AND p.cupon IS NOT NULL AND p.estado <> 'Cancelado' AND NOT (p.estado = 'Sin pagar' AND p.canal = 'web' AND p.pago = 'mp') AND p.creado_en >= $2 AND p.creado_en < $3
 				AND (c.origen IS NOT NULL OR p.cupon = ANY($4))`, tiendaID, desde, fin, codigos)
 		if err != nil {
 			return err

@@ -62,7 +62,7 @@ func Clientes(ctx context.Context, pool tx, tiendaID string, ahora time.Time) ([
 				(array_agg(canal ORDER BY creado_en))[1],
 				count(*), max(creado_en), sum(total), bool_or(mayorista),
 				array_agg(creado_en)
-			FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT `+anonimo+`
+			FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') AND NOT `+anonimo+`
 			GROUP BY 1`, tiendaID)
 		if err != nil {
 			return err

@@ -240,7 +240,9 @@ func TestReservaConSenaYCupo(t *testing.T) {
 	mp.falla = false
 
 	// La seña pagada (lo que hace el webhook) y «saldado» desde el panel.
-	admin(t, b, `UPDATE pedidos SET sena_pagada_en = now(), sena_vence = NULL, estado = 'Para preparar', estado_pago = 'Seña' WHERE numero = $1`, r.Numero)
+	// Con la tienda fijada, como el webhook: al pasar a «Seña» la base encola «Nueva venta» (00085).
+	admin(t, b, `UPDATE pedidos SET sena_pagada_en = now(), sena_vence = NULL, estado = 'Para preparar', estado_pago = 'Seña'
+		WHERE numero = $1 AND set_config('app.tienda_id', $2, true) IS NOT NULL`, r.Numero, luna)
 	if err := pedidos.Saldar(ctx, b.App, luna, r.Numero+1, true); !errors.Is(err, pedidos.ErrSinSena) {
 		t.Fatalf("saldar uno cancelado: %v", err)
 	}

@@ -69,7 +69,7 @@ func Canales(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (ma
 			return err
 		}
 		filas, err := t.Query(ctx, `SELECT canal, coalesce(sum(total), 0), count(*) FROM pedidos
-			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND creado_en > $2 GROUP BY canal`, tiendaID, ahora.Add(-30*24*time.Hour))
+			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') AND creado_en > $2 GROUP BY canal`, tiendaID, ahora.Add(-30*24*time.Hour))
 		if err != nil {
 			return err
 		}
@@ -137,9 +137,9 @@ func Informes(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (m
 				SELECT (extract(year FROM creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires')::int * 12
 					+ extract(month FROM creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires')::int) - $4::int AS k,
 					total, items, comprador->>'nombre' AS quien, creado_en
-				FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND creado_en >= $3 AND creado_en <= $2
+				FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') AND creado_en >= $3 AND creado_en <= $2
 			), primeras AS (
-				SELECT comprador->>'nombre' AS quien, min(creado_en) AS en FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' GROUP BY 1
+				SELECT comprador->>'nombre' AS quien, min(creado_en) AS en FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') GROUP BY 1
 			)
 			SELECT k, sum(total), sum((SELECT coalesce(sum((i->>'cantidad')::int), 0) FROM jsonb_array_elements(items) i)),
 				count(DISTINCT quien) FILTER (WHERE (SELECT en FROM primeras f WHERE f.quien = p.quien) = p.creado_en),

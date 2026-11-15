@@ -21,6 +21,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/lanzamientos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/notificaciones"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/promos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/push"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
@@ -151,7 +152,7 @@ func correr() error {
 	// La campanita del panel (§45): los mismos eventos dejan además una notificación por persona.
 	(&notificaciones.Generador{Pool: app}).Envolver(w.Manejadores)
 	// Lanzamientos y señas (§52), cada minuto: encola los avisos de los que llegaron a su hora y
-	// cancela los pedidos cuya seña no se pagó a tiempo (el stock vuelve). Sólo ids y UPDATE
+	// cancela los pedidos cuya seña (o cuyo pago de Mercado Pago) no se pagó a tiempo (el stock vuelve). Sólo ids y UPDATE
 	// condicionados: dos workers no avisan dos veces.
 	go func() {
 		t := time.NewTicker(time.Minute)
@@ -162,6 +163,11 @@ func correr() error {
 			}
 			if _, err := lanzamientos.VencerSenas(ctx, app); err != nil && ctx.Err() == nil {
 				slog.Error("lanzamientos: vencer señas", "error", err)
+			}
+			// Los de Mercado Pago de la tienda online sin pagar a las 24 h: se cancelan sin avisar y el
+			// stock y el cupón vuelven (no fueron una venta).
+			if _, err := pedidos.VencerSinPago(ctx, app); err != nil && ctx.Err() == nil {
+				slog.Error("pedidos: vencer los de Mercado Pago sin pagar", "error", err)
 			}
 			select {
 			case <-ctx.Done():

@@ -175,6 +175,10 @@ func (s *Servicio) mail(p pedido, aviso string) (correo.Mensaje, bool) {
 				pesos(p.sena), pesos(p.total-p.sena)))
 		} else if p.estadoPago == "Pendiente" {
 			parrafos = append(parrafos, "Cuando se acredite el pago te avisamos y empezamos a prepararlo.")
+		} else if p.pago == "mp" {
+			// Con Mercado Pago la confirmación sale recién con el pago acreditado (no hay otro mail de
+			// «Recibimos tu pago»): lo dice acá.
+			parrafos = append(parrafos, "Se acreditó tu pago con Mercado Pago: ya lo estamos preparando.")
 		}
 	case "pago":
 		asunto = fmt.Sprintf("Recibimos tu pago · pedido #%d", p.numero)

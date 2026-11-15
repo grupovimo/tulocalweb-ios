@@ -2,7 +2,6 @@ package pedidos
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -81,35 +80,21 @@ func CancelarSinSena(ctx context.Context, pool tx, tiendaID string, numero int, 
 	var hecho bool
 	err := pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var items []byte
+		var cupon *string
 		err := t.QueryRow(ctx, `UPDATE pedidos SET estado = 'Cancelado', sena_vence = NULL,
 				estados_en = estados_en || jsonb_build_object('Cancelado', now())
 			WHERE tienda_id = $1 AND numero = $2 AND sena IS NOT NULL AND sena_pagada_en IS NULL AND estado = 'Sin pagar'
 				AND (NOT $3 OR sena_vence < now())
-			RETURNING items`, tiendaID, numero, soloVencido).Scan(&items)
+			RETURNING items, cupon`, tiendaID, numero, soloVencido).Scan(&items, &cupon)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		var ls []Item
-		if err := json.Unmarshal(items, &ls); err != nil {
+		// El stock vuelve y el cupón se libera (no fue una venta).
+		if err := devolver(ctx, t, tiendaID, items, cupon); err != nil {
 			return err
-		}
-		for _, it := range ls {
-			if it.ProductoID == nil {
-				continue
-			}
-			if it.VarianteID != nil {
-				_, err = t.Exec(ctx, `UPDATE variantes SET stock = stock + $4
-					WHERE tienda_id = $1 AND producto_id::text = $2 AND id::text = $3`, tiendaID, *it.ProductoID, *it.VarianteID, it.Cantidad)
-			} else {
-				_, err = t.Exec(ctx, `UPDATE productos SET stock = stock + $3
-					WHERE tienda_id = $1 AND id::text = $2 AND opciones = '[]'::jsonb`, tiendaID, *it.ProductoID, it.Cantidad)
-			}
-			if err != nil {
-				return err
-			}
 		}
 		hecho = true
 		return nil

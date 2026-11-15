@@ -124,9 +124,13 @@ func (s *Servicio) PagarLink(ctx context.Context, tiendaID, codigo string) (stri
 func (s *Servicio) PagarPedido(ctx context.Context, tiendaID string, numero int, vuelta string) (string, error) {
 	var total int64
 	var tienda string
+	var vence *time.Time
 	err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
-		return t.QueryRow(ctx, `SELECT p.total, t.nombre FROM pedidos p JOIN tiendas t ON t.id = p.tienda_id
-			WHERE p.numero = $1 AND p.estado_pago = 'Pendiente'`, numero).Scan(&total, &tienda)
+		// El de la tienda online se cancela solo a las 24 h sin pagar: la preferencia vence con él,
+		// así nadie paga un pedido que ya devolvió el stock.
+		return t.QueryRow(ctx, `SELECT p.total, t.nombre, CASE WHEN p.canal = 'web' THEN p.creado_en + interval '24 hours' END
+			FROM pedidos p JOIN tiendas t ON t.id = p.tienda_id
+			WHERE p.numero = $1 AND p.estado_pago = 'Pendiente' AND p.estado <> 'Cancelado'`, numero).Scan(&total, &tienda, &vence)
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", ErrNoExiste
@@ -152,6 +156,9 @@ func (s *Servicio) PagarPedido(ctx context.Context, tiendaID string, numero int,
 		ExternalReference: ref,
 		BackURLs:          map[string]string{"success": vuelta + "?pago=ok", "pending": vuelta + "?pago=pendiente", "failure": vuelta + "?pago=error"},
 		StatementDesc:     recortar(tienda, 22),
+	}
+	if vence != nil {
+		p.Expires, p.ExpirationDateTo = true, vence.Format("2006-01-02T15:04:05.000-07:00")
 	}
 	if s.publico() {
 		p.AutoReturn = "approved"
@@ -428,7 +435,7 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 }
 
 // aplicarSena: la seña aprobada deja el pedido «Para preparar» con el pago en «Seña» (falta el
-// resto) y avisa como una venta nueva y a quien compró. Si el pedido ya se canceló (la seña llegó
+// resto): ahí es una venta nueva, y a quien compró le llega «Recibimos tu seña». Si el pedido ya se canceló (la seña llegó
 // tarde y el stock volvió), sólo se anota pagada: la tienda la devuelve desde el pedido.
 func aplicarSena(ctx context.Context, t pgx.Tx, tiendaID, numero string, aprobado, devuelto bool) error {
 	switch {
@@ -445,10 +452,8 @@ func aplicarSena(ctx context.Context, t pgx.Tx, tiendaID, numero string, aprobad
 		if err != nil {
 			return err
 		}
+		// «Nueva venta» (mail, push, Telegram y el panel) lo encola la base al pasar a «Seña» (00085).
 		n, _ := strconv.Atoi(numero)
-		if err := outbox.Publicar(ctx, t, tiendaID, "tienda.venta", map[string]any{"numero": n}); err != nil {
-			return err
-		}
 		return outbox.Publicar(ctx, t, tiendaID, "comprador.aviso", map[string]any{"numero": n, "aviso": "sena"})
 	case devuelto:
 		_, err := t.Exec(ctx, `UPDATE pedidos SET estado_pago = 'Devuelto' WHERE numero = $1::int`, numero)

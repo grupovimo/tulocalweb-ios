@@ -203,7 +203,7 @@ func Exportar(ctx context.Context, pool tx, tiendaID, tipo string) ([][]any, err
 			 FROM productos WHERE tienda_id = $1 ORDER BY nombre`},
 		"clientes": {[]any{"Nombre", "Email", "Teléfono", "Pedidos", "Gastado"},
 			`SELECT comprador->>'nombre', coalesce(comprador->>'email', ''), coalesce(comprador->>'telefono', ''), count(*), sum(total)
-			 FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado'
+			 FROM pedidos WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp')
 				AND NOT (comprador->>'nombre' = 'Consumidor final' AND coalesce(comprador->>'email', '') = ''
 				AND coalesce(comprador->>'telefono', '') = '')
 			 GROUP BY 1, 2, 3 ORDER BY 1`},

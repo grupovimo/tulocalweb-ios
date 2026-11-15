@@ -166,7 +166,7 @@ func Conversion(ctx context.Context, t pgx.Tx, tiendaID string, visitantes Compa
 	err := t.QueryRow(ctx, `SELECT
 			count(*) FILTER (WHERE (creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires')::date BETWEEN $2 AND $3),
 			count(*) FILTER (WHERE (creado_en AT TIME ZONE 'America/Argentina/Buenos_Aires')::date BETWEEN $4 AND $5)
-		FROM pedidos WHERE tienda_id = $1 AND canal = 'web' AND estado <> 'Cancelado'
+		FROM pedidos WHERE tienda_id = $1 AND canal = 'web' AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp')
 			AND creado_en >= $4::date - interval '1 day'`, tiendaID, a, b, c, e).Scan(&actual, &anterior)
 	tasa := func(pedidos, visitas float64) float64 {
 		if visitas == 0 {

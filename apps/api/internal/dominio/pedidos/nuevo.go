@@ -184,9 +184,15 @@ func CrearDesdeProductos(ctx context.Context, pool tx, tiendaID string, n Pedido
 		var cupon *string
 		if n.Cupon != "" {
 			cupon = &n.Cupon
+			// Esperando el pago de Mercado Pago sólo se reserva el uso: lo vendido y lo descontado los
+			// suma la base al confirmarse (app.sumar_cupon_confirmado), y al vencer se libera.
+			vendio, desconto := total+n.CostoEnvio-n.Descuento, n.DescuentoCupon
+			if EsperaPago(n.Canal, n.Pago, estadoPago) {
+				vendio, desconto = 0, 0
+			}
 			tag, err := t.Exec(ctx, `UPDATE cupones SET usos = usos + 1, vendio = vendio + $3, desconto = desconto + $4
 				WHERE tienda_id = $1 AND codigo = $2 AND NOT pausado AND (limite = 0 OR usos < limite)`,
-				tiendaID, n.Cupon, total+n.CostoEnvio-n.Descuento, n.DescuentoCupon)
+				tiendaID, n.Cupon, vendio, desconto)
 			if err != nil {
 				return err
 			}

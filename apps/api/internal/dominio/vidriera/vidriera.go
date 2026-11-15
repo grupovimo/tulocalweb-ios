@@ -403,7 +403,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		}
 		qs.Close()
 		rows, err := t.Query(ctx, `SELECT i->>'nombre', sum((i->>'cantidad')::int) FROM pedidos, jsonb_array_elements(items) i
-			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND creado_en > now() - interval '30 days' GROUP BY 1`, id)
+			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') AND creado_en > now() - interval '30 days' GROUP BY 1`, id)
 		if err != nil {
 			return err
 		}

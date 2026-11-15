@@ -253,7 +253,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 		ultimos30 := map[string]int{}
 		v, err := t.Query(ctx, `SELECT i->>'nombre', (i->>'cantidad')::int, creado_en
 			FROM pedidos, jsonb_array_elements(items) i
-			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND creado_en > $2`, tiendaID, ahora.Add(-56*24*time.Hour))
+			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp') AND creado_en > $2`, tiendaID, ahora.Add(-56*24*time.Hour))
 		if err != nil {
 			return err
 		}
