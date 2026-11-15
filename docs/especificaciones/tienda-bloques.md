@@ -51,6 +51,7 @@ fotoProducto?: 'cuadrada' | 'vertical' | 'apaisada';
 encabezado?: 'izquierda' | 'centrado' | 'buscador';
 pie?: 'simple' | 'columnas' | 'grande';
 barra?: { variante: 'fija' | 'rotativa'; mensajes: { texto: string; link?: string }[]; fondo?: Fondo };
+whatsappFlotante?: boolean;         // false: sin botón flotante de WhatsApp (la sección «wa» de v1)
 // anuncio/anuncioLink (v1) pasan a barra.mensajes[0]; textos (v1) pasan a los títulos de cada bloque.
 ```
 
@@ -87,6 +88,11 @@ Mientras convivan, la tienda migra al vuelo cualquier diseño v1 que lea. La mig
 código v1 se borra.
 
 ## Presets (las 17 plantillas)
+
+`packages/contrato/presets.json` (fuente de verdad; la web, Go y las apps lo leen): dirección, estilo base, orden y
+variantes de los bloques iniciales. El estilo final de una tienda es: tokens de la dirección ⊕ preset ⊕ colores de
+`rolesDe(plantilla)` ⊕ `diseno.estilo`. El diseño guarda sólo lo que la tienda cambió. Los casos de la migración están
+en `packages/contrato/casos/diseno-v2.json`.
 
 El preset de cada plantilla es `lib/tienda/sistema/presets.ts`: dirección, estilo base y bloques iniciales con
 textos sugeridos. Ese archivo se exporta a `presets.json` para Go y para las apps.
