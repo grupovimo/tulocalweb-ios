@@ -5,17 +5,18 @@
  */
 import type { Premio } from './promos.ts';
 
-/** El premio que devuelve el servidor al captar o al girar. */
+/** El premio que devuelve el servidor al captar o al girar (components/schemas/PromoPremio). */
 export type PremioGanado = {
 	tipo: Premio['tipo'];
 	codigo?: string;
+	descripcion?: string;
 	descarga?: string;
 	nombreArchivo?: string;
 	vence?: string;
 };
 
-export type Captado = { premio: PremioGanado };
-export type Girado = { porcion: number; premio: PremioGanado };
+export type Captado = { premio: PremioGanado; repetido?: boolean; demo?: boolean };
+export type Girado = Captado & { porcion?: number; texto?: string };
 export type Fallo = { error: string };
 
 async function pedir<T>(url: string, cuerpo: unknown): Promise<T | Fallo> {
@@ -26,12 +27,14 @@ async function pedir<T>(url: string, cuerpo: unknown): Promise<T | Fallo> {
 			body: JSON.stringify(cuerpo)
 		});
 		const j = (await r.json().catch(() => null)) as
-			(T & { message?: string; error?: string }) | null;
+			(T & { message?: string; error?: string; detail?: string; title?: string }) | null;
 		if (!r.ok || !j)
 			return {
 				error:
 					j?.error ??
+					j?.detail ??
 					j?.message ??
+					j?.title ??
 					(r.status === 429
 						? 'Probaste muchas veces seguidas. Esperá unos minutos.'
 						: 'No pudimos anotarte. Probá de nuevo.')
@@ -56,10 +59,11 @@ export const esFallo = (x: unknown): x is Fallo =>
 	!!x && typeof x === 'object' && typeof (x as Fallo).error === 'string';
 
 // ---------------------------------------------------------------------------------------------
-// Eventos: se juntan y salen en lote con sendBeacon (al esconder la página, o de a 10).
+// Eventos: se juntan por (ventana, tipo) y salen en lote con sendBeacon al esconder la página.
+// Los envíos (captación y ruleta) los cuenta el servidor al captar: acá no se mandan.
 
-export type TipoEvento = 'vista' | 'cierre' | 'envio' | 'clic';
-type Evento = { ventana: string; tipo: TipoEvento };
+export type TipoEvento = 'vista' | 'cierre' | 'clic';
+type Evento = { ventana: string; tipo: TipoEvento; n: number };
 
 let fila: { slug: string; eventos: Evento[] } | null = null;
 let escuchando = false;
@@ -69,7 +73,7 @@ export function mandarEventos() {
 	const { slug, eventos } = fila;
 	fila = { slug, eventos: [] };
 	const url = `/t/${slug}/promos/eventos`;
-	const cuerpo = JSON.stringify({ eventos });
+	const cuerpo = JSON.stringify({ eventos: eventos.slice(0, 50) });
 	try {
 		if (navigator.sendBeacon?.(url, new Blob([cuerpo], { type: 'application/json' }))) return;
 	} catch {
@@ -87,7 +91,9 @@ export function evento(slug: string, ventana: string, tipo: TipoEvento) {
 	if (typeof window === 'undefined') return;
 	if (fila && fila.slug !== slug) mandarEventos();
 	fila ??= { slug, eventos: [] };
-	fila.eventos.push({ ventana, tipo });
+	const e = fila.eventos.find((x) => x.ventana === ventana && x.tipo === tipo && x.n < 20);
+	if (e) e.n++;
+	else fila.eventos.push({ ventana, tipo, n: 1 });
 	if (!escuchando) {
 		escuchando = true;
 		addEventListener('pagehide', mandarEventos);
@@ -95,24 +101,44 @@ export function evento(slug: string, ventana: string, tipo: TipoEvento) {
 			if (document.visibilityState === 'hidden') mandarEventos();
 		});
 	}
-	if (fila.eventos.length >= 10) mandarEventos();
+	if (fila.eventos.length >= 40) mandarEventos();
 }
 
 // ---------------------------------------------------------------------------------------------
 // Compras recientes (prueba social): sólo pedidos reales pagados de los últimos 7 días.
 
-export type Reciente = { nombre: string; provincia: string; producto: string; hace: string };
+export type Reciente = {
+	nombre: string;
+	/** '' si no se sabe (no se inventa). */
+	provincia: string;
+	producto: string;
+	productoId: string | null;
+	foto: string | null;
+	cuando: string;
+};
 
 export async function recientes(slug: string): Promise<Reciente[]> {
 	try {
 		const r = await fetch(`/t/${slug}/promos/recientes`);
 		if (!r.ok) return [];
-		const j = (await r.json()) as { recientes?: Reciente[] } | Reciente[];
-		const l = Array.isArray(j) ? j : (j.recientes ?? []);
-		return l.filter((x) => x && typeof x.nombre === 'string' && typeof x.producto === 'string');
+		const j = (await r.json()) as { compras?: Reciente[] };
+		return (j.compras ?? []).filter(
+			(x) => x && typeof x.nombre === 'string' && x.nombre && typeof x.producto === 'string'
+		);
 	} catch {
 		return [];
 	}
+}
+
+/** «hace 2 h», «hace 3 días»: cuánto pasó desde la compra. */
+export function hace(iso: string, ahora = Date.now()): string {
+	const m = Math.max(1, Math.round((ahora - Date.parse(iso)) / 60_000));
+	if (!Number.isFinite(m)) return '';
+	if (m < 60) return `hace ${m} min`;
+	const h = Math.round(m / 60);
+	if (h < 24) return `hace ${h} h`;
+	const d = Math.round(h / 24);
+	return d === 1 ? 'ayer' : `hace ${d} días`;
 }
 
 /** Deja el cupón anotado para el carrito y el checkout (como el link de un cupón: CampoCupon). */

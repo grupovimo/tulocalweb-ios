@@ -155,7 +155,11 @@ export function estiloFinal(
 	}
 	const fuente = (x: string | undefined, si: string) => (x && FUENTES[x] ? x : si);
 	const mensajes = (e.barra?.mensajes ?? [])
-		.map((m) => ({ texto: (m.texto ?? '').trim(), ...(m.link ? { link: m.link } : {}) }))
+		.map((m) => ({
+			texto: (m.texto ?? '').trim(),
+			...(m.link ? { link: m.link } : {}),
+			...(m.hasta && Number.isFinite(Date.parse(m.hasta)) ? { hasta: m.hasta } : {})
+		}))
 		.filter((m) => m.texto)
 		.slice(0, 5);
 	return {

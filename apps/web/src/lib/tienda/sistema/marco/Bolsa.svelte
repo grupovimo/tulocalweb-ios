@@ -22,6 +22,7 @@
 	const unidades = $derived(lineas.reduce((s, l) => s + l.cantidad, 0));
 	const titulo = $derived(ctx.estilo.gastronomia ? 'Tu pedido' : 'Tu bolsa');
 	const gratis = $derived(t.envios.gratisDesde && total >= t.envios.gratisDesde);
+	const falta = $derived(t.envios.gratisDesde ? Math.max(0, t.envios.gratisDesde - total) : 0);
 	const extra = $derived(
 		[
 			t.cobros.mercadoPago ? cuotas(total, t.cobros.cuotas) : '',
@@ -72,6 +73,19 @@
 				</li>
 			{/each}
 		</ul>
+		{#if t.envios.gratisDesde && ctx.conversion.envioGratis}
+			<div class="tv-aviso-barra tv-bolsa-aviso" class:tv-aviso-barra--ok={!falta}>
+				<p>
+					{#if falta}Te faltan <b>{precio(falta)}</b> para el envío&nbsp;gratis.{:else}<b
+							>¡Ya tenés envío gratis!</b
+						>{/if}
+				</p>
+				{#if falta}<span class="tv-progreso" aria-hidden="true"
+						><span style:width="{Math.min(100, (total / t.envios.gratisDesde) * 100)}%"
+						></span></span
+					>{/if}
+			</div>
+		{/if}
 		<div class="tv-bolsa-total">
 			{#if t.envios.gratisDesde}<div class="tv-bolsa-fila">
 					<span>Envío</span>{#if gratis}<b class="tv-ok">Gratis</b>{:else}<span class="tv-suave"

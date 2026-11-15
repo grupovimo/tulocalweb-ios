@@ -25,6 +25,8 @@
 		sinViuda
 	} from '../formato.ts';
 	import BotonComparar from '../marco/BotonComparar.svelte';
+	import { conversionDeTienda, etiquetasDe } from '../conversion.ts';
+	import Corazon from '../primitivas/Corazon.svelte';
 	import Tienda from '../marco/Tienda.svelte';
 	import { disenoDeTienda } from '../migrar.ts';
 	import { panelCarrito } from '../panel.svelte.ts';
@@ -96,12 +98,23 @@
 		)
 	);
 	const comparador = $derived(funcionesDe(tienda).comparador);
+	// Las herramientas para vender más: etiquetas automáticas, stock bajo y compra fija en el celular.
+	const conv = $derived(conversionDeTienda(tienda));
+	const automaticas = $derived(
+		etiquetasDe(producto, tienda, conv)
+			.filter((e) => e.tipo !== 'off' && e.tipo !== 'propia')
+			.map((e) => e.texto)
+	);
 	const chips = $derived(
 		[
 			tienda.envios.gratisDesde && sel.precio >= tienda.envios.gratisDesde ? 'Envío gratis' : '',
-			producto.etiqueta?.trim() ?? ''
-		].filter(Boolean)
+			producto.etiqueta?.trim() ?? '',
+			...automaticas
+		].filter((x, i, l) => x && l.indexOf(x) === i)
 	);
+	// «Quedan 3»: desde conversion.stockBajo (0: no se avisa).
+	const stockBajo = $derived(conv.stockBajo);
+	const fija = $derived(conv.compraFija);
 
 	// Cuántos (Mostrador: el «− 1 +» al lado del botón).
 	let cantidad = $state(1);
@@ -391,10 +404,15 @@
 							>{/each}
 					</div>
 				{/if}
+				{#if dir !== 'mostrador' && automaticas.length}
+					<div class="tv-ficha-chips tv-ficha-chips--auto">
+						{#each automaticas as c (c)}<span class="tv-chip">{c}</span>{/each}
+					</div>
+				{/if}
 				{#if dir === 'pedido' && (producto.categoria || prom)}
 					<p class="tv-chico tv-suave tv-ficha-sobre">
-						{#if producto.categoria}<span>{producto.categoria}</span>{/if}{#if producto.categoria && prom}<span
-								aria-hidden="true">·</span
+						{#if producto.categoria}<span>{producto.categoria}</span
+							>{/if}{#if producto.categoria && prom}<span aria-hidden="true">·</span
 							>{/if}{#if prom}<span class="tv-ficha-sobre-prom"
 								>{promedio(prom)}<Icon icon={I.phStarFill} size={12} /><span
 									>({cuantos(resenas.length, 'reseña', 'reseñas')})</span
@@ -437,7 +455,7 @@
 				</div>
 
 				{@render opciones()}
-				{#if sel.stock > 0 && sel.stock <= 3 && !sel.proximo && (!sel.conOpciones || sel.variante)}
+				{#if sel.stock > 0 && sel.stock <= stockBajo && !sel.proximo && (!sel.conOpciones || sel.variante)}
 					<p class="tv-ficha-quedan">
 						{dir === 'mostrador' ? '¡' : ''}{sel.stock === 1
 							? 'Queda 1'
@@ -455,7 +473,7 @@
 				{/if}
 
 				<div class="tv-ficha-acciones">
-					<div class="tv-ficha-comprar tv-solo-compu">
+					<div class="tv-ficha-comprar" class:tv-solo-compu={fija}>
 						{#if dir === 'mostrador' && sePuede && sel.stock > 1}
 							<Cantidad
 								valor={cantidad}
@@ -478,6 +496,7 @@
 					<div class="tv-ficha-extras">
 						<CompartirProducto {tienda} {producto} {tema} />
 						{#if comparador}<BotonComparar {producto} grande />{/if}
+						{#if conv.favoritos}<Corazon {producto} grande />{/if}
 					</div>
 				</div>
 
@@ -541,18 +560,18 @@
 
 	<!-- Celular: el botón principal fijo abajo (reserva su lugar al final: regla 8). Va acá, antes
 	que los relacionados, así es el primero de la página para el teclado y los lectores. -->
-	<div class="tv-ficha-barra tv-solo-movil">
-		{#if dir === 'mostrador' && numeroWa(tienda)}
-			<a
-				class="tv-ficha-wa"
-				href={wa}
-				target="_blank"
-				rel="noopener"
-				aria-label="Consultar por WhatsApp"><Icon icon={I.phWhatsappLogoFill} size={24} /></a
-			>
-		{/if}
-		{@render botonPrincipal('')}
-	</div>
+	{#if fija}<div class="tv-ficha-barra tv-solo-movil">
+			{#if dir === 'mostrador' && numeroWa(tienda)}
+				<a
+					class="tv-ficha-wa"
+					href={wa}
+					target="_blank"
+					rel="noopener"
+					aria-label="Consultar por WhatsApp"><Icon icon={I.phWhatsappLogoFill} size={24} /></a
+				>
+			{/if}
+			{@render botonPrincipal('')}
+		</div>{/if}
 
 	{#if dir === 'mostrador'}
 		<section class="tv-ancho tv-ficha-cajas" aria-label="Detalles">
@@ -588,8 +607,7 @@
 			{#each resenas.slice(0, 6) as r, i (i)}
 				<figure class="tv-ficha-resena">
 					<figcaption>
-						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave"
-								>{' · '}compra verificada</span
+						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave">{' · '}compra verificada</span
 							>{/if}
 					</figcaption>
 					<Estrellas valor={r.estrellas} tam={14} />
@@ -625,7 +643,7 @@
 		</div>
 	{/if}
 
-	<div class="tv-reserva-barra tv-solo-movil" aria-hidden="true"></div>
+	{#if fija}<div class="tv-reserva-barra tv-solo-movil" aria-hidden="true"></div>{/if}
 
 	{#if hayGuia}
 		<dialog

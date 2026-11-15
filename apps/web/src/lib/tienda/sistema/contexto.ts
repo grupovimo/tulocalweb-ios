@@ -5,6 +5,8 @@
  */
 import { getContext, setContext } from 'svelte';
 import type { Carrito } from '../carrito.svelte.ts';
+import type { Favoritos } from './favoritos.svelte.ts';
+import type { Conversion } from './promos.ts';
 import type { Direccion } from './catalogo.ts';
 import type { Tienda } from './datos.ts';
 import type { EstiloFinal } from './presets.ts';
@@ -22,6 +24,10 @@ export type ContextoTienda = {
 	readonly carrito: Carrito;
 	/** La página que se está dibujando (inicio, catalogo, producto…). */
 	readonly pagina: string;
+	/** Las herramientas para vender más (estilo.conversion con sus valores por defecto). */
+	readonly conversion: Conversion;
+	/** Los favoritos de quien compra (sólo se muestran con conversion.favoritos). */
+	readonly favoritos: Favoritos;
 };
 
 const CLAVE = Symbol('tienda-sistema');

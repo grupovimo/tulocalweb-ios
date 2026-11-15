@@ -10,6 +10,7 @@
 	import { tarjetaDe } from '../../seleccion.svelte.ts';
 	import type { TiendaPublica } from '../../tipos.ts';
 	import { productosDe } from '../datos.ts';
+	import { conversionDeTienda, sumaTambien } from '../conversion.ts';
 	import { conTransferencia, cuantos, cuotas, precio } from '../formato.ts';
 	import AvisosCarrito from '../marco/AvisosCarrito.svelte';
 	import LineasCarrito from '../marco/LineasCarrito.svelte';
@@ -76,9 +77,21 @@
 		].filter(Boolean)
 	);
 
+	// «Sumá también» (conversion.sumaEnCarrito): combos y relacionados de lo que ya está, hasta 3.
+	const suma = $derived(
+		conversionDeTienda(tienda).sumaEnCarrito
+			? sumaTambien(
+					tienda,
+					carrito.lineas.map((l) => l.id)
+				)
+			: []
+	);
 	const sugeridos = $derived(
 		productosDe(tienda, { fuente: 'vendidos', cantidad: 12 })
-			.filter((p) => !carrito.lineas.some((l) => l.id === p.id) && !tarjetaDe(p).agotado)
+			.filter(
+				(p) =>
+					!carrito.lineas.some((l) => l.id === p.id) && !tarjetaDe(p).agotado && !suma.includes(p)
+			)
 			.slice(0, 4)
 	);
 </script>
@@ -101,6 +114,16 @@
 				<div class="tv-carrito-lineas">
 					<AvisosCarrito {lineas} envioGratis={op.envioGratisDesde} />
 					<LineasCarrito {lineas} />
+					{#if suma.length}
+						<section class="tv-suma" aria-labelledby="tv-suma-t">
+							<h2 class="tv-h3" id="tv-suma-t">Sumá también</h2>
+							<ul class="tv-suma-lista">
+								{#each suma as p (p.id)}<li>
+										<TarjetaProducto producto={p} forma="lista" accion="agregar" ancho={200} />
+									</li>{/each}
+							</ul>
+						</section>
+					{/if}
 				</div>
 				<aside class="tv-carrito-resumen tv-tarjeta" aria-label="Resumen">
 					<h2 class="tv-h3">Resumen</h2>

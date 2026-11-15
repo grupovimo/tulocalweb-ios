@@ -7,7 +7,7 @@
 import { completa, type PaginaVentana, type VarianteVentana, type Ventana } from './promos.ts';
 
 /** Las páginas de la tienda que no son del catálogo de ventanas pero donde pueden salir (si «todas»). */
-const OTRAS = ['turnos', 'suscripciones', 'suscripcion'];
+const OTRAS = ['turnos', 'suscripciones', 'suscripcion', 'favoritos'];
 const DE_VENTANA: PaginaVentana[] = ['inicio', 'catalogo', 'producto', 'carrito', 'nosotros'];
 
 /**

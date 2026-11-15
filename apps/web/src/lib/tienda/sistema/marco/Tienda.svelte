@@ -9,6 +9,9 @@
 	import { estiloFinal } from '../presets.ts';
 	import { hojaFuentes, variables } from '../tokens.ts';
 	import { funcionesDe, opcionesPaginas } from '../paginas.ts';
+	import { favoritosDe } from '../favoritos.svelte.ts';
+	import { conversionDe } from '../promos.ts';
+	import PruebaSocial from './PruebaSocial.svelte';
 	import Aviso18 from './Aviso18.svelte';
 	import Barra from './Barra.svelte';
 	import BotonWhatsApp from './BotonWhatsApp.svelte';
@@ -58,6 +61,8 @@
 	const base = $derived(baseDe(tienda));
 	const carrito = $derived(carritoDe(tienda.slug));
 	const funciones = $derived(funcionesDe(tienda));
+	const conversion = $derived(conversionDe(diseno.estilo));
+	const favoritos = $derived(favoritosDe(tienda.slug));
 	const opciones = $derived(opcionesPaginas(tienda, estilo.direccion));
 	const panel = $derived(
 		opciones.carrito.variante === 'panel' && pagina !== 'checkout' && pagina !== 'carrito'
@@ -83,7 +88,17 @@
 			...(tienda.suscripciones.length
 				? [{ t: 'Suscripciones', href: `${base}/suscripciones`, on: pagina === 'suscripciones' }]
 				: []),
-			{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' }
+			{ t: 'Nosotros', href: `${base}/nosotros`, on: pagina === 'nosotros' },
+			// Favoritos: aparece cuando quien compra guardó alguno.
+			...(conversion.favoritos && favoritos.ids.length
+				? [
+						{
+							t: `Favoritos (${favoritos.ids.length})`,
+							href: `${base}/favoritos`,
+							on: pagina === 'favoritos'
+						}
+					]
+				: [])
 		];
 	});
 
@@ -108,6 +123,12 @@
 		},
 		get pagina() {
 			return pagina;
+		},
+		get conversion() {
+			return conversion;
+		},
+		get favoritos() {
+			return favoritos;
 		}
 	});
 	const fuentes = $derived(hojaFuentes(estilo));
@@ -139,4 +160,5 @@
 	{#if panel}<PanelCarrito envioGratis={opciones.carrito.envioGratisDesde} />{/if}
 	<!-- Las ventanas (popups): una por página, nunca en el checkout ni en los legales. -->
 	<Ventanas />
+	{#if conversion.pruebaSocial.activa}<PruebaSocial />{/if}
 </div>

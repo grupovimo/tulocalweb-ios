@@ -38,14 +38,14 @@
 
 {#if f}
 	{#if caja}
-		<span class="tv-cuenta tv-cuenta--caja">
+		<span class="tv-regresiva tv-regresiva--caja">
 			<span class="tv-oculto">{textoFaltanLargo(f)}</span>
-			{#each partes as p (p.u)}<span class="tv-cuenta-celda" aria-hidden="true"
+			{#each partes as p (p.u)}<span class="tv-regresiva-celda" aria-hidden="true"
 					><b>{String(p.n).padStart(2, '0')}</b><small>{p.u}</small></span
 				>{/each}
 		</span>
 	{:else}
-		<span class="tv-cuenta"
+		<span class="tv-regresiva"
 			><span class="tv-oculto">{textoFaltanLargo(f)}</span><span aria-hidden="true"
 				>{textoFaltan(f)}</span
 			></span

@@ -110,11 +110,11 @@
 }
 
 /* La cuenta regresiva en cajitas. */
-.tv-cuenta--caja {
+.tv-regresiva--caja {
 	display: flex;
 	gap: 8px;
 }
-.tv-cuenta-celda {
+.tv-regresiva-celda {
 	display: grid;
 	justify-items: center;
 	min-width: 56px;
@@ -123,16 +123,16 @@
 	background: color-mix(in srgb, var(--t-texto) 6%, transparent);
 	line-height: 1;
 }
-.tv-cuenta-celda b {
+.tv-regresiva-celda b {
 	font: var(--t-peso-titulos) 22px/1 var(--t-f-titulos);
 	font-variant-numeric: tabular-nums;
 }
-.tv-cuenta-celda small {
+.tv-regresiva-celda small {
 	margin-top: 4px;
 	font-size: 12px;
 	color: var(--t-suave);
 }
-.tv-cuenta {
+.tv-regresiva {
 	font-variant-numeric: tabular-nums;
 }
 
@@ -358,7 +358,7 @@
 .tv-vent--completa.tv-vent--foto .tv-vent-cupon {
 	border-color: #fff;
 }
-.tv-vent--completa.tv-vent--foto .tv-cuenta-celda {
+.tv-vent--completa.tv-vent--foto .tv-regresiva-celda {
 	background: rgb(255 255 255 / 0.16);
 }
 .tv-vent--completa.tv-vent--foto .tv-vent-acepto a,
@@ -414,7 +414,7 @@
 	.tv-vent--completa .tv-vent-titulo {
 		font-size: var(--t-h3);
 	}
-	.tv-cuenta-celda {
+	.tv-regresiva-celda {
 		min-width: 50px;
 	}
 }
@@ -459,5 +459,155 @@
 	}
 	.tv-ruleta-rueda {
 		transition: none;
+	}
+}
+
+/* ---- Herramientas para vender más (estilo.conversion) ----------------------------------------- */
+
+/* Las etiquetas de la tarjeta: hasta dos, apiladas arriba a la izquierda de la foto. */
+.tv-prod-chips {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	right: 56px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	pointer-events: none;
+}
+.tv-prod-chips .tv-prod-chip {
+	position: static;
+}
+.tv-chip--nuevo {
+	background: var(--t-texto);
+	color: var(--t-fondo);
+}
+.tv-chip--ultimas {
+	background: color-mix(in srgb, var(--t-error, #b42318) 12%, var(--t-fondo));
+	color: var(--t-error, #b42318);
+}
+.tv-ficha-chips--auto {
+	margin-bottom: 10px;
+}
+.tv-ficha-chips--auto .tv-chip {
+	background: color-mix(in srgb, var(--t-texto) 7%, var(--t-fondo));
+}
+
+/* El corazón de favoritos: sobre la foto, arriba a la derecha (44 px de toque). */
+.tv-corazon {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--t-texto);
+	cursor: pointer;
+}
+.tv-corazon::before {
+	content: '';
+	position: absolute;
+	inset: 6px;
+	border-radius: inherit;
+	background: color-mix(in srgb, var(--t-fondo) 88%, transparent);
+	box-shadow: 0 2px 8px -4px rgb(0 0 0 / 0.3);
+}
+.tv-corazon svg {
+	position: relative;
+}
+.tv-corazon[aria-pressed='true'],
+.tv-corazon-grande[aria-pressed='true'] {
+	color: var(--t-error, #b42318);
+}
+.tv[data-dir='mostrador'] .tv-corazon {
+	top: 14px;
+	right: 14px;
+}
+
+/* «Sumá también» en el carrito. */
+.tv-suma {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-top: 12px;
+}
+.tv-suma-lista {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.tv-bolsa-aviso {
+	padding: 12px 14px;
+	font-size: 14px;
+}
+
+/* Compras recientes: un aviso chico abajo a la izquierda, por encima de la barra fija. */
+.tv-social-zona {
+	position: fixed;
+	left: 16px;
+	bottom: calc(16px + env(safe-area-inset-bottom));
+	z-index: 35;
+	width: min(360px, calc(100vw - 32px));
+	pointer-events: none;
+}
+.tv-social {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 4px 8px 8px;
+	background: var(--t-fondo);
+	box-shadow: 0 16px 36px -18px rgb(0 0 0 / 0.4);
+	pointer-events: auto;
+	animation: tv-vent-sube 0.3s ease-out;
+}
+.tv[data-dir='mostrador'] .tv-social {
+	background: var(--t-superficie);
+}
+.tv-social-foto {
+	flex: none;
+	width: 48px;
+	height: 48px;
+	overflow: hidden;
+	border-radius: min(var(--t-r-foto), 10px);
+}
+.tv-social p {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	font-size: var(--t-chico);
+	line-height: 1.4;
+	text-wrap: pretty;
+}
+.tv-social a {
+	font-weight: 600;
+}
+.tv:has(.tv-reserva-barra) .tv-social-zona {
+	bottom: calc(100px + env(safe-area-inset-bottom));
+}
+@media (max-width: 759px) {
+	.tv-social-zona {
+		left: 12px;
+		right: 12px;
+		width: auto;
+	}
+}
+
+/* La cuenta regresiva de la barra de anuncios. */
+.tv-barra-cuenta {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+	.tv-social {
+		animation: none;
 	}
 }

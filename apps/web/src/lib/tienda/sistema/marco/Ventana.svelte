@@ -170,8 +170,8 @@
 		const c = {
 			ventana: w.id,
 			email: m,
-			...(pedirNombre && nombre.trim() ? { nombre: nombre.trim().slice(0, 80) } : {}),
-			...(pedirWa && whatsapp.trim() ? { whatsapp: whatsapp.trim().slice(0, 30) } : {}),
+			...(pedirNombre && nombre.trim() ? { nombre: nombre.trim().slice(0, 60) } : {}),
+			...(pedirWa && whatsapp.trim() ? { whatsapp: whatsapp.trim().slice(0, 24) } : {}),
 			consentimiento: true as const
 		};
 		if (w.contenido === 'ruleta') {
@@ -179,9 +179,9 @@
 			enviando = false;
 			if (esFallo(r)) return void (error = r.error);
 			accion = true;
-			medida('envio');
 			anotarHecha(ctx.tienda.slug, w.id);
-			porcion = r.porcion;
+			porcion = r.porcion ?? null;
+			if (porcion === null) return void ganar(r.premio);
 			girando = true;
 			premioPendiente = r.premio;
 		} else {
@@ -189,7 +189,6 @@
 			enviando = false;
 			if (esFallo(r)) return void (error = r.error);
 			accion = true;
-			medida('envio');
 			anotarHecha(ctx.tienda.slug, w.id);
 			ganar(r.premio);
 		}
@@ -236,7 +235,7 @@
 		{#if pedirNombre}
 			<div class="tv-campo">
 				<label for="{uid}-nombre">Tu nombre <span class="tv-suave">(opcional)</span></label>
-				<input id="{uid}-nombre" bind:value={nombre} autocomplete="given-name" maxlength="80" />
+				<input id="{uid}-nombre" bind:value={nombre} autocomplete="given-name" maxlength="60" />
 			</div>
 		{/if}
 		<div class="tv-campo">
@@ -262,7 +261,7 @@
 					bind:value={whatsapp}
 					autocomplete="tel"
 					inputmode="tel"
-					maxlength="30"
+					maxlength="24"
 				/>
 			</div>
 		{/if}
@@ -297,6 +296,7 @@
 				</p>
 			{:else}
 				{#if listo}<p class="tv-lead">{sinViuda(listo)}</p>{/if}
+				{#if premio.descripcion}<p class="tv-chico tv-suave">{premio.descripcion}</p>{/if}
 				{#if premio.codigo}{@render codigoCupon(premio.codigo)}{/if}
 				{#if premio.descarga}
 					<a

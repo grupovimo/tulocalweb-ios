@@ -9,8 +9,9 @@
 	import { agregar, sumaDirecto } from '../acciones.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { productoHref } from '../datos.ts';
-	import { descuento } from '../formato.ts';
+	import { etiquetasDe } from '../conversion.ts';
 	import Cantidad from './Cantidad.svelte';
+	import Corazon from './Corazon.svelte';
 	import Foto from './Foto.svelte';
 	import Precio from './Precio.svelte';
 
@@ -45,14 +46,9 @@
 	const ui = getUi();
 	const t = $derived(tarjetaDe(producto));
 	const href = $derived(productoHref(ctx.tienda, producto));
-	const off = $derived(t.desde ? '' : descuento(t.precio, producto.anterior));
-	const etiqueta = $derived(
-		proximamente(producto)
-			? 'Próximamente'
-			: t.agotado
-				? 'Sin stock'
-				: off || (producto.etiqueta?.trim() ?? '')
-	);
+	// Las etiquetas automáticas (conversion.etiquetas): la oferta, la propia, Nuevo, Últimas N y Más
+	// vendido; en la tarjeta van las dos primeras.
+	const etiquetas = $derived(etiquetasDe(producto, ctx.tienda, ctx.conversion).slice(0, 2));
 	const directo = $derived(sumaDirecto(ctx, producto));
 	const enCarrito = $derived(
 		accion === 'agregar'
@@ -75,11 +71,14 @@
 			{prioridad}
 			proporcion={forma === 'lista' ? '1/1' : 'var(--t-foto)'}
 		/>
-		{#if etiqueta && forma === 'grilla'}<span
-				class="tv-chip tv-prod-chip"
-				class:tv-chip--off={!!off}>{etiqueta}</span
+		{#if etiquetas.length && forma === 'grilla'}<span class="tv-prod-chips"
+				>{#each etiquetas as e (e.texto)}<span
+						class="tv-chip tv-prod-chip tv-chip--{e.tipo}"
+						class:tv-chip--off={e.tipo === 'off'}>{e.texto}</span
+					>{/each}</span
 			>{/if}
 	</a>
+	{#if ctx.conversion.favoritos && forma === 'grilla'}<Corazon {producto} />{/if}
 	<div class="tv-prod-info">
 		<a class="tv-prod-nombre" {href}>{producto.nombre}</a>
 		{#if detalle}<span class="tv-prod-detalle">{detalle}</span>{/if}

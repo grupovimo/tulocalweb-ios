@@ -2,6 +2,7 @@
 	import Carrito from './sistema/paginas/Carrito.svelte';
 	import Catalogo from './sistema/paginas/Catalogo.svelte';
 	import Checkout from './sistema/paginas/Checkout.svelte';
+	import Favoritos from './sistema/paginas/Favoritos.svelte';
 	import Ficha from './sistema/paginas/Ficha.svelte';
 	import Inicio from './sistema/paginas/Inicio.svelte';
 	import Listo, { type PedidoListo } from './sistema/paginas/Listo.svelte';
@@ -33,6 +34,7 @@
 		| 'carrito'
 		| 'checkout'
 		| 'nosotros'
+		| 'favoritos'
 		| 'no-existe'
 		| 'listo'
 		| 'turnos'
@@ -86,6 +88,8 @@
 	<Checkout {tienda} {error} />
 {:else if pagina === 'listo' && pedido}
 	<Listo {tienda} {pedido} />
+{:else if pagina === 'favoritos'}
+	<Favoritos {tienda} />
 {:else if pagina === 'nosotros'}
 	<Nosotros {tienda} />
 {:else if pagina === 'turnos' && tienda.turnos}

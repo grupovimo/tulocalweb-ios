@@ -13,7 +13,8 @@
 	const ctx = usarTienda();
 	const t = $derived(ctx.tienda);
 	const subtotal = $derived(lineas.reduce((s, l) => s + l.subtotal, 0));
-	const desde = $derived(envioGratis ? t.envios.gratisDesde : null);
+	// La página lo muestra (paginas.carrito.envioGratisDesde) y la tienda no lo apagó (conversion).
+	const desde = $derived(envioGratis && ctx.conversion.envioGratis ? t.envios.gratisDesde : null);
 	const falta = $derived(desde ? Math.max(0, desde - subtotal) : 0);
 	const mayor = $derived(avisoMayorista(lineas, t.mayorista ?? null));
 	const textoMayor = $derived(mayor && textoAviso(mayor, precio));
