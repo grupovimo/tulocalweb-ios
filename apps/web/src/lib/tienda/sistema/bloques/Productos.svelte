@@ -2,6 +2,7 @@
 	import { campo, textoDe, type Bloque, type SeleccionProductos } from '../catalogo.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { productosDe } from '../datos.ts';
+	import { MIN_PRODUCTOS_TOP } from '../conversion.ts';
 	import { cuantos } from '../formato.ts';
 	import Grilla from '../primitivas/Grilla.svelte';
 	import Seccion from '../primitivas/Seccion.svelte';
@@ -20,14 +21,24 @@
 	const sel = $derived(campo<SeleccionProductos>(bloque, 'productos'));
 	const lista = $derived(productosDe(ctx.tienda, sel));
 	const columnas = $derived(campo<number>(bloque, 'columnas') ?? 4);
-	// «Lo más elegido» (el título por defecto) sólo si hay ventas que lo respalden: sin ninguna, los
-	// «más vendidos» son el orden del catálogo y el título prometía algo que no era.
-	const sinVentas = $derived(
+	// «Lo más elegido» (el título por defecto) sólo si dice algo: con ventas que lo respalden y con
+	// algo entre qué elegir. Sin ventas, los «más vendidos» son el orden del catálogo; con uno a tres
+	// productos, «lo más elegido» es la tienda entera (y con uno solo, el antetítulo sobra).
+	const porDefecto = $derived(
 		(sel?.fuente ?? 'vendidos') === 'vendidos' &&
-			!(bloque.datos.titulo as string | undefined)?.trim() &&
-			!(ctx.tienda.topVendidos ?? []).length
+			!(bloque.datos.titulo as string | undefined)?.trim()
 	);
-	const titulo = $derived(sinVentas ? 'Nuestros productos' : textoDe(bloque, 'titulo'));
+	const noDistingue = $derived(
+		porDefecto &&
+			(!(ctx.tienda.topVendidos ?? []).length || ctx.tienda.productos.length < MIN_PRODUCTOS_TOP)
+	);
+	const titulo = $derived(
+		noDistingue
+			? ctx.tienda.productos.length === 1
+				? ''
+				: 'Nuestros productos'
+			: textoDe(bloque, 'titulo')
+	);
 	const total = $derived(ctx.tienda.productos.length);
 	const link = $derived(
 		campo<boolean>(bloque, 'verTodo') !== false && total > lista.length

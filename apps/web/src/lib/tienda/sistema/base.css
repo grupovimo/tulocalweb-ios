@@ -1033,11 +1033,16 @@
 	gap: 12px;
 }
 .tv-cat-nombre {
+	min-width: 0;
 	font-family: var(--t-f-titulos);
 	font-weight: var(--t-peso-titulos);
 	letter-spacing: var(--t-esp-titulos);
 	font-size: var(--t-h3);
 	line-height: 1.1;
+	/* Con una tipografía ancha (Relojería Norte), «Automáticos» no entraba en la tarjeta y se cortaba:
+	   se parte en sílabas antes que salirse. */
+	overflow-wrap: break-word;
+	hyphens: auto;
 }
 .tv-cat-cant {
 	font-size: 14px;

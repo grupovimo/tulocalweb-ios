@@ -164,7 +164,7 @@
 /* Categorías: tarjeta con la foto al costado y «Ver productos». */
 .tv[data-dir='mostrador'] .tv-cats--tarjetas .tv-cat {
 	display: grid;
-	grid-template-columns: 160px 1fr;
+	grid-template-columns: 160px minmax(0, 1fr);
 	align-items: center;
 	gap: 20px;
 	padding: 12px;
@@ -179,6 +179,7 @@
 	border-radius: 12px;
 }
 .tv[data-dir='mostrador'] .tv-cat-textos {
+	min-width: 0;
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 6px;
