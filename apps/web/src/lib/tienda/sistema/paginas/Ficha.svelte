@@ -444,7 +444,7 @@
 							{#if transf}<p class="tv-ficha-transf">{transf} pagando con transferencia</p>{/if}
 						{:else}
 							<p class="tv-ficha-cuotas">
-								{enCuotas}{#if enCuotas && transf}{' · '}{/if}{#if transf}<span
+								{enCuotas}{#if enCuotas && transf}&#32;·&#32;{/if}{#if transf}<span
 										class={dir === 'vidriera' ? 'tv-ok' : ''}>{transf} con transferencia</span
 									>{/if}
 							</p>
@@ -607,7 +607,7 @@
 			{#each resenas.slice(0, 6) as r, i (i)}
 				<figure class="tv-ficha-resena">
 					<figcaption>
-						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave">{' · '}compra verificada</span
+						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave">&#32;· compra verificada</span
 							>{/if}
 					</figcaption>
 					<Estrellas valor={r.estrellas} tam={14} />
