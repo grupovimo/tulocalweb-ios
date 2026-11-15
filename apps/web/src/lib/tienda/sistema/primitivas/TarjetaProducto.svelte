@@ -5,10 +5,12 @@
 	import { proximamente } from '../../lanzamiento.ts';
 	import { tarjetaDe } from '../../seleccion.svelte.ts';
 	import type { ProductoPublico } from '../../tipos.ts';
+	import { claveLinea } from '../../lineas.ts';
 	import { agregar, sumaDirecto } from '../acciones.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { productoHref } from '../datos.ts';
 	import { descuento } from '../formato.ts';
+	import Cantidad from './Cantidad.svelte';
 	import Foto from './Foto.svelte';
 	import Precio from './Precio.svelte';
 
@@ -20,19 +22,24 @@
 	 *   transferencia en verde, «+» redondo (B-moda, B-cafe).
 	 * - Pedido: foto con radio 12, nombre y precio en una línea y el «+» sobre la foto (C-moda, C-cafe).
 	 * `forma`: 'grilla' (la de arriba) o 'lista' (fila con foto chica, para listas y el menú).
+	 * `accion`: 'mas' (el «+») o 'agregar' (el botón «Agregar» del catálogo, A- y B-catalogo); con
+	 * 'agregar', si ya está en el carrito se ve el «− n +».
 	 */
 	let {
 		producto,
 		forma = 'grilla',
 		ancho = 600,
-		prioridad = false
+		prioridad = false,
+		accion = 'mas'
 	}: {
 		producto: ProductoPublico;
 		forma?: 'grilla' | 'lista';
 		/** El ancho de la foto que se pide (px). */
 		ancho?: number;
 		prioridad?: boolean;
+		accion?: 'mas' | 'agregar';
 	} = $props();
+	const clave = $derived(claveLinea({ id: producto.id, varianteId: null }));
 
 	const ctx = usarTienda();
 	const ui = getUi();
@@ -47,6 +54,11 @@
 				: off || (producto.etiqueta?.trim() ?? '')
 	);
 	const directo = $derived(sumaDirecto(ctx, producto));
+	const enCarrito = $derived(
+		accion === 'agregar'
+			? (ctx.carrito.lineas.find((l) => l.id === producto.id && !l.varianteId)?.cantidad ?? 0)
+			: 0
+	);
 	const detalle = $derived(
 		forma === 'lista' ? (producto.descripcion ?? '').split('\n')[0].slice(0, 90) : ''
 	);
@@ -73,7 +85,22 @@
 		{#if detalle}<span class="tv-prod-detalle">{detalle}</span>{/if}
 		<div class="tv-prod-pie">
 			<Precio {producto} linea={ctx.dir === 'pedido' || forma === 'lista'} />
-			{#if directo}<button
+			{#if directo && accion === 'agregar' && enCarrito}<Cantidad
+					valor={enCarrito}
+					max={producto.stock}
+					nombre={producto.nombre}
+					lleno
+					alCambiar={(n) => ctx.carrito.fijar(clave, n)}
+				/>{:else if directo && accion === 'agregar'}<button
+					type="button"
+					class="tv-agregar"
+					aria-label="Agregar {producto.nombre} al carrito"
+					onclick={() => agregar(ctx, producto, ui)}>Agregar</button
+				>{:else if accion === 'agregar' && !ctx.tienda.vitrina && !t.agotado && !proximamente(producto)}<a
+					class="tv-agregar"
+					{href}
+					aria-label="Elegir opciones de {producto.nombre}">Elegir</a
+				>{:else if directo}<button
 					type="button"
 					class="tv-mas"
 					aria-label="Agregar {producto.nombre} al carrito"

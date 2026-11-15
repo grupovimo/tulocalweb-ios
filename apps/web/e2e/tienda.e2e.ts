@@ -24,7 +24,8 @@ test('tienda: se compra de punta a punta y el pedido entra al panel', async ({ p
 	await listo(page);
 	await page.getByRole('button', { name: 'Agregar al carrito' }).click();
 	await expect(page).toHaveURL(/\/carrito$/);
-	await expect(page.getByRole('heading', { name: /Tu carrito/ })).toContainText('(1)');
+	await expect(page.getByRole('heading', { name: 'Tu carrito' })).toBeVisible();
+	await expect(page.getByText('1 producto', { exact: true })).toBeVisible();
 	await page.getByRole('link', { name: 'Finalizar compra' }).click();
 
 	await page.getByLabel('Email').fill('lucia@ejemplo.com');

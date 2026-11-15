@@ -15,9 +15,4 @@
 	path="/t/{data.tienda.slug}/catalogo"
 	imagen={imagenTienda(data.tienda)}
 />
-<Plantilla
-	tienda={data.tienda}
-	pagina="catalogo"
-	{categoria}
-	orden={page.url.searchParams.get('orden') ?? 'vendidos'}
-/>
+<Plantilla tienda={data.tienda} pagina="catalogo" />

@@ -2450,27 +2450,36 @@
 }
 
 /* Lo flotante no tapa (regla 8): el botón de WhatsApp y la barra del pedido dejan su lugar. */
+/* En la compu, una pestaña pegada al borde derecho que entra en el margen lateral (el más chico
+   es el de Pedido, 32 px): nunca tapa una tarjeta. En el celular no hay margen que alcance: el
+   WhatsApp va en el menú, el pie y la barra de la ficha (el handoff no lleva flotante). */
 .tv-wa {
 	position: fixed;
-	right: 18px;
-	bottom: calc(18px + env(safe-area-inset-bottom));
+	right: 0;
+	bottom: calc(96px + env(safe-area-inset-bottom));
 	z-index: 30;
 	display: grid;
 	place-items: center;
-	width: 56px;
-	height: 56px;
-	border-radius: 50%;
+	width: 30px;
+	height: 64px;
+	border-radius: 12px 0 0 12px;
 	background: #25d366;
 	color: #fff;
-	box-shadow: 0 12px 26px -8px rgb(0 0 0 / 0.4);
+	box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.4);
+	transition: width 0.15s;
 }
-.tv-reserva-wa {
-	height: 88px;
-	background: var(--t-pie);
+.tv-wa:hover,
+.tv-wa:focus-visible {
+	width: 44px;
 }
-@media (min-width: 760px) {
-	.tv-reserva-wa {
-		height: 0;
+@media (max-width: 999px) {
+	.tv-wa {
+		width: 22px;
+	}
+}
+@media (max-width: 759px) {
+	.tv-wa {
+		display: none;
 	}
 }
 .tv-barra-pedido {

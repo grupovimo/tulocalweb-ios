@@ -53,7 +53,7 @@ test('suscripciones: el club de vinos de Malbec, el alta sin cobrar en la demo y
 	await page.getByLabel('Nombre y apellido').fill('Julia Paz');
 	await page.getByRole('textbox', { name: 'WhatsApp' }).fill('11 5555-0101');
 	await page.getByLabel(/Dirección/).fill('Gorriti 4500');
-	await page.getByRole('button', { name: 'Sumarme al club' }).click();
+	await page.getByRole('button', { name: /^Suscribirme/ }).click();
 
 	// El link privado: activa, sin cobro en la demo; se pausa, se reanuda y se da de baja.
 	await expect(page).toHaveURL(/\/suscripcion\/[A-Za-z0-9_-]{16,}\?alta=1$/);

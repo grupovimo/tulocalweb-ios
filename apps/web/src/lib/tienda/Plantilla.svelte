@@ -1,70 +1,103 @@
 <script lang="ts">
-	import type { Component, ComponentProps } from 'svelte';
-	import Andes from './plantillas/Andes.svelte';
-	import Ceibo from './plantillas/Ceibo.svelte';
-	import Malbec from './plantillas/Malbec.svelte';
-	import Miga from './plantillas/Miga.svelte';
-	import MigaClasica from './plantillas/MigaClasica.svelte';
-	import Motor from './plantillas/Motor.svelte';
-	import Mostaza from './plantillas/Mostaza.svelte';
-	import Pampa from './plantillas/Pampa.svelte';
-	import Quebracho from './plantillas/Quebracho.svelte';
-	import Rosedal from './plantillas/Rosedal.svelte';
-	import Tijera from './plantillas/Tijera.svelte';
-	import Yerbal from './plantillas/Yerbal.svelte';
-	import { acentoElegido } from './acentos.ts';
-	import { cssEstilo } from './estilo/css.ts';
+	import Carrito from './sistema/paginas/Carrito.svelte';
+	import Catalogo from './sistema/paginas/Catalogo.svelte';
+	import Checkout from './sistema/paginas/Checkout.svelte';
+	import Ficha from './sistema/paginas/Ficha.svelte';
 	import Inicio from './sistema/paginas/Inicio.svelte';
-
-	type Props = ComponentProps<typeof Ceibo>;
+	import Listo, { type PedidoListo } from './sistema/paginas/Listo.svelte';
+	import MiSuscripcion from './sistema/paginas/MiSuscripcion.svelte';
+	import NoExiste from './sistema/paginas/NoExiste.svelte';
+	import Nosotros from './sistema/paginas/Nosotros.svelte';
+	import Suscripcion from './sistema/paginas/Suscripcion.svelte';
+	import Suscripciones from './sistema/paginas/Suscripciones.svelte';
+	import Turno from './sistema/paginas/Turno.svelte';
+	import Turnos from './sistema/paginas/Turnos.svelte';
+	import type {
+		PlanPublico,
+		ProductoPublico,
+		ProximosTurnos,
+		SuscripcionPublica,
+		TiendaPublica,
+		TurnoPublico
+	} from './tipos.ts';
 
 	/**
-	 * La portada (pagina 'inicio') ya se dibuja con el sistema de bloques (lib/tienda/sistema, diseño
-	 * v2: `tienda.diseno`, o migrado al vuelo si no viene). Las demás páginas siguen, por ahora, con
-	 * las plantillas viejas.
-	 *
-	 * Dibuja la tienda con su plantilla. Las que tienen archivo propio en el handoff (Plantilla X.dc.html)
-	 * usan su diseño; las demás salen del motor de plantillas (Plantillas Tienda.dc.html).
+	 * La tienda online: cada página dibujada con el sistema de bloques (lib/tienda/sistema, diseño
+	 * v2: `tienda.diseno`, o migrado al vuelo si no viene). Las rutas de /t/[tienda] y la vista
+	 * previa de Mi tienda le pasan la página y lo que esa página necesita.
 	 */
-	const PROPIAS: Record<string, Component<Props>> = {
-		andes: Andes,
-		ceibo: Ceibo,
-		malbec: Malbec,
-		miga: Miga,
-		'miga-clasica': MigaClasica,
-		mostaza: Mostaza,
-		pampa: Pampa,
-		quebracho: Quebracho,
-		rosedal: Rosedal,
-		tijera: Tijera,
-		yerbal: Yerbal
-	};
+	type Pagina =
+		| 'inicio'
+		| 'catalogo'
+		| 'producto'
+		| 'carrito'
+		| 'checkout'
+		| 'nosotros'
+		| 'no-existe'
+		| 'listo'
+		| 'turnos'
+		| 'turno'
+		| 'suscripcion'
+		| 'suscripciones'
+		| 'mi-suscripcion';
 
-	let props: Props = $props();
-	const Vista = $derived(PROPIAS[props.tienda.plantilla] ?? Motor);
-	// El color de acento elegido en Mi tienda: las plantillas lo leen de var(--acento).
-	const acento = $derived(acentoElegido(props.tienda.plantilla, props.tienda.paleta));
-	// Mi tienda › Estilo: los colores por rol y las tipografías elegidas (lib/tienda/estilo). Las del
-	// motor los toman de sus tokens (Motor.svelte); acá van las fuentes y las zonas.
-	const estilo = $derived(cssEstilo(props.tienda.plantilla, props.tienda.estilo));
-	const raiz = $derived(
-		[acento ? `--acento:${acento}` : '', estilo.raiz].filter(Boolean).join(';')
-	);
+	let {
+		tienda,
+		pagina,
+		producto = null,
+		pedido = null,
+		turno = null,
+		proximos = null,
+		aviso = null,
+		plan = null,
+		suscripcion = null,
+		demo = false,
+		error = null
+	}: {
+		tienda: TiendaPublica;
+		pagina: Pagina;
+		producto?: ProductoPublico | null;
+		pedido?: PedidoListo | null;
+		/** La confirmación de un turno (pagina 'turno'). */
+		turno?: TurnoPublico | null;
+		/** Los libres de hoy y el próximo de cada profesional (portada). */
+		proximos?: ProximosTurnos | null;
+		/** Vuelta de Mercado Pago (la seña del turno) o el alta de una suscripción. */
+		aviso?: string | null;
+		/** El plan de suscripción (pagina 'suscripcion', §51). */
+		plan?: PlanPublico | null;
+		/** La suscripción del link privado (pagina 'mi-suscripcion'). */
+		suscripcion?: SuscripcionPublica | null;
+		/** Es la demo: suscribirse no cobra (se dice al lado del botón). */
+		demo?: boolean;
+		error?: string | null;
+	} = $props();
 </script>
 
-<svelte:head>
-	{#if estilo.fuentes && props.pagina !== 'inicio'}<link
-			rel="stylesheet"
-			href={estilo.fuentes}
-		/>{/if}
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- colores #RRGGBB validados en estilo/css.ts -->
-	{#if estilo.reglas && props.pagina !== 'inicio'}{@html `<style>${estilo.reglas}</style>`}{/if}
-</svelte:head>
-
-{#if props.pagina === 'inicio'}
-	<Inicio tienda={props.tienda} proximos={props.proximos} />
-{:else if raiz || estilo.reglas}
-	<div class="t-estilo" style={raiz} style:display="contents"><Vista {...props} /></div>
+{#if pagina === 'inicio'}
+	<Inicio {tienda} {proximos} />
+{:else if pagina === 'catalogo'}
+	<Catalogo {tienda} />
+{:else if pagina === 'producto' && producto}
+	<Ficha {tienda} {producto} />
+{:else if pagina === 'carrito'}
+	<Carrito {tienda} />
+{:else if pagina === 'checkout'}
+	<Checkout {tienda} {error} />
+{:else if pagina === 'listo' && pedido}
+	<Listo {tienda} {pedido} />
+{:else if pagina === 'nosotros'}
+	<Nosotros {tienda} />
+{:else if pagina === 'turnos' && tienda.turnos}
+	<Turnos {tienda} {error} />
+{:else if pagina === 'turno' && turno}
+	<Turno {tienda} {turno} {aviso} {error} />
+{:else if pagina === 'suscripcion' && plan}
+	<Suscripcion {tienda} {plan} {demo} {error} />
+{:else if pagina === 'suscripciones'}
+	<Suscripciones {tienda} />
+{:else if pagina === 'mi-suscripcion' && suscripcion}
+	<MiSuscripcion {tienda} {suscripcion} {aviso} {demo} {error} />
 {:else}
-	<Vista {...props} />
+	<NoExiste {tienda} />
 {/if}

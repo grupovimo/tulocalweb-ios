@@ -74,7 +74,7 @@
 
 {#snippet newsletter()}
 	<form class="tv-pie-nl" onsubmit={nl.enviar} novalidate>
-		<label for="tv-pie-email" class="tv-oculto">Tu email para las novedades</label>
+		<label for="tv-pie-email" class="tv-oculto">Tu correo para las novedades</label>
 		<input
 			id="tv-pie-email"
 			type="email"
@@ -85,7 +85,7 @@
 			placeholder="Tu email"
 			bind:value={nl.email}
 		/>
-		<button type="submit" disabled={nl.enviando}>Suscribirme</button>
+		<button type="submit" disabled={nl.enviando}>Sumarme</button>
 	</form>
 	{#if nl.aviso}<p class="tv-pie-aviso" role="status">
 			{nl.aviso.texto}{#if nl.aviso.link}&nbsp;<a href={nl.aviso.link}>Confirmar acá</a>{/if}

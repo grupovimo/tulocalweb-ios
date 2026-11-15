@@ -44,7 +44,7 @@ test('botón de arrepentimiento de la tienda: código de trámite y devolución 
 	await expect(page.getByRole('alert')).toContainText('No encontramos ese pedido');
 	await page.getByLabel('Código o número del pedido').fill(codigo);
 	await page.getByRole('button', { name: 'Enviar pedido de arrepentimiento' }).click();
-	const tramite = await page.locator('.codigo').textContent();
+	const tramite = await page.locator('.tv-confirma-alias').textContent();
 	expect(tramite).toMatch(/^ARR-\d{4}-\d+$/);
 
 	await page.goto('/panel/devoluciones');

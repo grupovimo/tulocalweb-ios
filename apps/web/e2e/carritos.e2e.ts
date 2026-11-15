@@ -34,5 +34,6 @@ test('carritos: el que deja su email en el checkout aparece en el panel', async 
 	// Un link de recordatorio que ya no sirve deja el carrito como estaba.
 	await page.goto(`/t/${slug}/carrito/recuperar/${'x'.repeat(32)}`);
 	await expect(page).toHaveURL(/\/carrito$/);
-	await expect(page.getByRole('heading', { name: /Tu carrito/ })).toContainText('(1)');
+	await expect(page.getByRole('heading', { name: 'Tu carrito' })).toBeVisible();
+	await expect(page.getByText('1 producto', { exact: true })).toBeVisible();
 });

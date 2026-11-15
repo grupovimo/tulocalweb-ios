@@ -17,7 +17,7 @@ async function demo(page: Page, boton: RegExp) {
 test('newsletter: sumarse desde el pie, confirmar, aparecer en el panel y darse de baja', async ({
 	page
 }) => {
-	const slug = await demo(page, /^Litoral/);
+	const slug = await demo(page, /^Rosedal/);
 	await page.goto(`/t/${slug}`);
 	await listo(page);
 	const pie = page.locator('footer');

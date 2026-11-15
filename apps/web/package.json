@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "sh -c 'set -a; [ -f .dev.vars ] && . ./.dev.vars; set +a; exec \"$0\" \"$@\"' vite dev --port 5173",
 		"build": "vite build",
-		"preview": "wrangler d1 migrations apply mostrador-sandbox --local >/dev/null && wrangler d1 migrations apply mostrador-estado --local >/dev/null && wrangler dev --local --var HORNERO:simulado --var TELEGRAM_BOT_TOKEN:prueba --var TELEGRAM_WEBHOOK_SECRET:secreto-de-prueba-e2e --var ENCRYPTION_KEY:Y2xhdmUtZGUtcHJ1ZWJhLWUyZS0zMi1ieXRlcy0hISE --var TIENDANUBE_CLIENT_ID:321 --var TIENDANUBE_SECRETO:secreto-e2e --var TIENDANUBE_LOCAL:http://127.0.0.1:4179 .svelte-kit/cloudflare/_worker.js --port 4173",
+		"preview": "wrangler d1 migrations apply mostrador-sandbox --local >/dev/null && wrangler d1 migrations apply mostrador-estado --local >/dev/null && wrangler dev --local --var HORNERO:simulado --var TELEGRAM_BOT_TOKEN:prueba --var TELEGRAM_WEBHOOK_SECRET:secreto-de-prueba-e2e --var ENCRYPTION_KEY:Y2xhdmUtZGUtcHJ1ZWJhLWUyZS0zMi1ieXRlcy0hISE --var TIENDANUBE_CLIENT_ID:321 --var TIENDANUBE_SECRETO:secreto-e2e --var TIENDANUBE_LOCAL:http://127.0.0.1:4179 .svelte-kit/cloudflare/_worker.js --port ${PUERTO:-4173}",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"gen": "wrangler types && sed -i.bak '/mainModule: typeof import/d' worker-configuration.d.ts && rm -f worker-configuration.d.ts.bak",

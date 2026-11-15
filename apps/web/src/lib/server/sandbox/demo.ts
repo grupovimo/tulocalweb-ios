@@ -227,18 +227,48 @@ const PRIMER_NUMERO = 1048;
 /** Días de historia: 30 para mostrar y 30 más para comparar ("vs. mes anterior"). */
 export const DIAS_DEMO = 60;
 
-const RESENAS_5 = [
-	'Llegó rapidísimo y súper bien embalado. Ya es mi tercera compra.',
-	'Muy buena atención por WhatsApp, me ayudaron a elegir.',
-	'Excelente calidad, tal cual las fotos.',
-	'Todo perfecto, lo recomiendo.',
-	'Me encantó. El envío llegó antes de lo que decía.',
-	'Es un regalo y quedó hermoso. Gracias por la tarjetita.'
-];
-const RESENAS_4 = [
-	'Muy lindo, aunque tardó un día más de lo previsto.',
-	'Buena calidad. El color es un poco distinto al de la foto.'
-];
+/**
+ * Las reseñas de la demo: cada una con un texto distinto (una frase de apertura y otra de cierre,
+ * sin repetir la combinación) y ninguna nombra un producto, así sirven para cualquier rubro (como
+ * Go en dominio/demo/demo.go). Cuando se acaban las combinaciones, no hay más reseñas.
+ */
+const RESENAS_5 = {
+	a: [
+		'Llegó rapidísimo y súper bien embalado.',
+		'Muy buena atención por WhatsApp.',
+		'Excelente calidad, tal cual las fotos.',
+		'Todo perfecto.',
+		'El envío llegó antes de lo que decía.',
+		'Era un regalo y quedó hermoso.',
+		'Se nota el cuidado en cada detalle.',
+		'Respondieron todas mis dudas al toque.',
+		'Mejor de lo que esperaba.',
+		'Precio justo y muy buena calidad.',
+		'Lo retiré en el local y estaba listo.',
+		'Primera compra y salió todo bien.'
+	],
+	b: [
+		'Ya es mi tercera compra.',
+		'Lo recomiendo.',
+		'Vuelvo a comprar seguro.',
+		'Me ayudaron a elegir.',
+		'Gracias por la tarjetita.',
+		'Diez puntos.',
+		'Se lo pasé a mis amigas.',
+		'Muy conforme.',
+		'Así da gusto comprar.',
+		'Gracias por la buena onda.'
+	]
+};
+const RESENAS_4 = {
+	a: [
+		'Muy lindo, aunque tardó un día más de lo previsto.',
+		'Buena calidad, el color es un poco distinto al de la foto.',
+		'Todo bien, el embalaje podría ser mejor.',
+		'Lindo, aunque esperaba un poco más por el precio.'
+	],
+	b: ['Igual lo recomiendo.', 'Volvería a comprar.', 'Me avisaron con tiempo.']
+};
 
 function generar(plantilla: string, base: number): Demo | null {
 	const catalogo = catalogoDe(plantilla);
@@ -475,12 +505,22 @@ function generar(plantilla: string, base: number): Demo | null {
 
 	// Reseñas de pedidos entregados (no en el local), unos días después de comprar.
 	const resenas: Resena[] = [];
+	const usadas = new Set<string>();
+	/** Un texto que nadie usó todavía (null si ya no quedan). */
+	const textoNuevo = (t: { a: string[]; b: string[] }) => {
+		const libres = t.a.flatMap((a) => t.b.map((b) => `${a} ${b}`)).filter((x) => !usadas.has(x));
+		if (!libres.length) return null;
+		const x = libres[Math.floor(r() * libres.length)];
+		usadas.add(x);
+		return x;
+	};
 	for (const p of pedidos) {
 		if (p.estado !== 'Entregado' || p.canal === 'pos' || r() > 0.18) continue;
 		const creada = p.creado + (2 + r() * 5) * DIA;
 		const cinco = r() < 0.86;
-		const textos = cinco ? RESENAS_5 : RESENAS_4;
 		if (creada >= base) continue;
+		const texto = textoNuevo(cinco ? RESENAS_5 : RESENAS_4);
+		if (!texto) continue;
 		resenas.push({
 			pedido: p.numero,
 			clienteId: p.clienteId,
@@ -488,7 +528,7 @@ function generar(plantilla: string, base: number): Demo | null {
 			producto: p.items[0].nombre,
 			canal: p.canal,
 			estrellas: cinco ? 5 : 4,
-			texto: textos[Math.floor(r() * textos.length)],
+			texto,
 			creada
 		});
 	}

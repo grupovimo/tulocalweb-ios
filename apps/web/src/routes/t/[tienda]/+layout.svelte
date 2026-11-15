@@ -2,7 +2,6 @@
 	import { afterNavigate } from '$app/navigation';
 	import AvisoCookies from '#lib/tienda/AvisoCookies.svelte';
 	import { pagina, preparar } from '#lib/tienda/medicion.ts';
-	import AnuncioTienda from '#lib/tienda/AnuncioTienda.svelte';
 
 	let { data, children } = $props();
 
@@ -127,8 +126,6 @@
 
 <svelte:document onfocusout={alSalir} />
 
-<!-- La portada ya va con el sistema de bloques, que dibuja su propia barra (sistema/marco/Barra). -->
-{#if page.route.id !== '/t/[tienda]'}<AnuncioTienda tienda={data.tienda} />{/if}
 {@render children()}
 {#key data.tienda.slug}
 	<AvisoCookies tienda={data.tienda} />

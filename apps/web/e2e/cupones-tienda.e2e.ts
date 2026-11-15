@@ -70,12 +70,16 @@ test('tienda: el link de un cupón lo deja aplicado en el checkout', async ({ pa
 	await listo(page);
 	await listo(page);
 	await page.getByRole('button', { name: 'Agregar al carrito' }).click();
+	await expect(page).toHaveURL(/\/carrito$/);
+	// El carrito ya lo trae aplicado (lo dejó el link) y el checkout también.
+	await expect(page.getByRole('status').filter({ hasText: 'FINDE10' })).toBeVisible();
 	await page.getByRole('link', { name: 'Finalizar compra' }).click();
+	await expect(page).toHaveURL(/\/checkout$/);
 	await listo(page);
 	await expect(page.getByRole('status').filter({ hasText: 'FINDE10' })).toBeVisible();
 
 	// Quitarlo no lo vuelve a traer.
-	await page.getByRole('button', { name: 'Quitar' }).click();
+	await page.getByRole('button', { name: 'Quitar', exact: true }).click();
 	await page.reload();
 	await listo(page);
 	await expect(page.getByLabel('¿Tenés un cupón?')).toHaveValue('');

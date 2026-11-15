@@ -12,10 +12,12 @@
 	 */
 	const ctx = usarTienda();
 	const planes = $derived(ctx.tienda.suscripciones);
+	// El club de vinos de Malbec (su función propia); en las demás, «Suscripciones».
+	const titulo = $derived(ctx.tienda.plantilla === 'malbec' ? 'Club de vinos' : 'Suscripciones');
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
-<Seccion titulo="Suscripciones" link={{ t: 'Ver los planes', href: `${ctx.base}/suscripciones` }}>
+<Seccion {titulo} link={{ t: 'Ver los planes', href: `${ctx.base}/suscripciones` }}>
 	<Grilla items={planes} columnas={4} etiqueta="Planes de suscripción">
 		{#snippet children(p)}
 			<article class="tv-prod tv-prod--grilla">

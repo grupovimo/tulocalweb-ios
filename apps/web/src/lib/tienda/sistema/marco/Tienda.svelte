@@ -8,11 +8,16 @@
 	import { disenoDeTienda } from '../migrar.ts';
 	import { estiloFinal } from '../presets.ts';
 	import { hojaFuentes, variables } from '../tokens.ts';
+	import { funcionesDe, opcionesPaginas } from '../paginas.ts';
+	import Aviso18 from './Aviso18.svelte';
 	import Barra from './Barra.svelte';
 	import BotonWhatsApp from './BotonWhatsApp.svelte';
+	import Comparador from './Comparador.svelte';
 	import Encabezado from './Encabezado.svelte';
+	import PanelCarrito from './PanelCarrito.svelte';
 	import Pie from './Pie.svelte';
 	import '../base.css';
+	import '../paginas.css';
 	import '../direcciones/vidriera.css';
 	import '../direcciones/mostrador.css';
 	import '../direcciones/pedido.css';
@@ -50,6 +55,11 @@
 	);
 	const base = $derived(baseDe(tienda));
 	const carrito = $derived(carritoDe(tienda.slug));
+	const funciones = $derived(funcionesDe(tienda));
+	const opciones = $derived(opcionesPaginas(tienda, estilo.direccion));
+	const panel = $derived(
+		opciones.carrito.variante === 'panel' && pagina !== 'checkout' && pagina !== 'carrito'
+	);
 	const nav = $derived.by((): ItemNav[] => {
 		const propio = menuPropio({ estilo: diseno.estilo ?? tienda.estilo }, base);
 		if (propio) return propio;
@@ -121,4 +131,8 @@
 	<!-- En Pedido, con algo en la bolsa, la barra fija del celular ocupa su lugar (y la bolsa del
 	costado ya ofrece consultar por WhatsApp). -->
 	<BotonWhatsApp oculto={sinWhatsApp || (estilo.direccion === 'pedido' && carrito.unidades > 0)} />
+	<!-- Las funciones propias de algunos puntos de partida y el carrito como panel (paginas.ts). -->
+	{#if funciones.comparador}<Comparador />{/if}
+	{#if funciones.mayor18}<Aviso18 />{/if}
+	{#if panel}<PanelCarrito envioGratis={opciones.carrito.envioGratisDesde} />{/if}
 </div>

@@ -3492,7 +3492,7 @@ export class DatosSandbox implements Datos {
 			secciones: seccionesV1(diseno),
 			portada: {
 				titulo: diseno.titulo || (p?.lema ?? t.nombre),
-				lema: diseno.lema || (d.catalogo.ciudad ? `Desde ${d.catalogo.ciudad}` : ''),
+				lema: diseno.lema || '',
 				foto: diseno.portada || (p?.img ?? visibles.find((x) => x.foto)?.foto ?? null)
 			},
 			logo: diseno.logo ?? '',
