@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { campo, textoDe, type Bloque } from '../catalogo.ts';
-	import { usarTienda } from '../contexto.ts';
+	import { fotosUsadasDe, usarTienda } from '../contexto.ts';
 	import { categoriasDe } from '../datos.ts';
 	import Foto from '../primitivas/Foto.svelte';
 	import Grilla from '../primitivas/Grilla.svelte';
@@ -14,7 +14,7 @@
 	 */
 	let { bloque }: { bloque: Bloque } = $props();
 	const ctx = usarTienda();
-	const cats = $derived(categoriasDe(ctx.tienda, campo(bloque, 'items')));
+	const cats = $derived(categoriasDe(ctx.tienda, campo(bloque, 'items'), fotosUsadasDe(bloque.id)));
 	const titulo = $derived(textoDe(bloque, 'titulo'));
 </script>
 

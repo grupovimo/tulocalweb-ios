@@ -2,8 +2,8 @@
 	import type { Component } from 'svelte';
 	import type { ProximosTurnos } from '../../tipos.ts';
 	import type { Bloque, TipoBloque } from '../catalogo.ts';
-	import { usarTienda } from '../contexto.ts';
-	import { seDibuja } from '../datos.ts';
+	import { ponerFotosUsadas, usarTienda } from '../contexto.ts';
+	import { fotosGaleria, fotosUsadas, seDibuja } from '../datos.ts';
 	import Banner from './Banner.svelte';
 	import Beneficios from './Beneficios.svelte';
 	import Categorias from './Categorias.svelte';
@@ -68,7 +68,16 @@
 		whatsapp: Whatsapp,
 		turnos: Turnos
 	};
-	const visibles = $derived(bloques.filter((b) => seDibuja(b, ctx.tienda)));
+	const conDatos = $derived(bloques.filter((b) => seDibuja(b, ctx.tienda)));
+	// Las fotos que ya muestra la página, para que lo automático no las repita (la galería que sólo
+	// repetiría la grilla no se dibuja).
+	const usadas = $derived(fotosUsadas(ctx.tienda, conDatos));
+	ponerFotosUsadas(() => usadas);
+	const visibles = $derived(
+		conDatos.filter(
+			(b) => b.tipo !== 'galeria' || fotosGaleria(ctx.tienda, b, usadas.get(b.id)).length > 0
+		)
+	);
 	const conPlanes = $derived(
 		suscripciones && ctx.tienda.suscripciones.length
 			? (visibles.find((b) => b.tipo === 'productos' || b.tipo === 'menu')?.id ??

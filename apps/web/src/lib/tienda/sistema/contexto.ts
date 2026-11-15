@@ -39,3 +39,15 @@ export function usarTienda(): ContextoTienda {
 	if (!c) throw new Error('Las piezas del sistema van dentro de marco/Tienda.svelte');
 	return c;
 }
+
+/**
+ * Las fotos que ya muestra la lista de bloques en la que está una pieza (datos.ts › fotosUsadas),
+ * por id de bloque: la portada, las categorías y la galería automáticas prefieren otras. Lo pone
+ * bloques/Bloques.svelte; fuera de una lista, ninguna.
+ */
+const FOTOS = Symbol('tienda-fotos');
+const NINGUNA: ReadonlySet<string> = new Set();
+export const ponerFotosUsadas = (f: () => Map<string, Set<string>>) => setContext(FOTOS, f);
+export function fotosUsadasDe(id: string): ReadonlySet<string> {
+	return getContext<(() => Map<string, Set<string>>) | undefined>(FOTOS)?.().get(id) ?? NINGUNA;
+}

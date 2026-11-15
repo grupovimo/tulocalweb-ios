@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/env';
 	import { campo, textoDe, type Bloque, type Fondo } from '../catalogo.ts';
-	import { usarTienda } from '../contexto.ts';
+	import { fotosUsadasDe, usarTienda } from '../contexto.ts';
 	import {
 		botonesPortada,
 		fotosPortada,
@@ -31,7 +31,7 @@
 	const titulo = $derived(sinViuda(tituloPortada(t, bloque)));
 	const frase = $derived(fraseDe(t, bloque));
 	const ante = $derived(textoDe(bloque, 'etiqueta'));
-	const fotos = $derived(fotosPortada(t, bloque));
+	const fotos = $derived(fotosPortada(t, bloque, fotosUsadasDe(bloque.id)));
 	const botones = $derived(botonesPortada(t, bloque));
 	const fondo = $derived((campo<Fondo>(bloque, 'fondo') ?? 'acento') as Fondo);
 	const variante = $derived(fotos.length ? bloque.variante : 'texto');

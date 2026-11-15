@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { campo, textoDe, type Bloque } from '../catalogo.ts';
-	import { usarTienda } from '../contexto.ts';
+	import { fotosUsadasDe, usarTienda } from '../contexto.ts';
 	import { enlace, fotosGaleria } from '../datos.ts';
 	import Foto from '../primitivas/Foto.svelte';
 	import Seccion from '../primitivas/Seccion.svelte';
@@ -12,7 +12,7 @@
 	 */
 	let { bloque }: { bloque: Bloque } = $props();
 	const ctx = usarTienda();
-	const fotos = $derived(fotosGaleria(ctx.tienda, bloque));
+	const fotos = $derived(fotosGaleria(ctx.tienda, bloque, fotosUsadasDe(bloque.id)));
 	const n = $derived(fotos.length);
 	const mosaico = $derived(bloque.variante === 'mosaico' && n % 6 === 0);
 	const href = $derived(enlace(ctx.tienda, campo<string>(bloque, 'link')));

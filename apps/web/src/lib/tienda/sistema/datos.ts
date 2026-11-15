@@ -105,11 +105,31 @@ export type CategoriaVista = {
 	href: string;
 };
 
-/** Las categorías del bloque (vacío: todas), con la foto elegida o la del primer producto. */
+/**
+ * Las categorías del bloque (vacío: todas), con la foto elegida o la de un producto de la
+ * categoría: la primera que la página no muestre ya (`usadas`), así la tarjeta de «Abrigos» no
+ * repite la foto del sweater que está en la grilla de abajo.
+ */
 export function categoriasDe(
 	t: Tienda,
-	items?: { categoria: string; foto?: string }[]
+	items?: { categoria: string; foto?: string }[],
+	usadas?: ReadonlySet<string>
 ): CategoriaVista[] {
+	// La foto de la categoría que manda la API es la de su primer producto (no la eligió nadie):
+	// cuenta como una candidata más.
+	const deCategoria = (nombre: string, primera: string | null | undefined) => {
+		const fotos = [
+			...new Set(
+				[
+					primera,
+					...t.productos
+						.filter((p) => p.categoria === nombre)
+						.flatMap((p) => [p.foto, ...(p.fotos ?? [])])
+				].filter((f): f is string => !!f)
+			)
+		];
+		return fotos.find((f) => !usadas?.has(f)) ?? fotos[0] ?? null;
+	};
 	const de = (nombre: string) => t.categorias.find((c) => c.nombre === nombre);
 	const lista = items?.length
 		? items.map((i) => ({ c: de(i.categoria), foto: i.foto }))
@@ -122,8 +142,7 @@ export function categoriasDe(
 		.map(({ c, foto }) => ({
 			nombre: c.nombre,
 			cantidad: cuantos(c.cantidad, 'producto', 'productos'),
-			foto:
-				foto ?? c.foto ?? t.productos.find((p) => p.categoria === c.nombre && p.foto)?.foto ?? null,
+			foto: foto ?? deCategoria(c.nombre, c.foto),
 			href: categoriaHref(t, c.nombre)
 		}))
 		.slice(0, 12);
@@ -187,19 +206,27 @@ export function resenasDe(t: Tienda, cantidad = 3): ResenaPublica[] {
 /** Cuántas reseñas con compra tiene la tienda. */
 export const conCompra = (t: Tienda) => t.resenas.filter((r) => r.conCompra).length;
 
+/** Las fotos de los productos a la vista: la principal y las demás de cada uno, sin repetir. */
+const fotosDeProductos = (t: Tienda, conSecundarias = true) => [
+	...new Set(
+		t.productos
+			.filter(aLaVista)
+			.flatMap((p) => [p.foto, ...(conSecundarias ? (p.fotos ?? []) : [])])
+			.filter((f): f is string => !!f)
+	)
+];
+
 /**
  * Las fotos de la galería recortadas a filas completas (regla 2): 3, 4 o múltiplos de 6 (6 en la
- * compu, 3 en el celular). Menos de 3, nada. Vacío: las de los productos.
+ * compu, 3 en el celular). Menos de 3, nada. Vacío: las de la tienda y las de los productos, pero
+ * sólo las que la página no muestra ya (`usadas`): una galería que repite la grilla de arriba no
+ * suma nada, así que si no quedan 3 nuevas no se dibuja.
  */
-export function fotosGaleria(t: Tienda, b: Bloque): string[] {
+export function fotosGaleria(t: Tienda, b: Bloque, usadas?: ReadonlySet<string>): string[] {
 	const propias = campo<string[]>(b, 'fotos') ?? [];
-	const fotos = [
-		...new Set(
-			propias.length
-				? propias
-				: [...t.fotos, ...t.productos.flatMap((p) => (p.foto ? [p.foto] : []))]
-		)
-	].slice(0, 12);
+	const fotos = [...new Set(propias.length ? propias : [...t.fotos, ...fotosDeProductos(t)])]
+		.filter((f) => propias.length || !usadas?.has(f))
+		.slice(0, 12);
 	const n = fotos.length;
 	if (n < 3) return [];
 	if (n < 6) return fotos.slice(0, n === 5 ? 4 : n);
@@ -238,16 +265,82 @@ export function tituloPortada(t: Tienda, b: Bloque): string {
 export function fraseDe(t: Tienda, b: Bloque): string {
 	return textoDe(b, 'texto') || t.portada?.lema?.trim() || '';
 }
-export function fotosPortada(t: Tienda, b: Bloque): string[] {
+export function fotosPortada(t: Tienda, b: Bloque, usadas?: ReadonlySet<string>): string[] {
 	const propias = campo<string[]>(b, 'fotos') ?? [];
 	if (propias.length) return propias;
 	// La foto de portada de v1 (o la sugerida por la demo) y las de los productos, para collage.
 	// Con una sola foto de producto no: el bloque de productos ya la muestra en grande justo abajo
 	// y la portada quedaría repitiéndola (Yulz); sin foto propia, la portada va como texto.
 	// La API, sin portada propia, manda la primera foto de producto como `portada.foto`: ésa no cuenta.
-	const deProductos = [...new Set(t.productos.flatMap((p) => (p.foto ? [p.foto] : [])))];
-	const propia = t.portada?.foto && !deProductos.includes(t.portada.foto) ? [t.portada.foto] : [];
-	return [...new Set([...propia, ...(deProductos.length >= 2 ? deProductos : [])])].slice(0, 5);
+	// De las de productos, primero las que la página no muestra ya (`usadas`: la grilla de abajo):
+	// las segundas fotos y los productos que no entran en la grilla.
+	const principales = fotosDeProductos(t, false);
+	const deProductos = fotosDeProductos(t);
+	const propia = t.portada?.foto && !principales.includes(t.portada.foto) ? [t.portada.foto] : [];
+	const candidatas = principales.length >= 2 ? deProductos : [];
+	return [
+		...new Set([
+			...propia,
+			...candidatas.filter((f) => !usadas?.has(f)),
+			...candidatas.filter((f) => usadas?.has(f))
+		])
+	].slice(0, 5);
+}
+
+/**
+ * Las fotos que ya muestra cada lista de bloques, para que los automáticos (portada sin fotos
+ * propias, categorías y galería) prefieran otras: primero lo que se eligió (grillas de productos,
+ * menú, combo, destacado, ofertas, fotos subidas a un bloque) y después, en el orden de la página,
+ * lo que va tomando cada automático. Devuelve, por id de bloque, las fotos que ese bloque debería
+ * evitar (las de todos los demás).
+ */
+export function fotosUsadas(t: Tienda, bloques: Bloque[]): Map<string, Set<string>> {
+	const fijas = new Set<string>();
+	const sumar = (fs: (string | null | undefined)[]) => {
+		for (const f of fs) if (f) fijas.add(f);
+	};
+	for (const b of bloques) {
+		switch (b.tipo) {
+			case 'productos':
+			case 'oferta':
+				sumar(productosDe(t, campo(b, 'productos')).map((p) => p.foto));
+				break;
+			case 'menu':
+				sumar(seccionesMenu(t, b).flatMap((s) => s.productos.map((p) => p.foto)));
+				break;
+			case 'combo':
+				sumar(comboDe(t, b).map((p) => p.foto));
+				break;
+			case 'destacado':
+				sumar([destacadoDe(t, b)?.foto]);
+				break;
+			case 'portada':
+			case 'galeria':
+				sumar(campo<string[]>(b, 'fotos') ?? []);
+				break;
+			case 'textoImagen':
+			case 'banner':
+				sumar([campo<string>(b, 'foto'), campo<{ foto?: string }>(b, 'segundo')?.foto]);
+				break;
+		}
+	}
+	const out = new Map<string, Set<string>>();
+	const tomadas = new Set(fijas);
+	for (const b of bloques) {
+		const evitar = new Set(tomadas);
+		out.set(b.id, evitar);
+		if (b.tipo === 'portada') {
+			const v = b.variante;
+			const cuantas =
+				v === 'texto' ? 0 : v === 'foto' ? 1 : v === 'partida' || v === 'collage' ? 3 : 5;
+			for (const f of fotosPortada(t, b, evitar).slice(0, cuantas)) tomadas.add(f);
+		} else if (b.tipo === 'categorias') {
+			for (const c of categoriasDe(t, campo(b, 'items'), evitar)) if (c.foto) tomadas.add(c.foto);
+		} else if (b.tipo === 'galeria') {
+			for (const f of fotosGaleria(t, b, evitar)) tomadas.add(f);
+		}
+	}
+	return out;
 }
 
 /** Los botones de la portada: los elegidos o, si no, los que tienen sentido con lo que hay. */
