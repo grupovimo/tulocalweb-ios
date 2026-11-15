@@ -34,6 +34,11 @@
 		if (quieta) onlisto?.();
 	});
 	const corto = (t: string) => (t.length > 14 ? `${t.slice(0, 13)}…` : t);
+	// El texto va a lo largo del radio; en la mitad izquierda se da vuelta para no leerse cabeza abajo.
+	const giroTexto = (i: number) => {
+		const a = (i + 0.5) * paso;
+		return a > 180 ? a + 90 : a - 90;
+	};
 </script>
 
 <div class="tv-ruleta" aria-hidden="true">
@@ -51,7 +56,7 @@
 				x={tx}
 				y={ty}
 				class={i % 2 ? 'tv-ruleta-tb' : 'tv-ruleta-ta'}
-				transform="rotate({(i + 0.5) * paso - 90} {tx} {ty})"
+				transform="rotate({giroTexto(i)} {tx} {ty})"
 				text-anchor="middle"
 				dominant-baseline="middle">{corto(p)}</text
 			>
