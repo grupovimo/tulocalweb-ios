@@ -94,9 +94,6 @@ variantes de los bloques iniciales. El estilo final de una tienda es: tokens de 
 `rolesDe(plantilla)` ⊕ `diseno.estilo`. El diseño guarda sólo lo que la tienda cambió. Los casos de la migración están
 en `packages/contrato/casos/diseno-v2.json`.
 
-El preset de cada plantilla es `lib/tienda/sistema/presets.ts`: dirección, estilo base y bloques iniciales con
-textos sugeridos. Ese archivo se exporta a `presets.json` para Go y para las apps.
-
 | Dirección | Plantillas |
 |---|---|
 | Vidriera | ceibo, rosedal, quebracho, malbec, taller, torno |
