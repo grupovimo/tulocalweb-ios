@@ -393,8 +393,13 @@
 				{/if}
 				{#if dir === 'pedido' && (producto.categoria || prom)}
 					<p class="tv-chico tv-suave tv-ficha-sobre">
-						{producto.categoria ?? ''}{#if producto.categoria && prom}&#32;·&#32;{/if}{#if prom}
-							{promedio(prom)}&nbsp;<Icon icon={I.phStarFill} size={12} /> ({resenas.length}){/if}
+						{#if producto.categoria}<span>{producto.categoria}</span>{/if}{#if producto.categoria && prom}<span
+								aria-hidden="true">·</span
+							>{/if}{#if prom}<span class="tv-ficha-sobre-prom"
+								>{promedio(prom)}<Icon icon={I.phStarFill} size={12} /><span
+									>({cuantos(resenas.length, 'reseña', 'reseñas')})</span
+								></span
+							>{/if}
 					</p>
 				{/if}
 				<h1 class="tv-h1 tv-ficha-titulo">{sinViuda(producto.nombre)}</h1>
@@ -420,7 +425,7 @@
 							{#if transf}<p class="tv-ficha-transf">{transf} pagando con transferencia</p>{/if}
 						{:else}
 							<p class="tv-ficha-cuotas">
-								{enCuotas}{#if enCuotas && transf}&#32;·&#32;{/if}{#if transf}<span
+								{enCuotas}{#if enCuotas && transf}{' · '}{/if}{#if transf}<span
 										class={dir === 'vidriera' ? 'tv-ok' : ''}>{transf} con transferencia</span
 									>{/if}
 							</p>
@@ -584,7 +589,7 @@
 				<figure class="tv-ficha-resena">
 					<figcaption>
 						<b>{r.autor}</b>{#if r.conCompra}<span class="tv-suave"
-								>&#32;·&#32;compra verificada</span
+								>{' · '}compra verificada</span
 							>{/if}
 					</figcaption>
 					<Estrellas valor={r.estrellas} tam={14} />

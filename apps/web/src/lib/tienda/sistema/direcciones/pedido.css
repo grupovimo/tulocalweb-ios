@@ -96,7 +96,8 @@
 	display: none;
 }
 .tv[data-dir='pedido'] .tv-bolsa-n::before {
-	content: '· ';
+	content: '·';
+	margin-right: 6px;
 }
 .tv[data-dir='pedido'] .tv-bolsa-n::after {
 	content: none;

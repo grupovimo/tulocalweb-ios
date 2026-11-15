@@ -868,9 +868,17 @@
 }
 .tv-ficha-sobre {
 	margin: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
 }
-.tv-ficha-sobre svg {
-	vertical-align: -1px;
+/* El promedio, la estrella y la cantidad van siempre juntos en el mismo renglón. */
+.tv-ficha-sobre-prom {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
 }
 .tv-ficha-titulo {
 	font-size: var(--t-h2);
