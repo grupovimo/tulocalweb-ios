@@ -669,7 +669,7 @@
 												/>{/each}</span
 										><span
 											><b style="color:var(--tc-3a2414, #3A2414)"
-												>{tienda.promedio.toLocaleString('es-AR')}</b
+												>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b
 											>
 											·
 											{tienda.resenas.length}
@@ -1087,7 +1087,7 @@
 										icon={e}
 										size={14}
 									/>{/each}</span
-							><b>{promedioFicha.toLocaleString('es-AR')}</b><span
+							><b>{promedioFicha.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b><span
 								style="color:var(--tc-7a5f4c, #7A5F4C)"
 								>{resenasFicha.length} {resenasFicha.length === 1 ? 'reseña' : 'reseñas'}</span
 							>
@@ -2674,7 +2674,7 @@
 									<div
 										style="font-family:var(--tf-titulos,'Young Serif'),serif;font-size:clamp(24px,2.8cqw,34px)"
 									>
-										{tienda.promedio.toLocaleString('es-AR')}
+										{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}
 									</div>
 									<div style="font-size:12.5px;color:var(--tc-7a5f4c, #7A5F4C);margin-top:2px">
 										de promedio en reseñas

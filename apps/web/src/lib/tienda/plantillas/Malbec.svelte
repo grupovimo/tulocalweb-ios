@@ -878,7 +878,7 @@
 													icon={e}
 													size={15}
 												/>{/each}</span
-										><b>{tienda.promedio.toLocaleString('es-AR')}</b><span
+										><b>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b><span
 											style="color:var(--tc-bfa9a3, #BFA9A3)"
 											>· {tienda.resenas.length}
 											{tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}</span

@@ -462,10 +462,11 @@ VALUES (%s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s);
 	// Reseñas de compras entregadas, con alguna respuesta de la tienda.
 	r.Shuffle(len(entregados), func(a, z int) { entregados[a], entregados[z] = entregados[z], entregados[a] })
 	for i, v := range entregados {
-		if i >= 22 {
+		// Una reseña por texto: repetidas se notan, y ninguna nombra un producto que no es el suyo.
+		if i >= len(resenas[t.Rubro]) {
 			break
 		}
-		txt := resenas[t.Rubro][i%len(resenas[t.Rubro])]
+		txt := resenas[t.Rubro][i]
 		estrellas := []int{5, 5, 5, 5, 4, 4, 5, 3}[r.IntN(8)]
 		resp := "NULL"
 		if i%3 == 0 {
@@ -600,24 +601,33 @@ var resenas = map[string][]string{
 		"El color es igual al de la foto. Muy conforme.",
 		"Lo cambié por otro talle sin vueltas. Excelente atención.",
 		"Lindo pero me quedó un poco grande; igual lo uso un montón.",
+		"Se lavó varias veces y quedó como nuevo.",
+		"Me lo regalaron y me encantó; ahora compro yo.",
+		"Muy cómodo, lo uso todos los días.",
 	},
 	"gastronomia": {
-		"El mejor flat white de Palermo, sin exagerar.",
-		"Pedí café en grano para la cafetera y llegó recién tostado.",
-		"Las medialunas son una locura. Volvemos todas las semanas.",
+		"Riquísimo y llegó calentito.",
 		"Rapidísimo el pedido para retirar, estaba listo al llegar.",
-		"El Yirgacheffe es floral y delicado, tal cual la descripción.",
 		"Muy buena atención y el lugar es hermoso.",
-		"Rico todo, el tostado en masa madre un poco chico.",
+		"Se nota que todo es fresco y hecho en el día.",
+		"Tal cual la descripción. Lo vuelvo a pedir seguro.",
+		"Las porciones son generosas y el precio está bien.",
+		"Rico todo, un poco chico para mi gusto.",
+		"Volvemos todas las semanas, nunca falla.",
+		"Pedí para la oficina y quedaron todos contentos.",
+		"Excelente calidad, se siente la diferencia.",
 	},
 	"almacen": {
 		"Todo fresquísimo y bien fraccionado. Recomiendo.",
-		"La miel de monte es increíble, se nota que es de verdad.",
+		"Se nota que es de productores, la calidad es otra.",
 		"Llegó en el día con la moto. Muy prolijos.",
 		"Los precios están muy bien comparado con el súper.",
-		"Las almendras son enormes. Ya repetí el pedido.",
+		"Ya repetí el pedido, siempre igual de bueno.",
 		"Me encanta que usen bolsas compostables.",
 		"Faltaba un producto pero me avisaron y me lo mandaron al otro día.",
+		"Buen tamaño el paquete y bien cerrado.",
+		"Rinde un montón y el sabor es muy rico.",
+		"Atención de diez por WhatsApp.",
 	},
 }
 

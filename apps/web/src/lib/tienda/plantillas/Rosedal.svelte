@@ -483,7 +483,7 @@
 			...(tienda.promedio
 				? [
 						{
-							v: tienda.promedio.toLocaleString('es-AR'),
+							v: tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 }),
 							t: `en ${tienda.resenas.length} ${tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}`
 						}
 					]
@@ -924,7 +924,7 @@
 													icon={e}
 													size={15}
 												/>{/each}</span
-										>{tienda.promedio.toLocaleString('es-AR')}</span
+										>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</span
 									>{/if}
 							</div>
 							<div

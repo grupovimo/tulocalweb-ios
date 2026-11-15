@@ -698,7 +698,7 @@
 												<div
 													style="{B};font-weight:800;font-size:clamp(34px,4cqw,48px);line-height:1;letter-spacing:-.04em"
 												>
-													{tienda.promedio.toLocaleString('es-AR')}
+													{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}
 												</div>
 												<div style="font-size:13px;font-weight:600;margin-top:4px">
 													de promedio en reseñas
@@ -2729,7 +2729,7 @@
 						style="padding:22px;border-radius:24px;background:var(--tc-ffffff, #fff)"
 					>
 						<div style="{B};font-weight:800;font-size:48px;line-height:1;letter-spacing:-.04em">
-							{tienda.promedio.toLocaleString('es-AR')}
+							{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}
 						</div>
 						<div style="font-size:14px;color:var(--tc-7a5a44, #7A5A44);margin-top:6px">
 							de promedio en reseñas

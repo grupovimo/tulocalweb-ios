@@ -684,7 +684,7 @@
 											icon={I.phStarFill}
 											size={15}
 											style="color:#E3A93B"
-										/>{tienda.promedio.toLocaleString('es-AR')} · {tienda.resenas.length}
+										/>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })} · {tienda.resenas.length}
 										{tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}</span
 									>{/if}
 								<h1
@@ -987,7 +987,7 @@
 								{#if tienda.promedio}<span
 										style="display:flex;align-items:center;gap:6px;font-size:14px"
 										><Icon icon={I.phStarFill} size={16} style="color:#E3A93B" /><b
-											>{tienda.promedio.toLocaleString('es-AR')}</b
+											>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b
 										><span style="color:var(--tc-5a566b, #5A566B)"
 											>· {tienda.resenas.length}
 											{tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}</span
@@ -1664,7 +1664,7 @@
 						>
 							<span style="display:flex;color:#E3A93B"
 								>{#each estrellas(promedioProd) as e, i (i)}<Icon icon={e} size={14} />{/each}</span
-							><b>{promedioProd.toLocaleString('es-AR')}</b><span
+							><b>{promedioProd.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b><span
 								style="color:var(--tc-5a566b, #5A566B)"
 								>{resenasProd.length} {resenasProd.length === 1 ? 'reseña' : 'reseñas'}</span
 							>
@@ -2773,7 +2773,7 @@
 									<div
 										style="font-family:var(--tf-titulos,'Syne'),sans-serif;font-weight:800;font-size:clamp(26px,3cqw,36px);letter-spacing:-.03em"
 									>
-										{tienda.promedio.toLocaleString('es-AR')}
+										{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}
 									</div>
 									<div style="font-size:12.5px;color:var(--tc-5a566b, #5A566B);margin-top:2px">
 										de promedio en reseñas

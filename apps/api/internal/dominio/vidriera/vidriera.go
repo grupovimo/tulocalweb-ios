@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -397,7 +398,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		}
 		rs.Close()
 		if cant > 0 {
-			prom := float64(suma) / float64(cant)
+			prom := math.Round(float64(suma)/float64(cant)*10) / 10
 			out.Promedio = &prom
 		}
 		qs, err := t.Query(ctx, `SELECT producto_id::text, pregunta, respuesta FROM preguntas

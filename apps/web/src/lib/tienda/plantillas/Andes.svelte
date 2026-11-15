@@ -590,7 +590,7 @@
 		...(tienda.promedio
 			? [
 					{
-						v: tienda.promedio.toLocaleString('es-AR'),
+						v: tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 }),
 						t: `en ${tienda.resenas.length} ${tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}`,
 						bg: 'var(--tc-ffffff, #fff)',
 						fg: 'var(--tc-0e1116, #0E1116)'
@@ -1161,7 +1161,7 @@
 									{#if tienda.promedio}<span
 											style="display:flex;align-items:center;gap:8px;font-size:14px"
 											><b style="font-family:var(--tf-titulos,'Sora'),sans-serif;font-size:26px"
-												>{tienda.promedio.toLocaleString('es-AR')}</b
+												>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b
 											><span style="display:flex;color:#F5A524"
 												>{#each estrellas(tienda.promedio) as e, i (i)}<Icon
 														icon={e}

@@ -237,7 +237,7 @@
 			? [{ v: String(tienda.cobros.cuotas), t: 'Cuotas sin interés' }]
 			: []),
 		...(tienda.promedio
-			? [{ v: tienda.promedio.toLocaleString('es-AR'), t: 'En reseñas' }]
+			? [{ v: tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 }), t: 'En reseñas' }]
 			: tienda.cobros.transferencia > 0
 				? [{ v: `${tienda.cobros.transferencia}%`, t: 'Off por transferencia' }]
 				: [])
@@ -989,7 +989,7 @@
 													icon={e}
 													size={15}
 												/>{/each}</span
-										>{tienda.promedio.toLocaleString('es-AR')} · {tienda.resenas.length}
+										>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })} · {tienda.resenas.length}
 										{tienda.resenas.length === 1 ? 'reseña' : 'reseñas'}</span
 									>{/if}
 							</div>

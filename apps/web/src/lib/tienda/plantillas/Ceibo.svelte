@@ -718,7 +718,7 @@
 													icon={e}
 													size={15}
 												/>{/each}</span
-										><b>{tienda.promedio.toLocaleString('es-AR')}</b></span
+										><b>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b></span
 									>{/if}
 							</div>
 							<div
@@ -2551,7 +2551,7 @@
 									<div
 										style="font-family:var(--tf-titulos,'Instrument Serif'),serif;font-size:44px;line-height:1"
 									>
-										{tienda.promedio.toLocaleString('es-AR')}
+										{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}
 									</div>
 									<div style="font-size:13px;color:var(--tc-6e655c, #6E655C);margin-top:4px">
 										de promedio en reseñas

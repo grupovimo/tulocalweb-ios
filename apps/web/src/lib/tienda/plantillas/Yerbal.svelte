@@ -1031,7 +1031,7 @@
 							>
 								{#if tienda.estilo?.textos?.revs?.trim()}{tienda.estilo.textos.revs}{:else}
 									{tienda.promedio
-										? `${tienda.promedio.toLocaleString('es-AR')} de promedio en reseñas`
+										? `${tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })} de promedio en reseñas`
 										: 'Lo que dicen'}
 								{/if}
 							</h2>
@@ -1406,7 +1406,7 @@
 												icon={e}
 												size={14}
 											/>{/each}</span
-									><b>{promedioProd.toLocaleString('es-AR')}</b><span
+									><b>{promedioProd.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b><span
 										style="color:var(--tc-6b7a6e, #6B7A6E)"
 										>{resenasProd.length}
 										{resenasProd.length === 1 ? 'reseña' : 'reseñas'}</span
@@ -2970,7 +2970,7 @@
 						style="padding:18px;border-radius:14px;background:var(--tc-ffffff, #fff)"
 					>
 						<b style="display:block;font-size:34px;letter-spacing:-.04em"
-							>{tienda.promedio.toLocaleString('es-AR')}</b
+							>{tienda.promedio.toLocaleString('es-AR', { maximumFractionDigits: 1 })}</b
 						><span style="font-size:13.5px;color:var(--tc-56645a, #56645A)"
 							>de promedio en reseñas</span
 						>
