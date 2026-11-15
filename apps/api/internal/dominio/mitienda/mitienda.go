@@ -54,6 +54,8 @@ type Diseno struct {
 	// Inicio: los bloques de la portada, en orden.
 	Inicio  []Bloque `json:"inicio"`
 	Paginas *Paginas `json:"paginas,omitempty"`
+	// Ventanas: los popups de la tienda (ventanas.go), en orden: si varias califican, gana la primera.
+	Ventanas []Ventana `json:"ventanas,omitempty"`
 
 	// Secciones: sólo v1.
 	Secciones []Seccion `json:"secciones,omitempty"`
@@ -138,7 +140,7 @@ func (d Diseno) Valido() bool {
 		return false
 	}
 	vistos := map[string]bool{}
-	return bloquesValidos(d.Inicio, vistos) && d.Paginas.valido(vistos)
+	return bloquesValidos(d.Inicio, vistos) && d.Paginas.valido(vistos) && ventanasValidas(d.Ventanas)
 }
 
 // leerDiseno: el jsonb de la base como diseño v2 (los v1 y los nulos se migran con la plantilla).
@@ -244,6 +246,15 @@ func Guardar(ctx context.Context, pool tx, tiendaID string, d Diseno) error {
 		if d.Paginas.Nosotros != nil {
 			limpiarBloques(d.Paginas.Nosotros.Bloques)
 		}
+	}
+	for i := range d.Ventanas {
+		if d.Ventanas[i].Datos == nil {
+			d.Ventanas[i].Datos = map[string]any{}
+		}
+		if d.Ventanas[i].Paginas == nil {
+			d.Ventanas[i].Paginas = []string{}
+		}
+		d.Ventanas[i].Nombre = strings.TrimSpace(d.Ventanas[i].Nombre)
 	}
 	d.Titulo, d.Lema = strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Lema)
 	d.CompartirTitulo, d.CompartirDescripcion = strings.TrimSpace(d.CompartirTitulo), strings.TrimSpace(d.CompartirDescripcion)

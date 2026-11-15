@@ -7,7 +7,8 @@
     "bytesDiseno": 65536,
     "filasTabla": 8,
     "columnasTabla": 8,
-    "letrasCelda": 30
+    "letrasCelda": 30,
+    "ventanas": 8
   },
   "estilo": {
     "direccion": {
@@ -1102,7 +1103,10 @@
     "categorias": "lista de nombres de categoría",
     "lista": "lista de objetos con los campos de item (min, max)",
     "grupo": "un objeto con los campos de item",
-    "tabla": "filas × columnas de textos cortos: [[encabezado…], [celda…], …]; de 2 a limites.filasTabla filas y de 1 a limites.columnasTabla columnas, todas con las mismas columnas; cada celda hasta limites.letrasCelda letras en una línea, sin < ni > (puede quedar vacía). La primera fila es el encabezado"
+    "tabla": "filas × columnas de textos cortos: [[encabezado…], [celda…], …]; de 2 a limites.filasTabla filas y de 1 a limites.columnasTabla columnas, todas con las mismas columnas; cada celda hasta limites.letrasCelda letras en una línea, sin < ni > (puede quedar vacía). La primera fila es el encabezado",
+    "cupon": "código de un cupón de la tienda: A-Z, 0-9 y guiones, de 3 a 20 (el editor lo elige de la lista de cupones)",
+    "premio": "{ tipo: uno de opciones (si no trae opciones: cuponFijo|cuponUnico|descarga|nada); según el tipo: cuponFijo → cupon; cuponUnico → descuento: porcentaje|monto|envioGratis, valor (porcentaje 1–90; monto en pesos 100–100000; envioGratis sin valor), dias 1–90 (vence; por defecto 7); descarga → archivo (URL https hasta 300) y nombreArchivo (hasta 60); nada → nada más }. Las claves de otro tipo se ignoran. Lo que falta no invalida el borrador: la ventana no sale hasta estar completa (casos/ventanas.json).",
+    "opciones": "lista sin repetir de valores de opciones (vacía = todas)"
   },
   "barraAnuncios": {
     "nombre": "Barra de anuncios",
@@ -1134,6 +1138,12 @@
             "id": "link",
             "tipo": "link",
             "nombre": "Link"
+          },
+          {
+            "id": "hasta",
+            "tipo": "fecha",
+            "nombre": "Cuenta regresiva hasta",
+            "descripcion": "Muestra cuánto falta y el mensaje se esconde al vencer."
           }
         ]
       },
@@ -1142,6 +1152,781 @@
         "tipo": "fondo",
         "nombre": "Fondo",
         "porDefecto": "oscuro"
+      }
+    ]
+  },
+  "conversion": {
+    "$comentario": "Herramientas de conversión: estilo.conversion (docs/especificaciones/tienda-promociones.md § 2). Lo que falta toma porDefecto. Se valida como un grupo de estos campos.",
+    "nombre": "Herramientas para vender más",
+    "descripcion": "Ayudas chicas en la tienda que empujan la compra, sin molestar.",
+    "campos": [
+      {
+        "id": "envioGratis",
+        "tipo": "si",
+        "nombre": "Cuánto falta para el envío gratis",
+        "porDefecto": true,
+        "descripcion": "«Te faltan $ X para el envío gratis» en la bolsa y el carrito. Usa el monto que ya configuraste."
+      },
+      {
+        "id": "pruebaSocial",
+        "tipo": "grupo",
+        "nombre": "Compras recientes",
+        "descripcion": "Avisos chicos de compras reales de los últimos 7 días: nombre de pila y provincia. Sin compras, no sale nada.",
+        "porDefecto": {
+          "activa": false,
+          "cada": 30,
+          "paginas": []
+        },
+        "item": [
+          {
+            "id": "activa",
+            "tipo": "si",
+            "nombre": "Mostrar compras recientes",
+            "porDefecto": false
+          },
+          {
+            "id": "cada",
+            "tipo": "numero",
+            "nombre": "Cada cuántos segundos",
+            "min": 15,
+            "max": 120,
+            "porDefecto": 30
+          },
+          {
+            "id": "paginas",
+            "tipo": "opciones",
+            "nombre": "En qué páginas",
+            "opciones": [
+              "inicio",
+              "catalogo",
+              "producto",
+              "carrito",
+              "nosotros"
+            ],
+            "nombres": [
+              "Inicio",
+              "Catálogo",
+              "Ficha de producto",
+              "Carrito",
+              "Nosotros"
+            ],
+            "porDefecto": [],
+            "descripcion": "Ninguna marcada: en todas."
+          }
+        ]
+      },
+      {
+        "id": "etiquetas",
+        "tipo": "grupo",
+        "nombre": "Etiquetas en los productos",
+        "descripcion": "Se ponen solas en las tarjetas y en la ficha.",
+        "porDefecto": {
+          "nuevo": true,
+          "oferta": true,
+          "ultimas": true,
+          "masVendido": true
+        },
+        "item": [
+          {
+            "id": "nuevo",
+            "tipo": "si",
+            "nombre": "Nuevo",
+            "descripcion": "Productos cargados hace 14 días o menos.",
+            "porDefecto": true
+          },
+          {
+            "id": "oferta",
+            "tipo": "si",
+            "nombre": "Oferta",
+            "descripcion": "El porcentaje de descuento: «−20 %».",
+            "porDefecto": true
+          },
+          {
+            "id": "ultimas",
+            "tipo": "si",
+            "nombre": "Últimas unidades",
+            "descripcion": "«Últimas 3» cuando queda poco stock (el número de abajo, o 3).",
+            "porDefecto": true
+          },
+          {
+            "id": "masVendido",
+            "tipo": "si",
+            "nombre": "Más vendido",
+            "descripcion": "Los 3 que más se vendieron en 30 días.",
+            "porDefecto": true
+          }
+        ]
+      },
+      {
+        "id": "stockBajo",
+        "tipo": "numero",
+        "nombre": "Avisar «Quedan pocas» desde",
+        "min": 0,
+        "max": 20,
+        "porDefecto": 3,
+        "descripcion": "Si quedan esa cantidad o menos, la ficha dice «Quedan 3». En 0, no se avisa."
+      },
+      {
+        "id": "compraFija",
+        "tipo": "si",
+        "nombre": "Botón de comprar fijo en el celular",
+        "porDefecto": true,
+        "descripcion": "En la ficha, el botón de agregar queda abajo mientras se baja."
+      },
+      {
+        "id": "sumaEnCarrito",
+        "tipo": "si",
+        "nombre": "«Sumá también» en el carrito",
+        "porDefecto": true,
+        "descripcion": "Hasta 3 combos o productos relacionados para sumar con un toque."
+      },
+      {
+        "id": "favoritos",
+        "tipo": "si",
+        "nombre": "Favoritos",
+        "porDefecto": false,
+        "descripcion": "Un corazón en los productos y la página Favoritos. Se guardan en el dispositivo de quien compra."
+      }
+    ]
+  },
+  "ventanas": {
+    "$comentario": "Ventanas (popups) de la tienda: diseno.ventanas, hasta limites.ventanas (docs/especificaciones/tienda-promociones.md). Una Ventana es { id [a-z0-9]{6,16} único, nombre (1–40), activa, variante, contenido, datos (los campos del contenido), disparo { cuando, valor? }, frecuencia { cada, dias? }, publico, paginas [] (vacío = todas), dispositivos, desde?, hasta? (ISO) }. valor y dias van sólo en los disparos y frecuencias que traen rango (si falta, porDefecto). Plantillas: el editor copia «ventana», le pone un id nuevo, reemplaza {envioGratis} por el monto de envío gratis de la tienda, pide los campos de «completar» y, si trae hastaEnDias, pone datos.hasta = ahora + esos días. Una ventana válida puede estar incompleta (el borrador se guarda a medias); sale en la tienda sólo si está completa: los campos requeridos del contenido cargados, el premio con lo suyo (cuponFijo con cupon, cuponUnico con descuento y valor salvo envioGratis, descarga con archivo) y, en la ruleta, al menos una porción con peso mayor a 0. Casos: casos/ventanas.json.",
+    "nombre": "Ventanas",
+    "descripcion": "Avisos que se abren solos: promos, cupones, captar mails y la ruleta.",
+    "variantes": [
+      "centrada",
+      "lateral",
+      "completa",
+      "inferior"
+    ],
+    "nombresVariantes": [
+      "Centrada",
+      "En un costado",
+      "Pantalla completa",
+      "Desde abajo"
+    ],
+    "descripcionesVariantes": [
+      "Una tarjeta en el medio, con la tienda atrás.",
+      "Chica, en una esquina: no corta la compra.",
+      "Ocupa todo. En el celular sale desde abajo.",
+      "Una hoja que sube desde abajo."
+    ],
+    "campos": [
+      {
+        "id": "nombre",
+        "tipo": "texto",
+        "nombre": "Nombre (sólo lo ves vos)",
+        "max": 40,
+        "requerido": true
+      }
+    ],
+    "contenidos": [
+      {
+        "tipo": "promo",
+        "nombre": "Promo",
+        "descripcion": "Una novedad o una oferta con un botón.",
+        "campos": [
+          {
+            "id": "foto",
+            "tipo": "foto",
+            "nombre": "Foto",
+            "descripcion": "Opcional. El texto va arriba con un velo."
+          },
+          {
+            "id": "etiqueta",
+            "tipo": "texto",
+            "nombre": "Antetítulo",
+            "max": 30
+          },
+          {
+            "id": "titulo",
+            "tipo": "texto",
+            "nombre": "Título",
+            "max": 70,
+            "requerido": true
+          },
+          {
+            "id": "texto",
+            "tipo": "textoLargo",
+            "nombre": "Texto",
+            "max": 200
+          },
+          {
+            "id": "boton",
+            "tipo": "boton",
+            "nombre": "Botón"
+          },
+          {
+            "id": "hasta",
+            "tipo": "fecha",
+            "nombre": "Cuenta regresiva hasta",
+            "descripcion": "Opcional. Al vencer, la ventana no sale más."
+          }
+        ]
+      },
+      {
+        "tipo": "cupon",
+        "nombre": "Cupón",
+        "descripcion": "Un cupón tuyo con «Copiar»; se aplica solo al carrito.",
+        "campos": [
+          {
+            "id": "foto",
+            "tipo": "foto",
+            "nombre": "Foto",
+            "descripcion": "Opcional. El texto va arriba con un velo."
+          },
+          {
+            "id": "titulo",
+            "tipo": "texto",
+            "nombre": "Título",
+            "max": 70,
+            "requerido": true
+          },
+          {
+            "id": "texto",
+            "tipo": "textoLargo",
+            "nombre": "Texto",
+            "max": 200
+          },
+          {
+            "id": "cupon",
+            "tipo": "cupon",
+            "nombre": "Cupón",
+            "requerido": true
+          },
+          {
+            "id": "condiciones",
+            "tipo": "texto",
+            "nombre": "Condiciones",
+            "max": 100,
+            "descripcion": "Corto: «Mínimo $ 20.000, no acumulable»."
+          },
+          {
+            "id": "hasta",
+            "tipo": "fecha",
+            "nombre": "Cuenta regresiva hasta",
+            "descripcion": "Opcional. Al vencer, la ventana no sale más."
+          }
+        ]
+      },
+      {
+        "tipo": "captacion",
+        "nombre": "Captar mails",
+        "descripcion": "Pide el mail a cambio de un premio y suma el contacto a tu newsletter.",
+        "campos": [
+          {
+            "id": "foto",
+            "tipo": "foto",
+            "nombre": "Foto",
+            "descripcion": "Opcional. El texto va arriba con un velo."
+          },
+          {
+            "id": "titulo",
+            "tipo": "texto",
+            "nombre": "Título",
+            "max": 70,
+            "requerido": true
+          },
+          {
+            "id": "texto",
+            "tipo": "textoLargo",
+            "nombre": "Texto",
+            "max": 200
+          },
+          {
+            "id": "pedirNombre",
+            "tipo": "si",
+            "nombre": "Pedir el nombre",
+            "porDefecto": false
+          },
+          {
+            "id": "pedirWhatsapp",
+            "tipo": "si",
+            "nombre": "Pedir el WhatsApp",
+            "porDefecto": false
+          },
+          {
+            "id": "premio",
+            "tipo": "premio",
+            "nombre": "Premio",
+            "requerido": true,
+            "porDefecto": {
+              "tipo": "nada"
+            }
+          },
+          {
+            "id": "textoBoton",
+            "tipo": "texto",
+            "nombre": "Texto del botón",
+            "max": 30,
+            "porDefecto": "Quiero mi premio"
+          },
+          {
+            "id": "listo",
+            "tipo": "texto",
+            "nombre": "Mensaje al terminar",
+            "max": 120,
+            "porDefecto": "¡Listo! También te lo mandamos por mail."
+          }
+        ]
+      },
+      {
+        "tipo": "ruleta",
+        "nombre": "Ruleta de premios",
+        "descripcion": "Dejan el mail y giran una vez. El premio lo sortea el servidor.",
+        "campos": [
+          {
+            "id": "titulo",
+            "tipo": "texto",
+            "nombre": "Título",
+            "max": 70,
+            "requerido": true
+          },
+          {
+            "id": "texto",
+            "tipo": "textoLargo",
+            "nombre": "Texto",
+            "max": 200
+          },
+          {
+            "id": "pedirNombre",
+            "tipo": "si",
+            "nombre": "Pedir el nombre",
+            "porDefecto": false
+          },
+          {
+            "id": "porciones",
+            "tipo": "lista",
+            "nombre": "Porciones",
+            "min": 4,
+            "max": 8,
+            "requerido": true,
+            "descripcion": "De 4 a 8. El peso es la chance de cada una: más peso, más sale. Al menos una con peso mayor a 0.",
+            "item": [
+              {
+                "id": "texto",
+                "tipo": "texto",
+                "nombre": "Texto",
+                "max": 24,
+                "requerido": true
+              },
+              {
+                "id": "premio",
+                "tipo": "premio",
+                "nombre": "Premio",
+                "opciones": [
+                  "cuponUnico",
+                  "nada"
+                ],
+                "requerido": true
+              },
+              {
+                "id": "peso",
+                "tipo": "numero",
+                "nombre": "Peso",
+                "min": 0,
+                "max": 100,
+                "porDefecto": 10,
+                "requerido": true
+              }
+            ]
+          },
+          {
+            "id": "textoBoton",
+            "tipo": "texto",
+            "nombre": "Texto del botón",
+            "max": 30,
+            "porDefecto": "Girar la ruleta"
+          }
+        ]
+      }
+    ],
+    "disparos": [
+      {
+        "cuando": "entrar",
+        "nombre": "Al entrar",
+        "descripcion": "A los 1,5 segundos de abrir la página."
+      },
+      {
+        "cuando": "segundos",
+        "nombre": "Después de un rato",
+        "descripcion": "A los segundos que elijas.",
+        "valor": {
+          "min": 3,
+          "max": 120,
+          "porDefecto": 10,
+          "unidad": "segundos"
+        }
+      },
+      {
+        "cuando": "scroll",
+        "nombre": "Al bajar",
+        "descripcion": "Cuando bajó parte de la página.",
+        "valor": {
+          "min": 10,
+          "max": 90,
+          "porDefecto": 50,
+          "unidad": "%"
+        }
+      },
+      {
+        "cuando": "salida",
+        "nombre": "Antes de irse",
+        "descripcion": "Cuando parece que se va. Nunca antes de 8 segundos."
+      },
+      {
+        "cuando": "carrito",
+        "nombre": "Al agregar al carrito",
+        "descripcion": "Con el primer producto que agrega."
+      }
+    ],
+    "frecuencias": [
+      {
+        "cada": "sesion",
+        "nombre": "Una vez por visita",
+        "descripcion": "Vuelve a salir la próxima vez que entre."
+      },
+      {
+        "cada": "dias",
+        "nombre": "Cada tantos días",
+        "descripcion": "Después de verla, no sale por unos días.",
+        "dias": {
+          "min": 1,
+          "max": 90,
+          "porDefecto": 7
+        }
+      },
+      {
+        "cada": "siempre",
+        "nombre": "Siempre",
+        "descripcion": "En cada página que califique (una por página)."
+      },
+      {
+        "cada": "unaVez",
+        "nombre": "Una sola vez",
+        "descripcion": "La ve una vez y nunca más en ese dispositivo."
+      }
+    ],
+    "publicos": {
+      "opciones": [
+        "todos",
+        "nuevos",
+        "recurrentes"
+      ],
+      "nombres": [
+        "Todos",
+        "Primera visita",
+        "Los que vuelven"
+      ],
+      "porDefecto": "todos"
+    },
+    "paginas": {
+      "opciones": [
+        "inicio",
+        "catalogo",
+        "producto",
+        "carrito",
+        "nosotros"
+      ],
+      "nombres": [
+        "Inicio",
+        "Catálogo",
+        "Ficha de producto",
+        "Carrito",
+        "Nosotros"
+      ],
+      "descripcion": "Ninguna marcada: en todas. Nunca sale en el pago, el listo ni los legales."
+    },
+    "dispositivos": {
+      "opciones": [
+        "todos",
+        "celular",
+        "compu"
+      ],
+      "nombres": [
+        "Celular y compu",
+        "Sólo celular",
+        "Sólo compu"
+      ],
+      "porDefecto": "todos"
+    },
+    "plantillas": [
+      {
+        "id": "bienvenida",
+        "nombre": "Bienvenida 10 % por mail",
+        "descripcion": "A quien entra por primera vez: deja el mail y recibe un 10 % para la primera compra.",
+        "ventana": {
+          "nombre": "Bienvenida 10 %",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "10 % en tu primera compra",
+            "texto": "Dejanos tu mail y te mandamos el código. Además, te enterás antes que nadie de las novedades.",
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 10,
+              "dias": 7
+            },
+            "textoBoton": "Quiero mi 10 %",
+            "listo": "¡Listo! Tu código ya está en el carrito y también te lo mandamos por mail."
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 8
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 14
+          },
+          "publico": "nuevos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "antes-de-irte",
+        "nombre": "Antes de irte (cupón)",
+        "descripcion": "Cuando parece que se va, le ofrece un cupón tuyo.",
+        "completar": [
+          "cupon"
+        ],
+        "ventana": {
+          "nombre": "Antes de irte",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "cupon",
+          "datos": {
+            "titulo": "¡Esperá! Llevate un descuento",
+            "texto": "Usá este código antes de terminar tu compra.",
+            "condiciones": "Válido por tiempo limitado."
+          },
+          "disparo": {
+            "cuando": "salida"
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 3
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "ruleta",
+        "nombre": "Ruleta de premios",
+        "descripcion": "Dejan el mail y giran: el premio sale por sorteo, uno por persona.",
+        "ventana": {
+          "nombre": "Ruleta de premios",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "ruleta",
+          "datos": {
+            "titulo": "Girá y ganá",
+            "texto": "Dejá tu mail y probá suerte. Un giro por persona.",
+            "porciones": [
+              {
+                "texto": "5 % off",
+                "premio": {
+                  "tipo": "cuponUnico",
+                  "descuento": "porcentaje",
+                  "valor": 5,
+                  "dias": 7
+                },
+                "peso": 35
+              },
+              {
+                "texto": "Casi…",
+                "premio": {
+                  "tipo": "nada"
+                },
+                "peso": 15
+              },
+              {
+                "texto": "10 % off",
+                "premio": {
+                  "tipo": "cuponUnico",
+                  "descuento": "porcentaje",
+                  "valor": 10,
+                  "dias": 7
+                },
+                "peso": 25
+              },
+              {
+                "texto": "Envío gratis",
+                "premio": {
+                  "tipo": "cuponUnico",
+                  "descuento": "envioGratis",
+                  "dias": 7
+                },
+                "peso": 15
+              },
+              {
+                "texto": "Otra vez será",
+                "premio": {
+                  "tipo": "nada"
+                },
+                "peso": 5
+              },
+              {
+                "texto": "15 % off",
+                "premio": {
+                  "tipo": "cuponUnico",
+                  "descuento": "porcentaje",
+                  "valor": 15,
+                  "dias": 7
+                },
+                "peso": 5
+              }
+            ],
+            "textoBoton": "Girar la ruleta"
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 10
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 7
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "envio-gratis",
+        "nombre": "Envío gratis desde $X",
+        "descripcion": "Avisa desde cuánto el envío es gratis, en un costado y sin cortar la compra.",
+        "ventana": {
+          "nombre": "Envío gratis",
+          "activa": true,
+          "variante": "lateral",
+          "contenido": "promo",
+          "datos": {
+            "etiqueta": "Envío gratis",
+            "titulo": "Envío gratis desde {envioGratis}",
+            "texto": "Sumá productos al carrito y el envío corre por nuestra cuenta.",
+            "boton": {
+              "t": "Ver productos",
+              "a": "catalogo"
+            }
+          },
+          "disparo": {
+            "cuando": "scroll",
+            "valor": 40
+          },
+          "frecuencia": {
+            "cada": "sesion"
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "lanzamiento",
+        "nombre": "Lanzamiento con cuenta regresiva",
+        "descripcion": "Anuncia algo nuevo con el reloj corriendo hasta la fecha que elijas.",
+        "hastaEnDias": 7,
+        "ventana": {
+          "nombre": "Lanzamiento",
+          "activa": true,
+          "variante": "completa",
+          "contenido": "promo",
+          "datos": {
+            "etiqueta": "Se viene",
+            "titulo": "Nueva colección",
+            "texto": "Faltan pocos días. Mirá lo que llega antes que nadie.",
+            "boton": {
+              "t": "Ver novedades",
+              "a": "catalogo"
+            }
+          },
+          "disparo": {
+            "cuando": "entrar"
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 1
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "guia",
+        "nombre": "Descargá la guía",
+        "descripcion": "Ofrece una guía, recetario o catálogo en PDF a cambio del mail.",
+        "completar": [
+          "premio"
+        ],
+        "ventana": {
+          "nombre": "Guía gratis",
+          "activa": true,
+          "variante": "centrada",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "Bajate la guía gratis",
+            "texto": "Te la mandamos al mail y la podés descargar ahora mismo.",
+            "premio": {
+              "tipo": "descarga",
+              "nombreArchivo": "Guía"
+            },
+            "textoBoton": "Quiero la guía",
+            "listo": "¡Listo! Descargala acá; también te la mandamos por mail."
+          },
+          "disparo": {
+            "cuando": "scroll",
+            "valor": 50
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 30
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
+      },
+      {
+        "id": "whatsapp",
+        "nombre": "Sumate por WhatsApp",
+        "descripcion": "Pide mail y WhatsApp para mandarle ofertas antes que a nadie.",
+        "ventana": {
+          "nombre": "Sumate por WhatsApp",
+          "activa": true,
+          "variante": "inferior",
+          "contenido": "captacion",
+          "datos": {
+            "titulo": "Enterate primero por WhatsApp",
+            "texto": "Ofertas y novedades antes que nadie. Sin cadenas ni spam.",
+            "pedirNombre": true,
+            "pedirWhatsapp": true,
+            "premio": {
+              "tipo": "cuponUnico",
+              "descuento": "porcentaje",
+              "valor": 5,
+              "dias": 14
+            },
+            "textoBoton": "Sumarme",
+            "listo": "¡Gracias! Ya estás en la lista. Tu 5 % llega por mail."
+          },
+          "disparo": {
+            "cuando": "segundos",
+            "valor": 20
+          },
+          "frecuencia": {
+            "cada": "dias",
+            "dias": 30
+          },
+          "publico": "todos",
+          "paginas": [],
+          "dispositivos": "todos"
+        }
       }
     ]
   }

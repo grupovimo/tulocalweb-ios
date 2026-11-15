@@ -40,6 +40,8 @@ type Estilo struct {
 	Barra *Barra `json:"barra,omitempty"`
 	// WhatsappFlotante: false saca el botón flotante de WhatsApp (nil: se ve, si hay número).
 	WhatsappFlotante *bool `json:"whatsappFlotante,omitempty"`
+	// Conversion: las herramientas para vender más (bloques.json › conversion); lo que falta, porDefecto.
+	Conversion map[string]any `json:"conversion,omitempty"`
 }
 
 // Barra de anuncios: fija (un mensaje) o rotativa.
@@ -52,6 +54,8 @@ type Barra struct {
 type MensajeBarra struct {
 	Texto string `json:"texto"`
 	Link  string `json:"link,omitempty"`
+	// Hasta: cuenta regresiva; al vencer el mensaje se esconde (ISO 8601).
+	Hasta string `json:"hasta,omitempty"`
 }
 
 // ItemMenu: el texto de la pestaña y adónde lleva (una página, «cat:<categoría>» o un link https).
@@ -125,7 +129,7 @@ func (e *Estilo) valido() bool {
 			return false
 		}
 	}
-	if !e.Barra.valido() {
+	if !e.Barra.valido() || !conversionValida(e.Conversion) {
 		return false
 	}
 	return permitidoEn(e.Textos, textosIDs) && permitidoEn(e.Redes, redesIDs)
@@ -141,7 +145,7 @@ func (e *Estilo) vacio() bool {
 	return e.Colores == nil && e.Textos == nil && e.Redes == nil && len(e.Menu) == 0 && e.FuenteTitulos == "" && e.FuenteTexto == "" &&
 		e.LogoOscuro == "" && e.Icono == "" && e.LogoAlto == 0 && e.Anuncio == "" && e.AnuncioLink == "" && e.LeyendaPie == "" &&
 		e.Direccion == "" && e.Forma == "" && e.Densidad == "" && e.Ancho == "" && e.FotoProducto == "" && e.Encabezado == "" &&
-		e.Pie == "" && e.Barra == nil && e.WhatsappFlotante == nil
+		e.Pie == "" && e.Barra == nil && e.WhatsappFlotante == nil && len(e.Conversion) == 0
 }
 
 // limpiar saca los espacios de más y lo vacío, para que el borrador no cambie por nada.
@@ -177,6 +181,9 @@ func (e *Estilo) limpiar() *Estilo {
 		if len(e.Barra.Mensajes) == 0 {
 			e.Barra = nil
 		}
+	}
+	if len(e.Conversion) == 0 {
+		e.Conversion = nil
 	}
 	if e.vacio() {
 		return nil

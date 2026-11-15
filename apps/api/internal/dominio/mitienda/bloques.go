@@ -60,6 +60,7 @@ var Catalogo = func() (c struct {
 		FilasTabla       int `json:"filasTabla"`
 		ColumnasTabla    int `json:"columnasTabla"`
 		LetrasCelda      int `json:"letrasCelda"`
+		Ventanas         int `json:"ventanas"`
 	} `json:"limites"`
 	Estilo           map[string]opciones       `json:"estilo"`
 	Fondos           opciones                  `json:"fondos"`
@@ -68,6 +69,8 @@ var Catalogo = func() (c struct {
 	Paginas          map[string]paginaCatalogo `json:"paginas"`
 	Bloques          []tipoBloque              `json:"bloques"`
 	BarraAnuncios    paginaCatalogo            `json:"barraAnuncios"`
+	Conversion       paginaCatalogo            `json:"conversion"`
+	Ventanas         catalogoVentanas          `json:"ventanas"`
 }) {
 	if err := json.Unmarshal(bloquesJSON, &c); err != nil {
 		panic("mitienda: bloques.json: " + err.Error())
@@ -301,6 +304,13 @@ func valorValido(c campo, v any) bool {
 		return ok && camposValidos(c.Item, m, false)
 	case "tabla":
 		return tablaValida(v)
+	case "cupon":
+		s, ok := v.(string)
+		return ok && (s == "" || reCupon.MatchString(s))
+	case "premio":
+		return premioValido(c.Opciones, v)
+	case "opciones":
+		return opcionesValidas(c.Opciones, v)
 	}
 	return false
 }
@@ -499,7 +509,8 @@ func (b *Barra) valido() bool {
 		return false
 	}
 	for _, m := range b.Mensajes {
-		if strings.TrimSpace(m.Texto) == "" || !textoValido(m.Texto, 100, false) || (m.Link != "" && !linkValido(m.Link)) {
+		if strings.TrimSpace(m.Texto) == "" || !textoValido(m.Texto, 100, false) || (m.Link != "" && !linkValido(m.Link)) ||
+			(m.Hasta != "" && !fechaValida(m.Hasta)) {
 			return false
 		}
 	}

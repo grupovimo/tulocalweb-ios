@@ -137,14 +137,14 @@ func TestDisenoValido(t *testing.T) {
 		{"estilo v2 bien", con(func(d *Diseno) {
 			d.Estilo = &Estilo{Direccion: "pedido", Forma: "pildora", Densidad: "compacta", Ancho: "amplio", FotoProducto: "apaisada",
 				Encabezado: "buscador", Pie: "columnas", WhatsappFlotante: &si,
-				Barra: &Barra{Variante: "rotativa", Fondo: "acento", Mensajes: []MensajeBarra{{"Envío gratis", "catalogo"}, {"3 cuotas", ""}}}}
+				Barra: &Barra{Variante: "rotativa", Fondo: "acento", Mensajes: []MensajeBarra{{Texto: "Envío gratis", Link: "catalogo"}, {Texto: "3 cuotas"}}}}
 		}), true},
 		{"dirección inventada", con(func(d *Diseno) { d.Estilo = &Estilo{Direccion: "galeria"} }), false},
-		{"barra con html", con(func(d *Diseno) { d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{"<b>x</b>", ""}}}} }), false},
+		{"barra con html", con(func(d *Diseno) { d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{Texto: "<b>x</b>"}}}} }), false},
 		{"barra con seis", con(func(d *Diseno) {
-			d.Estilo = &Estilo{Barra: &Barra{Mensajes: slices.Repeat([]MensajeBarra{{"x", ""}}, 6)}}
+			d.Estilo = &Estilo{Barra: &Barra{Mensajes: slices.Repeat([]MensajeBarra{{Texto: "x"}}, 6)}}
 		}), false},
-		{"barra a otro lado", con(func(d *Diseno) { d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{"x", "ftp://x"}}}} }), false},
+		{"barra a otro lado", con(func(d *Diseno) { d.Estilo = &Estilo{Barra: &Barra{Mensajes: []MensajeBarra{{Texto: "x", Link: "ftp://x"}}}} }), false},
 		{"páginas bien", con(func(d *Diseno) {
 			d.Paginas = &Paginas{Catalogo: &PaginaCatalogo{"lista", "arriba", 3}, Carrito: &PaginaCarrito{"panel", &si},
 				Producto: &PaginaProducto{Variante: "carrusel", Relacionados: &si,
