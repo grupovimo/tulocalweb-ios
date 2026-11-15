@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"math"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mayorista"
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/mitienda"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/newsletter"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/pedidos"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/suscripciones"
@@ -99,17 +101,22 @@ type Categoria struct {
 
 // Tienda es components/schemas/TiendaPublica (lib/tienda/tipos.ts).
 type Tienda struct {
-	Slug      string         `json:"slug"`
-	Nombre    string         `json:"nombre"`
-	Plantilla string         `json:"plantilla"`
-	Paleta    int            `json:"paleta"`
+	Slug      string `json:"slug"`
+	Nombre    string `json:"nombre"`
+	Plantilla string `json:"plantilla"`
+	Paleta    int    `json:"paleta"`
+	// Diseno: el publicado, siempre v2 (un v1 se migra al leer, mitienda.Migrar). Los productos que
+	// nombran sus bloques están en Productos.
+	Diseno mitienda.Diseno `json:"diseno"`
+	// Secciones y Estilo: lo mismo en v1, para las plantillas viejas mientras convivan.
 	Secciones []string       `json:"secciones"`
 	Portada   map[string]any `json:"portada"`
 	// Logo subido en Mi tienda (URL); vacío: el nombre en letras.
 	Logo string `json:"logo"`
 	// Compartir: título, descripción y foto propia de la vista previa al compartir (vacíos: lo sugerido).
 	Compartir Compartir `json:"compartir"`
-	// Estilo: lo de Mi tienda › Estilo, validado al guardar (mitienda.Estilo); {} si no cambió nada.
+	// Estilo: lo de Mi tienda › Estilo con el anuncio y los textos de v1 (mitienda.Diseno.EstiloV1);
+	// {} si no cambió nada.
 	Estilo    json.RawMessage `json:"estilo"`
 	Ciudad    string          `json:"ciudad"`
 	Direccion string          `json:"direccion"`
@@ -217,8 +224,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 	if err != nil {
 		return Tienda{}, err
 	}
-	var miPortada struct{ Titulo, Lema, Portada string }
-	out := Tienda{Slug: slug, Secciones: []string{"hero", "cats", "prods", "revs", "ig", "wa"}, Resenas: []ResenaPublica{}, Preguntas: []PreguntaPublica{},
+	out := Tienda{Slug: slug, Resenas: []ResenaPublica{}, Preguntas: []PreguntaPublica{},
 		Fotos: []string{}, MasVendidos: []string{}}
 	// Los más vendidos de los últimos 30 días (los ítems de los pedidos guardan el nombre).
 	vendidos := map[string]int{}
@@ -253,35 +259,12 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 			id).Scan(&out.Dominio); err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
-		var d struct {
-			Secciones []struct {
-				ID      string `json:"id"`
-				Visible bool   `json:"visible"`
-			} `json:"secciones"`
-			Paleta                      int `json:"paleta"`
-			Titulo, Lema, Portada, Logo string
-			CompartirTitulo             string          `json:"compartirTitulo"`
-			CompartirDescripcion        string          `json:"compartirDescripcion"`
-			CompartirFoto               string          `json:"compartirFoto"`
-			Estilo                      json.RawMessage `json:"estilo"`
-		}
+		d := mitienda.LeerDiseno(diseno, out.Plantilla)
+		out.Diseno, out.Paleta, out.Logo, out.Secciones = d, d.Paleta, d.Logo, d.SeccionesV1()
+		out.Compartir = Compartir{d.CompartirTitulo, d.CompartirDescripcion, d.CompartirFoto}
 		out.Estilo = json.RawMessage(`{}`)
-		if json.Unmarshal(diseno, &d) == nil {
-			if len(d.Estilo) > 0 && string(d.Estilo) != "null" {
-				out.Estilo = d.Estilo
-			}
-			miPortada.Titulo, miPortada.Lema, miPortada.Portada = d.Titulo, d.Lema, d.Portada
-			out.Logo = d.Logo
-			out.Compartir = Compartir{d.CompartirTitulo, d.CompartirDescripcion, d.CompartirFoto}
-		}
-		if len(d.Secciones) > 0 {
-			out.Secciones = out.Secciones[:0]
-			for _, s := range d.Secciones {
-				if s.Visible {
-					out.Secciones = append(out.Secciones, s.ID)
-				}
-			}
-			out.Paleta = d.Paleta
+		if e := d.EstiloV1(); e != nil {
+			out.Estilo, _ = json.Marshal(e)
 		}
 		var n struct{ Direccion, Whatsapp, Alias, CBU, Titular, Politica string }
 		_ = json.Unmarshal(negocio, &n)
@@ -345,39 +328,33 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		if err := vs.Err(); err != nil {
 			return err
 		}
-		filas, err := t.Query(ctx, `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
+		ahora := time.Now()
+		// Todo el catálogo visible (los 500 más nuevos) y, si los bloques nombran alguno más viejo
+		// (destacado, combo, elegidos a mano, links prod:), también ese.
+		const columnas = `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
 				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista FROM productos
-			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true) ORDER BY creado_en DESC LIMIT 500`, id)
+			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true)`
+		filas, err := t.Query(ctx, columnas+` ORDER BY creado_en DESC LIMIT 500`, id)
 		if err != nil {
 			return err
 		}
-		ahora := time.Now()
-		for filas.Next() {
-			var p ProductoPublico
-			var l lanzamiento
-			if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
-				&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista); err != nil {
+		if err := leerProductos(filas, &out, variantes, soloSi, mp, ahora); err != nil {
+			return err
+		}
+		var faltan []string
+		for _, r := range d.ProductosReferidos() {
+			if uuidValido.MatchString(r) && !slices.ContainsFunc(out.Productos, func(p ProductoPublico) bool { return p.ID == r }) {
+				faltan = append(faltan, r)
+			}
+		}
+		if len(faltan) > 0 {
+			filas, err := t.Query(ctx, columnas+` AND id = ANY($2::uuid[])`, id, faltan)
+			if err != nil {
 				return err
 			}
-			p.Mayorista = soloSi(p.Mayorista)
-			p.Variantes = []VariantePublica{}
-			if len(p.Opciones) > 0 {
-				vs := variantes[p.ID]
-				listas.OrdenarVariantes(p.Opciones, vs)
-				for _, v := range vs {
-					p.Variantes = append(p.Variantes, VariantePublica{ID: v.ID, Valores: v.Valores, Precio: v.Precio, Stock: v.Stock, Foto: v.Foto,
-						Mayorista: soloSi(v.PrecioMayorista)})
-				}
+			if err := leerProductos(filas, &out, variantes, soloSi, mp, ahora); err != nil {
+				return err
 			}
-			if p.Stock > 0 && p.Stock <= 3 {
-				u := "Últimos"
-				p.Etiqueta = &u
-			}
-			l.aplicar(&p, mp, ahora)
-			out.Productos = append(out.Productos, p)
-		}
-		if err := filas.Err(); err != nil {
-			return err
 		}
 		// Reseñas visibles (las 60 últimas) y su promedio; preguntas respondidas.
 		var suma, cant int
@@ -468,15 +445,48 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 	if len(out.Fotos) > 0 {
 		foto = &out.Fotos[0]
 	}
-	if miPortada.Portada != "" {
-		foto = &miPortada.Portada
+	if out.Diseno.Portada != "" {
+		foto = &out.Diseno.Portada
 	}
 	titulo := out.Nombre
-	if miPortada.Titulo != "" {
-		titulo = miPortada.Titulo
+	if out.Diseno.Titulo != "" {
+		titulo = out.Diseno.Titulo
 	}
-	out.Portada = map[string]any{"titulo": titulo, "lema": miPortada.Lema, "foto": foto}
+	out.Portada = map[string]any{"titulo": titulo, "lema": out.Diseno.Lema, "foto": foto}
 	return out, nil
+}
+
+var uuidValido = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+// leerProductos suma a la tienda los productos de filas, con sus variantes activas.
+func leerProductos(filas pgx.Rows, out *Tienda, variantes map[string][]listas.Variante, soloSi func(*int64) *int64, mp bool,
+	ahora time.Time) error {
+	defer filas.Close()
+	for filas.Next() {
+		var p ProductoPublico
+		var l lanzamiento
+		if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
+			&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista); err != nil {
+			return err
+		}
+		p.Mayorista = soloSi(p.Mayorista)
+		p.Variantes = []VariantePublica{}
+		if len(p.Opciones) > 0 {
+			vs := variantes[p.ID]
+			listas.OrdenarVariantes(p.Opciones, vs)
+			for _, v := range vs {
+				p.Variantes = append(p.Variantes, VariantePublica{ID: v.ID, Valores: v.Valores, Precio: v.Precio, Stock: v.Stock, Foto: v.Foto,
+					Mayorista: soloSi(v.PrecioMayorista)})
+			}
+		}
+		if p.Stock > 0 && p.Stock <= 3 {
+			u := "Últimos"
+			p.Etiqueta = &u
+		}
+		l.aplicar(&p, mp, ahora)
+		out.Productos = append(out.Productos, p)
+	}
+	return filas.Err()
 }
 
 func contiene(l []string, s string) bool {
