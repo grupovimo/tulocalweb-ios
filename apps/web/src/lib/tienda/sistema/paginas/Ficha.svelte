@@ -97,9 +97,7 @@
 		sel.proximo ? '' : textoSinImpuestos(ofrece, sel.precio, ivaDe(producto))
 	);
 	// «Ver medios de pago»: con Mercado Pago o transferencia hay algo que contar.
-	const hayMedios = $derived(
-		!sel.proximo && (ofrece.mercadoPago || ofrece.aceptaTransferencia) && !tienda.vitrina
-	);
+	const hayMedios = $derived(!sel.proximo && (ofrece.mercadoPago || ofrece.aceptaTransferencia));
 	let verMedios = $state(false);
 	// Envío gratis: el producto solo ya llega (sello sobre la foto), o con lo que hay en el carrito.
 	const gratisSolo = $derived(!sel.proximo && conEnvioGratis(ofrece, sel.precio));
@@ -189,7 +187,11 @@
 	const detalles = $derived(
 		[
 			{ t: 'Descripción', d: producto.descripcion?.trim() || '' },
-			{ t: 'Envíos', d: textoEnvios(tienda.envios) },
+			// Con la caja de confianza a la vista, «Envíos» ya está dicho arriba.
+			{
+				t: 'Envíos',
+				d: confianza.some((c) => c.tipo === 'envio') ? '' : textoEnvios(tienda.envios)
+			},
 			{
 				t: 'Cambios y devoluciones',
 				d: `${tienda.politica ? `${tienda.politica} ` : ''}Tenés 10 días desde que lo recibís para arrepentirte de la compra, sin dar explicaciones (botón de arrepentimiento, abajo de todo).`
@@ -425,11 +427,10 @@
 							{#if enCuotas}<p class="tv-ok tv-ficha-cuotas"><b>{enCuotas}</b></p>{/if}
 							{#if transf}<p class="tv-ficha-transf">{transf} pagando con transferencia</p>{/if}
 						{:else}
-							<p class="tv-ficha-cuotas">
-								{enCuotas}{#if enCuotas && transf}&#32;·&#32;{/if}{#if transf}<span
-										class={dir === 'vidriera' ? 'tv-ok' : ''}>{transf} con transferencia</span
-									>{/if}
-							</p>
+							{#if enCuotas}<p class="tv-ficha-cuotas">{enCuotas}</p>{/if}
+							{#if transf}<p class="tv-ficha-transf" class:tv-ok={dir === 'vidriera'}>
+									{transf} con&nbsp;transferencia
+								</p>{/if}
 						{/if}
 					{/if}
 					{#if sinImp}<p class="tv-ficha-impuestos">{sinImp}</p>{/if}

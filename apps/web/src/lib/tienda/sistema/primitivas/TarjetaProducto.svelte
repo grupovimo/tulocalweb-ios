@@ -10,7 +10,7 @@
 	import { usarTienda } from '../contexto.ts';
 	import { productoHref } from '../datos.ts';
 	import { etiquetasDe } from '../conversion.ts';
-	import { conEnvioGratis, ofreceDe } from '../cobros.ts';
+	import { conEnvioGratis, ofreceDe, sellosQueDistinguen } from '../cobros.ts';
 	import { eleccion } from '../eleccion.svelte.ts';
 	import Cantidad from './Cantidad.svelte';
 	import Corazon from './Corazon.svelte';
@@ -68,16 +68,18 @@
 		!ctx.tienda.vitrina && !!producto.opciones?.length && !t.agotado && !proximamente(producto)
 	);
 	const ofrece = $derived(ofreceDe(ctx.tienda));
-	const gratis = $derived(!t.agotado && conEnvioGratis(ofrece, t.precio));
+	const sirven = $derived(sellosQueDistinguen(ctx.tienda));
+	const gratis = $derived(sirven.gratis && !t.agotado && conEnvioGratis(ofrece, t.precio));
 	const porMayor = $derived.by(() => {
 		const m = ctx.tienda.mayorista;
-		if (!m || (m.unidades === null && m.monto === null)) return '';
+		if (!sirven.mayor || !m || (m.unidades === null && m.monto === null)) return '';
 		const pm = producto.mayorista;
 		if (!pm || pm >= t.precio) return '';
 		const pct = Math.round((1 - pm / t.precio) * 100);
 		return pct >= 1 ? `−${pct}\u00a0% por mayor` : '';
 	});
-	const sellos = $derived([gratis ? 'Envío gratis' : '', porMayor].filter(Boolean));
+	// Uno solo sobre la foto: la tarjeta no se recarga.
+	const sellos = $derived([gratis ? 'Envío gratis' : '', porMayor].filter(Boolean).slice(0, 1));
 	function rapido(e: MouseEvent) {
 		if (directo) agregar(ctx, producto, ui);
 		else if (elige) eleccion.abrir(producto, e.currentTarget as HTMLElement);

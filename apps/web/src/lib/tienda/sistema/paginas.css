@@ -2600,3 +2600,6 @@
 	font-size: 12px;
 	font-weight: 600;
 }
+.tv-ficha-cuotas + .tv-ficha-transf {
+	margin-top: 2px !important;
+}

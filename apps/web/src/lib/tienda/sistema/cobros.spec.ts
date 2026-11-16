@@ -43,7 +43,7 @@ describe('lo que la tienda ofrece al cobrar', () => {
 		const o = ofreceDe(
 			tienda({ transferencia: 10, datosTransferencia: { alias: 'a', cbu: '', titular: 'x' } })
 		);
-		expect(textoTransferencia(o, 1000)).toBe('$ 900 con transferencia');
+		expect(textoTransferencia(o, 1000)).toBe('$ 900 con transferencia');
 	});
 	it('precio sin impuestos nacionales con centavos y coma', () => {
 		expect(sinImpuestos(18_500, 21)).toBe(15_289.26);

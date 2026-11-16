@@ -72,7 +72,7 @@ export const precioTransferencia = (o: Ofrece, total: number) =>
 /** «$ 15.300 con transferencia» (vacío sin descuento). */
 export function textoTransferencia(o: Ofrece, total: number) {
 	const p = precioTransferencia(o, total);
-	return p === null ? '' : `${precio(p)} con transferencia`;
+	return p === null ? '' : `${precio(p)} con\u00a0transferencia`;
 }
 
 export { IVAS, sinImpuestos };
@@ -113,6 +113,27 @@ export function textoTotalSinImpuestos(
 /** El precio alcanza solo para el envío gratis. */
 export const conEnvioGratis = (o: Ofrece, total: number) =>
 	o.envioGratis !== null && total >= o.envioGratis;
+
+const distinguen = new WeakMap<ProductoPublico[], { gratis: boolean; mayor: boolean }>();
+/**
+ * Si los sellos de la tarjeta distinguen algo: «Envío gratis» o «por mayor» en casi todos los
+ * productos es ruido (la barra y los beneficios ya lo dicen). Salen si los lleva la mitad o menos.
+ */
+export function sellosQueDistinguen(
+	t: Pick<TiendaPublica, 'productos' | 'mayorista'> & ConCobros
+): { gratis: boolean; mayor: boolean } {
+	const ya = distinguen.get(t.productos);
+	if (ya) return ya;
+	const o = ofreceDe(t);
+	const vivos = t.productos.filter((p) => !!p.nombre);
+	const mitad = vivos.length / 2;
+	const r = {
+		gratis: vivos.filter((p) => conEnvioGratis(o, p.precio)).length <= mitad,
+		mayor: vivos.filter((p) => !!p.mayorista && p.mayorista < p.precio).length <= mitad
+	};
+	distinguen.set(t.productos, r);
+	return r;
+}
 
 /**
  * Los mensajes automáticos de la barra de anuncios, con lo que la tienda ofrece de verdad: cuotas,
