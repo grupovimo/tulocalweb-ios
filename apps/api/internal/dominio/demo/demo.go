@@ -286,7 +286,8 @@ func Diseno(t Tienda) mitienda.Diseno {
 	d.CompartirTitulo, d.CompartirDescripcion = t.Nombre, t.Lema
 	beneficios := []any{
 		map[string]any{"icono": "envio", "titulo": "Envíos a todo el país", "texto": "Por Correo Argentino"},
-		// Sin «cuotas sin interés»: la vidriera las manda en 0 y la demo no promete lo que la tienda no ofrece.
+		// Sin «cuotas sin interés»: las tiendas de demostración no tienen Mercado Pago ni eligieron cuotas en
+		// Configuración › Cobros, así que la vidriera las manda en 0 y la demo no promete lo que no ofrece.
 		map[string]any{"icono": "cuotas", "titulo": "Pagás como quieras", "texto": "Mercado Pago o transferencia"},
 		map[string]any{"icono": "retiro", "titulo": "Retiro en el local", "texto": "Sin cargo, en " + t.Ciudad},
 		map[string]any{"icono": "cambios", "titulo": "Cambios sin vueltas", "texto": "Hasta 30 días"},

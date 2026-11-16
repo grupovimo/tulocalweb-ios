@@ -20,6 +20,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cobros"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/configuracion"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cupones"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/listas"
@@ -82,6 +83,9 @@ type ProductoPublico struct {
 	OfertaHasta *time.Time `json:"ofertaHasta"`
 	// Alta: cuándo se cargó (la etiqueta «Nuevo» de estilo.conversion: 14 días o menos).
 	Alta time.Time `json:"alta"`
+	// IVA: la alícuota del producto (21, 10.5, 27 o 0), para «Precio sin impuestos nacionales»
+	// (cobros.impuestos.mostrar): precio / (1 + iva/100).
+	IVA float64 `json:"iva"`
 }
 
 // VariantePublica: sólo las activas, sin SKU. Precio nil = el del producto.
@@ -93,6 +97,8 @@ type VariantePublica struct {
 	Mayorista *int64  `json:"mayorista"`
 	Stock     int     `json:"stock"`
 	Foto      *string `json:"foto"`
+	// IVA: el del producto (las variantes no tienen alícuota propia).
+	IVA float64 `json:"iva"`
 }
 
 type Categoria struct {
@@ -199,12 +205,6 @@ type Envios struct {
 	Correo          bool   `json:"correo"`
 }
 
-// Cuotas sin interés: ninguna (0), porque las absorbe la tienda y no se le promete al que compra lo
-// que la tienda no eligió; las plantillas no las muestran con menos de 2. El descuento por
-// transferencia y el envío gratis salen de las promociones automáticas que prendió la tienda
-// (cupones.TransferenciaPct y el monto de envío gratis de la tienda): la misma fuente que muestra el panel.
-const cuotas = 0
-
 var slugValido = regexp.MustCompile(`^[a-z0-9-]{2,60}$`)
 
 func tiendaDe(ctx context.Context, pool tx, slug string) (string, error) {
@@ -274,7 +274,20 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		var n struct{ Direccion, Whatsapp, Alias, CBU, Titular, Politica string }
 		_ = json.Unmarshal(negocio, &n)
 		out.Direccion, out.Whatsapp, out.Politica = n.Direccion, n.Whatsapp, n.Politica
-		out.Cobros = map[string]any{"transferencia": 0, "cuotas": cuotas, "mercadoPago": mp, "datosTransferencia": nil}
+		// Cuotas sin interés: las que eligió la tienda en Configuración › Cobros (las absorbe ella), y
+		// sólo con Mercado Pago; si no, 0 y la tienda no las promete. El descuento por transferencia y
+		// el envío gratis salen de las promociones automáticas que prendió la tienda
+		// (cupones.TransferenciaPct y el monto de envío gratis): la misma fuente que muestra el panel.
+		cob, err := cobros.Leer(ctx, t, id)
+		if err != nil {
+			return err
+		}
+		cuotas, desde := 0, int64(0)
+		if mp && cob.Cuotas > 0 {
+			cuotas, desde = cob.Cuotas, cob.CuotasDesde
+		}
+		out.Cobros = map[string]any{"transferencia": 0, "cuotas": cuotas, "cuotasDesde": desde, "mercadoPago": mp,
+			"datosTransferencia": nil, "impuestos": cob.Impuestos}
 		// Sin alias ni CBU cargados no se ofrece transferencia (nunca un alias inventado), ni su descuento.
 		if n.Alias != "" || n.CBU != "" {
 			out.Cobros["datosTransferencia"] = map[string]string{"alias": n.Alias, "cbu": n.CBU, "titular": n.Titular}
@@ -342,7 +355,7 @@ func Publica(ctx context.Context, pool tx, slug string) (Tienda, error) {
 		// Todo el catálogo visible (los 500 más nuevos) y, si los bloques nombran alguno más viejo
 		// (destacado, combo, elegidos a mano, links prod:), también ese.
 		const columnas = `SELECT id::text, slug, nombre, descripcion, categoria, precio, foto, stock, fotos, opciones,
-				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista, creado_en FROM productos
+				lanzamiento, reserva_sena, encargo_sena, oferta_precio, oferta_hasta, precio_mayorista, creado_en, iva FROM productos
 			WHERE tienda_id = $1 AND publicado AND coalesce((canales->>'web')::boolean, true)`
 		filas, err := t.Query(ctx, columnas+` ORDER BY creado_en DESC LIMIT 500`, id)
 		if err != nil {
@@ -479,7 +492,7 @@ func leerProductos(filas pgx.Rows, out *Tienda, variantes map[string][]listas.Va
 		var p ProductoPublico
 		var l lanzamiento
 		if err := filas.Scan(&p.ID, &p.Slug, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Foto, &p.Stock, &p.Fotos, &p.Opciones,
-			&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista, &p.Alta); err != nil {
+			&l.fecha, &l.reserva, &l.encargo, &l.oferta, &l.hasta, &p.Mayorista, &p.Alta, &p.IVA); err != nil {
 			return err
 		}
 		p.Mayorista = soloSi(p.Mayorista)
@@ -489,7 +502,7 @@ func leerProductos(filas pgx.Rows, out *Tienda, variantes map[string][]listas.Va
 			listas.OrdenarVariantes(p.Opciones, vs)
 			for _, v := range vs {
 				p.Variantes = append(p.Variantes, VariantePublica{ID: v.ID, Valores: v.Valores, Precio: v.Precio, Stock: v.Stock, Foto: v.Foto,
-					Mayorista: soloSi(v.PrecioMayorista)})
+					Mayorista: soloSi(v.PrecioMayorista), IVA: p.IVA})
 			}
 		}
 		if p.Stock > 0 && p.Stock <= 3 {

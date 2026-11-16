@@ -228,6 +228,10 @@ func Leer(ctx context.Context, pool tx, geo geoip.Ubicador, tiendaID string, q Q
 		if err != nil {
 			return err
 		}
+		cob, err := leerCobros(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
 		var seguridad map[string]bool
 		if err := t.QueryRow(ctx, `SELECT seguridad FROM auth.usuarios WHERE id::text = $1`, q.UsuarioID).Scan(&seguridad); err != nil &&
 			!errors.Is(err, pgx.ErrNoRows) {
@@ -253,6 +257,7 @@ func Leer(ctx context.Context, pool tx, geo geoip.Ubicador, tiendaID string, q Q
 			"sesiones":  ses,
 			"avisos":    conDefecto(avisosDef, prefs.Avisos),
 			"mayorista": may,
+			"cobros":    cob,
 			"plan": map[string]any{"actual": plan, "ciclo": ciclo, "enPrueba": ahora.Before(prueba),
 				"diasPrueba": max(0, int(prueba.Sub(ahora).Hours()/24))},
 		}
@@ -553,6 +558,7 @@ func Rutas(mux *http.ServeMux, pool tx, geo geoip.Ubicador, sitio string, cobraA
 	rutasMedicion(mux, pool, con, errorDe, leer)
 	rutasEntregas(mux, pool, con, errorDe, leer)
 	rutasMayorista(mux, pool, con, errorDe, leer)
+	rutasCobros(mux, pool, con, errorDe, leer)
 	mux.HandleFunc("GET /v1/panel/configuracion", con(func(w http.ResponseWriter, r *http.Request, id string, q Quien) {
 		v, err := Leer(r.Context(), pool, geo, id, q, time.Now())
 		if err != nil {

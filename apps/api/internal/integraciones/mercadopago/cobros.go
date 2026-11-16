@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cobros"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/ventas"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/outbox"
 )
@@ -126,7 +127,14 @@ func (s *Servicio) PagarPedido(ctx context.Context, tiendaID string, numero int,
 	var total int64
 	var tienda string
 	var vence *time.Time
+	var cuotas int
 	err := s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
+		// Cuotas sin interés (Configuración › Cobros): el máximo que eligió la tienda; 0, sin límite propio.
+		c, err := cobros.Leer(ctx, t, tiendaID)
+		if err != nil {
+			return err
+		}
+		cuotas = c.Cuotas
 		// El de la tienda online se cancela solo a las 24 h sin pagar: la preferencia vence con él,
 		// así nadie paga un pedido que ya devolvió el stock.
 		return t.QueryRow(ctx, `SELECT p.total, t.nombre, CASE WHEN p.canal = 'web' THEN p.creado_en + interval '24 hours' END
@@ -157,6 +165,9 @@ func (s *Servicio) PagarPedido(ctx context.Context, tiendaID string, numero int,
 		ExternalReference: ref,
 		BackURLs:          map[string]string{"success": vuelta + "?pago=ok", "pending": vuelta + "?pago=pendiente", "failure": vuelta + "?pago=error"},
 		StatementDesc:     recortar(tienda, 22),
+	}
+	if cuotas > 0 {
+		p.PaymentMethods = map[string]any{"installments": cuotas}
 	}
 	if vence != nil {
 		p.Expires, p.ExpirationDateTo = true, vence.Format("2006-01-02T15:04:05.000-07:00")

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/nawesan12/mostrador-v2/apps/api/internal/dominio/cobros"
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/auditoria"
 )
 
@@ -39,6 +40,9 @@ type Editable struct {
 	// Tipo (ropa, alimentos, hogar…) y sus datos (peso, medidas, contenido…): nil deja lo que había.
 	Tipo      *string           `json:"tipo"`
 	Atributos map[string]string `json:"atributos"`
+	// IVA: la alícuota del producto (21, 10.5, 27 o 0), para el precio sin impuestos nacionales. nil
+	// deja la que había (21 en uno nuevo).
+	IVA *float64 `json:"iva"`
 	// SinPrecios: quien guarda no puede tocar precios ni costos (rol Ventas, docs/decisiones.md §37):
 	// quedan los que había, también los de las variantes. No viene del cliente.
 	SinPrecios bool `json:"-"`
@@ -67,6 +71,7 @@ type Producto struct {
 	// Tipo: null si todavía no se eligió (los productos de antes de 00071).
 	Tipo      *string           `json:"tipo"`
 	Atributos map[string]string `json:"atributos"`
+	IVA       float64           `json:"iva"`
 }
 
 // Validar revisa lo que se carga.
@@ -80,6 +85,9 @@ func (e Editable) Validar() error {
 	}
 	if m := e.PrecioMayorista; m != nil && !e.SinPrecios && (*m < 0 || (*m > 0 && *m >= e.Precio)) {
 		return errors.New("el precio mayorista tiene que ser menor que el precio")
+	}
+	if e.IVA != nil && !cobros.IVAValido(*e.IVA) {
+		return errors.New("el IVA tiene que ser 21 %, 10,5 %, 27 % o 0 %")
 	}
 	return nil
 }
@@ -192,10 +200,11 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 		if atributos == nil {
 			atributos = map[string]string{}
 		}
-		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones, precio_mayorista, tipo, atributos)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
+		if err := t.QueryRow(ctx, `INSERT INTO productos (tienda_id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, fotos, opciones, precio_mayorista, tipo, atributos, iva)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
 			tiendaID, strings.TrimSpace(e.Nombre), valor(e.Descripcion, ""), e.Categoria, e.Precio, valor(e.Costo, 0),
-			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones, mayor, tipo, atributos).Scan(&id); err != nil {
+			valor(e.SKU, ""), valor(stock, 0), foto, canales, fotos, opciones, mayor, tipo, atributos,
+			valor(e.IVA, cobros.IVAPorDefecto)).Scan(&id); err != nil {
 			return "", err
 		}
 		nombre := strings.TrimSpace(e.Nombre)
@@ -209,10 +218,10 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 			costo = CASE WHEN $14 THEN costo ELSE coalesce($7, costo) END, sku = coalesce($8, sku),
 			stock = coalesce($9, stock), foto = $10, canales = $11, publicado = true, fotos = $12, opciones = $13,
 			precio_mayorista = CASE WHEN $14 OR $15::bigint IS NULL THEN precio_mayorista ELSE nullif($15::bigint, 0) END,
-			tipo = coalesce($16, tipo), atributos = coalesce($17, atributos)
+			tipo = coalesce($16, tipo), atributos = coalesce($17, atributos), iva = coalesce($18, iva)
 		WHERE tienda_id = $1 AND id::text = $2`,
 		tiendaID, id, strings.TrimSpace(e.Nombre), e.Descripcion, e.Categoria, e.Precio, e.Costo, e.SKU, stock, foto, canales,
-		fotos, opciones, e.SinPrecios, e.PrecioMayorista, tipo, jsonONulo(atributos)); err != nil {
+		fotos, opciones, e.SinPrecios, e.PrecioMayorista, tipo, jsonONulo(atributos), e.IVA); err != nil {
 		return "", err
 	} else if err := registrarEdicion(ctx, t, tiendaID, id, antes, e, len(opciones) == 0); err != nil {
 		return "", err
@@ -302,7 +311,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 			return err
 		}
 		filas, err := t.Query(ctx, `SELECT id, nombre, descripcion, categoria, precio, costo, sku, stock, foto, canales, publicado, fotos, opciones, slug,
-				precio_mayorista, tipo, atributos
+				precio_mayorista, tipo, atributos, iva
 			FROM productos WHERE tienda_id = $1 ORDER BY creado_en DESC`, tiendaID)
 		if err != nil {
 			return err
@@ -310,7 +319,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 		for filas.Next() {
 			var p Producto
 			if err := filas.Scan(&p.ID, &p.Nombre, &p.Descripcion, &p.Categoria, &p.Precio, &p.Costo, &p.SKU, &p.Stock, &p.Foto, &p.Canales, &p.Publicado, &p.Fotos, &p.Opciones, &p.Slug,
-				&p.PrecioMayorista, &p.Tipo, &p.Atributos); err != nil {
+				&p.PrecioMayorista, &p.Tipo, &p.Atributos, &p.IVA); err != nil {
 				return err
 			}
 			p.Variantes = porProducto[p.ID]
@@ -360,7 +369,7 @@ func Productos(ctx context.Context, pool tx, tiendaID string, ahora time.Time) (
 				"margen": margen, "stock": p.Stock,
 				"ventas": ventas, "vendidos30": p.Vendidos30d, "canales": canales, "publicado": p.Publicado,
 				"estado": estado, "lowm": lowm, "star": p.Vendidos30d > 60, "variantes": resumen, "slug": p.Slug, "_ficha": p,
-				"esperan": esperan[p.ID],
+				"esperan": esperan[p.ID], "iva": p.IVA,
 			})
 		}
 		return filas.Err()
