@@ -1207,6 +1207,15 @@
 	aspect-ratio: 4/5;
 	height: auto;
 }
+/* Con una o dos categorías cada tarjeta ocupa media página o más: en vertical medían más de 800 px. */
+@media (min-width: 760px) {
+	.tv-grilla[data-n='2'] .tv-cat .tv-foto {
+		aspect-ratio: 3/2;
+	}
+	.tv-grilla[data-n='1'] .tv-cat .tv-foto {
+		aspect-ratio: 21/9;
+	}
+}
 .tv-cat-textos {
 	display: flex;
 	justify-content: space-between;
