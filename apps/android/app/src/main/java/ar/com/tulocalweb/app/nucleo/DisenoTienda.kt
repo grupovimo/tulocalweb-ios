@@ -202,7 +202,7 @@ data class Diseno(
         val tocado = tipos != deFabrica.filter { t -> t in tipos }
         val propio = tipos.filter { it in orden }
         val final = if (tocado && propio.size == orden.size) propio else orden
-        val inicio = final.map { t ->
+        val migrados = final.map { t ->
             val datos = mutableMapOf<String, ValorJSON>()
             if (t == "portada") {
                 if (titulo.isNotEmpty()) datos["titulo"] = Valor.texto(titulo)
@@ -213,6 +213,7 @@ data class Diseno(
             val visible = secciones.firstOrNull { it.first == t }?.second ?: true
             Bloque(t, t, p?.variantes?.get(t) ?: CatalogoBloques.shared.tipo(t)?.variantes?.firstOrNull() ?: "", !visible, datos)
         }
+        val inicio = p?.conAgregados(migrados) ?: migrados
         var e = estilo
         if (secciones.any { it.first == "whatsapp" && !it.second }) e = e.copy(whatsappFlotante = false)
         val a = e.anuncio

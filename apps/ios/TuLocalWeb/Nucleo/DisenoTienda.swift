@@ -228,7 +228,7 @@ struct Diseno: Equatable {
         let tocado = secciones.map(\.tipo) != deFabrica.filter { t in secciones.contains { $0.tipo == t } }
         let propio = secciones.map(\.tipo).filter { orden.contains($0) }
         let final = tocado && propio.count == orden.count ? propio : orden
-        inicio = final.map { t in
+        let migrados: [Bloque] = final.map { t in
             var datos: [String: ValorJSON] = [:]
             if t == "portada" {
                 if !titulo.isEmpty { datos["titulo"] = .texto(titulo) }
@@ -240,6 +240,7 @@ struct Diseno: Equatable {
             return Bloque(id: t, tipo: t, variante: p?.variantes[t] ?? CatalogoBloques.shared.tipo(t)?.variantes.first ?? "",
                           oculto: !visible, datos: datos)
         }
+        inicio = p?.conAgregados(migrados) ?? migrados
         if secciones.contains(where: { $0.tipo == "whatsapp" && !$0.visible }) { estilo.whatsappFlotante = false }
         if let a = estilo.anuncio, !a.trimmingCharacters(in: .whitespaces).isEmpty {
             let link = estilo.anuncioLink.flatMap { $0.isEmpty ? nil : $0 }

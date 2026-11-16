@@ -160,6 +160,17 @@ struct PresetTienda: Decodable {
     var orden: [String]
     var variantes: [String: String]
     var gastronomia: Bool?
+    /// Bloques que el inicial y la migración suman después del bloque con id `despuesDe` (las otras
+    /// secciones de productos de la portada), con su id y sus datos. Como la web y Go (conAgregados).
+    var agregados: [Agregado]?
+
+    struct Agregado: Decodable {
+        var id: String
+        var tipo: String
+        var variante: String
+        var despuesDe: String
+        var datos: [String: ValorJSON]
+    }
 
     private struct Archivo: Decodable { var presets: [String: PresetTienda] }
 
@@ -171,6 +182,16 @@ struct PresetTienda: Decodable {
 
     /// Los bloques del inicio recién armado con este punto de partida (id = tipo, como la migración).
     var inicio: [Bloque] {
-        orden.map { Bloque(id: $0, tipo: $0, variante: variantes[$0] ?? CatalogoBloques.shared.tipo($0)?.variantes.first ?? "", datos: [:]) }
+        conAgregados(orden.map { Bloque(id: $0, tipo: $0, variante: variantes[$0] ?? CatalogoBloques.shared.tipo($0)?.variantes.first ?? "", datos: [:]) })
+    }
+
+    /// Los agregados después de su bloque; si ese bloque no está, el agregado no va.
+    func conAgregados(_ inicio: [Bloque]) -> [Bloque] {
+        var out = inicio
+        for a in agregados ?? [] {
+            guard let i = out.firstIndex(where: { $0.id == a.despuesDe }), !out.contains(where: { $0.id == a.id }) else { continue }
+            out.insert(Bloque(id: a.id, tipo: a.tipo, variante: a.variante, datos: a.datos), at: i + 1)
+        }
+        return out
     }
 }

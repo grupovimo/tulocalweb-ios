@@ -152,11 +152,34 @@ data class PresetTienda(
     val orden: List<String> = emptyList(),
     val variantes: Map<String, String> = emptyMap(),
     val gastronomia: Boolean? = null,
+    /** Bloques que el inicial y la migración suman después del bloque con id `despuesDe` (las otras
+     *  secciones de productos de la portada), con su id y sus datos. Como la web y Go (conAgregados). */
+    val agregados: List<Agregado>? = null,
 ) {
+    @Serializable
+    data class Agregado(
+        val id: String,
+        val tipo: String,
+        val variante: String,
+        val despuesDe: String,
+        val datos: Map<String, ValorJSON> = emptyMap(),
+    )
+
     @Serializable private data class Archivo(val presets: Map<String, PresetTienda> = emptyMap())
 
     /** Los bloques del inicio recién armado con este punto de partida (id = tipo, como la migración). */
-    val inicio: List<Bloque> get() = orden.map { Bloque(it, it, variantes[it] ?: CatalogoBloques.shared.tipo(it)?.variantes?.firstOrNull() ?: "") }
+    val inicio: List<Bloque> get() = conAgregados(orden.map { Bloque(it, it, variantes[it] ?: CatalogoBloques.shared.tipo(it)?.variantes?.firstOrNull() ?: "") })
+
+    /** Los agregados después de su bloque; si ese bloque no está, el agregado no va. */
+    fun conAgregados(inicio: List<Bloque>): List<Bloque> {
+        val out = inicio.toMutableList()
+        for (a in agregados.orEmpty()) {
+            val i = out.indexOfFirst { it.id == a.despuesDe }
+            if (i < 0 || out.any { it.id == a.id }) continue
+            out.add(i + 1, Bloque(a.id, a.tipo, a.variante, false, a.datos))
+        }
+        return out
+    }
 
     companion object {
         val todos: Map<String, PresetTienda> by lazy { Recursos.leer<Archivo>("presets.json")?.presets ?: emptyMap() }
