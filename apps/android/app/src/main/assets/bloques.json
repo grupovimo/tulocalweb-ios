@@ -224,6 +224,32 @@
               "nombre": "O una tabla de medidas"
             }
           ]
+        },
+        {
+          "id": "confianza",
+          "tipo": "grupo",
+          "nombre": "Caja de confianza",
+          "descripcion": "Vacío, el envío se arma solo con tus envíos; garantía y cambios salen sólo si los escribís.",
+          "item": [
+            {
+              "id": "envio",
+              "tipo": "texto",
+              "nombre": "Envío",
+              "max": 120
+            },
+            {
+              "id": "garantia",
+              "tipo": "texto",
+              "nombre": "Garantía",
+              "max": 120
+            },
+            {
+              "id": "cambios",
+              "tipo": "texto",
+              "nombre": "Cambios",
+              "max": 120
+            }
+          ]
         }
       ],
       "bloques": true
@@ -997,6 +1023,119 @@
       ]
     },
     {
+      "tipo": "clientes",
+      "grupo": "confianza",
+      "nombre": "Clientes",
+      "descripcion": "Fotos de tus clientes con lo que compraron. Siempre llena filas completas.",
+      "variantes": [
+        "grilla",
+        "carrusel"
+      ],
+      "nombresVariantes": [
+        "Grilla",
+        "Carrusel"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60,
+          "porDefecto": "Nuestros clientes"
+        },
+        {
+          "id": "texto",
+          "tipo": "texto",
+          "nombre": "Texto",
+          "max": 160
+        },
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Fotos",
+          "max": 12,
+          "min": 1,
+          "item": [
+            {
+              "id": "foto",
+              "tipo": "foto",
+              "nombre": "Foto",
+              "requerido": true
+            },
+            {
+              "id": "nombre",
+              "tipo": "texto",
+              "nombre": "Nombre o usuario",
+              "max": 40
+            },
+            {
+              "id": "link",
+              "tipo": "link",
+              "nombre": "Link (por ejemplo, su publicación)"
+            }
+          ]
+        },
+        {
+          "id": "cta",
+          "tipo": "boton",
+          "nombre": "Botón",
+          "descripcion": "Por ejemplo, «Subí tu foto y etiquetanos» con el link a tu Instagram."
+        }
+      ]
+    },
+    {
+      "tipo": "videos",
+      "grupo": "confianza",
+      "nombre": "Videos",
+      "descripcion": "Videos verticales de tus productos o tus clientes. Al tocar uno se ve a pantalla completa.",
+      "variantes": [
+        "fila"
+      ],
+      "nombresVariantes": [
+        "En fila"
+      ],
+      "campos": [
+        {
+          "id": "titulo",
+          "tipo": "texto",
+          "nombre": "Título",
+          "max": 60
+        },
+        {
+          "id": "items",
+          "tipo": "lista",
+          "nombre": "Videos",
+          "max": 10,
+          "min": 1,
+          "item": [
+            {
+              "id": "video",
+              "tipo": "videoCorto",
+              "nombre": "Link del video",
+              "requerido": true
+            },
+            {
+              "id": "portada",
+              "tipo": "foto",
+              "nombre": "Portada",
+              "requerido": true
+            },
+            {
+              "id": "titulo",
+              "tipo": "texto",
+              "nombre": "Título",
+              "max": 60
+            },
+            {
+              "id": "producto",
+              "tipo": "producto",
+              "nombre": "Producto para agregar"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "tipo": "newsletter",
       "grupo": "confianza",
       "nombre": "Newsletter",
@@ -1096,6 +1235,7 @@
     "opcion": "uno de opciones",
     "icono": "uno de iconos",
     "video": "URL https de YouTube o Vimeo",
+    "videoCorto": "URL https de un video vertical: un archivo .mp4 o .webm, o un link de Instagram (reel o post), TikTok o YouTube Shorts (hasta 300 caracteres)",
     "producto": "id de un producto",
     "elegidos": "lista de ids de producto (min, max)",
     "productos": "{ fuente: fuentesProductos, cantidad: 1–24, ids?: [id] (elegidos), categoria?: nombre }",
@@ -1152,6 +1292,13 @@
         "tipo": "fondo",
         "nombre": "Fondo",
         "porDefecto": "oscuro"
+      },
+      {
+        "id": "automaticos",
+        "tipo": "si",
+        "nombre": "Sumar tus cuotas, el envío gratis y el descuento por transferencia",
+        "descripcion": "Salen solos de tu configuración de cobros y envíos, y sólo si los ofrecés.",
+        "porDefecto": true
       }
     ]
   },
