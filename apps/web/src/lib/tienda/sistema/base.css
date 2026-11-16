@@ -1465,8 +1465,10 @@
 	border-radius: var(--t-r-grande);
 	isolation: isolate;
 }
+/* Como en la portada partida: la foto cubre, pero el alto lo pone el texto (o el mínimo). */
 .tv-ti-foto {
 	min-height: 520px;
+	contain: size;
 }
 .tv-ti-foto .tv-foto {
 	border-radius: 0;
