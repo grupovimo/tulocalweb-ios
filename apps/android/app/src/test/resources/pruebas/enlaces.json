@@ -63,6 +63,7 @@
     "/panel/usuarios-y-permisos": "destino:usuarios",
     "/panel/configuracion": "destino:negocio",
     "/panel/configuracion?tab=seguridad": "destino:cuenta",
+    "/panel/configuracion?tab=cobros": "destino:cobros",
     "/panel/mis-datos": "destino:cuenta",
     "/panel/notificaciones": "destino:preferenciasAvisos",
     "/panel/informes": "destino:estadisticas",

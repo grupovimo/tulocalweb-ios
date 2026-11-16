@@ -14,6 +14,7 @@ Mas/Ajustes.swift
 Mas/Altas.swift
 Mas/Ayuda.swift
 Mas/CamposBloque.swift
+Mas/CobrosTienda.swift
 Mas/Cuenta.swift
 Mas/DosPasos.swift
 Mas/EditorBloques.swift

@@ -483,7 +483,8 @@
     "foto": null,
     "activa": true
    }
-  ]
+  ],
+  "iva": 21
  },
  "/v1/panel/cuenta/plan": {
   "actual": "emprende",
@@ -1113,7 +1114,15 @@
     "rol": "local",
     "pendiente": true
    }
-  ]
+  ],
+  "cobros": {
+   "cuotas": 6,
+   "cuotasDesde": 30000,
+   "impuestos": {
+    "mostrar": true
+   },
+   "mercadoPago": true
+  }
  },
  "/v1/panel/configuracion/entregas": {
   "retiro": true,
