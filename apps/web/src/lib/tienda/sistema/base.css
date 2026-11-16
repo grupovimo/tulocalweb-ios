@@ -797,12 +797,15 @@
 	font-size: 14px;
 	color: var(--t-suave);
 }
+/* Las fotos no ponen el alto: lo pone el texto (o el mínimo de la dirección). Sin esto, una foto
+   vertical de 2:3 estiraba la portada a más de 1100 px y el texto quedaba flotando en el medio. */
 .tv-portada-fotos {
 	display: grid;
 	grid-template-rows: minmax(0, 1fr);
 	gap: 8px;
 	min-height: 0;
 	overflow: hidden;
+	contain: size;
 }
 .tv-portada-fotos > * {
 	min-height: 0;
