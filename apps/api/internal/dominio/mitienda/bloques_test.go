@@ -182,6 +182,34 @@ func TestDisenoValido(t *testing.T) {
 				d.Inicio = append(d.Inicio, bloque(fmt.Sprintf("banner%02d", i), "banner", "banda", ""))
 			}
 		}), false},
+		{"clientes bien", agregar("clientes1", "clientes", "carrusel",
+			`{"titulo":"Nuestros clientes","items":[{"foto":"https://fotos.tulocalweb.com.ar/a.jpg","nombre":"@lu","link":"https://instagram.com/p/abc"}],"cta":{"t":"Subí tu foto","a":"https://instagram.com/x"}}`), true},
+		{"clientes sin fotos", agregar("clientes1", "clientes", "grilla", `{"items":[]}`), false},
+		{"cliente sin foto", agregar("clientes1", "clientes", "grilla", `{"items":[{"nombre":"Lu"}]}`), false},
+		{"clientes de más", agregar("clientes1", "clientes", "grilla", `{"items":[`+strings.Repeat(`{"foto":"https://x.com/a.jpg"},`, 12)+`{"foto":"https://x.com/a.jpg"}]}`), false},
+		{"clientes con variante inventada", agregar("clientes1", "clientes", "mosaico", ""), false},
+		{"videos mp4 con producto", agregar("videos01", "videos", "fila",
+			`{"titulo":"Mirala puesta","items":[{"video":"https://fotos.tulocalweb.com.ar/v/a.mp4","portada":"https://fotos.tulocalweb.com.ar/a.jpg","titulo":"Remera","producto":"3f2a-11"}]}`), true},
+		{"videos de redes", agregar("videos01", "videos", "fila",
+			`{"items":[{"video":"https://www.instagram.com/reel/C9xYz12AbCd/","portada":"https://x.com/a.jpg"},{"video":"https://www.tiktok.com/@bylula/video/7301234567890123456","portada":"https://x.com/b.jpg"},{"video":"https://youtube.com/shorts/abcDEF123","portada":"https://x.com/c.jpg"}]}`), true},
+		{"video sin portada", agregar("videos01", "videos", "fila", `{"items":[{"video":"https://x.com/a.mp4"}]}`), false},
+		{"video de youtube común", agregar("videos01", "videos", "fila", `{"items":[{"video":"https://www.youtube.com/watch?v=abc123","portada":"https://x.com/a.jpg"}]}`), false},
+		{"video http", agregar("videos01", "videos", "fila", `{"items":[{"video":"http://x.com/a.mp4","portada":"https://x.com/a.jpg"}]}`), false},
+		{"video que no es video", agregar("videos01", "videos", "fila", `{"items":[{"video":"https://x.com/a.gif","portada":"https://x.com/a.jpg"}]}`), false},
+		{"videos de más", agregar("videos01", "videos", "fila", `{"items":[`+strings.Repeat(`{"video":"https://x.com/a.mp4","portada":"https://x.com/a.jpg"},`, 10)+`{"video":"https://x.com/a.mp4","portada":"https://x.com/a.jpg"}]}`), false},
+		{"ficha con confianza", con(func(d *Diseno) {
+			d.Paginas = &Paginas{Producto: &PaginaProducto{Confianza: map[string]any{"envio": "Despachamos en 24 h", "garantia": "6 meses de garantía", "cambios": "30 días para cambiarlo"}}}
+		}), true},
+		{"confianza larga", con(func(d *Diseno) {
+			d.Paginas = &Paginas{Producto: &PaginaProducto{Confianza: map[string]any{"garantia": strings.Repeat("a", 121)}}}
+		}), false},
+		{"confianza con campo de más", con(func(d *Diseno) {
+			d.Paginas = &Paginas{Producto: &PaginaProducto{Confianza: map[string]any{"devoluciones": "x"}}}
+		}), false},
+		{"barra sin automáticos y sin mensajes", con(func(d *Diseno) {
+			no := false
+			d.Estilo = &Estilo{Barra: &Barra{Automaticos: &no}}
+		}), true},
 		{"título con html", con(func(d *Diseno) { d.Titulo = "<b>Hola</b>" }), false},
 	}
 	for _, c := range casos {

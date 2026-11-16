@@ -39,6 +39,16 @@ export const detalleRetiro = (e: Pick<EnviosTienda, 'retiroDireccion' | 'retiroH
 export const esCorreo = (id: string | null | undefined) =>
 	id === 'correo-domicilio' || id === 'correo-sucursal';
 
+/** Los días hábiles que informó Correo, como números (sin plazo: undefined). */
+export function diasDe(o: OpcionCorreo): { min: number; max: number } | undefined {
+	const a = Number.parseInt(o.diasMin ?? '', 10);
+	const b = Number.parseInt(o.diasMax ?? '', 10);
+	const min = Number.isFinite(a) && a > 0 ? a : Number.isFinite(b) && b > 0 ? b : NaN;
+	const max = Number.isFinite(b) && b > 0 ? b : min;
+	if (!Number.isFinite(min) || min > 60 || max > 60) return undefined;
+	return { min: Math.min(min, max), max: Math.max(min, max) };
+}
+
 /** "Llega en 2 a 5 días hábiles" si Correo informa el plazo; si no, el producto (Paq.ar Clásico). */
 function detalleCorreo(o: OpcionCorreo, donde: string) {
 	const [a, b] = [o.diasMin?.trim(), o.diasMax?.trim()];
@@ -47,6 +57,11 @@ function detalleCorreo(o: OpcionCorreo, donde: string) {
 		return `${donde} · llega en ${a || b} ${String(a || b) === '1' ? 'día hábil' : 'días hábiles'}`;
 	return `${donde} · ${o.producto || 'Paq.ar'}`;
 }
+
+const conDias = (o: OpcionCorreo) => {
+	const dias = diasDe(o);
+	return dias ? { dias } : {};
+};
 
 export function cotizar(
 	cp: string,
@@ -62,14 +77,16 @@ export function cotizar(
 				id: 'correo-domicilio',
 				nombre: 'Correo Argentino a domicilio',
 				detalle: detalleCorreo(correo.domicilio, 'Te lo lleva el cartero'),
-				precio: gratis ? 0 : correo.domicilio.precio
+				precio: gratis ? 0 : correo.domicilio.precio,
+				...conDias(correo.domicilio)
 			});
 		if (correo.sucursal)
 			out.push({
 				id: 'correo-sucursal',
 				nombre: 'Correo Argentino a sucursal',
 				detalle: detalleCorreo(correo.sucursal, 'Retirás en la sucursal que elijas'),
-				precio: gratis ? 0 : correo.sucursal.precio
+				precio: gratis ? 0 : correo.sucursal.precio,
+				...conDias(correo.sucursal)
 			});
 	}
 	// La moto va a una dirección: pide el CP. Llega a la zona que puso la tienda.

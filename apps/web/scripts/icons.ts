@@ -33,6 +33,11 @@ const files = readdirSync(design).filter(
 );
 // Íconos que no aparecen en el handoff pero se usan (reemplazos de logos que no existen en Iconify).
 const EXTRA = [
+	// Tienda: bloques «videos» (play, sonido) y «clientes» (el ícono del editor).
+	'ph:play-fill',
+	'ph:film-strip-fill',
+	'ph:speaker-simple-slash-fill',
+	'ph:speaker-simple-high-fill',
 	// Sesiones abiertas desde una tablet (Configuración › Seguridad).
 	'ph:device-tablet-fill',
 	// Salir del backoffice del equipo.

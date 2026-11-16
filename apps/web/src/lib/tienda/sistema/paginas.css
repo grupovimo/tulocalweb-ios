@@ -934,6 +934,175 @@
 	align-items: center;
 	gap: 8px;
 }
+/* Precio sin impuestos nacionales (Ley 27.743): chico, debajo del precio. */
+.tv-ficha-impuestos {
+	margin-top: 4px !important;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--t-suave);
+}
+.tv-ficha-medios {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	margin-top: 2px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--t-texto);
+	font: inherit;
+	font-size: 14px;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+.tv-ficha-sello {
+	position: absolute;
+	left: 16px;
+	bottom: 16px;
+	z-index: 1;
+	height: 28px;
+	padding: 0 10px;
+	font-size: 12px;
+}
+.tv-ficha-gratis {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 12px 14px;
+	border-radius: min(var(--t-r-tarjeta), 12px);
+	background: color-mix(in srgb, var(--t-ok) 10%, var(--t-fondo));
+	color: var(--t-ok);
+	font-size: 14px;
+	font-weight: 600;
+	text-wrap: pretty;
+}
+.tv-ficha-gratis svg {
+	flex: none;
+}
+.tv-ficha-llega {
+	display: block;
+	margin-top: 2px;
+	color: var(--t-ok);
+	font-weight: 600;
+}
+/* La caja de confianza: envío, garantía, cambios y compra protegida, con su ícono. */
+.tv-confianza {
+	display: grid;
+	gap: 14px;
+	margin: 0;
+	padding: 18px 20px;
+	list-style: none;
+	border: 1px solid var(--t-borde);
+	border-radius: var(--t-r-tarjeta);
+	font-size: 14px;
+	line-height: 1.45;
+}
+.tv-confianza li {
+	display: grid;
+	grid-template-columns: 20px minmax(0, 1fr);
+	gap: 12px;
+	align-items: start;
+}
+.tv-confianza li > span {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	color: var(--t-suave);
+	text-wrap: pretty;
+}
+.tv-confianza b {
+	color: var(--t-texto);
+	font-weight: 600;
+}
+/* Medios de pago y el «Agregar» rápido: en el panel al costado. */
+.tv-medio {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding-bottom: 18px;
+	border-bottom: 1px solid var(--t-borde);
+}
+.tv-medio:last-child {
+	border-bottom: 0;
+}
+.tv-medio-tit {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+.tv-medio-filas {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: 15px;
+}
+.tv-medio-filas li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+.tv-medio-filas b {
+	white-space: nowrap;
+}
+.tv-medio p {
+	margin: 0;
+}
+.tv-elegir-prod {
+	display: grid;
+	grid-template-columns: 96px minmax(0, 1fr);
+	gap: 16px;
+	align-items: start;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--t-borde);
+}
+.tv-elegir-foto {
+	overflow: hidden;
+	border-radius: var(--t-r-foto);
+}
+.tv-elegir-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+.tv-elegir-info p {
+	margin: 0;
+}
+.tv-elegir-nombre {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.3;
+	text-wrap: pretty;
+}
+.tv-elegir-precio {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 8px;
+	align-items: baseline;
+	font-size: 18px;
+}
+.tv-elegir-precio s {
+	font-size: 14px;
+	color: var(--t-suave);
+}
+.tv-elegir .tv-panel-cuerpo {
+	gap: 20px;
+}
+.tv-ficha-guia {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+}
 .tv-opcion {
 	margin: 0;
 	padding: 0;

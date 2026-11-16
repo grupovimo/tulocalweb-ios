@@ -4685,7 +4685,7 @@ export interface components {
             /** @description Único en todo el diseño (lo genera el editor; los migrados usan el tipo) */
             id: string;
             /** @enum {string} */
-            tipo: "portada" | "banner" | "oferta" | "textoImagen" | "video" | "beneficios" | "productos" | "destacado" | "combo" | "categorias" | "menu" | "local" | "resenas" | "preguntas" | "logos" | "galeria" | "newsletter" | "whatsapp" | "turnos";
+            tipo: "portada" | "banner" | "oferta" | "textoImagen" | "video" | "beneficios" | "productos" | "destacado" | "combo" | "categorias" | "menu" | "local" | "resenas" | "preguntas" | "logos" | "galeria" | "clientes" | "videos" | "newsletter" | "whatsapp" | "turnos";
             /** @description Una de bloques.json › bloques[tipo].variantes */
             variante: string;
             oculto?: boolean;

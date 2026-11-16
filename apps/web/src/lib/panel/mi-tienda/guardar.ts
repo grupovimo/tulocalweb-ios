@@ -274,11 +274,14 @@ function estiloParaGuardar(e: EstiloV2 | undefined): EstiloV2 | undefined {
 			})
 			.filter((m) => !!m)
 			.slice(0, 5);
-		if (mensajes.length)
+		// Sin mensajes propios, la barra queda sólo si apagó los automáticos (si no, salen solos).
+		const sinAuto = r.barra.automaticos === false;
+		if (mensajes.length || sinAuto)
 			r.barra = {
 				variante: r.barra.variante === 'rotativa' ? 'rotativa' : 'fija',
 				mensajes,
-				...(r.barra.fondo ? { fondo: r.barra.fondo } : {})
+				...(r.barra.fondo ? { fondo: r.barra.fondo } : {}),
+				...(sinAuto ? { automaticos: false } : {})
 			};
 		else delete r.barra;
 	}

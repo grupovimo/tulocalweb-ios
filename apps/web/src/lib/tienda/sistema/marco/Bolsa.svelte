@@ -3,7 +3,14 @@
 	import * as I from '#lib/icons.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { waHref } from '../datos.ts';
-	import { conTransferencia, cuotas, cuantos, precio } from '../formato.ts';
+	import { cuantos, precio } from '../formato.ts';
+	import {
+		ivaDe,
+		ofreceDe,
+		textoCuotas,
+		textoTotalSinImpuestos,
+		textoTransferencia
+	} from '../cobros.ts';
 	import Boton from '../primitivas/Boton.svelte';
 	import Foto from '../primitivas/Foto.svelte';
 
@@ -23,15 +30,15 @@
 	const titulo = $derived(ctx.estilo.gastronomia ? 'Tu pedido' : 'Tu bolsa');
 	const gratis = $derived(t.envios.gratisDesde && total >= t.envios.gratisDesde);
 	const falta = $derived(t.envios.gratisDesde ? Math.max(0, t.envios.gratisDesde - total) : 0);
+	const ofrece = $derived(ofreceDe(t));
 	const extra = $derived(
-		[
-			t.cobros.mercadoPago ? cuotas(total, t.cobros.cuotas) : '',
-			t.cobros.transferencia > 0 && t.cobros.datosTransferencia
-				? `${precio(conTransferencia(total, t.cobros.transferencia))} con transferencia`
-				: ''
-		]
-			.filter(Boolean)
-			.join(' · ')
+		[textoCuotas(ofrece, total), textoTransferencia(ofrece, total)].filter(Boolean).join(' · ')
+	);
+	const sinImp = $derived(
+		textoTotalSinImpuestos(
+			ofrece,
+			lineas.map((l) => ({ subtotal: l.subtotal, iva: ivaDe(l.producto) }))
+		)
 	);
 	const wa = $derived(waHref(t, '¡Hola! Quería consultar por mi pedido.'));
 </script>
@@ -94,6 +101,7 @@
 				</div>{/if}
 			<div class="tv-bolsa-fila tv-bolsa-fila--total"><span>Total</span><b>{precio(total)}</b></div>
 			{#if extra}<span class="tv-chico tv-suave">{extra}</span>{/if}
+			{#if sinImp}<span class="tv-chico tv-suave">{sinImp}</span>{/if}
 		</div>
 		<Boton href="{ctx.base}/carrito" bloque
 			>{ctx.estilo.gastronomia ? 'Confirmar pedido' : 'Comprar'}</Boton

@@ -1,7 +1,9 @@
 /**
  * Agregar al carrito desde una tarjeta, el menú o un combo (sin entrar a la ficha). Un producto con
  * opciones, o un lanzamiento que todavía no salió, lleva a la ficha para elegir. En la vitrina no se
- * compra. Avisa con un toast con «Deshacer» (CONVENCIONES › Textos).
+ * compra. Fuera de Pedido (que tiene la bolsa siempre a la vista) abre el carrito al costado
+ * (marco/PanelCarrito), donde se ve lo sumado y se puede cambiar la cantidad o sacarlo; si el panel
+ * no está en la página, avisa con un toast con «Deshacer» (CONVENCIONES › Textos).
  */
 import { goto } from '$app/navigation';
 import { claveLinea } from '../lineas.ts';
@@ -9,6 +11,7 @@ import type { ProductoPublico } from '../tipos.ts';
 import type { UiState } from '#lib/ui.svelte.ts';
 import type { ContextoTienda } from './contexto.ts';
 import { productoHref } from './datos.ts';
+import { panelCarrito } from './panel.svelte.ts';
 
 /** ¿Se puede sumar con un toque? (sin opciones, con stock, ya lanzado y fuera de la vitrina). */
 export function sumaDirecto(ctx: ContextoTienda, p: ProductoPublico): boolean {
@@ -21,7 +24,9 @@ export function agregar(ctx: ContextoTienda, p: ProductoPublico, ui?: UiState | 
 	// eslint-disable-next-line svelte/no-navigation-without-resolve -- ruta de la tienda con su slug
 	if (!ctx.carrito.sumarProducto(p)) return void goto(productoHref(ctx.tienda, p));
 	// En Pedido la bolsa está siempre a la vista: no hace falta avisar.
-	if (ctx.dir === 'pedido' || !ui) return;
+	if (ctx.dir === 'pedido') return;
+	if (panelCarrito.montado) return void (panelCarrito.abierto = true);
+	if (!ui) return;
 	ui.toast({
 		k: 'ok',
 		title: `Sumaste ${p.nombre}`,

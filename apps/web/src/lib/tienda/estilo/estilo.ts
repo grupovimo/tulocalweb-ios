@@ -67,6 +67,11 @@ export type EstiloTienda = {
 		/** `hasta` (ISO): cuenta regresiva en el mensaje, que se esconde al vencer. */
 		mensajes: { texto: string; link?: string; hasta?: string }[];
 		fondo?: 'normal' | 'superficie' | 'acento' | 'oscuro';
+		/**
+		 * false: no se suman los mensajes que salen de la configuración (cuotas, envío gratis,
+		 * transferencia). Sin venir, se suman.
+		 */
+		automaticos?: boolean;
 	};
 	/** false: sin el botón flotante de WhatsApp (la sección «wa» oculta de v1). */
 	whatsappFlotante?: boolean;

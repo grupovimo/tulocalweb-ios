@@ -18,6 +18,7 @@
 	import BotonWhatsApp from './BotonWhatsApp.svelte';
 	import Comparador from './Comparador.svelte';
 	import Encabezado from './Encabezado.svelte';
+	import ElegirRapido from './ElegirRapido.svelte';
 	import PanelCarrito from './PanelCarrito.svelte';
 	import Pie from './Pie.svelte';
 	import Ventanas from './Ventanas.svelte';
@@ -66,9 +67,11 @@
 	const conversion = $derived(conversionDe(diseno.estilo));
 	const favoritos = $derived(favoritosDe(tienda.slug));
 	const opciones = $derived(opcionesPaginas(tienda, estilo.direccion));
-	const panel = $derived(
-		opciones.carrito.variante === 'panel' && pagina !== 'checkout' && pagina !== 'carrito'
-	);
+	const fueraDelCarrito = $derived(pagina !== 'checkout' && pagina !== 'carrito');
+	const panel = $derived(opciones.carrito.variante === 'panel' && fueraDelCarrito);
+	// El panel también se abre al agregar rápido desde una tarjeta (acciones.ts), salvo en Pedido,
+	// que tiene la bolsa a la vista.
+	const conPanel = $derived(panel || (fueraDelCarrito && estilo.direccion !== 'pedido'));
 	const nav = $derived.by((): ItemNav[] => {
 		const propio = menuPropio({ estilo: diseno.estilo ?? tienda.estilo }, base);
 		if (propio) return propio;
@@ -181,7 +184,11 @@
 	<!-- Las funciones propias de algunos puntos de partida y el carrito como panel (paginas.ts). -->
 	{#if funciones.comparador}<Comparador />{/if}
 	{#if funciones.mayor18}<Aviso18 />{/if}
-	{#if panel}<PanelCarrito envioGratis={opciones.carrito.envioGratisDesde} />{/if}
+	{#if conPanel}<PanelCarrito
+			envioGratis={opciones.carrito.envioGratisDesde}
+			interceptar={panel}
+		/>{/if}
+	{#if fueraDelCarrito}<ElegirRapido />{/if}
 	<!-- Las ventanas (popups): una por página, nunca en el checkout ni en los legales. -->
 	<Ventanas />
 	<CuponDelLink />

@@ -11,7 +11,7 @@
 	import { fechaLocal, isoDeLocal, URL_VIDEO, type Ayuda } from './campos.ts';
 	import { FONDOS, FUENTES_PRODUCTOS, ICONOS, LIMITES, type CampoConNombres } from './catalogo.ts';
 	import { ICONO_BENEFICIO } from './iconos.ts';
-	import { TIPOS_PREMIO } from '#lib/tienda/sistema/catalogo.ts';
+	import { TIPOS_PREMIO, VIDEO_CORTO } from '#lib/tienda/sistema/catalogo.ts';
 
 	const NOMBRE_PREMIO: Record<string, string> = {
 		nada: 'Sólo suscribirse',
@@ -314,6 +314,30 @@
 			}}
 		/>
 		{#if errorVideo}<span class="error">{errorVideo}</span>{/if}
+	</label>
+{:else if campo.tipo === 'videoCorto'}
+	<label class="campo">
+		{@render rotulo()}
+		<input
+			class="input"
+			type="url"
+			inputmode="url"
+			maxlength="300"
+			placeholder="https://www.instagram.com/reel/…"
+			aria-invalid={!!errorVideo}
+			value={str}
+			onchange={(e) => {
+				const u = e.currentTarget.value.trim();
+				errorVideo =
+					!u || VIDEO_CORTO.test(u)
+						? ''
+						: 'Pegá el link de un reel de Instagram, un TikTok, un Short de YouTube o un archivo .mp4.';
+				if (!errorVideo) onvalor(u, true);
+			}}
+		/>
+		{#if errorVideo}<span class="error">{errorVideo}</span>{:else}<span class="ayuda"
+				>Un reel, un TikTok, un Short o un .mp4. Sumale una portada vertical.</span
+			>{/if}
 	</label>
 {:else if campo.tipo === 'producto' || campo.tipo === 'elegidos'}
 	<div class="campo">

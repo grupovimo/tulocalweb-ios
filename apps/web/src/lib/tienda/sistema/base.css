@@ -444,10 +444,11 @@
 
 /* Carrusel: una fila que se desliza, con encastre. */
 .tv-carrusel {
+	--gap-c: 20px;
 	display: grid;
 	grid-auto-flow: column;
-	grid-auto-columns: calc((100% - 3 * 24px) / 4);
-	gap: 24px;
+	grid-auto-columns: calc((100% - (var(--vis, 4) - 1) * var(--gap-c)) / var(--vis, 4));
+	gap: var(--gap-c);
 	margin: 0;
 	padding: 0 0 8px;
 	list-style: none;
@@ -461,6 +462,68 @@
 }
 .tv-carrusel--resenas {
 	grid-auto-columns: calc((100% - 2 * 24px) / 3);
+}
+/* Con 4 a la vista a 1440, en un monitor grande entra uno más (dentro del ancho contenido). */
+@media (min-width: 1800px) {
+	.tv-carrusel-caja .tv-carrusel {
+		grid-auto-columns: calc((100% - var(--vis, 4) * var(--gap-c)) / (var(--vis, 4) + 1));
+	}
+}
+@media (max-width: 999px) and (min-width: 760px) {
+	.tv-carrusel-caja .tv-carrusel {
+		grid-auto-columns: calc((100% - 2 * var(--gap-c)) / 3);
+	}
+}
+.tv-carrusel-caja {
+	position: relative;
+}
+.tv-carrusel-caja .tv-carrusel {
+	scrollbar-width: none;
+}
+.tv-carrusel-caja .tv-carrusel::-webkit-scrollbar {
+	display: none;
+}
+.tv-carrusel-flecha {
+	position: absolute;
+	top: calc(var(--flecha-y, 38%) - 22px);
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 1px solid var(--t-borde);
+	border-radius: 50%;
+	background: var(--t-fondo);
+	color: var(--t-texto);
+	box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+	cursor: pointer;
+}
+.tv-carrusel-flecha:disabled {
+	opacity: 0;
+	pointer-events: none;
+}
+.tv-carrusel-flecha--antes {
+	left: -22px;
+}
+.tv-carrusel-flecha--despues {
+	right: -22px;
+}
+@media (max-width: 1360px) {
+	.tv-carrusel-flecha--antes {
+		left: 6px;
+	}
+	.tv-carrusel-flecha--despues {
+		right: 6px;
+	}
+}
+@media (max-width: 759px) {
+	.tv-carrusel-flecha {
+		display: none;
+	}
+	.tv-carrusel-caja .tv-carrusel {
+		grid-auto-columns: var(--vis-m, 46%);
+	}
 }
 @media (max-width: 759px) {
 	.tv-carrusel,
@@ -578,6 +641,108 @@
 	background: transparent;
 	color: var(--t-texto);
 	cursor: pointer;
+}
+/* La foto con lo que va encima: las etiquetas (arriba), los sellos (abajo) y el «Agregar» rápido. */
+.tv-prod-media {
+	position: relative;
+	min-width: 0;
+}
+.tv-prod-sellos {
+	position: absolute;
+	left: 10px;
+	bottom: 10px;
+	right: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	pointer-events: none;
+}
+.tv-prod-sello {
+	display: inline-flex;
+	align-items: center;
+	height: 24px;
+	padding: 0 8px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+	border-radius: min(var(--t-r-boton), 6px);
+	background: var(--t-fondo);
+	color: var(--t-ok);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+/* Vidriera en la compu: el «Agregar» rápido aparece sobre la foto al pasar el mouse o con el
+   teclado (en el celular va el «+» de abajo). */
+.tv-prod-rapido {
+	display: none;
+}
+@media (min-width: 760px) {
+	.tv-prod-rapido {
+		position: absolute;
+		left: 12px;
+		right: 12px;
+		bottom: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 44px;
+		border: 0;
+		border-radius: min(var(--t-r-boton), 999px);
+		background: var(--t-texto);
+		color: var(--t-fondo);
+		font: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		cursor: pointer;
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 0.2s ease,
+			transform 0.2s ease;
+	}
+	.tv-prod:hover .tv-prod-rapido,
+	.tv-prod-rapido:focus-visible {
+		opacity: 1;
+		transform: none;
+	}
+	/* Con el botón a la vista, los sellos se corren para no quedar abajo. */
+	.tv-prod:hover .tv-prod-media:has(.tv-prod-rapido) .tv-prod-sellos {
+		opacity: 0;
+	}
+}
+@media (hover: none) and (min-width: 760px) {
+	.tv-prod-rapido {
+		opacity: 1;
+		transform: none;
+	}
+	.tv-prod-media:has(.tv-prod-rapido) .tv-prod-sellos {
+		bottom: 64px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.tv-prod-rapido {
+		transition: none;
+	}
+}
+@media (max-width: 759px) {
+	.tv-prod-sellos {
+		left: 8px;
+		bottom: 8px;
+		right: 8px;
+	}
+	.tv-prod-sello {
+		height: 22px;
+		padding: 0 6px;
+		font-size: 10.5px;
+	}
+	.tv-prod-sello--extra {
+		display: none;
+	}
+}
+.tv-precio-transf {
+	color: var(--t-ok);
+	font-weight: 600;
 }
 .tv-prod--lista {
 	display: grid;
@@ -2661,4 +2826,276 @@
 	text-align: center;
 	color: var(--t-suave);
 	font-size: 14px;
+}
+
+/* ---- Clientes (galería de clientes) ------------------------------------------------------- */
+
+.tv-clientes-texto {
+	max-width: 62ch;
+	margin: -24px 0 28px;
+	color: var(--t-zona-suave, var(--t-suave));
+	text-wrap: pretty;
+}
+.tv-clientes {
+	display: grid;
+	grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.tv-clientes > li {
+	min-width: 0;
+}
+.tv-cliente {
+	position: relative;
+	margin: 0;
+	overflow: hidden;
+	border-radius: var(--t-r-foto);
+}
+.tv-cliente-link {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+}
+.tv-cliente-link:focus-visible {
+	outline: 3px solid var(--t-texto);
+	outline-offset: -3px;
+}
+/* El nombre sobre la foto, con velo: se lee sobre cualquier foto (AA). */
+.tv-cliente figcaption {
+	position: absolute;
+	inset: auto 0 0;
+	z-index: 1;
+	padding: 36px 12px 10px;
+	background: linear-gradient(to top, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0));
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.tv-clientes-cta {
+	display: flex;
+	justify-content: center;
+	margin-top: 28px;
+}
+@media (max-width: 759px) {
+	/* En el celular, una fila que se desliza (se ve que sigue). */
+	.tv-clientes {
+		grid-template-columns: none;
+		grid-auto-flow: column;
+		grid-auto-columns: 62%;
+		gap: 12px;
+		margin-inline: calc(-1 * var(--t-margen));
+		padding-inline: var(--t-margen);
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: var(--t-margen);
+		scrollbar-width: none;
+	}
+	.tv-clientes > li {
+		scroll-snap-align: start;
+	}
+	.tv-clientes-texto {
+		margin: -16px 0 20px;
+	}
+}
+
+/* ---- Videos verticales y su visor ------------------------------------------------------------ */
+
+.tv-videos {
+	--flecha-y: 50%;
+}
+.tv-video-corto {
+	position: relative;
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	border-radius: var(--t-r-foto);
+	background: var(--t-oscuro);
+	color: #fff;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.tv-video-corto:focus-visible {
+	outline: 3px solid var(--t-texto);
+	outline-offset: 2px;
+}
+.tv-video-corto-velo {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, rgb(0 0 0 / 0) 45%);
+}
+.tv-video-corto-play {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: rgb(0 0 0 / 0.55);
+	color: #fff;
+}
+.tv-video-corto-pie {
+	position: absolute;
+	inset: auto 12px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 13px;
+	line-height: 1.3;
+}
+.tv-video-corto-pie b {
+	font-size: 14px;
+	font-weight: 600;
+	text-wrap: pretty;
+}
+.tv-video-corto .tv-foto {
+	transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.tv-video-corto:hover .tv-foto {
+	transform: scale(1.03);
+}
+@media (prefers-reduced-motion: reduce) {
+	.tv-video-corto .tv-foto {
+		transition: none;
+	}
+}
+
+.tv-visor {
+	width: 100vw;
+	max-width: 100vw;
+	height: 100dvh;
+	max-height: 100dvh;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: rgb(10 10 10 / 0.94);
+	color: #fff;
+	font-family: var(--t-f-texto);
+}
+.tv-visor::backdrop {
+	background: rgb(0 0 0 / 0.6);
+}
+.tv-visor-caja {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	height: 100%;
+	padding: 16px;
+}
+.tv-visor-video {
+	position: relative;
+	height: min(calc(100dvh - 140px), 860px);
+	aspect-ratio: 9/16;
+	max-width: 100%;
+	overflow: hidden;
+	border-radius: 12px;
+	background: #000;
+}
+.tv-visor-video video,
+.tv-visor-video iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	object-fit: cover;
+}
+.tv-visor-prod {
+	display: grid;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 12px;
+	width: min(100%, calc(min(calc(100dvh - 140px), 860px) * 9 / 16));
+	min-width: min(100%, 320px);
+	padding: 8px 8px 8px 8px;
+	border-radius: 12px;
+	background: var(--t-fondo);
+	color: var(--t-texto);
+}
+.tv-visor-prod-foto {
+	overflow: hidden;
+	border-radius: 8px;
+}
+.tv-visor-prod-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	color: inherit;
+	text-decoration: none;
+	font-size: 14px;
+	line-height: 1.3;
+}
+.tv-visor-prod-info span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.tv-visor-cerrar,
+.tv-visor-flecha {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 0.14);
+	color: #fff;
+	cursor: pointer;
+}
+.tv-visor-cerrar:focus-visible,
+.tv-visor-flecha:focus-visible {
+	outline: 3px solid #fff;
+	outline-offset: 2px;
+}
+.tv-visor-cerrar {
+	top: 16px;
+	right: 16px;
+}
+.tv-visor-flecha {
+	top: calc(50% - 24px);
+}
+.tv-visor-flecha--antes {
+	left: 24px;
+}
+.tv-visor-flecha--despues {
+	right: 24px;
+}
+@media (max-width: 759px) {
+	.tv-visor-caja {
+		padding: 0 0 12px;
+		justify-content: flex-end;
+	}
+	.tv-visor-video {
+		height: auto;
+		width: 100%;
+		flex: 1;
+		aspect-ratio: auto;
+		border-radius: 0;
+	}
+	.tv-visor-prod {
+		width: calc(100% - 24px);
+		min-width: 0;
+	}
+	.tv-visor-cerrar {
+		top: max(12px, env(safe-area-inset-top));
+		right: 12px;
+		background: rgb(0 0 0 / 0.5);
+	}
+	.tv-visor-flecha {
+		display: none;
+	}
 }

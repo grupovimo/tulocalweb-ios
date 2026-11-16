@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ofreceDe } from '../cobros.ts';
 	import { comoLlega } from '../../envio.svelte.ts';
 	import type { TiendaPublica } from '../../tipos.ts';
 	import Bloques from '../bloques/Bloques.svelte';
@@ -30,8 +31,8 @@
 						t: tienda.productos.length === 1 ? 'producto' : 'productos'
 					}
 				: null,
-			tienda.cobros.mercadoPago && tienda.cobros.cuotas > 1
-				? { n: String(tienda.cobros.cuotas), t: 'cuotas sin interés' }
+			ofreceDe(tienda).cuotas > 1
+				? { n: String(ofreceDe(tienda).cuotas), t: 'cuotas sin interés' }
 				: null,
 			tienda.promedio && tienda.resenas.length
 				? {

@@ -3,12 +3,14 @@
 	import { tarjetaDe } from '../../seleccion.svelte.ts';
 	import type { ProductoPublico } from '../../tipos.ts';
 	import { usarTienda } from '../contexto.ts';
-	import { conTransferencia, cuotas, precio } from '../formato.ts';
+	import { ofreceDe, textoCuotas, textoTransferencia } from '../cobros.ts';
+	import { precio } from '../formato.ts';
 
 	/**
 	 * El precio de un producto como lo muestra cada dirección (README, fila «Precio»):
-	 * - Vidriera: 600, tachado al lado y las cuotas abajo en 13 px.
+	 * - Vidriera: 600, tachado al lado y abajo, en 13 px, las cuotas y el precio con transferencia.
 	 * - Mostrador: 700 grande, cuotas sin interés en verde y el precio con transferencia.
+	 * Las cuotas van cortas («3 x $ 12.000 sin interés») y sólo si la tienda las ofrece (cobros.ts).
 	 * - Pedido: 600, todo en una línea (`linea`).
 	 * Con variantes de precios distintos, «Desde». Un lanzamiento muestra «Próximamente».
 	 */
@@ -27,18 +29,12 @@
 
 	const ctx = usarTienda();
 	const t = $derived(tarjetaDe(producto));
-	const cobros = $derived(ctx.tienda.cobros);
+	const ofrece = $derived(ofreceDe(ctx.tienda));
 	const anterior = $derived(
 		!t.desde && producto.anterior && producto.anterior > t.precio ? producto.anterior : null
 	);
-	const enCuotas = $derived(
-		cobros.mercadoPago ? cuotas(t.precio, cobros.cuotas, ctx.dir === 'mostrador') : ''
-	);
-	const transf = $derived(
-		cobros.transferencia > 0 && cobros.datosTransferencia
-			? `${precio(conTransferencia(t.precio, cobros.transferencia))} con transferencia`
-			: ''
-	);
+	const enCuotas = $derived(textoCuotas(ofrece, t.precio, 'corto'));
+	const transf = $derived(textoTransferencia(ofrece, t.precio));
 	const ver = $derived(extras && !linea);
 </script>
 
@@ -54,8 +50,9 @@
 		{#if ver && ctx.dir === 'mostrador'}
 			{#if enCuotas}<span class="tv-precio-ok">{enCuotas}</span>{/if}
 			{#if transf}<span class="tv-precio-ok">{transf}</span>{/if}
-		{:else if ver && ctx.dir === 'vidriera' && enCuotas}
-			<span class="tv-precio-cuotas">{enCuotas}</span>
+		{:else if ver && ctx.dir === 'vidriera'}
+			{#if enCuotas}<span class="tv-precio-cuotas">{enCuotas}</span>{/if}
+			{#if transf}<span class="tv-precio-cuotas tv-precio-transf">{transf}</span>{/if}
 		{/if}
 	{/if}
 </span>

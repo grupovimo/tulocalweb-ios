@@ -2,7 +2,14 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import * as I from '#lib/icons.ts';
 	import { usarTienda } from '../contexto.ts';
-	import { conTransferencia, cuantos, cuotas, precio } from '../formato.ts';
+	import { cuantos, precio } from '../formato.ts';
+	import {
+		ivaDe,
+		ofreceDe,
+		textoCuotas,
+		textoTotalSinImpuestos,
+		textoTransferencia
+	} from '../cobros.ts';
 	import { panelCarrito } from '../panel.svelte.ts';
 	import Boton from '../primitivas/Boton.svelte';
 	import AvisosCarrito from './AvisosCarrito.svelte';
@@ -13,7 +20,20 @@
 	 * la ficha o al tocar la bolsa del encabezado, sin salir de la página. Las mismas líneas y avisos
 	 * que la página; el cupón y el envío quedan para el checkout.
 	 */
-	let { envioGratis = true }: { envioGratis?: boolean } = $props();
+	let {
+		envioGratis = true,
+		interceptar = true
+	}: {
+		envioGratis?: boolean;
+		/** La bolsa del encabezado abre el panel (carrito.variante «panel»); si no, va a la página. */
+		interceptar?: boolean;
+	} = $props();
+	$effect(() => {
+		panelCarrito.montado = true;
+		return () => {
+			panelCarrito.montado = false;
+		};
+	});
 	const ctx = usarTienda();
 	const t = $derived(ctx.tienda);
 	const lineas = $derived(ctx.carrito.detalle(t.productos, t.mayorista ?? null));
@@ -22,13 +42,15 @@
 	const titulo = $derived(
 		ctx.estilo.gastronomia ? 'Tu pedido' : ctx.dir === 'mostrador' ? 'Tu carrito' : 'Tu bolsa'
 	);
+	const ofrece = $derived(ofreceDe(t));
 	const extra = $derived(
-		[
-			t.cobros.mercadoPago ? cuotas(total, t.cobros.cuotas) : '',
-			t.cobros.transferencia > 0 && t.cobros.datosTransferencia
-				? `${precio(conTransferencia(total, t.cobros.transferencia))} con transferencia`
-				: ''
-		].filter(Boolean)
+		[textoCuotas(ofrece, total), textoTransferencia(ofrece, total)].filter(Boolean)
+	);
+	const sinImp = $derived(
+		textoTotalSinImpuestos(
+			ofrece,
+			lineas.map((l) => ({ subtotal: l.subtotal, iva: ivaDe(l.producto) }))
+		)
 	);
 
 	let dialogo = $state<HTMLDialogElement>();
@@ -39,6 +61,7 @@
 	});
 	// La bolsa del encabezado abre el panel en vez de ir a la página.
 	function alTocar(e: MouseEvent) {
+		if (!interceptar) return;
 		const a = (e.target as HTMLElement).closest?.('a.tv-bolsa');
 		if (!a || e.metaKey || e.ctrlKey) return;
 		e.preventDefault();
@@ -81,6 +104,7 @@
 			<div class="tv-panel-pie">
 				<div class="tv-cuentas-total"><span>Subtotal</span><b>{precio(total)}</b></div>
 				{#if extra.length}<p class="tv-chico tv-suave">o {extra.join(' · ')}</p>{/if}
+				{#if sinImp}<p class="tv-chico tv-suave">{sinImp}</p>{/if}
 				<Boton href="{ctx.base}/checkout" bloque onclick={() => (panelCarrito.abierto = false)}
 					>Finalizar compra</Boton
 				>

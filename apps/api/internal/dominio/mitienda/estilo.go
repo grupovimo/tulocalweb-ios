@@ -49,6 +49,9 @@ type Barra struct {
 	Variante string         `json:"variante,omitempty"`
 	Mensajes []MensajeBarra `json:"mensajes"`
 	Fondo    string         `json:"fondo,omitempty"`
+	// Automaticos: false para no sumar las cuotas, el envío gratis y la transferencia de la
+	// configuración (nil o true: se suman). Con false la barra puede quedar sin mensajes.
+	Automaticos *bool `json:"automaticos,omitempty"`
 }
 
 type MensajeBarra struct {

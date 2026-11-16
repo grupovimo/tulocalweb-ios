@@ -204,4 +204,6 @@ export type OpcionEnvio = {
 	nombre: string;
 	detalle: string;
 	precio: number;
+	/** Los días hábiles que tarda, si quien lleva los informa (Correo Argentino). */
+	dias?: { min: number; max: number };
 };

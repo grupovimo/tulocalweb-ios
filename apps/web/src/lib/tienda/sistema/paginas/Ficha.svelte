@@ -16,15 +16,18 @@
 	import Bloques from '../bloques/Bloques.svelte';
 	import Combo from '../bloques/Combo.svelte';
 	import { categoriaHref, comboDe, numeroWa, productosDe, waHref } from '../datos.ts';
+	import { cuantos, descuento, precio, promedio, sinViuda } from '../formato.ts';
 	import {
-		conTransferencia,
-		cuantos,
-		cuotas,
-		descuento,
-		precio,
-		promedio,
-		sinViuda
-	} from '../formato.ts';
+		conEnvioGratis,
+		ivaDe,
+		ofreceDe,
+		precioTransferencia,
+		textoCuotas,
+		textoSinImpuestos
+	} from '../cobros.ts';
+	import { confianzaDe, fechaLlegada } from '../confianza.ts';
+	import MediosDePago from '../marco/MediosDePago.svelte';
+	import Opciones from '../primitivas/Opciones.svelte';
 	import BotonComparar from '../marco/BotonComparar.svelte';
 	import { conversionDeTienda, etiquetasDe } from '../conversion.ts';
 	import Corazon from '../primitivas/Corazon.svelte';
@@ -67,6 +70,11 @@
 	const carrito = $derived(carritoDe(tienda.slug));
 	const sel = $derived(new Seleccion(producto));
 	const cobros = $derived(tienda.cobros);
+	const ofrece = $derived(ofreceDe(tienda));
+	// Cuántos (Mostrador: el «− 1 +» al lado del botón).
+	let cantidad = $state(1);
+	// El botón principal: gris sólo si no se puede tocar (sin stock, próximamente o la vitrina).
+	const sePuede = $derived(!tienda.vitrina && !sel.proximo && sel.stock > 0);
 
 	const verbo = $derived(
 		dir === 'mostrador'
@@ -79,14 +87,35 @@
 		sel && !sel.desde && sel.anterior && sel.anterior > sel.precio ? sel.anterior : null
 	);
 	const off = $derived(tachado ? descuento(sel.precio, tachado) : '');
-	const enCuotas = $derived(
-		cobros.mercadoPago ? cuotas(sel.precio, cobros.cuotas, dir !== 'pedido') : ''
+	const enCuotas = $derived(textoCuotas(ofrece, sel.precio));
+	const transf = $derived.by(() => {
+		const p = precioTransferencia(ofrece, sel.precio);
+		return p === null ? '' : precio(p);
+	});
+	// «Precio sin impuestos nacionales» (Ley 27.743), si la tienda lo muestra.
+	const sinImp = $derived(
+		sel.proximo ? '' : textoSinImpuestos(ofrece, sel.precio, ivaDe(producto))
 	);
-	const transf = $derived(
-		cobros.transferencia > 0 && cobros.datosTransferencia
-			? precio(conTransferencia(sel.precio, cobros.transferencia))
-			: ''
+	// «Ver medios de pago»: con Mercado Pago o transferencia hay algo que contar.
+	const hayMedios = $derived(
+		!sel.proximo && (ofrece.mercadoPago || ofrece.aceptaTransferencia) && !tienda.vitrina
 	);
+	let verMedios = $state(false);
+	// Envío gratis: el producto solo ya llega (sello sobre la foto), o con lo que hay en el carrito.
+	const gratisSolo = $derived(!sel.proximo && conEnvioGratis(ofrece, sel.precio));
+	const enCarrito = $derived(
+		carrito.detalle(tienda.productos, tienda.mayorista ?? null).reduce((s, l) => s + l.subtotal, 0)
+	);
+	const gratisSumando = $derived(
+		!gratisSolo &&
+			sePuede &&
+			ofrece.envioGratis !== null &&
+			enCarrito > 0 &&
+			enCarrito < ofrece.envioGratis &&
+			enCarrito + sel.precio * cantidad >= ofrece.envioGratis
+	);
+	// La caja de confianza (paginas.producto.confianza): envío de la configuración, garantía y cambios.
+	const confianza = $derived(confianzaDe(tienda, op.producto.confianza));
 	const porMayor = $derived(lineaPorMayor(sel.mayorista, tienda.mayorista, precio));
 	const resenas = $derived(tienda.resenas.filter((r) => r.producto === producto.nombre));
 	const prom = $derived(
@@ -108,7 +137,6 @@
 	);
 	const chips = $derived(
 		[
-			tienda.envios.gratisDesde && sel.precio >= tienda.envios.gratisDesde ? 'Envío gratis' : '',
 			// La de la tienda, salvo que sea el mismo descuento que ya dice el chip de la oferta.
 			off && /\d\s*%/.test(producto.etiqueta ?? '') ? '' : (producto.etiqueta?.trim() ?? ''),
 			...automaticas
@@ -118,14 +146,10 @@
 	const stockBajo = $derived(conv.stockBajo);
 	const fija = $derived(conv.compraFija);
 
-	// Cuántos (Mostrador: el «− 1 +» al lado del botón).
-	let cantidad = $state(1);
 	$effect(() => {
 		if (cantidad > Math.max(1, sel.stock)) cantidad = Math.max(1, sel.stock);
 	});
 
-	// El botón principal: gris sólo si no se puede tocar (sin stock, próximamente o la vitrina).
-	const sePuede = $derived(!tienda.vitrina && !sel.proximo && sel.stock > 0);
 	const textoBoton = $derived(
 		tienda.vitrina && !sel.falta
 			? 'Es una tienda de ejemplo'
@@ -160,6 +184,7 @@
 		cotizado = await cotizarYa(cp, sel.precio * cantidad, tienda);
 		cotizando = false;
 	}
+	const hoy = new Date();
 
 	const detalles = $derived(
 		[
@@ -230,13 +255,19 @@
 	const guia = $derived(op.producto.guiaTalles);
 	const tabla = $derived(guia?.tabla && guia.tabla.length > 1 ? guia.tabla : null);
 	const hayGuia = $derived(!!(guia?.foto || tabla));
-	const esTalle = (nombre: string) => /^talles?\b/i.test(nombre.trim());
 	let dialogoGuia = $state<HTMLDialogElement>();
+	const ICONO_CONFIANZA = {
+		envio: I.phTruck,
+		garantia: I.phShieldCheck,
+		cambios: I.phArrowsClockwise,
+		protegida: I.phSealCheck
+	} as const;
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- las rutas de la tienda se arman con su slug -->
 {#snippet chipOff()}
 	{#if off}<span class="tv-chip tv-chip--off tv-ficha-off">{off}</span>{/if}
+	{#if gratisSolo}<span class="tv-prod-sello tv-ficha-sello">Envío gratis</span>{/if}
 {/snippet}
 
 {#snippet galeria()}
@@ -321,59 +352,12 @@
 {/snippet}
 
 {#snippet opciones()}
-	{#each sel.opciones as o, i (o.nombre)}
-		{@const muestras = o.valores.every((x) => x.color || x.foto)}
-		{@const falta = sel.aviso && !o.elegido}
-		<fieldset
-			class="tv-opcion"
-			class:tv-opcion--falta={falta}
-			id={i === 0 ? 'tv-ficha-opciones' : undefined}
-		>
-			<legend class:tv-opcion-cab={hayGuia && esTalle(o.nombre)}
-				><span
-					><b>{o.nombre}{o.elegido ? ':' : ''}</b
-					>{#if o.elegido}&nbsp;{o.elegido}{:else if falta}&nbsp;· elegí uno{/if}</span
-				>{#if hayGuia && esTalle(o.nombre)}<button
-						type="button"
-						class="tv-link tv-ficha-guia"
-						aria-haspopup="dialog"
-						onclick={() => dialogoGuia?.showModal()}>Guía de talles</button
-					>{/if}</legend
-			>
-			<div class="tv-opcion-valores" class:tv-opcion-valores--muestras={muestras}>
-				{#each o.valores as x (x.valor)}
-					{#if muestras && dir !== 'pedido'}
-						<button
-							type="button"
-							class="tv-muestra"
-							aria-label="{o.nombre} {x.valor}{x.disponible ? '' : ', sin stock'}"
-							aria-pressed={x.elegido}
-							disabled={!x.disponible && !x.elegido}
-							onclick={() => sel.elegir(o.nombre, x.valor)}
-							>{#if x.color}<span style:background={x.color}></span>{:else}<Foto
-									src={x.foto}
-									alt=""
-									nombre={x.valor}
-									ancho={120}
-									proporcion="1/1"
-								/>{/if}</button
-						>
-					{:else}
-						<button
-							type="button"
-							class="tv-valor"
-							aria-pressed={x.elegido}
-							disabled={!x.disponible && !x.elegido}
-							onclick={() => sel.elegir(o.nombre, x.valor)}
-							>{#if muestras && x.color}<span class="tv-valor-punto" style:background={x.color}
-								></span>{/if}{x.valor}{#if !x.disponible}<span class="tv-oculto">, sin stock</span
-								>{/if}</button
-						>
-					{/if}
-				{/each}
-			</div>
-		</fieldset>
-	{/each}
+	<Opciones
+		{sel}
+		{dir}
+		prefijo="tv-ficha"
+		alGuia={hayGuia ? () => dialogoGuia?.showModal() : null}
+	/>
 {/snippet}
 
 {#snippet botonPrincipal(clase: string)}
@@ -400,10 +384,7 @@
 			<div class="tv-ficha-info" class:tv-tarjeta={dir !== 'vidriera'}>
 				{#if dir === 'mostrador' && chips.length}
 					<div class="tv-ficha-chips">
-						{#each chips as c, i (c)}<span
-								class="tv-chip"
-								class:tv-chip--ok={i === 0 && c === 'Envío gratis'}>{c}</span
-							>{/each}
+						{#each chips as c (c)}<span class="tv-chip">{c}</span>{/each}
 					</div>
 				{/if}
 				{#if dir !== 'mostrador' && automaticas.length}
@@ -451,12 +432,23 @@
 							</p>
 						{/if}
 					{/if}
+					{#if sinImp}<p class="tv-ficha-impuestos">{sinImp}</p>{/if}
 					{#if porMayor}<p class="tv-ficha-mayor">
 							<Icon icon={I.phPackage} size={16} />{porMayor}
 						</p>{/if}
+					{#if hayMedios}<button
+							type="button"
+							class="tv-link tv-ficha-medios"
+							aria-haspopup="dialog"
+							onclick={() => (verMedios = true)}
+							><Icon icon={I.phCreditCard} size={16} />Ver medios de pago</button
+						>{/if}
 				</div>
 
 				{@render opciones()}
+				{#if gratisSumando}<p class="tv-ficha-gratis" role="status">
+						<Icon icon={I.phTruck} size={18} />Agregá este producto y tenés envío&nbsp;gratis
+					</p>{/if}
 				{#if sel.stock > 0 && sel.stock <= stockBajo && !sel.proximo && (!sel.conOpciones || sel.variante)}
 					<p class="tv-ficha-quedan">
 						{dir === 'mostrador' ? '¡' : ''}{sel.stock === 1
@@ -524,10 +516,12 @@
 						{#if cotizado}
 							<ul class="tv-ficha-envios" aria-live="polite">
 								{#each cotizado as o (o.id)}
+									{@const llega = o.dias ? fechaLlegada(o.dias, hoy) : ''}
 									<li>
-										<span>{o.nombre} · {o.detalle}</span><b class:tv-ok={!o.precio}
-											>{o.precio ? precio(o.precio) : 'Gratis'}</b
-										>
+										<span
+											>{o.nombre} · {o.detalle}{#if llega}<span class="tv-ficha-llega">{llega}</span
+												>{/if}</span
+										><b class:tv-ok={!o.precio}>{o.precio ? precio(o.precio) : 'Gratis'}</b>
 									</li>
 								{:else}
 									<li class="tv-suave">No llegamos a ese código postal por&nbsp;ahora.</li>
@@ -535,6 +529,19 @@
 							</ul>
 						{/if}
 					</form>
+				{/if}
+
+				{#if confianza.length}
+					<ul class="tv-confianza" aria-label="Comprá tranquilo">
+						{#each confianza as c (c.tipo)}
+							<li>
+								<Icon icon={ICONO_CONFIANZA[c.tipo]} size={20} />
+								<span
+									><b>{c.titulo}</b>{#each c.lineas as l (l)}<span>{l}</span>{/each}</span
+								>
+							</li>
+						{/each}
+					</ul>
 				{/if}
 
 				{#if dir !== 'mostrador'}
@@ -645,6 +652,15 @@
 	{/if}
 
 	{#if fija}<div class="tv-reserva-barra tv-solo-movil" aria-hidden="true"></div>{/if}
+
+	{#if hayMedios}
+		<MediosDePago
+			abierto={verMedios}
+			total={sel.precio}
+			{ofrece}
+			alCerrar={() => (verMedios = false)}
+		/>
+	{/if}
 
 	{#if hayGuia}
 		<dialog

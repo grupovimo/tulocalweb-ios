@@ -93,7 +93,10 @@ type PaginaProducto struct {
 	Combos *bool `json:"combos,omitempty"`
 	// GuiaTalles: { foto?, tabla? } (bloques.json › paginas.producto › guiaTalles).
 	GuiaTalles map[string]any `json:"guiaTalles,omitempty"`
-	Bloques    []Bloque       `json:"bloques"`
+	// Confianza: { envio?, garantia?, cambios? }, los textos de la caja de confianza de la ficha
+	// (bloques.json › paginas.producto › confianza). Vacío: el envío sale de la configuración.
+	Confianza map[string]any `json:"confianza,omitempty"`
+	Bloques   []Bloque       `json:"bloques"`
 }
 
 type PaginaCarrito struct {

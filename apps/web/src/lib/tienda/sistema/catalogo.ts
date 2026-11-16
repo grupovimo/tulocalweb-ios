@@ -23,6 +23,7 @@ export type TipoCampo =
 	| 'opcion'
 	| 'icono'
 	| 'video'
+	| 'videoCorto'
 	| 'producto'
 	| 'elegidos'
 	| 'productos'
@@ -80,6 +81,8 @@ export const TIPOS = [
 	'preguntas',
 	'logos',
 	'galeria',
+	'clientes',
+	'videos',
 	'newsletter',
 	'whatsapp',
 	'turnos'
@@ -141,6 +144,8 @@ export type PaginasDiseno = {
 		combos?: boolean;
 		/** La guía de talles: una foto, una tabla (la primera fila es el encabezado) o las dos. */
 		guiaTalles?: GuiaTalles;
+		/** Los textos de la caja de confianza (vacío: el envío sale de la configuración de envíos). */
+		confianza?: Confianza;
 		bloques: Bloque[];
 	};
 	carrito?: { variante: 'pagina' | 'panel'; envioGratisDesde: boolean };
@@ -148,6 +153,7 @@ export type PaginasDiseno = {
 };
 
 export type GuiaTalles = { foto?: string; tabla?: string[][] };
+export type Confianza = { envio?: string; garantia?: string; cambios?: string };
 
 /** El diseño de la tienda, versión 2: la portada en bloques y el estilo ampliado. */
 export type DisenoV2 = {
@@ -176,6 +182,12 @@ const LINK =
 	/^(inicio|catalogo|nosotros|turnos|suscripciones|cat:[^<>\n]{1,60}|prod:[0-9A-Za-z-]{1,64}|https:\/\/[^\s"'<>]{3,})$/;
 const VIDEO =
 	/^https:\/\/(youtube\.com|www\.youtube\.com|youtu\.be|vimeo\.com|www\.vimeo\.com|player\.vimeo\.com)\/[^\s"'<>]+$/;
+/**
+ * Un video vertical (bloque «videos»): un .mp4 o .webm en https, o un reel de Instagram, un video de
+ * TikTok o un Short de YouTube. Igual que Go (mitienda/bloques.go › videoCortoValido).
+ */
+export const VIDEO_CORTO =
+	/^https:\/\/(?:[^\s"'<>/?#]+\/[^\s"'<>?#]*\.(?:mp4|webm)(?:[?#][^\s"'<>]*)?|(?:www\.)?instagram\.com\/(?:reel|reels|p)\/[\w-]{5,40}\/?(?:[?#][^\s"'<>]*)?|(?:www\.|m\.)?tiktok\.com\/@[\w.-]{1,40}\/video\/\d{6,25}\/?(?:[?#][^\s"'<>]*)?|(?:www\.|m\.)?youtube\.com\/shorts\/[\w-]{6,20}\/?(?:[?#][^\s"'<>]*)?)$/i;
 
 // Igual que Go (mitienda/bloques.go): sin < ni >, y los textos de una línea sin saltos.
 const texto = (max = 200, largo = false) =>
@@ -219,6 +231,8 @@ export function esquemaCampo(c: Campo): v.GenericSchema {
 			return v.picklist(ICONOS);
 		case 'video':
 			return v.pipe(v.string(), v.maxLength(300), v.regex(VIDEO));
+		case 'videoCorto':
+			return v.pipe(v.string(), v.maxLength(300), v.regex(VIDEO_CORTO));
 		case 'producto':
 			return id;
 		case 'categoria':

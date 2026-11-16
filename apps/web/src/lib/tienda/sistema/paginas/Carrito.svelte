@@ -11,7 +11,14 @@
 	import type { TiendaPublica } from '../../tipos.ts';
 	import { productosDe } from '../datos.ts';
 	import { conversionDeTienda, sumaTambien } from '../conversion.ts';
-	import { conTransferencia, cuantos, cuotas, precio } from '../formato.ts';
+	import { cuantos, precio } from '../formato.ts';
+	import {
+		ivaDe,
+		ofreceDe,
+		textoCuotas,
+		textoTotalSinImpuestos,
+		textoTransferencia
+	} from '../cobros.ts';
 	import AvisosCarrito from '../marco/AvisosCarrito.svelte';
 	import LineasCarrito from '../marco/LineasCarrito.svelte';
 	import Tienda from '../marco/Tienda.svelte';
@@ -68,13 +75,20 @@
 		const o = cotizar(cpPedido, subtotal, tienda).filter((x) => x.id !== 'retiro');
 		return o.length ? Math.min(...o.map((x) => x.precio)) : -1;
 	});
+	const ofrece = $derived(ofreceDe(tienda));
 	const extra = $derived(
-		[
-			tienda.cobros.mercadoPago ? cuotas(total, tienda.cobros.cuotas, dir === 'mostrador') : '',
-			tienda.cobros.transferencia > 0 && tienda.cobros.datosTransferencia
-				? `${precio(conTransferencia(total, tienda.cobros.transferencia))} con transferencia`
-				: ''
-		].filter(Boolean)
+		[textoCuotas(ofrece, total), textoTransferencia(ofrece, total)].filter(Boolean)
+	);
+	// «Total sin impuestos nacionales» (Ley 27.743): cada línea con su IVA y, con descuentos (combo,
+	// cupón), en proporción a lo que se paga.
+	const sinImp = $derived(
+		textoTotalSinImpuestos(
+			ofrece,
+			lineas.map((l) => ({
+				subtotal: subtotal > 0 ? (l.subtotal * total) / subtotal : 0,
+				iva: ivaDe(l.producto)
+			}))
+		)
 	);
 
 	// «Sumá también» (conversion.sumaEnCarrito): combos y relacionados de lo que ya está, hasta 3.
@@ -204,6 +218,7 @@
 						{#if extra.length}<p class="tv-chico tv-suave tv-carrito-extra">
 								o {extra.join(' · ')}
 							</p>{/if}
+						{#if sinImp}<p class="tv-chico tv-suave tv-carrito-extra">{sinImp}</p>{/if}
 						<div class="tv-solo-compu">
 							<Boton href="{base}/checkout" bloque>Finalizar compra</Boton>
 						</div>

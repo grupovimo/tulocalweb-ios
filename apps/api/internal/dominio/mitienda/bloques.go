@@ -119,6 +119,9 @@ var (
 	reIDBloque = regexp.MustCompile(`^[a-z0-9]{6,16}$`)
 	reProducto = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
 	hostsVideo = []string{"youtube.com", "www.youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com", "player.vimeo.com"}
+	// Los videos verticales (bloque «videos»): un archivo mp4 o webm, o un reel, un TikTok o un Short.
+	reArchivoVideo = regexp.MustCompile(`(?i)\.(mp4|webm)$`)
+	reVideoCorto   = regexp.MustCompile(`^(?:(?:www\.)?instagram\.com/(?:reel|reels|p)/[\w-]{5,40}|(?:www\.|m\.)?tiktok\.com/@[\w.-]{1,40}/video/\d{6,25}|(?:www\.|m\.)?youtube\.com/shorts/[\w-]{6,20})/?$`)
 )
 
 // linkValido: una página de la tienda, «cat:<categoría>», «prod:<id>» o un link https (las mismas
@@ -150,6 +153,22 @@ func videoValido(u string) bool {
 	}
 	p, err := url.Parse(u)
 	return err == nil && len(p.Path) > 1 && slices.Contains(hostsVideo, strings.ToLower(p.Hostname()))
+}
+
+// videoCortoValido: un link https a un .mp4 o .webm, o a un reel de Instagram, un video de TikTok o
+// un Short de YouTube (como la web: catalogo.ts › VIDEO_CORTO).
+func videoCortoValido(u string) bool {
+	if !strings.HasPrefix(u, "https://") || !foto(u) {
+		return false
+	}
+	p, err := url.Parse(u)
+	if err != nil || p.Hostname() == "" {
+		return false
+	}
+	if reArchivoVideo.MatchString(p.Path) {
+		return true
+	}
+	return reVideoCorto.MatchString(strings.ToLower(p.Hostname()) + p.Path)
 }
 
 func fechaValida(s string) bool {
@@ -257,6 +276,9 @@ func valorValido(c campo, v any) bool {
 	case "video":
 		s, ok := v.(string)
 		return ok && videoValido(s)
+	case "videoCorto":
+		s, ok := v.(string)
+		return ok && videoCortoValido(s)
 	case "producto":
 		s, ok := v.(string)
 		return ok && reProducto.MatchString(s)
@@ -475,6 +497,12 @@ func (p *Paginas) valido(vistos map[string]bool) bool {
 		if c.GuiaTalles != nil {
 			g, ok := normalizar(c.GuiaTalles)
 			if !ok || !valorValido(opcionDe("producto", "guiaTalles"), g) {
+				return false
+			}
+		}
+		if c.Confianza != nil {
+			g, ok := normalizar(c.Confianza)
+			if !ok || !valorValido(opcionDe("producto", "confianza"), g) {
 				return false
 			}
 		}

@@ -8,7 +8,8 @@
 	import { compararDe } from '../comparar.svelte.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { productoHref, waHref } from '../datos.ts';
-	import { conTransferencia, cuotas, descuento, precio } from '../formato.ts';
+	import { conTransferencia, descuento, precio } from '../formato.ts';
+	import { ofreceDe, textoCuotas } from '../cobros.ts';
 	import Boton from '../primitivas/Boton.svelte';
 	import Foto from '../primitivas/Foto.svelte';
 
@@ -126,8 +127,8 @@
 					><Foto src={c.p.foto} alt="" nombre={c.p.nombre} ancho={500} proporcion="4/3" /></a
 				>
 				<a class="tv-cmp-nombre" href={productoHref(t, c.p)}>{c.p.nombre}</a>
-				{#if t.cobros.mercadoPago && cuotas(desde(c.p), t.cobros.cuotas)}<span
-						class="tv-chico tv-suave">{cuotas(desde(c.p), t.cobros.cuotas)}</span
+				{#if textoCuotas(ofreceDe(t), desde(c.p))}<span class="tv-chico tv-suave"
+						>{textoCuotas(ofreceDe(t), desde(c.p))}</span
 					>{/if}
 				<dl>
 					{#each c.filas as f (f.t)}

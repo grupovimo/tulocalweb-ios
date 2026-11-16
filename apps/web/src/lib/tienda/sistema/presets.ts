@@ -101,6 +101,8 @@ export type EstiloFinal = {
 	fuenteTexto: string;
 	colores: Colores;
 	barra: NonNullable<EstiloTienda['barra']> | null;
+	/** Sumar a la barra las cuotas, el envío gratis y la transferencia (barra.automaticos ≠ false). */
+	barraAuto: boolean;
 	whatsappFlotante: boolean;
 	gastronomia: boolean;
 };
@@ -188,6 +190,7 @@ export function estiloFinal(
 					fondo: e.barra?.fondo ?? 'oscuro'
 				}
 			: null,
+		barraAuto: e.barra?.automaticos !== false,
 		whatsappFlotante: e.whatsappFlotante !== false,
 		gastronomia: preset.gastronomia
 	};

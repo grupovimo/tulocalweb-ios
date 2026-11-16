@@ -4,6 +4,8 @@
  */
 class PanelCarrito {
 	abierto = $state(false);
+	/** El panel está en la página (marco/PanelCarrito lo marca al montarse). */
+	montado = false;
 }
 
 export const panelCarrito = new PanelCarrito();

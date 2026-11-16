@@ -4,6 +4,7 @@
  * (lib/tienda/sistema/datos.ts › seDibuja); acá va el motivo en palabras.
  */
 import { defDe, type Campo } from './catalogo.ts';
+import { VIDEO_CORTO } from '#lib/tienda/sistema/catalogo.ts';
 import type { Bloque } from './bloques.ts';
 
 /** Lo que el editor sabe de la tienda para sugerir y avisar. */
@@ -186,6 +187,12 @@ export function queFalta(b: Bloque, cx: Contexto, ahora = Date.now()): string | 
 			return cx.direccion || !vacio(d.horarios)
 				? null
 				: 'Falta la dirección: cargala en Configuración › Negocio.';
+		case 'videos': {
+			const l = (d.items as { video?: string }[] | undefined) ?? [];
+			return l.length && !l.some((x) => VIDEO_CORTO.test(String(x.video ?? '')))
+				? 'Los links tienen que ser de un .mp4, un reel de Instagram, un TikTok o un Short.'
+				: null;
+		}
 		case 'video':
 			return /^https:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)\//.test(String(d.url ?? ''))
 				? null

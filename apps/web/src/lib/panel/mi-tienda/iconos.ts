@@ -21,6 +21,8 @@ export const ICONO_BLOQUE: Record<TipoBloque, Ic> = {
 	preguntas: I.phQuestionFill,
 	logos: I.phCertificateFill,
 	galeria: I.phImagesFill,
+	clientes: I.phUsersThreeFill,
+	videos: I.phFilmStripFill,
 	newsletter: I.phEnvelopeSimpleFill,
 	whatsapp: I.phWhatsappLogoFill,
 	turnos: I.phCalendarCheckFill

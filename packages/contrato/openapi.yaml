@@ -4920,7 +4920,7 @@ components:
         id: { type: string, pattern: '^[a-z0-9]{6,16}$', description: 'Único en todo el diseño (lo genera el editor; los migrados usan el tipo)' }
         tipo:
           type: string
-          enum: [portada, banner, oferta, textoImagen, video, beneficios, productos, destacado, combo, categorias, menu, local, resenas, preguntas, logos, galeria, newsletter, whatsapp, turnos]
+          enum: [portada, banner, oferta, textoImagen, video, beneficios, productos, destacado, combo, categorias, menu, local, resenas, preguntas, logos, galeria, clientes, videos, newsletter, whatsapp, turnos]
         variante: { type: string, description: 'Una de bloques.json › bloques[tipo].variantes' }
         oculto: { type: boolean }
         datos: { type: object, additionalProperties: true }

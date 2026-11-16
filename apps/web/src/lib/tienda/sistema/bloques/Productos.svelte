@@ -4,6 +4,7 @@
 	import { productosDe } from '../datos.ts';
 	import { MIN_PRODUCTOS_TOP } from '../conversion.ts';
 	import { cuantos } from '../formato.ts';
+	import Carrusel from '../primitivas/Carrusel.svelte';
 	import Grilla from '../primitivas/Grilla.svelte';
 	import Seccion from '../primitivas/Seccion.svelte';
 	import TarjetaProducto from '../primitivas/TarjetaProducto.svelte';
@@ -13,7 +14,8 @@
 	 * Productos: más vendidos, novedades, ofertas, de una categoría o elegidos a mano.
 	 * - `grilla`: la grilla según cuántos hay (1 → destacado, 2 → mitades, 3 → tercios, 4+ → las
 	 *   columnas elegidas, en filas completas).
-	 * - `carrusel`: una fila que se desliza (scroll-snap), con las flechas del teclado.
+	 * - `carrusel`: una fila que se desliza (scroll-snap), con flechas en la compu y tantas tarjetas a
+	 *   la vista como columnas (primitivas/Carrusel).
 	 * - `lista`: filas con foto chica, nombre, detalle y precio (para almacén y gastronomía).
 	 */
 	let { bloque }: { bloque: Bloque } = $props();
@@ -61,9 +63,9 @@
 {:else}
 	<Seccion {titulo} ante={textoDe(bloque, 'etiqueta')} {link}>
 		{#if bloque.variante === 'carrusel'}
-			<ul class="tv-carrusel" aria-label={titulo || 'Productos'}>
-				{#each lista as p (p.id)}<li><TarjetaProducto producto={p} /></li>{/each}
-			</ul>
+			<Carrusel items={lista} visibles={columnas} etiqueta={titulo || 'Productos'}>
+				{#snippet children(p)}<TarjetaProducto producto={p} ancho={500} />{/snippet}
+			</Carrusel>
 		{:else if bloque.variante === 'lista'}
 			<ul class="tv-lista" aria-label={titulo || 'Productos'}>
 				{#each lista as p (p.id)}<li>

@@ -7,6 +7,7 @@
 	import Banner from './Banner.svelte';
 	import Beneficios from './Beneficios.svelte';
 	import Categorias from './Categorias.svelte';
+	import Clientes from './Clientes.svelte';
 	import Combo from './Combo.svelte';
 	import Destacado from './Destacado.svelte';
 	import Galeria from './Galeria.svelte';
@@ -23,6 +24,7 @@
 	import TextoImagen from './TextoImagen.svelte';
 	import Turnos from './Turnos.svelte';
 	import Video from './Video.svelte';
+	import Videos from './Videos.svelte';
 	import Whatsapp from './Whatsapp.svelte';
 
 	/**
@@ -64,6 +66,8 @@
 		preguntas: Preguntas,
 		logos: Logos,
 		galeria: Galeria,
+		clientes: Clientes,
+		videos: Videos,
 		newsletter: Newsletter,
 		whatsapp: Whatsapp,
 		turnos: Turnos

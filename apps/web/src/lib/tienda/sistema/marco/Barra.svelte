@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/env';
+	import { mensajesAuto, ofreceDe } from '../cobros.ts';
 	import { usarTienda } from '../contexto.ts';
 	import { enlace } from '../datos.ts';
 	import Cuenta from '../primitivas/Cuenta.svelte';
@@ -13,6 +14,11 @@
 	 * Un mensaje con `hasta` lleva la cuenta regresiva y se esconde al vencer (también si la página
 	 * quedó abierta).
 	 *
+	 * Automáticos (barra.automaticos, prendido si no se apagó): después de los propios van las cuotas
+	 * sin interés, el envío gratis y el descuento por transferencia que la tienda ofrece de verdad
+	 * (cobros.ts › mensajesAuto), sin repetir lo que ya dicen los propios. Si sólo hay automáticos,
+	 * la barra rota (así en el celular se ven todos).
+	 *
 	 * Uso: `<Barra />` dentro de marco/Tienda.svelte (ya la pone Tienda; no hace falta en cada página).
 	 */
 	const ctx = usarTienda();
@@ -20,17 +26,26 @@
 	// Los vencidos no salen: al cargar (el servidor) y al vencer mientras se mira (la cuenta avisa).
 	let vencidos = $state<string[]>([]);
 	const ahora = Date.now();
-	const mensajes = $derived(
+	const propios = $derived(
 		(barra?.mensajes ?? [])
 			.filter((m) => !m.hasta || (Date.parse(m.hasta) > ahora && !vencidos.includes(m.hasta)))
 			.map((m) => ({ texto: m.texto, href: enlace(ctx.tienda, m.link), hasta: m.hasta ?? '' }))
 	);
+	const auto = $derived(
+		ctx.estilo.barraAuto
+			? mensajesAuto(
+					ofreceDe(ctx.tienda),
+					propios.map((m) => m.texto)
+				).map((texto) => ({ texto, href: null, hasta: '' }))
+			: []
+	);
+	const mensajes = $derived([...propios, ...auto].slice(0, 5));
 	$effect(() => {
 		if (i >= mensajes.length) i = 0;
 	});
 	let i = $state(0);
 	let quieta = $state(false);
-	const rota = $derived(barra?.variante === 'rotativa' && mensajes.length > 1);
+	const rota = $derived((barra ? barra.variante === 'rotativa' : true) && mensajes.length > 1);
 
 	$effect(() => {
 		if (!browser || !rota || quieta) return;
@@ -53,6 +68,7 @@
 	<div
 		class="tv-barra"
 		data-fondo={barra?.fondo ?? 'oscuro'}
+		data-auto={!propios.length || undefined}
 		role="region"
 		aria-label="Anuncios"
 		onmouseenter={() => (quieta = true)}

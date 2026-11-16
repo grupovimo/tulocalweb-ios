@@ -15,7 +15,8 @@ import {
 	type Icono,
 	type SeleccionProductos
 } from './catalogo.ts';
-import { CUOTAS_DESDE, cuantos, precio } from './formato.ts';
+import { cuantos, precio } from './formato.ts';
+import { ofreceDe } from './cobros.ts';
 
 export type Tienda = TiendaPublica;
 
@@ -166,16 +167,17 @@ export function beneficiosAuto(t: Tienda): Beneficio[] {
 			titulo: 'Envío en moto',
 			texto: e.motoZona ? e.motoZona : e.motoDemora || `Desde ${precio(e.motoCosto)}`
 		});
-	if (t.cobros.cuotas > 1 && t.cobros.mercadoPago)
+	const o = ofreceDe(t);
+	if (o.cuotas > 1)
 		out.push({
 			icono: 'cuotas',
-			titulo: `${t.cobros.cuotas} cuotas sin interés`,
-			texto: `Desde ${precio(CUOTAS_DESDE)}`
+			titulo: `${o.cuotas} cuotas sin interés`,
+			texto: o.cuotasDesde > 0 ? `Desde ${precio(o.cuotasDesde)}` : 'Con tarjeta de crédito'
 		});
-	if (t.cobros.transferencia > 0 && t.cobros.datosTransferencia)
+	if (o.transferencia > 0)
 		out.push({
 			icono: 'transferencia',
-			titulo: `${t.cobros.transferencia}\u00a0% off`,
+			titulo: `${o.transferencia}\u00a0% off`,
 			texto: 'Pagando con transferencia'
 		});
 	if (e.retiro)
@@ -391,6 +393,87 @@ export function videoDe(url: string | undefined): string | null {
 	return null;
 }
 
+// ---- Clientes y videos -------------------------------------------------------------------
+
+export type Cliente = { foto: string; nombre: string; href: string | null };
+
+/** Las fotos de clientes del bloque (sólo las que tienen foto https). */
+export function clientesDe(t: Tienda, b: Bloque): Cliente[] {
+	return (campo<{ foto?: string; nombre?: string; link?: string }[]>(b, 'items') ?? [])
+		.filter((x) => typeof x.foto === 'string' && /^https:\/\//.test(x.foto))
+		.map((x) => ({
+			foto: x.foto!,
+			nombre: (x.nombre ?? '').trim(),
+			href: enlace(t, x.link)
+		}));
+}
+
+/** Cómo se mira un video vertical: el archivo en un <video>, o el reproductor de la red social. */
+export type FuenteVideo =
+	| { tipo: 'archivo'; src: string }
+	| { tipo: 'red'; src: string; red: 'instagram' | 'tiktok' | 'youtube' };
+
+/** Un video vertical del bloque «videos» (mp4/webm, reel, TikTok o Short); null si no se reconoce. */
+export function videoCortoDe(url: string | undefined | null): FuenteVideo | null {
+	if (!url || !/^https:\/\//.test(url)) return null;
+	let u: URL;
+	try {
+		u = new URL(url);
+	} catch {
+		return null;
+	}
+	const host = u.hostname.toLowerCase().replace(/^(www|m)\./, '');
+	if (/\.(mp4|webm)$/i.test(u.pathname)) return { tipo: 'archivo', src: u.href };
+	if (host === 'instagram.com') {
+		const m = u.pathname.match(/^\/(reel|reels|p)\/([\w-]{5,40})\/?$/);
+		if (m)
+			return {
+				tipo: 'red',
+				red: 'instagram',
+				src: `https://www.instagram.com/${m[1] === 'p' ? 'p' : 'reel'}/${m[2]}/embed/`
+			};
+	}
+	if (host === 'tiktok.com') {
+		const m = u.pathname.match(/^\/@[\w.-]{1,40}\/video\/(\d{6,25})\/?$/);
+		if (m) return { tipo: 'red', red: 'tiktok', src: `https://www.tiktok.com/embed/v2/${m[1]}` };
+	}
+	if (host === 'youtube.com') {
+		const m = u.pathname.match(/^\/shorts\/([\w-]{6,20})\/?$/);
+		if (m)
+			return {
+				tipo: 'red',
+				red: 'youtube',
+				src: `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0&playsinline=1&autoplay=1`
+			};
+	}
+	return null;
+}
+
+export type VideoCorto = {
+	fuente: FuenteVideo;
+	portada: string;
+	titulo: string;
+	producto: ProductoPublico | null;
+};
+
+/** Los videos del bloque que se pueden mirar (con su portada y, si tiene, el producto). */
+export function videosDe(t: Tienda, b: Bloque): VideoCorto[] {
+	const out: VideoCorto[] = [];
+	for (const x of campo<{ video?: string; portada?: string; titulo?: string; producto?: string }[]>(
+		b,
+		'items'
+	) ?? []) {
+		const fuente = videoCortoDe(x.video);
+		if (!fuente || typeof x.portada !== 'string' || !/^https:\/\//.test(x.portada)) continue;
+		const producto = x.producto
+			? (t.productos.find((p) => (p.id === x.producto || p.slug === x.producto) && aLaVista(p)) ??
+				null)
+			: null;
+		out.push({ fuente, portada: x.portada, titulo: (x.titulo ?? '').trim(), producto });
+	}
+	return out;
+}
+
 // ---- ¿Se dibuja? -------------------------------------------------------------------------
 
 /**
@@ -435,6 +518,10 @@ export function seDibuja(b: Bloque, t: Tienda, ahora = Date.now()): boolean {
 			return (campo<unknown[]>(b, 'items') ?? []).length > 0;
 		case 'galeria':
 			return fotosGaleria(t, b).length > 0;
+		case 'clientes':
+			return clientesDe(t, b).length > 0;
+		case 'videos':
+			return videosDe(t, b).length > 0;
 		case 'newsletter':
 			return true;
 		case 'whatsapp':

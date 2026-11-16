@@ -204,7 +204,8 @@
 	function ponerBarra(cambios: Partial<NonNullable<EstiloV2['barra']>>, confirmar = true) {
 		const b = { ...barra, ...cambios };
 		if (!b.fondo) delete b.fondo;
-		ponerEstilo({ barra: b.mensajes.length ? b : undefined }, confirmar);
+		if (b.automaticos !== false) delete b.automaticos;
+		ponerEstilo({ barra: b.mensajes.length || b.automaticos === false ? b : undefined }, confirmar);
 	}
 </script>
 
@@ -432,13 +433,15 @@
 		{#each BARRA.campos as c (c.id)}
 			<CampoBloque
 				campo={c}
-				valor={barra[c.id as 'mensajes' | 'fondo']}
+				valor={barra[c.id as 'mensajes' | 'fondo' | 'automaticos']}
 				{ayuda}
 				onvalor={(v, conf) =>
 					ponerBarra(
 						c.id === 'mensajes'
 							? { mensajes: (v as { texto: string; link?: string }[] | undefined) ?? [] }
-							: { fondo: v as 'oscuro' },
+							: c.id === 'automaticos'
+								? { automaticos: v !== false }
+								: { fondo: v as 'oscuro' },
 						conf
 					)}
 			/>
