@@ -62,7 +62,7 @@
 					<div class="lista">
 						{#each CHATS as [id, n, m, ico, act] (n)}
 							<div class="chat-f" class:act>
-								<img src={cara(id)} alt="" />
+								<img src={cara(id)} alt={n} />
 								<div class="cf-txt">
 									<div class="cf-n">{n}</div>
 									<div class="cf-m">{m}</div>
@@ -76,7 +76,10 @@
 						<div class="b-v">¡Sí! Te paso el link de pago 👇</div>
 						<div class="b-link">
 							<div class="bl-prod">
-								<img src={unsplash('1573612664822-d7d347da7b80', 100, '&h=100')} alt="" />
+								<img
+									src={unsplash('1573612664822-d7d347da7b80', 100, '&h=100')}
+									alt="Interior de un local de ropa y regalos"
+								/>
 								<div class="bl-txt">
 									<div class="a">Termo 1 L · Negro</div>
 									<div class="b">$ 42.900</div>

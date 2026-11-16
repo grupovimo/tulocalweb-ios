@@ -93,7 +93,10 @@
 				{#each COLUMNAS as [titulo, links] (titulo)}
 					<div class="col">
 						<span class="col-t">{titulo}</span>
-						{#each links as [href, t] (t)}<a {href}>{t}</a>{/each}
+						{#each links as [href, t] (t)}<a
+								{href}
+								rel={href.includes('?') ? 'nofollow' : undefined}>{t}</a
+							>{/each}
 					</div>
 				{/each}
 			</nav>

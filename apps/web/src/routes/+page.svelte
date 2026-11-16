@@ -35,7 +35,7 @@
 </script>
 
 <Seo
-	title="Tu Local Web · Vendé en todos lados, pagá menos"
+	title="Tu Local Web · Tienda online y punto de venta, sin comisión"
 	description="Tienda online, WhatsApp, Mercado Libre, local y factura de ARCA en un solo panel. Más barato que Tiendanube en cada plan."
 	path="/"
 	image="home"

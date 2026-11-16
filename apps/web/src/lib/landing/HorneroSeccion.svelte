@@ -51,7 +51,7 @@
 			</div>
 			<div class="chat" use:anim={{ t: 'reveal', delay: 120 }}>
 				<div class="chat-cab">
-					<img src={cara('1531058240690-006c446962d8')} alt="" />
+					<img src={cara('1531058240690-006c446962d8')} alt="Lucía Fernández" />
 					<div class="cab-txt">
 						<div class="nom">Lucía Fernández <Icon icon={I.logosWhatsappIcon} size={14} /></div>
 						<div class="sub">Cliente nueva · llegó por Instagram</div>
@@ -74,7 +74,10 @@
 						{:else if m.k === 'prod'}
 							<div class="m-tarjeta" use:entra>
 								<div class="prod">
-									<img src={unsplash('1573612664822-d7d347da7b80', 500, '&h=260')} alt="" />
+									<img
+										src={unsplash('1573612664822-d7d347da7b80', 500, '&h=260')}
+										alt="Interior de un local de ropa y regalos"
+									/>
 									<div class="prod-pie">
 										<div>
 											<div class="prod-n">Termo 1 L · Negro</div>
