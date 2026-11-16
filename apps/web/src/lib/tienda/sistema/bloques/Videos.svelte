@@ -115,6 +115,7 @@
 			<div class="tv-visor-video">
 				{#key abierto}
 					{#if actual.fuente.tipo === 'archivo'}
+						<!-- svelte-ignore a11y_media_has_caption -->
 						<video
 							src={actual.fuente.src}
 							poster={actual.portada}
