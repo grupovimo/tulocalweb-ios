@@ -4,6 +4,7 @@
  * completo. Acá se saca lo incompleto o inválido y se dejan sólo los campos del catálogo, así
  * nunca da 400 por algo que el editor todavía muestra.
  */
+import { VIDEO_CORTO } from '#lib/tienda/sistema/catalogo.ts';
 import { defDe, LIMITES, PAGINAS, type Campo } from './catalogo.ts';
 import { URL_VIDEO } from './campos.ts';
 import { bloquesDe, type Bloque } from './bloques.ts';
@@ -75,6 +76,8 @@ export function valorCampo(c: Campo, v: unknown): unknown {
 			return typeof v === 'boolean' ? v : undefined;
 		case 'video':
 			return typeof v === 'string' && URL_VIDEO.test(v) ? v : undefined;
+		case 'videoCorto':
+			return typeof v === 'string' && v.length <= 300 && VIDEO_CORTO.test(v) ? v : undefined;
 		case 'producto':
 		case 'categoria':
 			return typeof v === 'string' && v && (c.tipo === 'categoria' || ID_PRODUCTO.test(v))

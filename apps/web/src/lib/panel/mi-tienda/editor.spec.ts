@@ -371,3 +371,57 @@ describe('campos', () => {
 		expect(buscar(ps, 'cafe', ['a']).map((p) => p.id)).toEqual(['b']);
 	});
 });
+
+describe('bloques de clientes y videos, y la confianza de la ficha', () => {
+	const base: DisenoV2 = { version: 2, paleta: 0, inicio: [] };
+	it('guarda los videos válidos con su portada y descarta los links que no son videos', () => {
+		const r = paraGuardar({
+			...base,
+			inicio: [
+				{
+					id: 'videos01',
+					tipo: 'videos',
+					variante: 'fila',
+					datos: {
+						titulo: 'Mirala puesta',
+						items: [
+							{
+								video: 'https://www.instagram.com/reel/C9xYz12AbCd/',
+								portada: 'https://fotos.x.com/a.jpg',
+								producto: 'p1'
+							}
+						]
+					}
+				},
+				{
+					id: 'clientes1',
+					tipo: 'clientes',
+					variante: 'grilla',
+					datos: { items: [{ foto: 'https://fotos.x.com/b.jpg', nombre: '@lu' }] }
+				}
+			]
+		});
+		const v = r.inicio.find((b) => b.id === 'videos01')!;
+		expect((v.datos.items as { video: string }[])[0].video).toBe(
+			'https://www.instagram.com/reel/C9xYz12AbCd/'
+		);
+		expect(r.inicio.find((b) => b.id === 'clientes1')!.datos.items).toEqual([
+			{ foto: 'https://fotos.x.com/b.jpg', nombre: '@lu' }
+		]);
+	});
+	it('guarda los textos de confianza de la ficha', () => {
+		const r = paraGuardar({
+			...base,
+			paginas: {
+				producto: {
+					variante: 'grilla',
+					relacionados: true,
+					calcularEnvio: true,
+					bloques: [],
+					confianza: { garantia: '  6 meses de garantía ', cambios: '' }
+				}
+			}
+		});
+		expect(r.paginas?.producto?.confianza).toEqual({ garantia: '6 meses de garantía' });
+	});
+});
