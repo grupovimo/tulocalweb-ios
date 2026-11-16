@@ -156,7 +156,7 @@ struct EnviosTienda: View {
 }
 
 /// El ícono redondo de cada opción (como las de Configuración del panel).
-private struct IconoOpcion: View {
+struct IconoOpcion: View {
     var simbolo: String
     var body: some View {
         Image(systemName: simbolo)

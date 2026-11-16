@@ -75,6 +75,7 @@ import ar.com.tulocalweb.app.nucleo.compartirTexto
 import ar.com.tulocalweb.app.nucleo.entero
 import ar.com.tulocalweb.app.nucleo.get
 import ar.com.tulocalweb.app.nucleo.lista
+import ar.com.tulocalweb.app.nucleo.numero
 import ar.com.tulocalweb.app.nucleo.objeto
 import ar.com.tulocalweb.app.nucleo.opcional
 import ar.com.tulocalweb.app.nucleo.texto
@@ -87,6 +88,10 @@ import kotlin.math.roundToInt
 
 private data class Opcion(val nombre: String, val valores: List<String>)
 private data class Combinacion(val stock: String = "", val precio: String = "", val sku: String = "")
+
+/** Las alícuotas de IVA de un producto (21 por defecto), como en la web (tienda/cobros.ts). */
+private fun textoIva(x: Double): String = (if (x % 1.0 == 0.0) x.toInt().toString() else x.toString().replace('.', ',')) + " %"
+private val ivas: List<Pair<Double, String>> = listOf(21.0, 10.5, 27.0, 0.0).map { it to textoIva(it) }
 
 /** Sin tipo elegido, las de siempre. */
 private val curvas: List<Pair<String, List<String>>> = listOf("Talle" to listOf("XS", "S", "M", "L", "XL", "XXL"), "Color" to emptyList(), "Presentación" to emptyList())
@@ -107,6 +112,8 @@ fun EditorProducto(id: String?, sku: String? = null) {
     var nombre by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var costo by remember { mutableStateOf("") }
+    // Alícuota de IVA, para el precio sin impuestos nacionales (21 % salvo que se elija otra).
+    var iva by remember { mutableStateOf(21.0) }
     var stock by remember { mutableStateOf("") }
     var codigo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
@@ -155,6 +162,7 @@ fun EditorProducto(id: String?, sku: String? = null) {
             nombre = v["nombre"]?.texto ?: ""
             precio = v["precio"]?.entero?.toString() ?: ""
             costo = v["costo"]?.entero?.let { if (it > 0) it.toString() else "" } ?: ""
+            v["iva"]?.numero?.let { iva = it }
             stock = v["stock"]?.entero?.toString() ?: ""
             codigo = v["sku"]?.texto ?: ""
             categoria = v["categoria"]?.texto ?: ""
@@ -189,6 +197,7 @@ fun EditorProducto(id: String?, sku: String? = null) {
             o["nombre"] = Valor.texto(nombre.trim())
             o["precio"] = Valor.numero(num(precio) ?: 0)
             o["costo"] = Valor.numero(num(costo) ?: 0)
+            o["iva"] = if (iva % 1.0 == 0.0) Valor.numero(iva.toInt()) else Valor.numero(iva)
             val combos = combinaciones
             if (combos.isEmpty()) {
                 o["stock"] = Valor.numero(num(stock) ?: 0)
@@ -361,6 +370,15 @@ fun EditorProducto(id: String?, sku: String? = null) {
                     Campo("Costo (opcional)", Modifier.weight(1f)) { Entrada(costo, { costo = it }, "0", estilo = Estilo.body16, teclado = KeyboardType.Number) }
                 }
                 margen?.let { Texto(it, Estilo.footnoteFuerte, C.okTinta, Modifier.padding(horizontal = 4.dp)) }
+                // El IVA del producto. Ventas no cambia precios (docs/decisiones.md §37): lo ve sin poder cambiarlo.
+                if (estado.puede("catalogo")) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Texto("IVA", Estilo.footnoteFuerte, C.texto2)
+                        Segmentado(ivas, iva, { iva = it }, Modifier.semantics { contentDescription = "IVA" })
+                    }
+                } else {
+                    Texto(Formato.sinViudas("IVA ${textoIva(iva)} · Los precios los cambia la dueña o administración."), Estilo.footnote, C.texto2, Modifier.padding(horizontal = 4.dp))
+                }
                 if (opciones.isEmpty()) Campo("Stock") { Entrada(stock, { stock = it }, "0", estilo = Estilo.body16, teclado = KeyboardType.Number) }
                 // Datos del tipo: texto libre de a uno, peso con su unidad y las tres medidas juntas.
                 tipo?.let { tp ->

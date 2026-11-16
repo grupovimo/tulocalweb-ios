@@ -23,7 +23,12 @@ enum Vinculos {
         case "productos":
             if let e = valor("editar") ?? id { return .producto(e) }
             return .productos
-        case "configuracion": return valor("tab") == "seguridad" ? .destino(.cuenta) : .destino(.negocio)
+        case "configuracion":
+            switch valor("tab") ?? "" {
+            case "seguridad": return .destino(.cuenta)
+            case "cobros": return .destino(.cobros)
+            default: return .destino(.negocio)
+            }
         default:
             return secciones.first { $0.0 == seccion }.map { .destino($0.1) } ?? .web(u)
         }

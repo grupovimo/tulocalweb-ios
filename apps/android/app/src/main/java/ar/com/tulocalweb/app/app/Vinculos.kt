@@ -30,7 +30,7 @@ object Vinculos {
                 }
             }
             "productos" -> (valor("editar") ?: id)?.let { Ruta.producto(it) } ?: Ruta.productos
-            "configuracion" -> Ruta.destino(if (valor("tab") == "seguridad") Destino.cuenta else Destino.negocio)
+            "configuracion" -> Ruta.destino(when (valor("tab")) { "seguridad" -> Destino.cuenta; "cobros" -> Destino.cobros; else -> Destino.negocio })
             else -> secciones.firstOrNull { it.first == seccion }?.let { Ruta.destino(it.second) } ?: Ruta.web(texto)
         }
     }

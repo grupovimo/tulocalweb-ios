@@ -164,7 +164,7 @@ private fun CampoEnvio(titulo: String, texto: String, alCambiar: (String) -> Uni
 
 /** El ícono redondo de cada opción (como las de Configuración del panel). */
 @Composable
-private fun IconoOpcion(simbolo: String) {
+fun IconoOpcion(simbolo: String) {
     Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(C.crema), contentAlignment = Alignment.Center) {
         Icono(simbolo, 16f, C.primarioTexto)
     }

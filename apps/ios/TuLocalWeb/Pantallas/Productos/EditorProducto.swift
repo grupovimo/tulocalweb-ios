@@ -17,6 +17,8 @@ struct EditorProducto: View {
     @State private var nombre = ""
     @State private var precio = ""
     @State private var costo = ""
+    /// Alícuota de IVA, para el precio sin impuestos nacionales (21 % salvo que se elija otra).
+    @State private var iva: Double = 21
     @State private var stock = ""
     @State private var codigo = ""
     @State private var categoria = ""
@@ -36,6 +38,11 @@ struct EditorProducto: View {
     @State private var eligiendoTipo = false
 
     struct Opcion: Equatable { var nombre: String; var valores: [String] }
+    /// Las alícuotas de IVA de un producto (21 por defecto), como en la web (tienda/cobros.ts).
+    static let ivas: [(Double, String)] = [21, 10.5, 27, 0].map { ($0, EditorProducto.textoIva($0)) }
+    static func textoIva(_ x: Double) -> String {
+        (x == x.rounded() ? String(Int(x)) : String(x).replacingOccurrences(of: ".", with: ",")) + " %"
+    }
     struct Combinacion: Equatable { var stock = ""; var precio = ""; var sku = "" }
     /// Sin tipo elegido, las de siempre.
     static let curvas: [(nombre: String, valores: [String])] = [
@@ -61,6 +68,7 @@ struct EditorProducto: View {
                     if let m = margen {
                         Text(m).estilo(.footnoteFuerte).foregroundStyle(C.okTinta).padding(.horizontal, 4)
                     }
+                    seccionIva
                     if opciones.isEmpty {
                         campo("Stock") { TextField("0", text: $stock).keyboardType(.numberPad) }
                     }
@@ -136,6 +144,21 @@ struct EditorProducto: View {
         let p = Int(precio.filter(\.isNumber)) ?? 0, c = Int(costo.filter(\.isNumber)) ?? 0
         guard p > 0, c > 0, p > c else { return nil }
         return "Ganás \(Formato.pesos(p - c)) por unidad (\(Int((Double(p - c) / Double(p) * 100).rounded())) %)"
+    }
+
+    /// El IVA del producto. Ventas no cambia precios (docs/decisiones.md §37): lo ve sin poder cambiarlo.
+    @ViewBuilder
+    private var seccionIva: some View {
+        if estado.puede("catalogo") {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("IVA").estilo(.footnoteFuerte).foregroundStyle(C.texto2)
+                Segmentado(opciones: EditorProducto.ivas, elegido: $iva)
+                    .accessibilityLabel("IVA")
+            }
+        } else {
+            Text(Formato.sinViudas("IVA \(EditorProducto.textoIva(iva)) · Los precios los cambia la dueña o administración."))
+                .estilo(.footnote).foregroundStyle(C.texto2).padding(.horizontal, 4)
+        }
     }
 
     // MARK: Qué es
@@ -434,6 +457,7 @@ struct EditorProducto: View {
         nombre = v["nombre"]?.texto ?? ""
         precio = v["precio"]?.entero.map(String.init) ?? ""
         costo = v["costo"]?.entero.map { $0 > 0 ? String($0) : "" } ?? ""
+        if case let .numero(n)? = v["iva"] { iva = n }
         stock = v["stock"]?.entero.map(String.init) ?? ""
         codigo = v["sku"]?.texto ?? ""
         categoria = v["categoria"]?.texto ?? ""
@@ -480,6 +504,7 @@ struct EditorProducto: View {
         o["nombre"] = .texto(nombre.trimmingCharacters(in: .whitespaces))
         o["precio"] = .numero(Double(Int(precio.filter(\.isNumber)) ?? 0))
         o["costo"] = .numero(Double(Int(costo.filter(\.isNumber)) ?? 0))
+        o["iva"] = .numero(iva)
         let combos = combinaciones
         if combos.isEmpty {
             o["stock"] = .numero(Double(Int(stock.filter(\.isNumber)) ?? 0))

@@ -164,6 +164,7 @@ fun Mas() {
         Grupo("Tu cuenta", C.avisoFondo to C.avisoTinta, listOf(
             FilaMas("Plan", "creditcard", Destino.plan, "cuenta", detalle = plan),
             FilaMas("Datos del negocio y cobro", "building.2", Destino.negocio, "cuenta"),
+            FilaMas("Cobros", "percent", Destino.cobros, "cuenta"),
             FilaMas("Envíos y retiro", "shippingbox", Destino.envios, "cuenta"),
             FilaMas("Integraciones", "puzzlepiece.extension", Destino.integraciones, "cuenta"),
             FilaMas("Usuarios y permisos", "person.badge.key", Destino.usuarios, "cuenta"),
