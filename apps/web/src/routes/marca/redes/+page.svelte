@@ -379,21 +379,20 @@
 							style="position:absolute;inset:0;background:url(/textura/grain.png);opacity:.22;mix-blend-mode:multiply"
 						></div>
 						<div style="position:relative;font-size:40px;font-weight:600;opacity:.9">
-							Vos a las 2 AM:
+							Mientras dormías:
 						</div>
 						<div
 							style="position:relative;margin-top:20px;padding:40px 46px;border-radius:40px 40px 40px 8px;background:#FBF7F2;color:#2A140C;font-size:52px;line-height:1.15;letter-spacing:-.02em;font-weight:500;max-width:820px"
 						>
-							“¿Hay stock del termo negro?”<br />“¿Hacen envíos a Salta?”<br />“¿Puedo pagar en
-							cuotas?”
+							Venta nueva · $ 34.900<br />Venta nueva · $ 12.400<br />Venta nueva · $ 37.000
 						</div>
 						<div
 							style="position:relative;margin-top:44px;font-size:104px;line-height:.95;letter-spacing:-.045em;font-weight:600"
 						>
-							Dormí. Tincho responde.
+							Dormí. Tu tienda vende.
 						</div>
 						<img
-							src="/hornero/whatsapp.png"
+							src="/hornero/durmiendo.png"
 							alt=""
 							style="position:absolute;right:30px;bottom:20px;width:440px;height:440px;object-fit:contain"
 						/>
@@ -535,30 +534,30 @@
 						<div
 							style="display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;background:#fff;font-size:30px;font-weight:600;color:#C24E25"
 						>
-							✦ Tincho · tu vendedor con IA
+							✦ Tincho · conoce tu tienda
 						</div>
 						<div
 							style="margin-top:40px;font-size:100px;line-height:.95;letter-spacing:-.045em;font-weight:600"
 						>
-							Vende, cobra y factura mientras vos hacés otra cosa.
+							Preguntale cómo viene tu día.
 						</div>
 						<div
 							style="position:absolute;left:90px;right:440px;bottom:110px;display:flex;flex-direction:column;gap:18px"
 						>
 							<div
-								style="align-self:flex-start;padding:26px 32px;border-radius:30px 30px 30px 6px;background:#fff;font-size:32px;box-shadow:0 16px 40px -24px rgba(42,20,12,.5)"
-							>
-								¿Tenés el termo en negro?
-							</div>
-							<div
 								style="align-self:flex-end;padding:26px 32px;border-radius:30px 30px 6px 30px;background:#2A140C;color:#fff;font-size:32px"
 							>
-								¡Sí! Quedan 4. ¿Te paso el link de pago?
+								¿Cuánto vendí hoy?
+							</div>
+							<div
+								style="align-self:flex-start;padding:26px 32px;border-radius:30px 30px 30px 6px;background:#fff;font-size:32px;box-shadow:0 16px 40px -24px rgba(42,20,12,.5)"
+							>
+								Llevás $ 184.350 en 9 pedidos, contando el local y la tienda.
 							</div>
 							<div
 								style="align-self:flex-end;display:flex;align-items:center;gap:12px;padding:20px 28px;border-radius:999px;background:#2F8F63;color:#fff;font-size:30px;font-weight:600"
 							>
-								<Icon icon={I.phCheckCircleFill} size={34} />Pago aprobado · $ 42.900
+								<Icon icon={I.phCheckCircleFill} size={34} />12 % más que ayer
 							</div>
 						</div>
 						<img
