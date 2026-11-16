@@ -588,7 +588,8 @@ function disenoDemo(plantilla: string, ciudad: string): DisenoV2 {
 					}
 		}
 	};
-	const inicio = d.inicio.flatMap((b) => (extra[b.tipo] ? [b, extra[b.tipo]!] : [b]));
+	// Por id: las otras secciones de productos (novedades, ofertas) no llevan banner.
+	const inicio = d.inicio.flatMap((b) => (extra[b.id] ? [b, extra[b.id]!] : [b]));
 	// Las promociones de las demos (como demo.Diseno en Go): Lumbre, Café Bruma y Almacén Verde.
 	const promos = promosDemo(plantilla, ENVIO_GRATIS_DESDE, Date.now());
 	inicio.push(

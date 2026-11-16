@@ -115,6 +115,7 @@ func Inicial(plantilla string) Diseno {
 	for _, tipo := range p.Orden {
 		d.Inicio = append(d.Inicio, Bloque{ID: tipo, Tipo: tipo, Variante: p.Variantes[tipo], Datos: map[string]any{}})
 	}
+	d.Inicio = conAgregados(d.Inicio, p)
 	return d
 }
 

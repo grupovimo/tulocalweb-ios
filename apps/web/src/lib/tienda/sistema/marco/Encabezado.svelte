@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import * as I from '#lib/icons.ts';
 	import LogoTienda from '../../LogoTienda.svelte';
@@ -6,6 +7,7 @@
 	import { inicial } from '../datos.ts';
 	import type { Encabezado } from '../presets.ts';
 	import Buscador from './Buscador.svelte';
+	import MenuCategorias from './MenuCategorias.svelte';
 	import MenuMovil from './MenuMovil.svelte';
 
 	/**
@@ -17,6 +19,10 @@
 	 * En Pedido es siempre el compacto de 64 px (C-moda): logo, una línea de la tienda, buscador y
 	 * bolsa. En el celular: menú, marca y bolsa en 56 px, y el buscador abajo si corresponde.
 	 * Debajo, el aviso de la vitrina («Es una tienda de ejemplo…»).
+	 *
+	 * Para comprar rápido: con más de un producto, el buscador siempre está a mano (en `centrado` e
+	 * `izquierda`, la lupa abre la barra de búsqueda debajo); con categorías que no entran como
+	 * pestañas, el desplegable «Categorías» (MenuCategorias) junto al menú en la compu.
 	 *
 	 * Uso: lo pone marco/Tienda.svelte. Props: `variante` para forzar una (si no, la del estilo).
 	 * Lleva `data-t-enc` (los colores de la zona: --t-enc y --t-enc-texto).
@@ -41,6 +47,14 @@
 	const menu = $derived(
 		v === 'izquierda' ? ctx.nav : ctx.nav.filter((n) => n !== nosotros && !derecha.includes(n))
 	);
+	// Las categorías como desplegable si no van como pestañas (más de 4, o el menú propio no las trae).
+	const desplegable = $derived(
+		ctx.dir !== 'pedido' &&
+			t.categorias.filter((c) => c.cantidad > 0).length >= 2 &&
+			!ctx.nav.some((n) => n.href.includes('cat='))
+	);
+	const lupa = $derived(!conBuscador && t.productos.length > 1 && ctx.dir !== 'pedido');
+	let buscando = $state(false);
 	const linea = $derived(
 		[
 			t.ciudad,
@@ -71,6 +85,19 @@
 				>{/each}
 		</nav>
 	{/if}
+{/snippet}
+
+{#snippet lupaBoton()}
+	{#if lupa}<button
+			type="button"
+			class="tv-enc-lupa"
+			aria-label={buscando ? 'Cerrar la búsqueda' : 'Buscar productos'}
+			aria-expanded={buscando}
+			onclick={() => {
+				buscando = !buscando;
+				if (buscando) void tick().then(() => document.getElementById('tv-buscar-a')?.focus());
+			}}><Icon icon={buscando ? I.phXBold : I.phMagnifyingGlass} size={20} /></button
+		>{/if}
 {/snippet}
 
 {#snippet bolsa()}
@@ -104,8 +131,10 @@
 			<div class="tv-enc-acciones">{@render bolsa()}</div>
 		{:else if v === 'centrado'}
 			<!-- Sin pestañas, igual ocupa su columna: el logo queda al medio. -->
-			{#if menu.length}{@render nav(menu, 'tv-solo-compu')}{:else}<span class="tv-solo-compu"
-				></span>{/if}
+			<div class="tv-enc-izq tv-solo-compu">
+				{#if desplegable}<MenuCategorias />{/if}
+				{#if menu.length}{@render nav(menu, '')}{/if}
+			</div>
 			{@render marca()}
 			<div class="tv-enc-acciones">
 				{#each derecha as n (n.href)}<a
@@ -115,6 +144,7 @@
 					>{/each}
 				{#if nosotros}<a class="tv-solo-compu tv-enc-link" href={nosotros.href}>{nosotros.t}</a
 					>{/if}
+				{@render lupaBoton()}
 				{@render bolsa()}
 			</div>
 		{:else if v === 'buscador'}
@@ -127,15 +157,22 @@
 			</div>
 		{:else}
 			{@render marca()}
+			{#if desplegable}<span class="tv-solo-compu"><MenuCategorias /></span>{/if}
 			{@render nav(ctx.nav, 'tv-solo-compu')}
-			<div class="tv-enc-acciones">{@render bolsa()}</div>
+			<div class="tv-enc-acciones">{@render lupaBoton()}{@render bolsa()}</div>
 		{/if}
 	</div>
-	{#if v === 'buscador' && ctx.dir !== 'pedido' && menu.length}
+	{#if v === 'buscador' && ctx.dir !== 'pedido' && (menu.length || desplegable)}
 		<div class="tv-enc-pestanas tv-solo-compu">
-			<div class="tv-ancho">{@render nav(menu, '')}</div>
+			<div class="tv-ancho tv-enc-pestanas-fila">
+				{#if desplegable}<MenuCategorias />{/if}
+				{@render nav(menu, '')}
+			</div>
 		</div>
 	{/if}
+	{#if lupa && buscando}<div class="tv-enc-buscar-abierto">
+			<div class="tv-ancho"><Buscador id="tv-buscar-a" /></div>
+		</div>{/if}
 	{#if conBuscador}<div class="tv-enc-buscar-movil tv-solo-movil">
 			<Buscador id="tv-buscar-m" />
 		</div>{/if}

@@ -1,11 +1,11 @@
 {
-  "$comentario": "Los puntos de partida (las 17 plantillas). Lo usan la migración v1→v2 (web y Go) y el editor. El diseño guarda sólo lo que la tienda cambió; lo demás sale de acá. Los colores de cada preset son los de lib/tienda/estilo/roles.ts (rolesDe).",
+  "$comentario": "Los puntos de partida (las 17 plantillas). Lo usan la migración v1→v2 (web y Go) y el editor. El diseño guarda sólo lo que la tienda cambió; lo demás sale de acá. Los colores de cada preset son los de lib/tienda/estilo/roles.ts (rolesDe). «agregados»: bloques que el inicial (y la migración) suman después del bloque con id «despuesDe» (las otras secciones de productos de la portada); con su propio id y datos, no toman textos ni ocultas de v1.",
   "presets": {
     "ceibo": {
       "direccion": "vidriera",
       "estilo": {
         "forma": "recta",
-        "densidad": "aireada",
+        "densidad": "normal",
         "fotoProducto": "vertical",
         "encabezado": "centrado",
         "pie": "grande",
@@ -26,13 +26,41 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "rosedal": {
       "direccion": "vidriera",
       "estilo": {
         "forma": "redondeada",
-        "densidad": "aireada",
+        "densidad": "normal",
         "fotoProducto": "vertical",
         "encabezado": "centrado",
         "pie": "columnas",
@@ -53,13 +81,41 @@
         "resenas": "tarjetas",
         "galeria": "mosaico"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "quebracho": {
       "direccion": "vidriera",
       "estilo": {
         "forma": "recta",
-        "densidad": "aireada",
+        "densidad": "normal",
         "fotoProducto": "apaisada",
         "encabezado": "izquierda",
         "pie": "grande",
@@ -68,6 +124,7 @@
       },
       "orden": [
         "portada",
+        "categorias",
         "productos",
         "resenas",
         "galeria"
@@ -79,7 +136,35 @@
         "resenas": "tarjetas",
         "galeria": "mosaico"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "malbec": {
       "direccion": "vidriera",
@@ -94,8 +179,8 @@
       },
       "orden": [
         "portada",
-        "productos",
         "categorias",
+        "productos",
         "resenas",
         "galeria"
       ],
@@ -106,13 +191,41 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "taller": {
       "direccion": "vidriera",
       "estilo": {
         "forma": "recta",
-        "densidad": "aireada",
+        "densidad": "normal",
         "fotoProducto": "cuadrada",
         "encabezado": "izquierda",
         "pie": "columnas",
@@ -133,7 +246,35 @@
         "resenas": "tarjetas",
         "galeria": "mosaico"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "torno": {
       "direccion": "vidriera",
@@ -160,7 +301,35 @@
         "resenas": "tarjetas",
         "galeria": "mosaico"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "pampa": {
       "direccion": "mostrador",
@@ -187,7 +356,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "yerbal": {
       "direccion": "mostrador",
@@ -213,7 +410,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "andes": {
       "direccion": "mostrador",
@@ -240,7 +465,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "patio": {
       "direccion": "mostrador",
@@ -267,7 +520,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "hora": {
       "direccion": "mostrador",
@@ -294,7 +575,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "litoral": {
       "direccion": "mostrador",
@@ -321,7 +630,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "lente": {
       "direccion": "mostrador",
@@ -348,7 +685,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "tijera": {
       "direccion": "mostrador",
@@ -375,7 +740,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": false
+      "gastronomia": false,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Recién llegados",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "mostaza": {
       "direccion": "pedido",
@@ -390,6 +783,7 @@
       },
       "orden": [
         "portada",
+        "categorias",
         "productos",
         "resenas",
         "galeria"
@@ -401,7 +795,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": true
+      "gastronomia": true,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Lo nuevo",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "miga": {
       "direccion": "pedido",
@@ -416,6 +838,7 @@
       },
       "orden": [
         "portada",
+        "categorias",
         "productos",
         "resenas",
         "galeria"
@@ -427,7 +850,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": true
+      "gastronomia": true,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Lo nuevo",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     },
     "miga-clasica": {
       "direccion": "pedido",
@@ -442,8 +893,8 @@
       },
       "orden": [
         "portada",
-        "productos",
         "categorias",
+        "productos",
         "resenas",
         "galeria"
       ],
@@ -454,7 +905,35 @@
         "resenas": "tarjetas",
         "galeria": "fila"
       },
-      "gastronomia": true
+      "gastronomia": true,
+      "agregados": [
+        {
+          "id": "novedades",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "productos",
+          "datos": {
+            "titulo": "Lo nuevo",
+            "productos": {
+              "fuente": "nuevos",
+              "cantidad": 10
+            }
+          }
+        },
+        {
+          "id": "ofertas",
+          "tipo": "productos",
+          "variante": "carrusel",
+          "despuesDe": "novedades",
+          "datos": {
+            "titulo": "En oferta",
+            "productos": {
+              "fuente": "ofertas",
+              "cantidad": 10
+            }
+          }
+        }
+      ]
     }
   }
 }

@@ -79,6 +79,8 @@ export function migrar(diseno: unknown, plantilla: string): DisenoV2 {
 
 	const textos = v1.estilo?.textos ?? {};
 	const inicio: Bloque[] = inicioDe({ ...preset, orden: tipos }).map((b) => {
+		// Los agregados del preset (novedades, ofertas) traen sus datos y no son una sección de v1.
+		if (b.id !== b.tipo.toLowerCase()) return b;
 		const sec = DE_BLOQUE[b.tipo];
 		const datos: Record<string, unknown> = {};
 		if (b.tipo === 'portada') {

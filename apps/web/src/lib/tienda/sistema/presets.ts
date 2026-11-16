@@ -28,6 +28,8 @@ export type Preset = {
 	orden: TipoBloque[];
 	variantes: Partial<Record<TipoBloque, string>>;
 	gastronomia: boolean;
+	/** Bloques que van después del de id `despuesDe` (las otras secciones de productos). */
+	agregados?: (Bloque & { despuesDe: string })[];
 };
 export type Forma = 'recta' | 'redondeada' | 'pildora';
 export type Densidad = 'aireada' | 'normal' | 'compacta';
@@ -44,12 +46,29 @@ export function presetDe(plantilla: string | null | undefined): Preset {
 
 /** Los bloques con los que arranca la portada de un preset (id = tipo, datos vacíos). */
 export function inicioDe(preset: Preset): Bloque[] {
-	return preset.orden.map((tipo) => ({
-		id: tipo.toLowerCase(),
-		tipo,
-		variante: preset.variantes[tipo] ?? '',
-		datos: {}
-	}));
+	return conAgregados(
+		preset.orden.map((tipo) => ({
+			id: tipo.toLowerCase(),
+			tipo,
+			variante: preset.variantes[tipo] ?? '',
+			datos: {}
+		})),
+		preset
+	);
+}
+
+/**
+ * Los agregados del preset (novedades, ofertas) después de su bloque; si ese bloque no está, el
+ * agregado no va. Como Go (mitienda.conAgregados).
+ */
+export function conAgregados(inicio: Bloque[], preset: Preset): Bloque[] {
+	const out = [...inicio];
+	for (const { despuesDe, ...a } of preset.agregados ?? []) {
+		const i = out.findIndex((b) => b.id === despuesDe);
+		if (i < 0 || out.some((b) => b.id === a.id)) continue;
+		out.splice(i + 1, 0, { ...a, datos: structuredClone(a.datos) });
+	}
+	return out;
 }
 
 /** Lo que trae cada dirección antes del preset (README del handoff, tabla de tokens). */

@@ -71,6 +71,19 @@
 
 /* ---- Ancho y ritmo ---------------------------------------------------------------------- */
 
+/* Las de autor (Vidriera aireada) conservan la portada alta del handoff; las demás van más justas. */
+@media (min-width: 1000px) {
+	.tv[data-dir='vidriera'][data-densidad='aireada'] .tv-portada-foto {
+		height: 720px;
+	}
+	.tv[data-dir='vidriera'][data-densidad='aireada'] .tv-portada-partida {
+		min-height: 760px;
+	}
+	.tv[data-densidad='aireada'] .tv-grilla {
+		gap: 40px 24px;
+	}
+}
+
 .tv-ancho {
 	width: 100%;
 	max-width: var(--t-ancho);
@@ -376,7 +389,7 @@
 	align-items: flex-end;
 	gap: 12px 24px;
 	flex-wrap: wrap;
-	margin-bottom: 40px;
+	margin-bottom: 28px;
 }
 .tv-cab-textos {
 	display: flex;
@@ -418,7 +431,7 @@
 .tv-grilla {
 	display: grid;
 	grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-	gap: 40px 24px;
+	gap: 32px 20px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -869,7 +882,7 @@
 }
 .tv-portada-foto {
 	position: relative;
-	height: 720px;
+	height: 640px;
 	overflow: hidden;
 }
 /* En un monitor grande la portada a todo el ancho se recortaba hasta perder el producto (a 2560 px
@@ -947,15 +960,15 @@
 .tv-portada-partida {
 	display: grid;
 	grid-template-columns: 5fr 7fr;
-	min-height: 760px;
+	min-height: 640px;
 	padding-right: 0;
 }
 .tv-portada-col {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	gap: 48px;
-	padding: 96px 56px 72px 0;
+	gap: 40px;
+	padding: 72px 56px 56px 0;
 }
 .tv-portada-nota {
 	margin: 0;
@@ -1632,7 +1645,7 @@
 }
 /* Como en la portada partida: la foto cubre, pero el alto lo pone el texto (o el mínimo). */
 .tv-ti-foto {
-	min-height: 520px;
+	min-height: 440px;
 	contain: size;
 }
 .tv-ti-foto .tv-foto {
@@ -2328,6 +2341,110 @@
 	height: 44px;
 	row-gap: 0;
 	column-gap: 28px;
+}
+.tv-enc-izq {
+	display: flex;
+	align-items: center;
+	gap: 28px;
+	min-width: 0;
+}
+.tv-enc-pestanas-fila {
+	display: flex;
+	align-items: center;
+	gap: 32px;
+}
+/* «Categorías»: el desplegable del encabezado en la compu. */
+.tv-cats-desplegable {
+	position: relative;
+	flex: none;
+}
+.tv-cats-boton {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+}
+.tv-cats-boton[aria-expanded='true'] :is(svg) {
+	transform: rotate(180deg);
+}
+.tv-cats-menu {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: -12px;
+	z-index: 40;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	width: max-content;
+	min-width: 240px;
+	max-width: min(640px, 80vw);
+	max-height: min(70vh, 520px);
+	margin: 0;
+	padding: 8px;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var(--t-borde);
+	border-radius: min(var(--t-r-tarjeta), 14px);
+	background: var(--t-fondo);
+	color: var(--t-texto);
+	box-shadow: 0 12px 32px rgb(0 0 0 / 0.14);
+}
+.tv-cats-menu:has(li:nth-child(9)) {
+	width: min(640px, 80vw);
+}
+.tv-cats-menu a {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	min-height: 40px;
+	padding: 0 12px;
+	border-radius: 8px;
+	color: inherit;
+	font-size: 14px;
+	text-decoration: none;
+}
+.tv-cats-menu a:hover,
+.tv-cats-menu a:focus-visible {
+	background: color-mix(in srgb, var(--t-texto) 7%, var(--t-fondo));
+}
+.tv-cats-n {
+	color: var(--t-suave);
+	font-size: 12px;
+}
+.tv-cats-todo {
+	grid-column: 1 / -1;
+	margin-top: 4px;
+	padding-top: 4px;
+	border-top: 1px solid var(--t-borde);
+}
+.tv-cats-todo a {
+	font-weight: 600;
+}
+/* La lupa de los encabezados sin buscador y la barra de búsqueda que abre. */
+.tv-enc-lupa {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	cursor: pointer;
+}
+.tv-enc-buscar-abierto {
+	padding: 0 0 14px;
+}
+.tv-enc-buscar-abierto .tv-ancho {
+	max-width: min(var(--t-ancho), 760px);
 }
 .tv-enc[data-variante='centrado'] .tv-marca {
 	justify-self: center;

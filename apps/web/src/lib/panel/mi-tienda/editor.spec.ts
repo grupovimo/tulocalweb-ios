@@ -191,7 +191,13 @@ describe('punto de partida', () => {
 		const r = aplicarPreset(d, 'mostaza');
 		const p = PRESETS_TIENDA.mostaza;
 		expect(r.plantilla).toBe('mostaza');
-		expect(r.inicio.slice(0, p.orden.length).map((x) => x.tipo)).toEqual(p.orden);
+		// El orden del preset, con sus agregados (novedades, ofertas) después de los productos.
+		const sinAgregados = r.inicio.filter((x) => !p.agregados?.some((a) => a.id === x.id));
+		expect(sinAgregados.slice(0, p.orden.length).map((x) => x.tipo)).toEqual(p.orden);
+		expect(r.inicio.map((x) => x.id).slice(3, 5)).toEqual(['novedades', 'ofertas']);
+		expect(r.inicio.find((x) => x.id === 'novedades')!.datos).toMatchObject({
+			productos: { fuente: 'nuevos' }
+		});
 		const prods = r.inicio.find((x) => x.tipo === 'productos')!;
 		expect(prods.id).toBe('b1');
 		expect(prods.datos).toEqual({ titulo: 'Lo nuestro' });

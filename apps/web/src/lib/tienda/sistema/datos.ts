@@ -393,6 +393,24 @@ export function videoDe(url: string | undefined): string | null {
 	return null;
 }
 
+/**
+ * Las secciones de productos que no repiten: una que casi no suma nada a las anteriores (menos de 4
+ * productos nuevos, o ninguno) no se dibuja. Así una tienda con pocos productos no ve tres veces lo
+ * mismo con distinto título (más vendidos, novedades, ofertas).
+ */
+export function productosQueSuman(t: Tienda, bloques: Bloque[]): Set<string> {
+	const vistos = new Set<string>();
+	const fuera = new Set<string>();
+	for (const b of bloques) {
+		if (b.tipo !== 'productos') continue;
+		const ids = productosDe(t, campo(b, 'productos')).map((p) => p.id);
+		const nuevos = ids.filter((id) => !vistos.has(id)).length;
+		if (vistos.size && nuevos < Math.min(4, ids.length || 1)) fuera.add(b.id);
+		else for (const id of ids) vistos.add(id);
+	}
+	return fuera;
+}
+
 // ---- Clientes y videos -------------------------------------------------------------------
 
 export type Cliente = { foto: string; nombre: string; href: string | null };

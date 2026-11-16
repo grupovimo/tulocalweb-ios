@@ -33,6 +33,27 @@ export function aplicarPreset(d: DisenoV2, id: string): DisenoV2 {
 			usados.add(id);
 			return { id, tipo, variante, datos: {} };
 		});
+	// Los agregados del preset (novedades, ofertas) después de su bloque: si la tienda ya los tenía
+	// (mismo id), con lo suyo; si no, con los datos del preset.
+	const delPreset = new Map<string, Bloque>(p.orden.map((tipo, i) => [tipo, inicio[i]]));
+	for (const { despuesDe, ...a } of p.agregados ?? []) {
+		const ancla = delPreset.get(despuesDe);
+		const i = ancla ? inicio.indexOf(ancla) : -1;
+		if (i < 0) continue;
+		const lista = porTipo.get(a.tipo) ?? [];
+		const j = lista.findIndex((b) => b.id === a.id);
+		let b: Bloque;
+		if (j >= 0) {
+			b = { ...lista.splice(j, 1)[0], variante: a.variante };
+			delete b.oculto;
+		} else {
+			const id = usados.has(a.id) ? nuevoId(usados) : a.id;
+			usados.add(id);
+			b = { ...a, id, datos: structuredClone(a.datos) };
+		}
+		inicio.splice(i + 1, 0, b);
+		delPreset.set(a.id, b);
+	}
 	// Lo que la tienda sumó y el preset no trae (un banner, preguntas) no se pierde.
 	for (const resto of porTipo.values()) inicio.push(...resto);
 	const estilo = { ...d.estilo };

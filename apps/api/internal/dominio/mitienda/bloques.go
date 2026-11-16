@@ -85,6 +85,38 @@ type Preset struct {
 	Orden       []string          `json:"orden"`
 	Variantes   map[string]string `json:"variantes"`
 	Gastronomia bool              `json:"gastronomia"`
+	// Agregados: los bloques que se suman después del de id DespuesDe (las otras secciones de
+	// productos de la portada: novedades y ofertas).
+	Agregados []Agregado `json:"agregados"`
+}
+
+// Agregado: un bloque del preset con su propio id y datos (presets.json › agregados).
+type Agregado struct {
+	Bloque
+	DespuesDe string `json:"despuesDe"`
+}
+
+// conAgregados: los bloques con los agregados del preset después del suyo (si ese bloque no está,
+// el agregado no va). Los datos se copian: cada diseño tiene los suyos.
+func conAgregados(inicio []Bloque, p Preset) []Bloque {
+	for _, a := range p.Agregados {
+		i := slices.IndexFunc(inicio, func(b Bloque) bool { return b.ID == a.DespuesDe })
+		if i < 0 || slices.ContainsFunc(inicio, func(b Bloque) bool { return b.ID == a.ID }) {
+			continue
+		}
+		b := a.Bloque
+		b.Datos = copiarDatos(a.Datos)
+		inicio = slices.Insert(inicio, i+1, b)
+	}
+	return inicio
+}
+
+func copiarDatos(m map[string]any) map[string]any {
+	out := map[string]any{}
+	if c, ok := normalizar(m); ok {
+		out = c
+	}
+	return out
 }
 
 // Presets por id de plantilla.

@@ -248,7 +248,7 @@
 
 /* Portada: en tarjetas de radio 24–28. */
 .tv[data-dir='mostrador'] .tv-portada-foto.tv-ancho-foto {
-	height: 560px;
+	height: 500px;
 	margin: 24px auto 0;
 	max-width: calc(var(--t-ancho) - 2 * var(--t-margen));
 	width: calc(100% - 2 * var(--t-margen));

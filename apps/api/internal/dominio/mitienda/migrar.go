@@ -76,6 +76,7 @@ func Migrar(d *Diseno, plantilla string) Diseno {
 		}
 		out.Inicio = append(out.Inicio, b)
 	}
+	out.Inicio = conAgregados(out.Inicio, p)
 
 	// El estilo: lo mismo, sin lo de v1.
 	var e Estilo

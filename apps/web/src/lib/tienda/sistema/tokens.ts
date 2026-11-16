@@ -118,11 +118,15 @@ const RADIOS: Record<Direccion, Record<Forma, [number, number, number, number]>>
 	mostrador: { recta: [4, 4, 4, 6], redondeada: [16, 12, 999, 24], pildora: [20, 14, 999, 28] },
 	pedido: { recta: [2, 2, 2, 4], redondeada: [12, 10, 10, 16], pildora: [16, 12, 999, 20] }
 };
-/** Ritmo vertical entre bloques en la compu (README: 120 / 56–72 / 24–32). */
+/**
+ * Ritmo vertical entre bloques en la compu. «normal» es ~30 % más junto que el handoff (README:
+ * 120 / 56–72 / 24–32): se tiene que sentir una tienda, con varias secciones de productos por
+ * pantalla, no una revista. «aireada» queda para las de autor.
+ */
 const RITMO: Record<Direccion, Record<Densidad, number>> = {
-	vidriera: { aireada: 120, normal: 96, compacta: 72 },
-	mostrador: { aireada: 88, normal: 72, compacta: 56 },
-	pedido: { aireada: 40, normal: 32, compacta: 24 }
+	vidriera: { aireada: 104, normal: 68, compacta: 52 },
+	mostrador: { aireada: 72, normal: 52, compacta: 40 },
+	pedido: { aireada: 40, normal: 28, compacta: 22 }
 };
 const MARGEN: Record<Direccion, number> = { vidriera: 56, mostrador: 40, pedido: 32 };
 const VERTICAL: Record<Direccion, string> = { vidriera: '3/4', mostrador: '4/5', pedido: '4/5' };

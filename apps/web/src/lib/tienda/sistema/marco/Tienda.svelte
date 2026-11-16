@@ -98,8 +98,9 @@
 						}
 					]
 				: []),
-			...(cats.length > 1
-				? cats.slice(0, 4).map((c) => ({ t: c.nombre, href: categoriaHref(tienda, c.nombre) }))
+			// Hasta 4 categorías van como pestañas; con más, el desplegable «Categorías» (Encabezado).
+			...(cats.length > 1 && cats.length <= 4
+				? cats.map((c) => ({ t: c.nombre, href: categoriaHref(tienda, c.nombre) }))
 				: []),
 			...(tienda.turnos ? [{ t: 'Turnos', href: `${base}/turnos`, on: pagina === 'turnos' }] : []),
 			...(tienda.suscripciones.length

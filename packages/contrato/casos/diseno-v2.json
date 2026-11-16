@@ -1,18 +1,68 @@
 {
-  "$comentario": "Casos de la migración v1→v2 (docs/especificaciones/tienda-bloques.md). Los corren lib/tienda/sistema/migrar.spec.ts y mitienda/migrar_test.go. «plantilla» es la de la tienda (tiendas.plantilla). Reglas: version 2; un bloque por sección del orden del preset (id = tipo), en el orden del preset salvo que la tienda haya reordenado (entonces el suyo, filtrado a las del preset); las secciones ocultas quedan oculto:true; hero → portada con titulo/lema/portada; textos[sección] → datos.titulo; wa oculta → estilo.whatsappFlotante=false; anuncio → estilo.barra fija con un mensaje; se sacan secciones, textos, anuncio y anuncioLink. Un diseño ya v2 vuelve igual. null → el inicial del preset.",
+  "$comentario": "Casos de la migración v1→v2 (docs/especificaciones/tienda-bloques.md). Los corren lib/tienda/sistema/migrar.spec.ts y mitienda/migrar_test.go. «plantilla» es la de la tienda (tiendas.plantilla). Reglas: version 2; un bloque por sección del orden del preset (id = tipo), en el orden del preset salvo que la tienda haya reordenado (entonces el suyo, filtrado a las del preset); las secciones ocultas quedan oculto:true; hero → portada con titulo/lema/portada; textos[sección] → datos.titulo; wa oculta → estilo.whatsappFlotante=false; anuncio → estilo.barra fija con un mensaje; se sacan secciones, textos, anuncio y anuncioLink. Después del bloque «despuesDe» van los agregados del preset (presets.json › agregados), con sus datos. Un diseño ya v2 vuelve igual. null → el inicial del preset.",
   "casos": [
     {
       "nombre": "nulo: el inicial del preset",
       "plantilla": "ceibo",
       "v1": null,
       "v2": {
-        "version": 2, "paleta": 0,
+        "version": 2,
+        "paleta": 0,
         "inicio": [
-          { "id": "portada", "tipo": "portada", "variante": "partida", "datos": {} },
-          { "id": "categorias", "tipo": "categorias", "variante": "tarjetas", "datos": {} },
-          { "id": "productos", "tipo": "productos", "variante": "grilla", "datos": {} },
-          { "id": "resenas", "tipo": "resenas", "variante": "tarjetas", "datos": {} },
-          { "id": "galeria", "tipo": "galeria", "variante": "fila", "datos": {} }
+          {
+            "id": "portada",
+            "tipo": "portada",
+            "variante": "partida",
+            "datos": {}
+          },
+          {
+            "id": "categorias",
+            "tipo": "categorias",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "productos",
+            "tipo": "productos",
+            "variante": "grilla",
+            "datos": {}
+          },
+          {
+            "id": "novedades",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "Recién llegados",
+              "productos": {
+                "fuente": "nuevos",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "ofertas",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "En oferta",
+              "productos": {
+                "fuente": "ofertas",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "resenas",
+            "tipo": "resenas",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "galeria",
+            "tipo": "galeria",
+            "variante": "fila",
+            "datos": {}
+          }
         ]
       }
     },
@@ -20,19 +70,137 @@
       "nombre": "inicial sin tocar, con textos, portada y anuncio",
       "plantilla": "ceibo",
       "v1": {
-        "secciones": [ {"id":"hero","visible":true},{"id":"cats","visible":true},{"id":"prods","visible":true},{"id":"revs","visible":true},{"id":"ig","visible":true},{"id":"wa","visible":true} ],
-        "paleta": 2, "titulo": "Tienda Lumbre", "lema": "Ropa de autor", "portada": "https://tulocalweb.com.ar/f/abc.webp", "logo": "https://tulocalweb.com.ar/f/logo.webp",
-        "estilo": { "anuncio": "Envío gratis desde $ 80.000", "anuncioLink": "https://tulocalweb.com.ar/t/lumbre/catalogo", "textos": { "prods": "Lo más pedido", "ig": "Usado de verdad" }, "colores": { "acento": "#B4532A" }, "fuenteTitulos": "fraunces" }
+        "secciones": [
+          {
+            "id": "hero",
+            "visible": true
+          },
+          {
+            "id": "cats",
+            "visible": true
+          },
+          {
+            "id": "prods",
+            "visible": true
+          },
+          {
+            "id": "revs",
+            "visible": true
+          },
+          {
+            "id": "ig",
+            "visible": true
+          },
+          {
+            "id": "wa",
+            "visible": true
+          }
+        ],
+        "paleta": 2,
+        "titulo": "Tienda Lumbre",
+        "lema": "Ropa de autor",
+        "portada": "https://tulocalweb.com.ar/f/abc.webp",
+        "logo": "https://tulocalweb.com.ar/f/logo.webp",
+        "estilo": {
+          "anuncio": "Envío gratis desde $ 80.000",
+          "anuncioLink": "https://tulocalweb.com.ar/t/lumbre/catalogo",
+          "textos": {
+            "prods": "Lo más pedido",
+            "ig": "Usado de verdad"
+          },
+          "colores": {
+            "acento": "#B4532A"
+          },
+          "fuenteTitulos": "fraunces"
+        }
       },
       "v2": {
-        "version": 2, "paleta": 2, "titulo": "Tienda Lumbre", "lema": "Ropa de autor", "portada": "https://tulocalweb.com.ar/f/abc.webp", "logo": "https://tulocalweb.com.ar/f/logo.webp",
-        "estilo": { "colores": { "acento": "#B4532A" }, "fuenteTitulos": "fraunces", "barra": { "variante": "fija", "mensajes": [ { "texto": "Envío gratis desde $ 80.000", "link": "https://tulocalweb.com.ar/t/lumbre/catalogo" } ] } },
+        "version": 2,
+        "paleta": 2,
+        "titulo": "Tienda Lumbre",
+        "lema": "Ropa de autor",
+        "portada": "https://tulocalweb.com.ar/f/abc.webp",
+        "logo": "https://tulocalweb.com.ar/f/logo.webp",
+        "estilo": {
+          "colores": {
+            "acento": "#B4532A"
+          },
+          "fuenteTitulos": "fraunces",
+          "barra": {
+            "variante": "fija",
+            "mensajes": [
+              {
+                "texto": "Envío gratis desde $ 80.000",
+                "link": "https://tulocalweb.com.ar/t/lumbre/catalogo"
+              }
+            ]
+          }
+        },
         "inicio": [
-          { "id": "portada", "tipo": "portada", "variante": "partida", "datos": { "titulo": "Tienda Lumbre", "texto": "Ropa de autor", "fotos": [ "https://tulocalweb.com.ar/f/abc.webp" ] } },
-          { "id": "categorias", "tipo": "categorias", "variante": "tarjetas", "datos": {} },
-          { "id": "productos", "tipo": "productos", "variante": "grilla", "datos": { "titulo": "Lo más pedido" } },
-          { "id": "resenas", "tipo": "resenas", "variante": "tarjetas", "datos": {} },
-          { "id": "galeria", "tipo": "galeria", "variante": "fila", "datos": { "titulo": "Usado de verdad" } }
+          {
+            "id": "portada",
+            "tipo": "portada",
+            "variante": "partida",
+            "datos": {
+              "titulo": "Tienda Lumbre",
+              "texto": "Ropa de autor",
+              "fotos": [
+                "https://tulocalweb.com.ar/f/abc.webp"
+              ]
+            }
+          },
+          {
+            "id": "categorias",
+            "tipo": "categorias",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "productos",
+            "tipo": "productos",
+            "variante": "grilla",
+            "datos": {
+              "titulo": "Lo más pedido"
+            }
+          },
+          {
+            "id": "novedades",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "Recién llegados",
+              "productos": {
+                "fuente": "nuevos",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "ofertas",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "En oferta",
+              "productos": {
+                "fuente": "ofertas",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "resenas",
+            "tipo": "resenas",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "galeria",
+            "tipo": "galeria",
+            "variante": "fila",
+            "datos": {
+              "titulo": "Usado de verdad"
+            }
+          }
         ]
       }
     },
@@ -40,18 +208,97 @@
       "nombre": "reordenada, con ocultas y WhatsApp apagado",
       "plantilla": "andes",
       "v1": {
-        "secciones": [ {"id":"prods","visible":true},{"id":"hero","visible":true},{"id":"revs","visible":false},{"id":"cats","visible":true},{"id":"ig","visible":false},{"id":"wa","visible":false} ],
+        "secciones": [
+          {
+            "id": "prods",
+            "visible": true
+          },
+          {
+            "id": "hero",
+            "visible": true
+          },
+          {
+            "id": "revs",
+            "visible": false
+          },
+          {
+            "id": "cats",
+            "visible": true
+          },
+          {
+            "id": "ig",
+            "visible": false
+          },
+          {
+            "id": "wa",
+            "visible": false
+          }
+        ],
         "paleta": 0
       },
       "v2": {
-        "version": 2, "paleta": 0,
-        "estilo": { "whatsappFlotante": false },
+        "version": 2,
+        "paleta": 0,
+        "estilo": {
+          "whatsappFlotante": false
+        },
         "inicio": [
-          { "id": "productos", "tipo": "productos", "variante": "grilla", "datos": {} },
-          { "id": "portada", "tipo": "portada", "variante": "partida", "datos": {} },
-          { "id": "resenas", "tipo": "resenas", "variante": "tarjetas", "oculto": true, "datos": {} },
-          { "id": "categorias", "tipo": "categorias", "variante": "tarjetas", "datos": {} },
-          { "id": "galeria", "tipo": "galeria", "variante": "fila", "oculto": true, "datos": {} }
+          {
+            "id": "productos",
+            "tipo": "productos",
+            "variante": "grilla",
+            "datos": {}
+          },
+          {
+            "id": "novedades",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "Recién llegados",
+              "productos": {
+                "fuente": "nuevos",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "ofertas",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "En oferta",
+              "productos": {
+                "fuente": "ofertas",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "portada",
+            "tipo": "portada",
+            "variante": "partida",
+            "datos": {}
+          },
+          {
+            "id": "resenas",
+            "tipo": "resenas",
+            "variante": "tarjetas",
+            "oculto": true,
+            "datos": {}
+          },
+          {
+            "id": "categorias",
+            "tipo": "categorias",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "galeria",
+            "tipo": "galeria",
+            "variante": "fila",
+            "oculto": true,
+            "datos": {}
+          }
         ]
       }
     },
@@ -59,16 +306,94 @@
       "nombre": "gastronomía: sin categorías en el preset, el orden del preset",
       "plantilla": "mostaza",
       "v1": {
-        "secciones": [ {"id":"hero","visible":true},{"id":"cats","visible":true},{"id":"prods","visible":true},{"id":"revs","visible":true},{"id":"ig","visible":true},{"id":"wa","visible":true} ],
-        "paleta": 1, "plantilla": "miga"
+        "secciones": [
+          {
+            "id": "hero",
+            "visible": true
+          },
+          {
+            "id": "cats",
+            "visible": true
+          },
+          {
+            "id": "prods",
+            "visible": true
+          },
+          {
+            "id": "revs",
+            "visible": true
+          },
+          {
+            "id": "ig",
+            "visible": true
+          },
+          {
+            "id": "wa",
+            "visible": true
+          }
+        ],
+        "paleta": 1,
+        "plantilla": "miga"
       },
       "v2": {
-        "version": 2, "paleta": 1, "plantilla": "miga",
+        "version": 2,
+        "paleta": 1,
+        "plantilla": "miga",
         "inicio": [
-          { "id": "portada", "tipo": "portada", "variante": "partida", "datos": {} },
-          { "id": "productos", "tipo": "productos", "variante": "grilla", "datos": {} },
-          { "id": "resenas", "tipo": "resenas", "variante": "tarjetas", "datos": {} },
-          { "id": "galeria", "tipo": "galeria", "variante": "fila", "datos": {} }
+          {
+            "id": "portada",
+            "tipo": "portada",
+            "variante": "partida",
+            "datos": {}
+          },
+          {
+            "id": "categorias",
+            "tipo": "categorias",
+            "variante": "circulos",
+            "datos": {}
+          },
+          {
+            "id": "productos",
+            "tipo": "productos",
+            "variante": "grilla",
+            "datos": {}
+          },
+          {
+            "id": "novedades",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "Lo nuevo",
+              "productos": {
+                "fuente": "nuevos",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "ofertas",
+            "tipo": "productos",
+            "variante": "carrusel",
+            "datos": {
+              "titulo": "En oferta",
+              "productos": {
+                "fuente": "ofertas",
+                "cantidad": 10
+              }
+            }
+          },
+          {
+            "id": "resenas",
+            "tipo": "resenas",
+            "variante": "tarjetas",
+            "datos": {}
+          },
+          {
+            "id": "galeria",
+            "tipo": "galeria",
+            "variante": "fila",
+            "datos": {}
+          }
         ]
       }
     },
@@ -76,12 +401,32 @@
       "nombre": "ya v2: vuelve igual",
       "plantilla": "yerbal",
       "v1": {
-        "version": 2, "paleta": 0,
-        "inicio": [ { "id": "b7k2m9q1", "tipo": "banner", "variante": "banda", "datos": { "titulo": "Hot Sale" } } ]
+        "version": 2,
+        "paleta": 0,
+        "inicio": [
+          {
+            "id": "b7k2m9q1",
+            "tipo": "banner",
+            "variante": "banda",
+            "datos": {
+              "titulo": "Hot Sale"
+            }
+          }
+        ]
       },
       "v2": {
-        "version": 2, "paleta": 0,
-        "inicio": [ { "id": "b7k2m9q1", "tipo": "banner", "variante": "banda", "datos": { "titulo": "Hot Sale" } } ]
+        "version": 2,
+        "paleta": 0,
+        "inicio": [
+          {
+            "id": "b7k2m9q1",
+            "tipo": "banner",
+            "variante": "banda",
+            "datos": {
+              "titulo": "Hot Sale"
+            }
+          }
+        ]
       }
     }
   ]

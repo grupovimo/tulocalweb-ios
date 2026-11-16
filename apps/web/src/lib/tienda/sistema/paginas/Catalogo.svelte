@@ -61,10 +61,12 @@
 	const precios = $derived(tienda.productos.map((p) => tarjetaDe(p).precio));
 	const conPrecio = $derived(precios.length > 3 && Math.max(...precios) > Math.min(...precios));
 
-	let mostrar = $state(24);
+	// De a 60: llena filas de 2, 3, 4, 5 y 6 columnas (celular, tablet, compu y monitor grande).
+	const TANDA = 60;
+	let mostrar = $state(TANDA);
 	$effect(() => {
 		void page.url.search;
-		mostrar = 24;
+		mostrar = TANDA;
 	});
 	const visibles = $derived(lista.slice(0, mostrar));
 
@@ -337,7 +339,7 @@
 	{/if}
 	{#if lista.length > mostrar}
 		<div class="tv-cat-mas">
-			<Boton tipo="secundario" onclick={() => (mostrar += 24)}
+			<Boton tipo="secundario" onclick={() => (mostrar += TANDA)}
 				>Ver más ({lista.length - mostrar})</Boton
 			>
 		</div>

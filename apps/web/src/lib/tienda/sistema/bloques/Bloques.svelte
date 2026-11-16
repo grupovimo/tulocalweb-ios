@@ -3,7 +3,7 @@
 	import type { ProximosTurnos } from '../../tipos.ts';
 	import type { Bloque, TipoBloque } from '../catalogo.ts';
 	import { ponerFotosUsadas, usarTienda } from '../contexto.ts';
-	import { fotosGaleria, fotosUsadas, seDibuja } from '../datos.ts';
+	import { fotosGaleria, fotosUsadas, productosQueSuman, seDibuja } from '../datos.ts';
 	import Banner from './Banner.svelte';
 	import Beneficios from './Beneficios.svelte';
 	import Categorias from './Categorias.svelte';
@@ -77,9 +77,13 @@
 	// repetiría la grilla no se dibuja).
 	const usadas = $derived(fotosUsadas(ctx.tienda, conDatos));
 	ponerFotosUsadas(() => usadas);
+	// Una sección de productos que repite lo de las anteriores no se dibuja (datos.ts).
+	const repetidos = $derived(productosQueSuman(ctx.tienda, conDatos));
 	const visibles = $derived(
 		conDatos.filter(
-			(b) => b.tipo !== 'galeria' || fotosGaleria(ctx.tienda, b, usadas.get(b.id)).length > 0
+			(b) =>
+				!repetidos.has(b.id) &&
+				(b.tipo !== 'galeria' || fotosGaleria(ctx.tienda, b, usadas.get(b.id)).length > 0)
 		)
 	);
 	const conPlanes = $derived(

@@ -443,6 +443,12 @@
 .tv-cat-res .tv-cat-grilla {
 	grid-template-columns: repeat(var(--cat-cols, 4), minmax(0, 1fr)) !important;
 }
+/* En un monitor grande, una columna más dentro del mismo ancho (4 → 5). */
+@media (min-width: 1800px) {
+	.tv-cat-res .tv-cat-grilla {
+		grid-template-columns: repeat(min(calc(var(--cat-cols, 4) + 1), 5), minmax(0, 1fr)) !important;
+	}
+}
 @media (max-width: 999px) {
 	.tv-cat-res .tv-cat-grilla {
 		grid-template-columns: repeat(min(var(--cat-cols, 4), 3), minmax(0, 1fr)) !important;

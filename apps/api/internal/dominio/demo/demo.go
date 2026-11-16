@@ -315,7 +315,8 @@ func Diseno(t Tienda) mitienda.Diseno {
 	var inicio []mitienda.Bloque
 	for _, b := range d.Inicio {
 		inicio = append(inicio, b)
-		if x, ok := extra[b.Tipo]; ok {
+		// Por id: las otras secciones de productos (novedades, ofertas) no llevan banner.
+		if x, ok := extra[b.ID]; ok {
 			inicio = append(inicio, x)
 		}
 	}
