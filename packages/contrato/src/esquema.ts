@@ -2487,6 +2487,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/panel/configuracion/cobros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Guarda Configuración › Cobros, las cuotas sin interés y el precio sin impuestos nacionales.
+         * @description Cuotas 0 es «Ninguna» y apaga la promoción automática «Cuotas sin interés» de Cupones (el
+         *     mismo interruptor); las elegidas quedan guardadas y vuelven si se prende desde Cupones. El
+         *     costo de las cuotas lo absorbe la tienda, y tiene que activarlas también en su cuenta de
+         *     Mercado Pago. Sin Mercado Pago conectado, la tienda no las ofrece aunque estén elegidas.
+         *     `impuestos.mostrar` reemplaza al valor por defecto (prendido para responsables inscriptos).
+         */
+        put: operations["guardarCobros"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panel/configuracion/{grupo}/{clave}": {
         parameters: {
             query?: never;
@@ -3983,6 +4007,11 @@ export interface components {
              * @enum {string|null}
              */
             tipo?: "ropa" | "calzado" | "alimentos" | "belleza" | "hogar" | "tecnologia" | "otro" | null;
+            /**
+             * @description Alícuota de IVA del producto (21 por defecto), para el precio sin impuestos nacionales. Al guardar: sin mandar queda la que había (21 en uno nuevo)
+             * @enum {number}
+             */
+            iva?: 0 | 10.5 | 21 | 27;
             /** @description Los datos del tipo: peso (gramos), alto, ancho y largo (centímetros), contenido, material, marca, modelo, garantia. Textos de hasta 60 letras; los vacíos se descartan. Sin mandar: quedan los que había */
             atributos?: {
                 [key: string]: string;
@@ -5022,9 +5051,30 @@ export interface components {
             /** @description Mínimo del carrito en pesos, a precio minorista (null: sin mínimo de monto) */
             monto: number | null;
         };
+        /** @description Configuración › Cobros: lo que ve quien compra sobre cómo paga (docs/especificaciones/tienda-nivel-tiendanube.md) */
+        CobrosTienda: {
+            /**
+             * @description Cuotas sin interés que ofrece la tienda (0: ninguna). El costo lo absorbe la tienda; la preferencia de Checkout Pro del pedido limita installments a este máximo
+             * @enum {integer}
+             */
+            cuotas: 0 | 3 | 6 | 9 | 12;
+            /**
+             * @description Monto mínimo del carrito para ofrecer las cuotas, en pesos
+             * @default 30000
+             */
+            cuotasDesde: number;
+            impuestos: {
+                /** @description Mostrar «Precio sin impuestos nacionales» (Ley 27.743). Sin elegir: true si negocio.condicion es responsable inscripto (o ARCA lo dice), false si es monotributo */
+                mostrar: boolean;
+            };
+        };
         Configuracion: {
             negocio: components["schemas"]["Negocio"];
             mayorista: components["schemas"]["VentaMayorista"];
+            cobros: components["schemas"]["CobrosTienda"] & {
+                /** @description Mercado Pago conectado: sin eso la tienda no ofrece cuotas aunque estén elegidas */
+                mercadoPago: boolean;
+            };
             equipo: components["schemas"]["Miembro"][];
             /** @description Opciones de la persona que mira (no de la tienda). */
             seguridad: {
@@ -9103,9 +9153,45 @@ export interface operations {
                             stock?: number;
                             /** Format: date-time */
                             alta?: string;
+                            /**
+                             * @description Alícuota de IVA. Precio sin impuestos nacionales = precio / (1 + iva/100), redondeado a centavos
+                             * @enum {number}
+                             */
+                            iva?: 0 | 10.5 | 21 | 27;
+                            variantes?: ({
+                                /**
+                                 * @description La del producto
+                                 * @enum {number}
+                                 */
+                                iva?: 0 | 10.5 | 21 | 27;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
                         } & {
                             [key: string]: unknown;
                         })[];
+                        cobros?: {
+                            /** @description % de descuento pagando con transferencia (0: sin descuento) */
+                            transferencia: number;
+                            /**
+                             * @description Cuotas sin interés que ofrece (Configuración › Cobros). 0 sin Mercado Pago conectado o si no eligió
+                             * @enum {integer}
+                             */
+                            cuotas: 0 | 3 | 6 | 9 | 12;
+                            /** @description Monto mínimo (pesos) para ofrecerlas; 0 cuando cuotas es 0 */
+                            cuotasDesde: number;
+                            mercadoPago: boolean;
+                            datosTransferencia: {
+                                [key: string]: unknown;
+                            } | null;
+                            facturaA?: boolean;
+                            impuestos: {
+                                /** @description Mostrar «Precio sin impuestos nacionales» (Ley 27.743) */
+                                mostrar: boolean;
+                            };
+                        } & {
+                            [key: string]: unknown;
+                        };
                         envios?: {
                             /** @description Envío gratis desde este monto: la barra «Te faltan $ X» (estilo.conversion.envioGratis) */
                             gratisDesde?: number | null;
@@ -11102,6 +11188,29 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VentaMayorista"];
+            };
+        };
+        responses: {
+            /** @description Guardado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problema"];
+        };
+    };
+    guardarCobros: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CobrosTienda"];
             };
         };
         responses: {

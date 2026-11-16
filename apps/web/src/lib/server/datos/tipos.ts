@@ -78,6 +78,8 @@ export type Medicion = components['schemas']['Medicion'];
 export type Entregas = components['schemas']['Entregas'];
 export type EstadoEntregas = components['schemas']['EstadoEntregas'];
 export type VentaMayorista = components['schemas']['VentaMayorista'];
+/** Configuración › Cobros: cuotas sin interés y precio sin impuestos nacionales. */
+export type CobrosTienda = components['schemas']['CobrosTienda'];
 export type PublicacionML = components['schemas']['PublicacionML'];
 export type ArcaConfig = components['schemas']['ArcaConfig'];
 export type ArcaAlta = components['schemas']['ArcaAlta'];
@@ -247,6 +249,8 @@ export interface Datos {
 	guardarEntregas(e: Entregas): Promise<void>;
 	/** Venta mayorista (§49): prendida o apagada y el mínimo; sin mínimo, error 400 con el motivo. */
 	guardarMayorista(m: VentaMayorista): Promise<void>;
+	/** Cuotas sin interés (0, 3, 6, 9, 12 y desde cuánto) y si se muestra el precio sin impuestos. */
+	guardarCobros(c: CobrosTienda): Promise<void>;
 	/** Mercado Libre como canal (OAuth de la tienda). */
 	mercadoLibre(): Promise<ConexionML>;
 	conectarMercadoLibre(): Promise<string | null>;

@@ -17,6 +17,7 @@
 		type Variante
 	} from '#lib/tienda/variantes.ts';
 	import type { components } from '@mostrador/contrato/esquema';
+	import { IVA_INICIAL, IVAS, type Iva } from '#lib/tienda/cobros.ts';
 	import type { VentaMayorista } from '#lib/tienda/mayorista.ts';
 	import {
 		adivinarTipo,
@@ -67,6 +68,8 @@
 	// Precio mayorista (§49): 0 es «no tiene» (así lo saca Go al guardar).
 	let precioMayor = $state(0);
 	let costo = $state(0);
+	// Alícuota de IVA, para el precio sin impuestos nacionales (21 % salvo que se elija otra).
+	let iva = $state<Iva>(IVA_INICIAL);
 	// Ventas edita el producto pero no los precios ni los costos (docs/decisiones.md §37): se ven sin
 	// poder cambiarlos y el costo no se muestra. Go igual conserva los que había.
 	const conPrecios = $derived((page.data.acceso?.permisos ?? ['catalogo']).includes('catalogo'));
@@ -154,6 +157,7 @@
 		precio = p?.precio ?? 0;
 		precioMayor = p?.precioMayorista ?? 0;
 		costo = p?.costo ?? 0;
+		iva = (p?.iva as Iva | undefined) ?? IVA_INICIAL;
 		stock = p?.stock ?? 0;
 		categoria = p?.categoria ?? '';
 		canales = { web: true, ml: false, ig: false, google: false, ...(p?.canales ?? {}) };
@@ -359,6 +363,7 @@
 				precio,
 				precioMayorista: precioMayor,
 				costo,
+				iva,
 				stock,
 				foto: fotos[0] ?? null,
 				fotos,
@@ -600,9 +605,18 @@
 							value={costo ? pesos(costo) : ''}
 							onchange={(e) => (costo = numero(e.currentTarget.value))}
 						/>
+						· IVA
+						<select class="costo iva" aria-label="IVA" bind:value={iva}>
+							{#each IVAS as a (a)}<option value={a}>{String(a).replace('.', ',')} %</option>{/each}
+						</select>
 					</div>
 				{:else}
-					<div class="margen">Los precios los cambia la dueña o administración.</div>
+					<div class="margen">
+						Los precios los cambia la dueña o administración · IVA {String(iva).replace(
+							'.',
+							','
+						)}&nbsp;%
+					</div>
 				{/if}
 			</div>
 
@@ -1142,6 +1156,12 @@
 		font-size: 12.5px;
 		font-weight: 600;
 		outline: none;
+	}
+	.costo.iva {
+		width: auto;
+		min-height: 28px;
+		padding: 0 2px;
+		cursor: pointer;
 	}
 	.variantes {
 		margin-top: 8px;

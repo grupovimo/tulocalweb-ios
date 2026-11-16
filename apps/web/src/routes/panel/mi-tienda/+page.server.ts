@@ -48,7 +48,9 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 			todoElPais: tienda.envios.correo,
 			retiro: tienda.envios.retiro,
 			mercadoPago: tienda.cobros.mercadoPago,
+			// Las de Configuración › Cobros: la vidriera las manda en 0 sin Mercado Pago o sin elegir.
 			cuotasSinInteres: tienda.cobros.mercadoPago && tienda.cobros.cuotas > 1,
+			cuotasMax: tienda.cobros.cuotas,
 			transferencia: tienda.cobros.transferencia > 0
 		}
 	};

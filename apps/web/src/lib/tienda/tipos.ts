@@ -54,6 +54,11 @@ export type ProductoPublico = {
 	ofertaHasta?: string | null;
 	/** ISO de cuándo se cargó: la etiqueta «Nuevo» (estilo.conversion, 14 días o menos). */
 	alta?: string;
+	/**
+	 * Alícuota de IVA (21, 10.5, 27 o 0): con `cobros.impuestos.mostrar`, «Precio sin impuestos
+	 * nacionales» = precio / (1 + iva/100), redondeado a centavos. Sin venir, 21.
+	 */
+	iva?: number;
 };
 
 export type OpcionProducto = { nombre: string; valores: string[] };
@@ -66,6 +71,8 @@ export type VariantePublica = {
 	mayorista?: number | null;
 	stock: number;
 	foto: string | null;
+	/** La del producto (las variantes no tienen alícuota propia). */
+	iva?: number;
 };
 
 export type ResenaPublica = {
@@ -125,12 +132,20 @@ export type TiendaPublica = {
 	fotos: string[];
 	cobros: {
 		transferencia: number;
+		/**
+		 * Cuotas sin interés que ofrece (Configuración › Cobros): 0, 3, 6, 9 o 12. 0 sin Mercado Pago
+		 * o si no eligió: entonces no se prometen.
+		 */
 		cuotas: number;
+		/** Monto mínimo (pesos) para ofrecerlas; 0 cuando `cuotas` es 0. */
+		cuotasDesde?: number;
 		mercadoPago: boolean;
 		/** Datos para transferir que cargó la tienda (null: no ofrece transferencia). `ejemplo` en la demo. */
 		datosTransferencia: { alias: string; cbu: string; titular: string; ejemplo?: boolean } | null;
 		/** Responsable inscripta con ARCA conectado: el checkout pide CUIT y razón social para factura A. */
 		facturaA?: boolean;
+		/** Mostrar «Precio sin impuestos nacionales» (Ley 27.743). */
+		impuestos?: { mostrar: boolean };
 	};
 	/**
 	 * Cómo entrega (Configuración › Envíos y retiro). Sin retiro, su dirección y horario van vacíos;

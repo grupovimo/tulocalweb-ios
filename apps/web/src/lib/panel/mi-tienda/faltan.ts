@@ -35,6 +35,8 @@ export type Ofrece = {
 	retiro: boolean;
 	mercadoPago: boolean;
 	cuotasSinInteres: boolean;
+	/** Cuántas cuotas sin interés eligió en Configuración › Cobros (0: ninguna). */
+	cuotasMax?: number;
 	transferencia: boolean;
 };
 
@@ -55,7 +57,7 @@ const PROMESAS: { re: RegExp; si: (o: Ofrece) => boolean; dice: string; falta: s
 		re: /sin\s+inter[eé]s/i,
 		si: (o) => o.cuotasSinInteres,
 		dice: 'cuotas sin interés',
-		falta: 'al pagar no se ofrecen cuotas sin interés'
+		falta: 'al pagar no se ofrecen cuotas sin interés (Configuración › Cobros)'
 	},
 	{
 		re: /cuotas/i,
@@ -94,7 +96,16 @@ export function queContradice(datos: unknown, cx: Pick<Contexto, 'ofrece'>): str
 	if (!o) return null;
 	const todo = textos(datos).join(' \n ');
 	const p = PROMESAS.find((x) => x.re.test(todo) && !x.si(o));
-	return p ? `Dice «${p.dice}», pero ${p.falta}.` : null;
+	if (p) return `Dice «${p.dice}», pero ${p.falta}.`;
+	// «12 cuotas sin interés» con 6 elegidas: promete más de lo que se cobra.
+	if (o.cuotasSinInteres && o.cuotasMax) {
+		const mas = [...todo.matchAll(/(\d+)\s*cuotas\s+sin\s+inter[eé]s/gi)]
+			.map((m) => Number(m[1]))
+			.find((n) => n > o.cuotasMax!);
+		if (mas)
+			return `Dice «${mas} cuotas sin interés», pero ofrecés hasta ${o.cuotasMax} (Configuración › Cobros).`;
+	}
+	return null;
 }
 
 const vacio = (v: unknown) =>

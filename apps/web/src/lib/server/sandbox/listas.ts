@@ -8,6 +8,7 @@ import type { components } from '@mostrador/contrato/esquema';
 import type { Demo, Pedido } from './demo.ts';
 import type { OpcionProducto } from '#lib/tienda/tipos.ts';
 import { adivinarTipo, type TipoProducto } from '#lib/tienda/tipo-producto.ts';
+import { IVA_INICIAL } from '#lib/tienda/cobros.ts';
 import { stockTotal, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
 
 type ListaGenerica = components['schemas']['ListaGenerica'];
@@ -345,6 +346,8 @@ export type CambioProducto = {
 	precioMayorista?: number | null;
 	/** Qué es (00071) y sus datos: peso, medidas, contenido… */
 	tipo?: TipoProducto | null;
+	/** Alícuota de IVA (00086); sin venir, la de ejemplo. */
+	iva?: number;
 	atributos?: Record<string, string>;
 	costo?: number;
 	sku?: string;
@@ -378,6 +381,8 @@ export type RegProducto = {
 	precioMayorista: number | null;
 	tipo: TipoProducto | null;
 	atributos: Record<string, string>;
+	/** Alícuota de IVA: 21, 10.5, 27 o 0 (el precio sin impuestos nacionales). */
+	iva: number;
 	costo: number;
 	/** null: sin costo cargado. */
 	margen: number | null;
@@ -415,6 +420,13 @@ function conVariantes(
 	}));
 	return { fotos, foto: c.fotos ? (c.fotos[0] ?? null) : fotoBase, opciones, variantes };
 }
+
+/**
+ * El IVA de los productos de ejemplo: 10,5 % los alimentos básicos que lo tienen reducido (frutas,
+ * verduras, carne, pan, harinas), 21 % todo lo demás.
+ */
+const ivaDeEjemplo = (categoria: string) =>
+	/frut|verdur|carne|panader|pan\b|harin|legumbr|huevo/i.test(categoria) ? 10.5 : IVA_INICIAL;
 
 export function registrosProductos(
 	d: Demo,
@@ -479,6 +491,7 @@ export function registrosProductos(
 			precioMayorista,
 			tipo: c.tipo !== undefined ? c.tipo : adivinarTipo(v.opciones),
 			atributos: c.atributos ?? {},
+			iva: c.iva ?? ivaDeEjemplo((c.categoria ?? p.categoria) || ''),
 			costo: c.costo ?? Math.round((precio * (1 - margen / 100)) / 10) * 10,
 			stock: v.opciones.length
 				? stockTotal(v.variantes)
@@ -505,6 +518,7 @@ export function registrosProductos(
 				precioMayorista: c.precioMayorista ?? null,
 				tipo: c.tipo ?? null,
 				atributos: c.atributos ?? {},
+				iva: c.iva ?? IVA_INICIAL,
 				costo: c.costo ?? 0,
 				stock: v.opciones.length
 					? stockTotal(v.variantes)

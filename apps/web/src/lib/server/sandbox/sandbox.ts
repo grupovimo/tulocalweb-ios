@@ -101,6 +101,7 @@ import type {
 	Entregas,
 	EstadoEntregas,
 	VentaMayorista,
+	CobrosTienda,
 	ConexionMP,
 	PublicacionML,
 	Dominios,
@@ -289,6 +290,13 @@ import {
 	type MinimoMayorista
 } from '#lib/tienda/mayorista.ts';
 import { pesos } from '#lib/panel/formato.ts';
+import {
+	CUOTAS_INICIAL,
+	type Iva,
+	DESDE_INICIAL,
+	problemaCobros,
+	responsableInscripto
+} from '#lib/tienda/cobros.ts';
 import { generarVariantes, precioDe, textoVariante, type Variante } from '#lib/tienda/variantes.ts';
 import {
 	aplicarLanzamiento,
@@ -626,6 +634,44 @@ export type TipoExport =
 type AumentoProgramado = { pct: number; redondeo: Redondeo; para: number };
 
 /** La medición guardada en los cambios de Integraciones (la demo arranca sin IDs). */
+/** Lo elegido en Configuración › Cobros (cambios 'cobros'), o 6 cuotas desde $ 30.000 de entrada. */
+function cuotasElegidas(c: Map<string, unknown>) {
+	return (
+		(c.get('cuotas') as { cuotas: number; cuotasDesde: number } | undefined) ?? {
+			cuotas: CUOTAS_INICIAL,
+			cuotasDesde: DESDE_INICIAL
+		}
+	);
+}
+
+/**
+ * Configuración › Cobros como cobros.Leer: las cuotas valen con la automática «Cuotas sin interés»
+ * prendida (en la demo arranca prendida, como en Cupones); sin elegir, el precio sin impuestos se
+ * muestra si el negocio es responsable inscripto.
+ */
+function cobrosDe(
+	autos: Map<string, unknown>,
+	c: Map<string, unknown>,
+	condicion: string | undefined
+): CobrosTienda {
+	const activa = (autos.get('cuotas') as { activa: boolean } | null | undefined)?.activa ?? true;
+	const e = cuotasElegidas(c);
+	const imp = c.get('impuestos') as { mostrar: boolean } | undefined;
+	return {
+		cuotas: (activa ? e.cuotas : 0) as CobrosTienda['cuotas'],
+		cuotasDesde: e.cuotasDesde,
+		impuestos: { mostrar: imp?.mostrar ?? responsableInscripto(condicion) }
+	};
+}
+
+/** «6 cuotas sin interés desde $ 30.000», como cobros.Config.Detalle (con las elegidas aunque esté apagada). */
+function detalleCuotas(c: Map<string, unknown>) {
+	const e = cuotasElegidas(c);
+	return e.cuotasDesde
+		? `${e.cuotas} cuotas sin interés desde ${pesos(e.cuotasDesde)}`
+		: `${e.cuotas} cuotas sin interés en cualquier compra`;
+}
+
 function medicionDe(c: Map<string, unknown>): Medicion {
 	const m = c.get('medicion') as Medicion | undefined;
 	const demo = (c.get('conectadas') as Record<string, boolean> | undefined) ?? {};
@@ -932,7 +978,8 @@ export class DatosSandbox implements Datos {
 			variantes: p.variantes.map((v) => ({ ...v, sku: '', stock: 0 })),
 			canales: { web: false },
 			tipo: p.tipo,
-			atributos: p.atributos
+			atributos: p.atributos,
+			iva: p.iva
 		});
 		return copia;
 	}
@@ -1403,7 +1450,8 @@ export class DatosSandbox implements Datos {
 			vendidos30d: p.vendidos30,
 			slug: slugProducto(p.nombre),
 			tipo: p.tipo,
-			atributos: p.atributos
+			atributos: p.atributos,
+			iva: p.iva as Iva
 		};
 	}
 
@@ -1488,6 +1536,8 @@ export class DatosSandbox implements Datos {
 			opciones,
 			variantes,
 			canales: p.canales ?? antes.canales,
+			// Como Go: sin venir queda la que había (21 en uno nuevo).
+			iva: p.iva ?? antes.iva,
 			// Como Go: sin venir quedan los que había; los datos vacíos se descartan.
 			tipo: p.tipo ?? antes.tipo,
 			atributos:
@@ -1821,14 +1871,15 @@ export class DatosSandbox implements Datos {
 
 	async cupones(): Promise<Cupones> {
 		const d = await this.demo();
-		const [cambios, nuevos, consejo, autos, rel, clientes, mayorista] = await Promise.all([
+		const [cambios, nuevos, consejo, autos, rel, clientes, mayorista, cuotas] = await Promise.all([
 			cambiosDe(this.db, this.sb.id, 'cupon'),
 			this.cuponesNuevos(),
 			cambiosDe(this.db, this.sb.id, 'cupones'),
 			cambiosDe(this.db, this.sb.id, 'automatica'),
 			cambiosDe(this.db, this.sb.id, 'relampago'),
 			this.regClientes(),
-			this.ventaMayorista()
+			this.ventaMayorista(),
+			cambiosDe(this.db, this.sb.id, 'cobros')
 		]);
 		const c = cuponesDemo(
 			d,
@@ -1860,7 +1911,9 @@ export class DatosSandbox implements Datos {
 					? { ...a, detalle: `Desde ${desde}, con el precio mayorista de cada producto` }
 					: a.id === 'envio'
 						? { ...a, detalle: `Desde ${pesos(gratis.monto)} en moto y por Correo` }
-						: a
+						: a.id === 'cuotas'
+							? { ...a, detalle: `${detalleCuotas(cuotas)}, con Mercado Pago` }
+							: a
 			)
 		};
 	}
@@ -2569,13 +2622,40 @@ export class DatosSandbox implements Datos {
 	}
 
 	async configuracion(): Promise<Configuracion> {
-		const [d, t, e, mayorista] = await Promise.all([
+		const [d, t, e, mayorista, autos, c, mp] = await Promise.all([
 			this.demo(),
 			this.tienda(),
 			this.estadoCuenta(),
-			this.ventaMayorista()
+			this.ventaMayorista(),
+			cambiosDe(this.db, this.sb.id, 'automatica'),
+			cambiosDe(this.db, this.sb.id, 'cobros'),
+			this.mercadoPago()
 		]);
-		return { ...configuracionDemo(d, t.nombre, Date.now(), DIAS_DE_PRUEBA, e), mayorista };
+		const conf = configuracionDemo(d, t.nombre, Date.now(), DIAS_DE_PRUEBA, e);
+		return {
+			...conf,
+			mayorista,
+			cobros: { ...cobrosDe(autos, c, conf.negocio.condicion), mercadoPago: mp.conectada }
+		};
+	}
+
+	/**
+	 * Configuración › Cobros (como cobros.Guardar): cuotas 0 apaga la automática «Cuotas sin interés»
+	 * de Cupones y deja guardadas las elegidas; `impuestos` pisa lo que sale de la condición fiscal.
+	 */
+	async guardarCobros(c: CobrosTienda): Promise<void> {
+		const mal = problemaCobros(c);
+		if (mal) error(400, mal);
+		const antes = (await cambiosDe(this.db, this.sb.id, 'cobros')).get('cuotas') as
+			{ cuotas: number } | undefined;
+		await guardarCambio(this.db, this.sb.id, 'cobros', 'cuotas', {
+			cuotas: c.cuotas || (antes?.cuotas ?? CUOTAS_INICIAL),
+			cuotasDesde: c.cuotasDesde
+		});
+		await guardarCambio(this.db, this.sb.id, 'cobros', 'impuestos', {
+			mostrar: c.impuestos.mostrar
+		});
+		await guardarCambio(this.db, this.sb.id, 'automatica', 'cuotas', { activa: c.cuotas > 0 });
 	}
 
 	/**
@@ -3746,6 +3826,7 @@ export class DatosSandbox implements Datos {
 				alta: altaDe(x.id),
 				fotos: x.fotos,
 				opciones: x.opciones,
+				iva: x.iva,
 				// Sólo las activas, sin SKU.
 				variantes: x.variantes
 					.filter((v) => v.activa)
@@ -3755,7 +3836,8 @@ export class DatosSandbox implements Datos {
 						precio: v.precio,
 						mayorista: soloSi(v.precioMayorista),
 						stock: v.stock,
-						foto: v.foto
+						foto: v.foto,
+						iva: x.iva
 					}))
 			})),
 			masVendidos,
@@ -3766,7 +3848,10 @@ export class DatosSandbox implements Datos {
 			fotos: [...new Set(visibles.flatMap((x) => (x.foto ? [x.foto] : [])))].slice(0, 6),
 			cobros: {
 				transferencia: 15,
-				cuotas: 6,
+				// Como Go: las cuotas que eligió (en la demo arrancan 6 desde $ 30.000), sólo con Mercado Pago.
+				cuotas: mp.conectada ? conf.cobros.cuotas : 0,
+				cuotasDesde: mp.conectada && conf.cobros.cuotas ? conf.cobros.cuotasDesde : 0,
+				impuestos: conf.cobros.impuestos,
 				mercadoPago: mp.conectada,
 				// Lo que cargó el visitante en Configuración › Negocio, o uno de ejemplo rotulado así.
 				datosTransferencia:

@@ -37,6 +37,7 @@ import type {
 	Entregas,
 	EstadoEntregas,
 	VentaMayorista,
+	CobrosTienda,
 	ConexionMP,
 	PublicacionML,
 	Dominios,
@@ -627,6 +628,9 @@ export class DatosApi implements Datos {
 	}
 	guardarMayorista(m: VentaMayorista) {
 		return this.pedir<void>('/v1/panel/configuracion/mayorista', 'PUT', m);
+	}
+	guardarCobros(c: CobrosTienda) {
+		return this.pedir<void>('/v1/panel/configuracion/cobros', 'PUT', c);
 	}
 	async ajustarIntegracion(a: AjusteIntegracion) {
 		// Por ahora sólo los permisos de las IA se guardan en la API; el resto llega con cada integración.

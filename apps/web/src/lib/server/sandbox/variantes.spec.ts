@@ -61,6 +61,7 @@ describe('variantes de la demo', () => {
 		expect(Object.keys(pub.variantes[0]).sort()).toEqual([
 			'foto',
 			'id',
+			'iva',
 			'mayorista',
 			'precio',
 			'stock',

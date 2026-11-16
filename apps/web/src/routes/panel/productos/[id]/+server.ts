@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { datosDe } from '#lib/server/datos/index.ts';
+import { IVAS } from '#lib/tienda/cobros.ts';
 import { CAMPOS, TIPOS, type Atributo } from '#lib/tienda/tipo-producto.ts';
 import { errorOpciones, errorVariantes, MAX_FOTOS, MAX_VARIANTES } from '#lib/tienda/variantes.ts';
 import type { RequestHandler } from './$types';
@@ -61,6 +62,8 @@ const Editable = v.object({
 		)
 	),
 	canales: v.optional(v.record(v.picklist(['web', 'ml', 'ig', 'google']), v.boolean())),
+	// Alícuota de IVA, para el precio sin impuestos nacionales: sin venir, queda la que había (21).
+	iva: v.optional(v.picklist(IVAS, 'El IVA tiene que ser 21 %, 10,5 %, 27 % o 0 %.')),
 	// Qué es y sus datos (peso, medidas, contenido…): sin venir, quedan los que había.
 	tipo: v.optional(v.nullable(v.picklist(TIPOS.map((t) => t.id)))),
 	atributos: v.optional(

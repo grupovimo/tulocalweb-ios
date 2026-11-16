@@ -86,7 +86,7 @@ export function configuracionDemo(
 	ahora: number,
 	diasPrueba: number,
 	e: EstadoCuenta
-): Omit<Configuracion, 'mayorista'> {
+): Omit<Configuracion, 'mayorista' | 'cobros'> {
 	const dom = `${dominio(tienda)}.com.ar`;
 	const negocio: Negocio = {
 		nombre: tienda,

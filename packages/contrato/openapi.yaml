@@ -1367,7 +1367,28 @@ paths:
                   productos:
                     type: array
                     description: 'Cada producto trae además stock (para «Quedan N» y «Últimas N») y alta (fecha de carga, para «Nuevo»: 14 días o menos)'
-                    items: { type: object, additionalProperties: true, properties: { stock: { type: integer }, alta: { type: string, format: date-time } } }
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        stock: { type: integer }
+                        alta: { type: string, format: date-time }
+                        iva: { type: number, enum: [0, 10.5, 21, 27], description: 'Alícuota de IVA. Precio sin impuestos nacionales = precio / (1 + iva/100), redondeado a centavos' }
+                        variantes:
+                          type: array
+                          items: { type: object, additionalProperties: true, properties: { iva: { type: number, enum: [0, 10.5, 21, 27], description: 'La del producto' } } }
+                  cobros:
+                    type: object
+                    additionalProperties: true
+                    required: [transferencia, cuotas, cuotasDesde, mercadoPago, datosTransferencia, impuestos]
+                    properties:
+                      transferencia: { type: integer, description: '% de descuento pagando con transferencia (0: sin descuento)' }
+                      cuotas: { type: integer, enum: [0, 3, 6, 9, 12], description: 'Cuotas sin interés que ofrece (Configuración › Cobros). 0 sin Mercado Pago conectado o si no eligió' }
+                      cuotasDesde: { type: integer, description: 'Monto mínimo (pesos) para ofrecerlas; 0 cuando cuotas es 0' }
+                      mercadoPago: { type: boolean }
+                      datosTransferencia: { type: [object, 'null'], additionalProperties: true }
+                      facturaA: { type: boolean }
+                      impuestos: { type: object, required: [mostrar], properties: { mostrar: { type: boolean, description: 'Mostrar «Precio sin impuestos nacionales» (Ley 27.743)' } } }
                   envios: { type: object, additionalProperties: true, properties: { gratisDesde: { type: [integer, 'null'], description: 'Envío gratis desde este monto: la barra «Te faltan $ X» (estilo.conversion.envioGratis)' } } }
         '404': { $ref: '#/components/responses/Problema' }
   /v1/publico/tiendas/{slug}/pedidos:
@@ -2545,6 +2566,24 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/VentaMayorista' }
+      responses:
+        '204': { description: Guardado }
+        '400': { $ref: '#/components/responses/Problema' }
+  /v1/panel/configuracion/cobros:
+    put:
+      operationId: guardarCobros
+      summary: Guarda Configuración › Cobros, las cuotas sin interés y el precio sin impuestos nacionales.
+      description: |
+        Cuotas 0 es «Ninguna» y apaga la promoción automática «Cuotas sin interés» de Cupones (el
+        mismo interruptor); las elegidas quedan guardadas y vuelven si se prende desde Cupones. El
+        costo de las cuotas lo absorbe la tienda, y tiene que activarlas también en su cuenta de
+        Mercado Pago. Sin Mercado Pago conectado, la tienda no las ofrece aunque estén elegidas.
+        `impuestos.mostrar` reemplaza al valor por defecto (prendido para responsables inscriptos).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CobrosTienda' }
       responses:
         '204': { description: Guardado }
         '400': { $ref: '#/components/responses/Problema' }
@@ -4143,6 +4182,7 @@ components:
           type: [string, 'null']
           enum: [ropa, calzado, alimentos, belleza, hogar, tecnologia, otro, null]
           description: 'Qué es: según el tipo el editor pide talle y color, contenido, peso y medidas… Sin mandar (o null): queda el que había. En la ficha, null: no se eligió'
+        iva: { type: number, enum: [0, 10.5, 21, 27], description: 'Alícuota de IVA del producto (21 por defecto), para el precio sin impuestos nacionales. Al guardar: sin mandar queda la que había (21 en uno nuevo)' }
         atributos:
           type: object
           description: 'Los datos del tipo: peso (gramos), alto, ancho y largo (centímetros), contenido, material, marca, modelo, garantia. Textos de hasta 60 letras; los vacíos se descartan. Sin mandar: quedan los que había'
@@ -4191,7 +4231,7 @@ components:
       allOf:
         - { $ref: '#/components/schemas/ProductoEditable' }
         - type: object
-          required: [id, publicado, vendidos30d, slug, fotos, opciones, variantes, tipo, atributos]
+          required: [id, publicado, vendidos30d, slug, fotos, opciones, variantes, tipo, atributos, iva]
           properties:
             id: { type: string }
             publicado: { type: boolean }
@@ -5243,12 +5283,31 @@ components:
         activa: { type: boolean }
         unidades: { type: [integer, 'null'], minimum: 2, maximum: 10000, description: 'Mínimo de unidades en el carrito (null: sin mínimo de unidades)' }
         monto: { type: [integer, 'null'], minimum: 1, maximum: 100000000, description: 'Mínimo del carrito en pesos, a precio minorista (null: sin mínimo de monto)' }
+    CobrosTienda:
+      type: object
+      required: [cuotas, cuotasDesde, impuestos]
+      description: 'Configuración › Cobros: lo que ve quien compra sobre cómo paga (docs/especificaciones/tienda-nivel-tiendanube.md)'
+      properties:
+        cuotas: { type: integer, enum: [0, 3, 6, 9, 12], description: 'Cuotas sin interés que ofrece la tienda (0: ninguna). El costo lo absorbe la tienda; la preferencia de Checkout Pro del pedido limita installments a este máximo' }
+        cuotasDesde: { type: integer, minimum: 0, maximum: 100000000, default: 30000, description: 'Monto mínimo del carrito para ofrecer las cuotas, en pesos' }
+        impuestos:
+          type: object
+          required: [mostrar]
+          properties:
+            mostrar: { type: boolean, description: 'Mostrar «Precio sin impuestos nacionales» (Ley 27.743). Sin elegir: true si negocio.condicion es responsable inscripto (o ARCA lo dice), false si es monotributo' }
     Configuracion:
       type: object
-      required: [negocio, equipo, seguridad, sesiones, avisos, plan, mayorista]
+      required: [negocio, equipo, seguridad, sesiones, avisos, plan, mayorista, cobros]
       properties:
         negocio: { $ref: '#/components/schemas/Negocio' }
         mayorista: { $ref: '#/components/schemas/VentaMayorista' }
+        cobros:
+          allOf:
+            - { $ref: '#/components/schemas/CobrosTienda' }
+            - type: object
+              required: [mercadoPago]
+              properties:
+                mercadoPago: { type: boolean, description: 'Mercado Pago conectado: sin eso la tienda no ofrece cuotas aunque estén elegidas' }
         equipo: { type: array, items: { $ref: '#/components/schemas/Miembro' } }
         seguridad:
           type: object

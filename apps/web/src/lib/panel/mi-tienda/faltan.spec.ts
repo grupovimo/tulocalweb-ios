@@ -9,7 +9,7 @@ const nada: Ofrece = {
 	cuotasSinInteres: false,
 	transferencia: false
 };
-const todo: Ofrece = Object.fromEntries(Object.keys(nada).map((k) => [k, true])) as Ofrece;
+const todo = Object.fromEntries(Object.keys(nada).map((k) => [k, true])) as unknown as Ofrece;
 
 describe('textos que prometen lo que la tienda no ofrece', () => {
 	const beneficios = {
@@ -37,6 +37,13 @@ describe('textos que prometen lo que la tienda no ofrece', () => {
 			/transferencia/
 		);
 		expect(queContradice(['Hecho a mano en Córdoba'], { ofrece: nada })).toBeNull();
+	});
+	it('más cuotas sin interés que las elegidas en Cobros', () => {
+		const seis = { ...todo, cuotasMax: 6 };
+		expect(queContradice(['12 cuotas sin interés'], { ofrece: seis })).toBe(
+			'Dice «12 cuotas sin interés», pero ofrecés hasta 6 (Configuración › Cobros).'
+		);
+		expect(queContradice(['3 y 6 cuotas sin interés'], { ofrece: seis })).toBeNull();
 	});
 	it('sin saber qué ofrece la tienda, no avisa', () => {
 		expect(queContradice(beneficios, {})).toBeNull();

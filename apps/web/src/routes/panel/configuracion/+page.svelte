@@ -8,6 +8,7 @@
 	import Interruptor from '#lib/components/Interruptor.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import Qr from '#lib/marca/Qr.svelte';
+	import Segmentado from '#lib/components/Segmentado.svelte';
 	import Seo from '#lib/components/Seo.svelte';
 	import * as I from '#lib/icons.ts';
 	import { unsplash } from '#lib/landing/formato.ts';
@@ -15,6 +16,7 @@
 	import { diaDeMes, haceCorto, pesos } from '#lib/panel/formato.ts';
 	import { AREAS, NOMBRE_ROL } from '#lib/panel/permisos.ts';
 	import { PLANES } from '#lib/panel/planes.ts';
+	import { CUOTAS, MP_CUOTAS, type Cuotas } from '#lib/tienda/cobros.ts';
 	import { HOST, MAX_CAMBIOS_POR_DIA, slugFinal } from '#lib/tienda/direccion.ts';
 	import { getUi } from '#lib/ui.svelte.ts';
 
@@ -31,6 +33,7 @@
 	// de cada persona, así que las ve cualquiera del equipo.
 	const TODAS = [
 		['negocio', I.phStorefrontFill, 'Negocio', 'tienda'],
+		['cobros', I.phCreditCardFill, 'Cobros', 'tienda'],
 		['equipo', I.phUsersThreeFill, 'Equipo y permisos', 'cuenta'],
 		['seguridad', I.phShieldCheckFill, 'Seguridad', 'panel'],
 		['avisos', I.phBellRingingFill, 'Notificaciones', 'tienda'],
@@ -261,6 +264,37 @@
 			() => guardarMayorista(antes.activa, { unidades: antes.unidades, monto: antes.monto }, true)
 		);
 	}
+
+	// ---- Cobros: cuotas sin interés y precio sin impuestos nacionales ----
+	// Las cuotas y el interruptor se guardan al toque (con Deshacer); el «desde», con su botón.
+	type Cobros = { cuotas: Cuotas; cuotasDesde: number; impuestos: { mostrar: boolean } };
+	const OPC_CUOTAS = CUOTAS.map((n) => [String(n), n ? String(n) : 'Ninguna'] as const);
+	const cobros = $derived<Cobros>({
+		cuotas: data.cobros.cuotas,
+		cuotasDesde: data.cobros.cuotasDesde,
+		impuestos: { mostrar: data.cobros.impuestos.mostrar }
+	});
+	let desde = $derived(data.cobros.cuotasDesde);
+	async function guardarCobros(c: Cobros, aviso: [string, string] | null, deshacer = false) {
+		const antes = cobros;
+		const r = await pedir('/panel/configuracion/cobros', 'PUT', c);
+		await invalidateAll();
+		if (!r || deshacer) return;
+		if (!aviso) {
+			ui.toast({ k: 'ok', title: 'Monto guardado', desc: 'Tu tienda ya usa el nuevo mínimo' });
+			return;
+		}
+		ui.undoable(aviso[0], aviso[1], () => guardarCobros(antes, null, true));
+	}
+	const elegirCuotas = (v: string) => {
+		const n = Number(v) as Cuotas;
+		void guardarCobros(
+			{ ...cobros, cuotas: n },
+			n
+				? [`${n} cuotas sin interés`, `Desde ${pesos(cobros.cuotasDesde)}, con Mercado Pago`]
+				: ['Sin cuotas sin interés', 'Tu tienda ya no las ofrece']
+		);
+	};
 </script>
 
 <Seo
@@ -496,6 +530,79 @@
 							/>
 						</div>
 					{/each}
+				</div>
+			{:else if tab === 'cobros'}
+				<form
+					class="tarjeta campos"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void guardarCobros({ ...cobros, cuotasDesde: desde }, null);
+					}}
+				>
+					<div class="t-cab"><span>Cuotas sin interés</span></div>
+					{#if !data.cobros.mercadoPago}
+						<p class="d-nota">
+							Se ofrecen sólo cobrando con Mercado Pago:
+							<a href={resolve('/panel/integraciones')}>conectalo en&nbsp;Integraciones</a>.
+						</p>
+					{/if}
+					<div class="ancho cuotas">
+						<Segmentado
+							opciones={OPC_CUOTAS}
+							value={String(cobros.cuotas)}
+							label="Cuotas sin interés"
+							onchange={elegirCuotas}
+						/>
+					</div>
+					{#if cobros.cuotas}
+						<label
+							>Desde $<input
+								inputmode="numeric"
+								placeholder="En cualquier compra"
+								value={desde ? pesos(desde) : ''}
+								onchange={(e) => (desde = Number(e.currentTarget.value.replace(/\D/g, '')))}
+							/></label
+						>
+					{/if}
+					<p class="d-nota">
+						El costo de las cuotas lo absorbe tu tienda: quien compra paga el mismo precio en todas.
+						Activalas también en tu cuenta de Mercado Pago, en
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- la cuenta de Mercado Pago -->
+						<a href={MP_CUOTAS} target="_blank" rel="noopener noreferrer">Costos y&nbsp;cuotas</a>,
+						con las mismas cuotas y el mismo&nbsp;monto.
+					</p>
+					{#if cobros.cuotas && desde !== data.cobros.cuotasDesde}
+						<div class="guardar">
+							<button
+								type="button"
+								class="btn btn-secondary"
+								onclick={() => (desde = data.cobros.cuotasDesde)}>Descartar</button
+							>
+							<button class="btn btn-primary">Guardar monto</button>
+						</div>
+					{/if}
+				</form>
+				<div class="tarjeta lista">
+					<div class="opcion">
+						<span class="o-ico"><Icon icon={I.phReceiptFill} size={18} /></span>
+						<span class="o-txt"
+							><span class="o-t">Mostrar precio sin impuestos nacionales</span><span class="o-d"
+								>Lo pide la Ley 27.743 a quien discrimina IVA. Cada producto tiene su IVA en
+								su&nbsp;ficha</span
+							></span
+						>
+						<Interruptor
+							checked={cobros.impuestos.mostrar}
+							label="Mostrar precio sin impuestos nacionales"
+							onchange={(v) =>
+								guardarCobros(
+									{ ...cobros, impuestos: { mostrar: v } },
+									v
+										? ['Precio sin impuestos a la vista', 'Se ve debajo de cada precio']
+										: ['Precio sin impuestos oculto', 'Tu tienda ya no lo muestra']
+								)}
+						/>
+					</div>
 				</div>
 			{:else if tab === 'mayorista'}
 				<div class="tarjeta lista">
@@ -763,6 +870,19 @@
 	.campos .t-cab,
 	.campos .d-nota {
 		grid-column: 1 / -1;
+	}
+	.d-nota a {
+		color: inherit;
+		font-weight: 600;
+	}
+	/* Las cinco opciones de cuotas en un renglón, también a 375 px. */
+	.cuotas :global(.seg) {
+		display: flex;
+		max-width: 420px;
+	}
+	.cuotas :global(.seg button) {
+		min-height: 40px;
+		padding: 7px 8px;
 	}
 	.campos {
 		display: grid;
