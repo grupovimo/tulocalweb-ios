@@ -206,9 +206,20 @@ struct HojaCuponNuevo: View {
     @State private var minimo = ""
     @State private var vigencia = "30"
 
+    /// Lo que acepta la API (cupones.Crear): código de 3 a 20 (A-Z, 0-9 y guiones), 1 a 90 % y $100 a $100.000.
+    private var codigoLimpio: String { String(codigo.uppercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }) }
+    private var valorValido: Bool {
+        let v = Int(valor.filter(\.isNumber)) ?? 0
+        switch tipo {
+        case "pct": return (1...90).contains(v)
+        case "fijo": return (100...100_000).contains(v)
+        default: return true
+        }
+    }
+
     var body: some View {
         HojaFormulario(titulo: "Cupón nuevo", boton: "Crear cupón",
-                       habilitado: codigo.count >= 3 && (tipo == "envio" || (Int(valor) ?? 0) > 0)) {
+                       habilitado: (3...20).contains(codigoLimpio.count) && valorValido) {
             struct Opciones: Encodable { var hornero = false; var combinable = false; var unicos = false; var link = false }
             struct Nuevo: Encodable {
                 var codigo, tipo: String; var valor: Int; var alcance = "todo"; var quien = "todos"
@@ -217,8 +228,8 @@ struct HojaCuponNuevo: View {
             }
             do {
                 try await estado.api.hacer("POST", "/v1/panel/cupones", Nuevo(
-                    codigo: codigo.uppercased().filter { $0.isLetter || $0.isNumber }, tipo: tipo,
-                    valor: tipo == "envio" ? 0 : (Int(valor) ?? 0), minimo: Int(minimo.filter(\.isNumber)) ?? 0, vigencia: vigencia))
+                    codigo: codigoLimpio, tipo: tipo,
+                    valor: tipo == "envio" ? 0 : (Int(valor.filter(\.isNumber)) ?? 0), minimo: Int(minimo.filter(\.isNumber)) ?? 0, vigencia: vigencia))
                 Haptico.exito()
                 estado.avisar("Cupón creado")
                 await listo()
@@ -229,8 +240,10 @@ struct HojaCuponNuevo: View {
         } contenido: {
             CampoTexto(titulo: "Código", texto: $codigo)
             Segmentado(opciones: [("pct", "%"), ("fijo", "$"), ("envio", "Envío gratis")], elegido: $tipo)
+                // El 10 de arranque es para el porcentaje: en pesos no vale (el mínimo es $100).
+                .onChange(of: tipo) { _, t in if t == "fijo" && (Int(valor) ?? 0) < 100 { valor = "" } }
             if tipo != "envio" {
-                CampoTexto(titulo: tipo == "pct" ? "Porcentaje de descuento" : "Monto de descuento", texto: $valor, teclado: .numberPad)
+                CampoTexto(titulo: tipo == "pct" ? "Porcentaje de descuento (1 a 90)" : "Monto de descuento (desde $100)", texto: $valor, teclado: .numberPad)
             }
             CampoTexto(titulo: "Compra mínima (opcional)", texto: $minimo, teclado: .numberPad)
             EtiquetaSeccion(texto: "Vigencia").padding(.top, 4)

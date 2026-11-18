@@ -242,6 +242,10 @@ fun HojaCuponNuevo(listo: suspend () -> Unit) {
     var valor by remember { mutableStateOf("10") }
     var minimo by remember { mutableStateOf("") }
     var vigencia by remember { mutableStateOf("30") }
+    // Lo que acepta la API (cupones.Crear): código de 3 a 20 (A-Z, 0-9 y guiones), 1 a 90 % y $100 a $100.000.
+    val codigoLimpio = codigo.uppercase().filter { (it in 'A'..'Z') || it.isDigit() || it == '-' }
+    val v = valor.filter { it.isDigit() }.toIntOrNull() ?: 0
+    val valorValido = when (tipo) { "pct" -> v in 1..90; "fijo" -> v in 100..100_000; else -> true }
 
     @Serializable data class Opciones(val hornero: Boolean = false, val combinable: Boolean = false, val unicos: Boolean = false, val link: Boolean = false)
     @Serializable data class Nuevo(
@@ -250,11 +254,11 @@ fun HojaCuponNuevo(listo: suspend () -> Unit) {
         val canales: List<String> = listOf("web"), val opciones: Opciones = Opciones(),
     )
 
-    HojaFormulario("Cupón nuevo", "Crear cupón", codigo.length >= 3 && (tipo == "envio" || (valor.toIntOrNull() ?: 0) > 0), {
+    HojaFormulario("Cupón nuevo", "Crear cupón", codigoLimpio.length in 3..20 && valorValido, {
         try {
             estado.api.hacer("POST", "/v1/panel/cupones", Nuevo(
-                codigo.uppercase().filter { it.isLetterOrDigit() }, tipo,
-                if (tipo == "envio") 0 else (valor.toIntOrNull() ?: 0), minimo = minimo.filter { it.isDigit() }.toIntOrNull() ?: 0, vigencia = vigencia))
+                codigoLimpio, tipo,
+                if (tipo == "envio") 0 else v, minimo = minimo.filter { it.isDigit() }.toIntOrNull() ?: 0, vigencia = vigencia))
             Haptico.exito()
             estado.avisar("Cupón creado")
             listo()
@@ -262,8 +266,12 @@ fun HojaCuponNuevo(listo: suspend () -> Unit) {
         } catch (e: ErrorApi) { estado.avisar(e.detalle, ok = false); false } catch (e: Exception) { false }
     }) {
         CampoTexto("Código", codigo, { codigo = it })
-        Segmentado(listOf("pct" to "%", "fijo" to "$", "envio" to "Envío gratis"), tipo, { tipo = it })
-        if (tipo != "envio") CampoTexto(if (tipo == "pct") "Porcentaje de descuento" else "Monto de descuento", valor, { valor = it }, teclado = KeyboardType.Number)
+        Segmentado(listOf("pct" to "%", "fijo" to "$", "envio" to "Envío gratis"), tipo, {
+            tipo = it
+            // El 10 de arranque es para el porcentaje: en pesos no vale (el mínimo es $100).
+            if (it == "fijo" && (valor.toIntOrNull() ?: 0) < 100) valor = ""
+        })
+        if (tipo != "envio") CampoTexto(if (tipo == "pct") "Porcentaje de descuento (1 a 90)" else "Monto de descuento (desde $100)", valor, { valor = it }, teclado = KeyboardType.Number)
         CampoTexto("Compra mínima (opcional)", minimo, { minimo = it }, teclado = KeyboardType.Number)
         EtiquetaSeccion("Vigencia", Modifier.padding(top = 4.dp))
         Segmentado(listOf("7" to "7 días", "30" to "30 días", "sin" to "Sin fin"), vigencia, { vigencia = it })

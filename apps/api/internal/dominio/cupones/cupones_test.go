@@ -3,6 +3,7 @@ package cupones_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,6 +39,18 @@ func TestCuponesCrearPausarDuplicarYMinimo(t *testing.T) {
 	}
 	if _, err := cupones.Crear(ctx, b.App, id, cupones.Nuevo{Codigo: "x"}, ahora); !errors.Is(err, cupones.ErrInvalido) {
 		t.Fatalf("inválido: %v", err)
+	}
+	// El porqué llega a la persona: $10 fijo (lo que mandaba la app por defecto) o 95 %.
+	fijo := nuevo("DIEZ")
+	fijo.Tipo, fijo.Valor = "fijo", 10
+	var dato *cupones.ErrDato
+	if _, err := cupones.Crear(ctx, b.App, id, fijo, ahora); !errors.As(err, &dato) || !strings.Contains(dato.Mensaje, "$100") || !errors.Is(err, cupones.ErrInvalido) {
+		t.Fatalf("fijo chico: %v", err)
+	}
+	pct := nuevo("MUCHO")
+	pct.Tipo, pct.Valor = "pct", 95
+	if _, err := cupones.Crear(ctx, b.App, id, pct, ahora); !errors.As(err, &dato) || !strings.Contains(dato.Mensaje, "1 a 90") {
+		t.Fatalf("porcentaje alto: %v", err)
 	}
 	if p, _ := cupones.Accion(ctx, b.App, id, c.ID, "pausar", 0, ahora); p.Estado != "pausado" {
 		t.Fatalf("pausar: %+v", p)

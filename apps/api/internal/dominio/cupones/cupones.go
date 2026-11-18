@@ -35,6 +35,13 @@ var (
 	argentina    = time.FixedZone("ART", -3*3600)
 )
 
+// ErrDato es un ErrInvalido con el porqué, para decírselo a la persona (las apps mostraban
+// «Revisá los datos del cupón» y no se entendía qué estaba mal).
+type ErrDato struct{ Mensaje string }
+
+func (e *ErrDato) Error() string          { return "cupón inválido: " + e.Mensaje }
+func (e *ErrDato) Is(objetivo error) bool { return objetivo == ErrInvalido }
+
 // Cupon es components/schemas/Cupon.
 type Cupon struct {
 	ID          string     `json:"id"`
@@ -160,13 +167,20 @@ func Crear(ctx context.Context, pool tx, tiendaID string, n Nuevo, ahora time.Ti
 	for _, k := range n.Canales {
 		canalesOk = canalesOk && slices.Contains([]string{"web", "wa", "ig", "pos"}, k)
 	}
-	if !codigoValido.MatchString(n.Codigo) || !canalesOk || n.Minimo < 0 || n.Limite < 0 || len(n.Productos) > 50 ||
+	switch {
+	case !codigoValido.MatchString(n.Codigo):
+		return c, &ErrDato{"El código va de 3 a 20 letras sin tildes, números o guiones."}
+	case n.Tipo == "pct" && (n.Valor < 1 || n.Valor > 90):
+		return c, &ErrDato{"El porcentaje de descuento va de 1 a 90."}
+	case n.Tipo == "fijo" && (n.Valor < 100 || n.Valor > 100000):
+		return c, &ErrDato{"El descuento en pesos va de $100 a $100.000."}
+	}
+	if !canalesOk || n.Minimo < 0 || n.Limite < 0 || len(n.Productos) > 50 ||
 		!slices.Contains([]string{"pct", "fijo", "envio", "regalo"}, n.Tipo) ||
 		!slices.Contains([]string{"todo", "categoria", "productos"}, n.Alcance) ||
 		!slices.Contains([]string{"todos", "nuevos", "vip", "riesgo"}, n.Quien) ||
 		!slices.Contains([]string{"1", "3", "libre"}, n.PorCliente) ||
-		!slices.Contains([]string{"7", "finde", "30", "hotsale", "sin"}, n.Vigencia) ||
-		(n.Tipo == "pct" && (n.Valor < 1 || n.Valor > 90)) || (n.Tipo == "fijo" && (n.Valor < 100 || n.Valor > 100000)) {
+		!slices.Contains([]string{"7", "finde", "30", "hotsale", "sin"}, n.Vigencia) {
 		return c, ErrInvalido
 	}
 	if n.Tipo == "envio" || n.Tipo == "regalo" {
@@ -534,6 +548,7 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string) {
 		_ = json.NewEncoder(w).Encode(v)
 	}
 	errorDe := func(w http.ResponseWriter, err error) {
+		var dato *ErrDato
 		switch {
 		case errors.Is(err, ErrNoExiste):
 			problema.Escribir(w, problema.NoEncontrado("Ese cupón no existe."))
@@ -541,6 +556,8 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string) {
 			problema.Escribir(w, problema.Conflicto("repetido", "Ya tenés un cupón con ese código."))
 		case errors.Is(err, ErrTerminado):
 			problema.Escribir(w, problema.Conflicto("terminado", "Ese cupón ya terminó. Duplicalo para usarlo de nuevo."))
+		case errors.As(err, &dato):
+			problema.Escribir(w, problema.Invalido(dato.Mensaje))
 		case errors.Is(err, ErrInvalido):
 			problema.Escribir(w, problema.Invalido("Revisá los datos del cupón."))
 		default:
