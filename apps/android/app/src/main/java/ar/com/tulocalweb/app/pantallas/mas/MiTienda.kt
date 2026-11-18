@@ -49,6 +49,7 @@ import ar.com.tulocalweb.app.nucleo.CatalogoBloques
 import ar.com.tulocalweb.app.nucleo.ContextoTienda
 import ar.com.tulocalweb.app.nucleo.Diseno
 import ar.com.tulocalweb.app.nucleo.ErrorApi
+import ar.com.tulocalweb.app.nucleo.errorDe
 import ar.com.tulocalweb.app.nucleo.Fotos
 import ar.com.tulocalweb.app.nucleo.PresetTienda
 import ar.com.tulocalweb.app.nucleo.Recursos
@@ -88,6 +89,8 @@ fun MiTiendaEditor() {
             ?: (EditorTienda() to DatosEditor()).also { estado.miTienda = clave to it }
     }
     var cargado by remember { mutableStateOf(false) }
+    /** Si no se pudo traer la tienda: sin el diseño real no se guarda (el PUT lo reemplaza entero). */
+    var errorCarga by remember { mutableStateOf<ErrorApi?>(null) }
     var pestana by remember { mutableStateOf("paginas") }
     var direccion by remember { mutableStateOf("") }
     var slug by remember { mutableStateOf("") }
@@ -121,8 +124,11 @@ fun MiTiendaEditor() {
     // MARK: Cargar y guardar
 
     suspend fun cargar() {
-        val v = estado.api.opcional<ValorJSON>("/v1/panel/mi-tienda")
-        if (v == null) { estado.avisar("No pudimos traer tu tienda", ok = false); cargado = true; return }
+        errorCarga = null
+        val v = try { estado.api.get<ValorJSON>("/v1/panel/mi-tienda") } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            // Sin el diseño de verdad no se habilita guardar: publicaría una tienda vacía.
+            errorCarga = errorDe(e); return
+        }
         val plantilla = v["plantillaId"]?.texto ?: v["plantilla"]?.texto ?: ""
         // Al volver con cambios sin guardar, se quedan los de la persona.
         if (!editor.sinGuardar) editor.empezar(Diseno.desde(v["diseno"]?.objeto ?: emptyMap(), plantilla), plantilla)
@@ -145,6 +151,7 @@ fun MiTiendaEditor() {
     }
 
     suspend fun guardar(publicar: Boolean, avisar: Boolean = true): Boolean {
+        if (!cargado) return false // sin la tienda traída, el PUT pisaría el diseño con uno vacío
         val d = editor.diseno
         val cuerpo = Valor.objeto(d.json)
         if (cuerpo.toString().toByteArray().size > CatalogoBloques.shared.limites.bytesDiseno) {
@@ -258,7 +265,9 @@ fun MiTiendaEditor() {
         }, Modifier.background(C.fondo).imePadding()) { abajo ->
             Column(Modifier.fillMaxSize().verticalScroll(desplazamiento).margenPantalla().padding(bottom = 32.dp + abajo), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Texto("Mi tienda", Estilo.tituloGrande, C.texto)
-                if (!cargado) EsqueletoFilas(5, 0.dp)
+                val error = errorCarga
+                if (error != null) Box(Modifier.padding(top = 60.dp)) { EstadoError("tu tienda", error) { alcance.launch { cargar() } } }
+                else if (!cargado) EsqueletoFilas(5, 0.dp)
                 else {
                     // MARK: Vista previa
                     Column(Modifier.fillMaxWidth().tarjeta(radio = 20.dp)) {

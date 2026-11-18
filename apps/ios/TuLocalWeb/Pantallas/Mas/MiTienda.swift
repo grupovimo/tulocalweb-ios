@@ -12,6 +12,8 @@ struct MiTiendaEditor: View {
     @State private var editor = EditorTienda()
     @State private var datos = DatosEditor()
     @State private var cargado = false
+    /// Si no se pudo traer la tienda: sin el diseño real no se guarda (el PUT lo reemplaza entero).
+    @State private var errorCarga: ErrorApi?
     @State private var pestana = "paginas"
     @State private var direccion = ""
     @State private var slug = ""
@@ -36,7 +38,9 @@ struct MiTiendaEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Mi tienda").estilo(.tituloGrande).foregroundStyle(C.texto).id("arriba")
-                if !cargado {
+                if let e = errorCarga {
+                    EstadoError(que: "tu tienda", error: e) { Task { await cargar() } }.padding(.top, 60)
+                } else if !cargado {
                     EsqueletoFilas(filas: 5, miniatura: 0)
                 } else {
                     vistaPrevia
@@ -302,8 +306,12 @@ struct MiTiendaEditor: View {
     // MARK: Cargar y guardar
 
     private func cargar() async {
-        guard let v: ValorJSON = try? await estado.api.get("/v1/panel/mi-tienda") else {
-            estado.avisar("No pudimos traer tu tienda", ok: false); cargado = true; return
+        errorCarga = nil
+        let v: ValorJSON
+        do { v = try await estado.api.get("/v1/panel/mi-tienda") } catch {
+            // Sin el diseño de verdad no se habilita guardar: publicaría una tienda vacía.
+            if !(error is CancellationError) { errorCarga = error as? ErrorApi ?? .desconocido }
+            return
         }
         let plantilla = v["plantillaId"]?.texto ?? v["plantilla"]?.texto ?? ""
         editor.empezar(Diseno(json: v["diseno"]?.objeto ?? [:], plantillaTienda: plantilla), plantilla: plantilla)
@@ -327,6 +335,7 @@ struct MiTiendaEditor: View {
 
     @discardableResult
     private func guardar(publicar: Bool, avisar: Bool = true) async -> Bool {
+        guard cargado else { return false } // sin la tienda traída, el PUT pisaría el diseño con uno vacío
         let d = editor.diseno
         let cuerpo = ValorJSON.objeto(d.json)
         if let bytes = try? JSONEncoder().encode(cuerpo), bytes.count > CatalogoBloques.shared.limites.bytesDiseno {
