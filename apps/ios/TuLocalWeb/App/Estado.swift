@@ -143,9 +143,9 @@ final class Estado {
     }
 
     private func cargarSesion() async throws {
-        async let d: DatosSesion = api.get("/v1/auth/sesion")
-        async let a: Acceso = api.get("/v1/auth/tiendas")
-        let (dd, aa) = try await (d, a)
+        // Uno detrás del otro, sin `async let`: en Release ya cerró la app (ver Compartir.swift).
+        let dd: DatosSesion = try await api.get("/v1/auth/sesion")
+        let aa: Acceso = try await api.get("/v1/auth/tiendas")
         datos = dd
         acceso = aa
         Guardado.guardar(dd, clave: "sesion")

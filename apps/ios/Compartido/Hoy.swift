@@ -27,7 +27,10 @@ enum SesionCompartida {
             ?? URL(string: "https://api.tulocalweb.com.ar")!
     }
 
-    /// GET a la API con la sesión compartida.
+    /// Lo que respondió la API cuando no fue 2xx (para separar «sin sesión» de «sin conexión»).
+    struct ErrorHTTP: Error { var estado: Int }
+
+    /// GET a la API con la sesión compartida. Una respuesta que no es 2xx tira `ErrorHTTP`; sin red, el `URLError`.
     static func get(_ ruta: String, query: [URLQueryItem] = []) async throws -> Data {
         var c = URLComponents(url: api.appendingPathComponent(ruta), resolvingAgainstBaseURL: false)!
         if !query.isEmpty { c.queryItems = query }
@@ -35,7 +38,8 @@ enum SesionCompartida {
         r.setValue("application/json", forHTTPHeaderField: "Accept")
         if let t = token() { r.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization") }
         let (d, resp) = try await URLSession.shared.data(for: r)
-        guard let h = resp as? HTTPURLResponse, (200..<300).contains(h.statusCode) else { throw URLError(.badServerResponse) }
+        guard let h = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        guard (200..<300).contains(h.statusCode) else { throw ErrorHTTP(estado: h.statusCode) }
         return d
     }
 
@@ -63,6 +67,9 @@ struct DatosHoy: Codable, Hashable {
     var ultimo: Pedido?
     /// El más nuevo de los que esperan preparación (para la Live Activity).
     var ultimoPorPreparar: Pedido?
+    /// Hay sesión pero no se pudo traer (sin red, un 500): no son ceros, así que no se muestran ni se
+    /// cierra la Live Activity por eso.
+    var sinConexion = false
 
     var delta: Double? { ventasAyer > 0 ? (ventasHoy - ventasAyer) / ventasAyer * 100 : nil }
 
@@ -72,6 +79,11 @@ struct DatosHoy: Codable, Hashable {
                                   ultimo: Pedido(numero: 1048, cliente: "Lucía Fernández", total: 23_400, estado: "Para preparar"),
                                   ultimoPorPreparar: Pedido(numero: 1048, cliente: "Lucía Fernández", total: 23_400, estado: "Para preparar"))
     static let sinSesion = DatosHoy(conSesion: false, montos: false, ventasHoy: 0, ventasAyer: 0, serie: [], pedidosHoy: 0, porPreparar: 0, ultimo: nil, ultimoPorPreparar: nil)
+    static let sinConexion = DatosHoy(conSesion: true, montos: false, ventasHoy: 0, ventasAyer: 0, serie: [], pedidosHoy: 0, porPreparar: 0,
+                                      ultimo: nil, ultimoPorPreparar: nil, sinConexion: true)
+
+    /// Si los datos sirven para mover la Live Activity (hay sesión y se pudieron traer).
+    var alDia: Bool { conSesion && !sinConexion }
 
     static func traer() async -> DatosHoy {
         guard SesionCompartida.token() != nil else { return .sinSesion }
@@ -82,10 +94,16 @@ struct DatosHoy: Codable, Hashable {
         struct Tablero: Decodable { var montos: Bool; var ventas: Comparado?; var serie: Serie?; var kpis: Kpis; var ultimosPedidos: [Breve] }
         struct Insignias: Decodable { var pedidos: Int }
         struct Resumen: Decodable { var insignias: Insignias }
-        async let t = try? JSONDecoder().decode(Tablero.self, from: await SesionCompartida.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: "hoy")]))
-        async let r = try? JSONDecoder().decode(Resumen.self, from: await SesionCompartida.get("/v1/panel/resumen"))
-        guard let tab = await t else { return .sinSesion }
-        let res = await r
+        // Uno detrás del otro, sin `async let`: en Release ya cerró la app (ver Compartir.swift).
+        let tab: Tablero
+        do {
+            tab = try JSONDecoder().decode(Tablero.self, from: await SesionCompartida.get("/v1/panel/tablero", query: [URLQueryItem(name: "periodo", value: "hoy")]))
+        } catch let e as SesionCompartida.ErrorHTTP where e.estado == 401 || e.estado == 403 {
+            return .sinSesion
+        } catch {
+            return .sinConexion
+        }
+        let res = try? JSONDecoder().decode(Resumen.self, from: await SesionCompartida.get("/v1/panel/resumen"))
         let u = tab.ultimosPedidos.first
         let pp = tab.ultimosPedidos.first { $0.estado == "Para preparar" }
         return DatosHoy(conSesion: true, montos: tab.montos, ventasHoy: tab.ventas?.actual ?? 0, ventasAyer: tab.ventas?.anterior ?? 0,

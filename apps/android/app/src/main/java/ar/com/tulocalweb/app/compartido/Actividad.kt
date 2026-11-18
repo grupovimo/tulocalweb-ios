@@ -21,6 +21,8 @@ object MarcarPreparado {
         val api = SesionCompartida.api(ctx) ?: throw ErrorApi.desconocido
         api.hacer("POST", "/v1/panel/pedidos/$numero/estado", Cuerpo("Listo para despachar"))
         val datos = DatosHoy.traer(ctx)
+        // Si no se pudo traer cómo quedó, se deja como está: con ceros la cerraría sin motivo.
+        if (!datos.alDia) return
         val previo = ActividadEnApp.estadoActual
         val nuevo = PedidosPorPreparar(datos.porPreparar, (previo?.preparadosHoy ?: 0) + 1, datos.ultimoPorPreparar?.numero, datos.ultimoPorPreparar?.cliente)
         if (datos.porPreparar == 0) ActividadEnApp.cerrar(ctx, nuevo) else ActividadEnApp.mostrar(ctx, ActividadEnApp.tiendaActual ?: "Tu Local Web", nuevo)

@@ -27,7 +27,7 @@ object ActividadEnApp {
         Widgets.actualizar(ctx)
         if (!Push.hayPermiso(ctx)) return
         val datos = DatosHoy.traer(ctx)
-        if (!datos.conSesion) return
+        if (!datos.alDia) return
         val previo = estadoActual
         val estado = PedidosPorPreparar(
             datos.porPreparar,

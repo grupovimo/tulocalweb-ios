@@ -60,6 +60,13 @@ struct VistaVentasDeHoy: View {
                 Text("Entrá a la app para ver tus ventas acá.").font(.footnote).foregroundStyle(ColorWidget.texto2)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        } else if datos.sinConexion {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tu Local Web").font(.caption.bold()).foregroundStyle(ColorWidget.primario)
+                Spacer()
+                Text("Sin conexión. Probamos de nuevo en un rato.").font(.footnote).foregroundStyle(ColorWidget.texto2)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else if familia == .systemMedium {
             HStack(spacing: 14) {
                 hoy

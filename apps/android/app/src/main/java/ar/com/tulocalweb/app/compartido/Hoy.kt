@@ -4,8 +4,8 @@ import android.content.Context
 import ar.com.tulocalweb.app.nucleo.Api
 import ar.com.tulocalweb.app.nucleo.Llavero
 import ar.com.tulocalweb.app.nucleo.opcional
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import ar.com.tulocalweb.app.nucleo.errorDe
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 
 // Clon de Compartido/Hoy.swift: lo que comparten la app, los widgets y los pedidos por preparar: la sesión, los datos
@@ -35,8 +35,14 @@ data class DatosHoy(
     val ultimo: Pedido? = null,
     /** El más nuevo de los que esperan preparación (para los pedidos por preparar). */
     val ultimoPorPreparar: Pedido? = null,
+    /** Hay sesión pero no se pudo traer (sin red, un 500): no son ceros, así que no se muestran ni se cierran los
+     *  pedidos por preparar por eso. */
+    val sinConexion: Boolean = false,
 ) {
     @Serializable data class Pedido(val numero: Int, val cliente: String, val total: Int? = null, val estado: String)
+
+    /** Si los datos sirven para mover los pedidos por preparar (hay sesión y se pudieron traer). */
+    val alDia: Boolean get() = conSesion && !sinConexion
 
     val delta: Double? get() = if (ventasAyer > 0) (ventasHoy - ventasAyer) / ventasAyer * 100 else null
 
@@ -45,6 +51,7 @@ data class DatosHoy(
             listOf(0.0, 8.0, 15.0, 22.0, 40.0, 52.0, 61.0, 80.0, 95.0, 110.0, 128.0, 150.0, 170.0, 184.0), 12, 3,
             Pedido(1048, "Lucía Fernández", 23_400, "Para preparar"), Pedido(1048, "Lucía Fernández", 23_400, "Para preparar"))
         val sinSesion = DatosHoy(false, false, 0.0, 0.0, emptyList(), 0, 0)
+        val sinConexion = DatosHoy(true, false, 0.0, 0.0, emptyList(), 0, 0, sinConexion = true)
 
         @Serializable private data class Comparado(val actual: Double = 0.0, val anterior: Double = 0.0)
         @Serializable private data class Serie(val actual: List<Double> = emptyList())
@@ -54,15 +61,17 @@ data class DatosHoy(
         @Serializable private data class Insignias(val pedidos: Int = 0)
         @Serializable private data class Resumen(val insignias: Insignias = Insignias())
 
-        suspend fun traer(ctx: Context): DatosHoy = coroutineScope {
-            val api = SesionCompartida.api(ctx) ?: return@coroutineScope sinSesion
-            val t = async { api.opcional<Tablero>("/v1/panel/tablero", listOf("periodo" to "hoy")) }
-            val r = async { api.opcional<Resumen>("/v1/panel/resumen") }
-            val tab = t.await() ?: return@coroutineScope sinSesion
-            val res = r.await()
+        suspend fun traer(ctx: Context): DatosHoy {
+            val api = SesionCompartida.api(ctx) ?: return sinSesion
+            // Uno detrás del otro, como en iOS (allá `async let` cerró la app en Release).
+            val tab = try { api.get<Tablero>("/v1/panel/tablero", listOf("periodo" to "hoy")) } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                val err = errorDe(e)
+                return if (err.estado == 401 || err.estado == 403) sinSesion else sinConexion
+            }
+            val res = api.opcional<Resumen>("/v1/panel/resumen")
             val u = tab.ultimosPedidos.firstOrNull()
             val pp = tab.ultimosPedidos.firstOrNull { it.estado == "Para preparar" }
-            DatosHoy(true, tab.montos, tab.ventas?.actual ?: 0.0, tab.ventas?.anterior ?: 0.0, tab.serie?.actual ?: emptyList(),
+            return DatosHoy(true, tab.montos, tab.ventas?.actual ?: 0.0, tab.ventas?.anterior ?: 0.0, tab.serie?.actual ?: emptyList(),
                 tab.kpis.pedidos.actual.toInt(), res?.insignias?.pedidos ?: 0,
                 u?.let { Pedido(it.numero, it.cliente, it.total, it.estado) }, pp?.let { Pedido(it.numero, it.cliente, it.total, it.estado) })
         }

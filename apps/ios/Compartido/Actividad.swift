@@ -26,6 +26,8 @@ struct MarcarPreparado: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         try await SesionCompartida.post("/v1/panel/pedidos/\(numero)/estado", json: ["estado": "Listo para despachar"])
         let datos = await DatosHoy.traer()
+        // Si no se pudo traer cómo quedó, se deja como está: con ceros la cerraría sin motivo.
+        guard datos.alDia else { return .result() }
         for a in Activity<PedidosPorPreparar>.activities {
             let previo = a.content.state
             let nuevo = PedidosPorPreparar.ContentState(

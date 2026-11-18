@@ -10,7 +10,7 @@ enum ActividadEnApp {
         WidgetCenter.shared.reloadAllTimelines()
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let datos = await DatosHoy.traer()
-        guard datos.conSesion else { return }
+        guard datos.alDia else { return }
         let actuales = Activity<PedidosPorPreparar>.activities
         let previo = actuales.first?.content.state
         let estado = PedidosPorPreparar.ContentState(

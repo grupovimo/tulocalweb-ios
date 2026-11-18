@@ -87,7 +87,7 @@ class VentasDeHoy : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(CHICO, MEDIANO))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val d = runCatching { DatosHoy.traer(context) }.getOrDefault(DatosHoy.sinSesion)
+        val d = runCatching { DatosHoy.traer(context) }.getOrDefault(DatosHoy.sinConexion)
         provideContent { Vista(context, d) }
     }
 
@@ -104,6 +104,11 @@ class VentasDeHoy : GlanceAppWidget() {
                     Text("Tu Local Web", style = TextStyle(cp(p.primario), 12.sp, FontWeight.Bold))
                     Spacer(GlanceModifier.defaultWeight())
                     Text("Entrá a la app para ver tus ventas acá.", style = TextStyle(cp(p.texto2()), 13.sp))
+                }
+                d.sinConexion -> Column(GlanceModifier.fillMaxSize()) {
+                    Text("Tu Local Web", style = TextStyle(cp(p.primario), 12.sp, FontWeight.Bold))
+                    Spacer(GlanceModifier.defaultWeight())
+                    Text("Sin conexión. Probamos de nuevo en un rato.", style = TextStyle(cp(p.texto2()), 13.sp))
                 }
                 mediano -> Row(GlanceModifier.fillMaxSize()) {
                     Box(GlanceModifier.defaultWeight().fillMaxHeight()) { Hoy(ctx, d, p) }

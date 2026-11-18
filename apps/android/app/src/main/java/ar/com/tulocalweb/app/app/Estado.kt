@@ -192,10 +192,10 @@ class Estado(api: Api? = null) {
         tarea { refrescarResumen(); pedirTokenPushSiCorresponde() }
     }
 
-    private suspend fun cargarSesion() = coroutineScope {
-        val d = async { api.get<DatosSesion>("/v1/auth/sesion") }
-        val a = async { api.get<Acceso>("/v1/auth/tiendas") }
-        val dd = d.await(); val aa = a.await()
+    private suspend fun cargarSesion() {
+        // Uno detrás del otro, como en iOS (allá `async let` cerró la app en Release).
+        val dd = api.get<DatosSesion>("/v1/auth/sesion")
+        val aa = api.get<Acceso>("/v1/auth/tiendas")
         datos = dd
         acceso = aa
         Guardado.guardar(dd, "sesion")
