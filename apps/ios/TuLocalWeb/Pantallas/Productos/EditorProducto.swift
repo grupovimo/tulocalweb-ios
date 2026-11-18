@@ -43,7 +43,8 @@ struct EditorProducto: View {
     static func textoIva(_ x: Double) -> String {
         (x == x.rounded() ? String(Int(x)) : String(x).replacingOccurrences(of: ".", with: ",")) + " %"
     }
-    struct Combinacion: Equatable { var stock = ""; var precio = ""; var sku = "" }
+    /// `leido`: el stock que tenía al abrir (nil si la combinación es nueva). Sólo se manda el que se tocó.
+    struct Combinacion: Equatable { var stock = ""; var precio = ""; var sku = ""; var leido: Int? }
     /// Sin tipo elegido, las de siempre.
     static let curvas: [(nombre: String, valores: [String])] = [
         ("Talle", ["XS", "S", "M", "L", "XL", "XXL"]), ("Color", []), ("Presentación", []),
@@ -476,7 +477,8 @@ struct EditorProducto: View {
             guard case let .objeto(vals)? = x["valores"] else { continue }
             let c = vals.compactMapValues(\.texto)
             variantes[clave(c)] = Combinacion(stock: x["stock"]?.entero.map(String.init) ?? "",
-                                              precio: x["precio"]?.entero.map(String.init) ?? "", sku: x["sku"]?.texto ?? "")
+                                              precio: x["precio"]?.entero.map(String.init) ?? "", sku: x["sku"]?.texto ?? "",
+                                              leido: x["stock"]?.entero ?? 0)
         }
     }
 
@@ -507,7 +509,10 @@ struct EditorProducto: View {
         o["iva"] = .numero(iva)
         let combos = combinaciones
         if combos.isEmpty {
-            o["stock"] = .numero(Double(Int(stock.filter(\.isNumber)) ?? 0))
+            // El stock va sólo si se cambió: si no, la API deja el que hay (una venta que entró con el
+            // editor abierto no se pierde al guardar).
+            let nuevo = Int(stock.filter(\.isNumber)) ?? 0
+            if id == nil || nuevo != original["stock"]?.entero { o["stock"] = .numero(Double(nuevo)) } else { o.removeValue(forKey: "stock") }
             if teniaOpciones { o["opciones"] = .lista([]); o["variantes"] = .lista([]) } else { o.removeValue(forKey: "opciones"); o.removeValue(forKey: "variantes") }
         } else {
             o["opciones"] = .lista(opciones.filter { !$0.nombre.isEmpty && !$0.valores.isEmpty }.map {
@@ -515,10 +520,13 @@ struct EditorProducto: View {
             })
             o["variantes"] = .lista(combos.map { c in
                 let x = variantes[clave(c)] ?? Combinacion()
-                var v: [String: ValorJSON] = ["valores": .objeto(c.mapValues { .texto($0) }),
-                                              "stock": .numero(Double(Int(x.stock.filter(\.isNumber)) ?? 0))]
+                var v: [String: ValorJSON] = ["valores": .objeto(c.mapValues { .texto($0) })]
+                // Stock sólo si se tocó (o es nueva): lo demás lo conserva la API, también foto y mayorista.
+                let nuevo = Int(x.stock.filter(\.isNumber)) ?? 0
+                if x.leido != nuevo { v["stock"] = .numero(Double(nuevo)) }
                 v["precio"] = Int(x.precio.filter(\.isNumber)).map { .numero(Double($0)) } ?? .nulo
-                if !x.sku.isEmpty { v["sku"] = .texto(x.sku) }
+                // Vacío también va: así se borra el SKU.
+                v["sku"] = .texto(x.sku.trimmingCharacters(in: .whitespaces))
                 return .objeto(v)
             })
             o.removeValue(forKey: "stock")

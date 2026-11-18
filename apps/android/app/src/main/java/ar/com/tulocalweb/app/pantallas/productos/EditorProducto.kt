@@ -87,7 +87,8 @@ import kotlin.math.roundToInt
 // Clon de Pantallas/Productos/EditorProducto.swift.
 
 private data class Opcion(val nombre: String, val valores: List<String>)
-private data class Combinacion(val stock: String = "", val precio: String = "", val sku: String = "")
+/** `leido`: el stock que tenía al abrir (null si la combinación es nueva). Sólo se manda el que se tocó. */
+private data class Combinacion(val stock: String = "", val precio: String = "", val sku: String = "", val leido: Int? = null)
 
 /** Las alícuotas de IVA de un producto (21 por defecto), como en la web (tienda/cobros.ts). */
 private fun textoIva(x: Double): String = (if (x % 1.0 == 0.0) x.toInt().toString() else x.toString().replace('.', ',')) + " %"
@@ -175,7 +176,8 @@ fun EditorProducto(id: String?, sku: String? = null) {
             for (x in v["variantes"]?.lista ?: emptyList()) {
                 val vals = x["valores"]?.objeto ?: continue
                 val c = vals.mapNotNull { (k, y) -> y.texto?.let { k to it } }.toMap()
-                variantes[clave(c)] = Combinacion(x["stock"]?.entero?.toString() ?: "", x["precio"]?.entero?.toString() ?: "", x["sku"]?.texto ?: "")
+                variantes[clave(c)] = Combinacion(x["stock"]?.entero?.toString() ?: "", x["precio"]?.entero?.toString() ?: "", x["sku"]?.texto ?: "",
+                    x["stock"]?.entero ?: 0)
             }
         } finally { cargando = false }
     }
@@ -200,7 +202,10 @@ fun EditorProducto(id: String?, sku: String? = null) {
             o["iva"] = if (iva % 1.0 == 0.0) Valor.numero(iva.toInt()) else Valor.numero(iva)
             val combos = combinaciones
             if (combos.isEmpty()) {
-                o["stock"] = Valor.numero(num(stock) ?: 0)
+                // El stock va sólo si se cambió: si no, la API deja el que hay (una venta que entró con el
+                // editor abierto no se pierde al guardar).
+                val nuevo = num(stock) ?: 0
+                if (id == null || nuevo != original["stock"]?.entero) o["stock"] = Valor.numero(nuevo) else o.remove("stock")
                 if (teniaOpciones) { o["opciones"] = Valor.lista(emptyList()); o["variantes"] = Valor.lista(emptyList()) } else { o.remove("opciones"); o.remove("variantes") }
             } else {
                 o["opciones"] = Valor.lista(opciones.filter { it.nombre.isNotEmpty() && it.valores.isNotEmpty() }.map {
@@ -208,9 +213,13 @@ fun EditorProducto(id: String?, sku: String? = null) {
                 })
                 o["variantes"] = Valor.lista(combos.map { c ->
                     val x = variantes[clave(c)] ?: Combinacion()
-                    val v = mutableMapOf("valores" to Valor.objeto(c.mapValues { Valor.texto(it.value) }), "stock" to Valor.numero(num(x.stock) ?: 0))
+                    val v = mutableMapOf("valores" to Valor.objeto(c.mapValues { Valor.texto(it.value) }))
+                    // Stock sólo si se tocó (o es nueva): lo demás lo conserva la API, también foto y mayorista.
+                    val nuevo = num(x.stock) ?: 0
+                    if (x.leido != nuevo) v["stock"] = Valor.numero(nuevo)
                     v["precio"] = num(x.precio)?.let { Valor.numero(it) } ?: Valor.nulo
-                    if (x.sku.isNotEmpty()) v["sku"] = Valor.texto(x.sku)
+                    // Vacío también va: así se borra el SKU.
+                    v["sku"] = Valor.texto(x.sku.trim())
                     Valor.objeto(v)
                 })
                 o.remove("stock")
