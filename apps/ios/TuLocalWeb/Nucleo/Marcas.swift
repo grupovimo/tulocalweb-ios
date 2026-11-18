@@ -63,8 +63,15 @@ enum Marcas {
     /// Una compra de la tienda online con Mercado Pago que todavía no se acreditó: no es una venta
     /// (docs/decisiones.md §63). Se ve «Esperando pago», no se marca cobrada a mano (la confirma
     /// Mercado Pago) y a las 24 h se cancela sola.
-    static func esperaPago(_ estado: String, pago: String, canal: String) -> Bool {
-        estado == "Sin pagar" && pago == "mp" && canal == "web"
+    /// Con `estadoPago` (el detalle lo tiene; la lista no), uno ya cobrado que se volvió a «Sin pagar» no
+    /// espera nada: se puede avanzar (el mismo criterio que la API, pedidos.EsperaPago).
+    static func esperaPago(_ estado: String, pago: String, canal: String, estadoPago: String = "") -> Bool {
+        estado == "Sin pagar" && pago == "mp" && canal == "web" && !pagoCobrado(estadoPago)
+    }
+
+    /// Los estados de pago que ya son plata (la seña también).
+    static func pagoCobrado(_ estadoPago: String) -> Bool {
+        ["Aprobado", "Acreditada", "Cobrado", "Seña"].contains(estadoPago)
     }
 
     /// El siguiente estado de un pedido y el texto del botón (la barra de acción de 3b y el swipe de

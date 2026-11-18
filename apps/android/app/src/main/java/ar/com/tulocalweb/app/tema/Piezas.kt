@@ -277,9 +277,10 @@ object ChipEstado {
 }
 
 @Composable
-fun ChipEstado(estado: String, envio: String = "", pago: String = "", canal: String = "", grande: Boolean = false) {
-    // Con el pago y el canal, la compra de Mercado Pago sin acreditar se ve «Esperando pago».
-    val espera = Marcas.esperaPago(estado, pago, canal)
+fun ChipEstado(estado: String, envio: String = "", pago: String = "", canal: String = "", grande: Boolean = false, estadoPago: String = "") {
+    // Con el pago y el canal, la compra de Mercado Pago sin acreditar se ve «Esperando pago» (el detalle manda
+    // estadoPago: uno ya cobrado, no).
+    val espera = Marcas.esperaPago(estado, pago, canal, estadoPago)
     val (fondo, tinta) = if (espera) C.apagadoFondo to C.texto2 else ChipEstado.colores(estado)
     Texto(
         if (espera) "Esperando pago" else ChipEstado.texto(estado, envio), if (grande) Estilo.footnoteFuerte else Estilo.chip, tinta,

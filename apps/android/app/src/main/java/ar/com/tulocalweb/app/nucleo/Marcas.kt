@@ -63,8 +63,11 @@ object Marcas {
     /** Una compra de la tienda online con Mercado Pago que todavía no se acreditó: no es una venta
      *  (docs/decisiones.md §63). Se ve «Esperando pago», no se marca cobrada a mano (la confirma Mercado Pago)
      *  y a las 24 h se cancela sola. */
-    fun esperaPago(estado: String, pago: String, canal: String): Boolean =
-        estado == "Sin pagar" && pago == "mp" && canal == "web"
+    fun esperaPago(estado: String, pago: String, canal: String, estadoPago: String = ""): Boolean =
+        estado == "Sin pagar" && pago == "mp" && canal == "web" && !pagoCobrado(estadoPago)
+
+    /** Los estados de pago que ya son plata (la seña también). */
+    fun pagoCobrado(estadoPago: String): Boolean = estadoPago in listOf("Aprobado", "Acreditada", "Cobrado", "Seña")
 
     data class Siguiente(val estado: String, val boton: String, val corto: String)
 

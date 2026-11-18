@@ -67,7 +67,7 @@ struct DetallePedido: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    ChipEstado(estado: p.estado, envio: p.envio, pago: p.pago, canal: p.canal, grande: true)
+                    ChipEstado(estado: p.estado, envio: p.envio, pago: p.pago, canal: p.canal, estadoPago: p.estadoPago, grande: true)
                     Text(Formato.pesos(p.total)).estilo(.montoPantalla).monospacedDigit().foregroundStyle(C.texto)
                     Text("\(Formato.cuando(p.creado)) · \(Marcas.canal(p.canal)) · \(Formato.cantidad(p.cantidadProductos, "producto", "productos"))")
                         .estilo(.subhead).foregroundStyle(C.texto2)
@@ -105,7 +105,7 @@ struct DetallePedido: View {
             .padding(.bottom, 16)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal), let sig = Marcas.siguiente(p.estado, envio: p.envio) {
+            if !Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal, estadoPago: p.estadoPago), let sig = Marcas.siguiente(p.estado, envio: p.envio) {
                 Button {
                     Task { await mover(p, a: sig.estado) }
                 } label: {
@@ -233,8 +233,13 @@ struct DetallePedido: View {
                 Spacer()
                 ChipPago(estado: p.estadoPago)
             }
-            if Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal) {
+            if Marcas.esperaPago(p.estado, pago: p.pago, canal: p.canal, estadoPago: p.estadoPago) {
                 Text(Formato.sinViudas("Esperando que se acredite el pago con Mercado Pago. Si no se paga en 24 horas, se cancela solo y el stock vuelve."))
+                    .estilo(.texto14).foregroundStyle(C.texto2)
+            } else if p.estado == "Sin pagar" && p.pago == "mp" && Marcas.pagoCobrado(p.estadoPago) {
+                // Uno ya cobrado que se volvió a «Sin pagar»: no espera nada, se avanza con el botón.
+                Text(Formato.sinViudas(p.estadoPago == "Seña" ? "La seña ya se acreditó. Pasalo a preparar cuando quieras."
+                                                              : "El pago ya se acreditó. Pasalo a preparar cuando quieras."))
                     .estilo(.texto14).foregroundStyle(C.texto2)
             } else if p.estado == "Sin pagar" {
                 Text(p.pago == "transf"

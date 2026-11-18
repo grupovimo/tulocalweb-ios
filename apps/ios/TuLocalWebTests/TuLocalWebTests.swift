@@ -73,6 +73,10 @@ final class PedidosTests: XCTestCase {
         XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "transf", canal: "web"))
         XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "wa"))
         XCTAssertFalse(Marcas.esperaPago("Para preparar", pago: "mp", canal: "web"))
+        // Ya cobrado y vuelto a «Sin pagar»: no espera (como pedidos.EsperaPago en la API).
+        XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "web", estadoPago: "Aprobado"))
+        XCTAssertFalse(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "web", estadoPago: "Seña"))
+        XCTAssertTrue(Marcas.esperaPago("Sin pagar", pago: "mp", canal: "web", estadoPago: "Pendiente"))
     }
 
     func testChipsDeRetiro() {

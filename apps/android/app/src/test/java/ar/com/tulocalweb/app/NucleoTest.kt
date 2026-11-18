@@ -94,6 +94,10 @@ class NucleoTest {
         assertFalse(Marcas.esperaPago("Sin pagar", "transf", "web"))
         assertFalse(Marcas.esperaPago("Sin pagar", "mp", "wa"))
         assertFalse(Marcas.esperaPago("Para preparar", "mp", "web"))
+        // Ya cobrado y vuelto a «Sin pagar»: no espera (como pedidos.EsperaPago en la API).
+        assertFalse(Marcas.esperaPago("Sin pagar", "mp", "web", "Aprobado"))
+        assertFalse(Marcas.esperaPago("Sin pagar", "mp", "web", "Seña"))
+        assertTrue(Marcas.esperaPago("Sin pagar", "mp", "web", "Pendiente"))
     }
 
     @Test fun chipsDeRetiro() {
