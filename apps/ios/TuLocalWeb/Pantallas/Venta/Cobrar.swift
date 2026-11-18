@@ -302,11 +302,14 @@ struct CobroQR: View {
     @Environment(Estado.self) private var estado
     @State private var pulso = false
     @State private var brillo: CGFloat = UIScreen.main.brightness
+    @State private var cancelando = false
+    private static let aprobados = ["processed", "approved", "paid"]
 
     var body: some View {
         VStack(spacing: 18) {
             HStack {
                 Button("Cancelar") { Task { await cancelar() } }.font(Estilo.body.font).foregroundStyle(C.primarioTexto)
+                    .disabled(cancelando)
                 Spacer()
             }
             .padding(.horizontal, 16).frame(height: 44)
@@ -349,21 +352,39 @@ struct CobroQR: View {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
             if let e: E = try? await estado.api.get("/v1/panel/cobros/qr/\(qr.referencia)") {
-                if ["processed", "approved", "paid"].contains(e.estado) {
+                if Self.aprobados.contains(e.estado) {
                     terminar(true)
                     return
                 }
                 if ["canceled", "expired", "refunded"].contains(e.estado) {
                     estado.avisar("El pago no se completó.", ok: false)
-                    await cancelar()
+                    await cancelar(porPersona: false)
                     return
                 }
             }
         }
     }
 
-    private func cancelar() async {
-        try? await estado.api.hacer("DELETE", "/v1/panel/cobros/qr/\(qr.referencia)")
+    /// `porPersona`: tocó «Cancelar». Si Mercado Pago no anuló el cobro, la venta no se cancela: puede estar
+    /// ya pagada (se mira y, si se acreditó, sigue como cobrada). Si el cobro ya venció o se anuló, se cancela igual.
+    private func cancelar(porPersona: Bool = true) async {
+        guard !cancelando else { return }
+        cancelando = true
+        defer { cancelando = false }
+        do {
+            try await estado.api.hacer("DELETE", "/v1/panel/cobros/qr/\(qr.referencia)")
+        } catch {
+            if porPersona {
+                struct E: Decodable { var estado: String }
+                if let e: E = try? await estado.api.get("/v1/panel/cobros/qr/\(qr.referencia)"), Self.aprobados.contains(e.estado) {
+                    terminar(true)
+                    return
+                }
+                Haptico.error()
+                estado.avisar("No pudimos anular el cobro, así que la venta sigue. Probá de nuevo.", ok: false)
+                return
+            }
+        }
         try? await PedidosApi.cambiarEstado(estado.api, numero: qr.numero, a: "Cancelado")
         terminar(false)
     }

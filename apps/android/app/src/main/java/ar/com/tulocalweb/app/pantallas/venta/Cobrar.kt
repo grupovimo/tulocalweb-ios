@@ -285,10 +285,27 @@ fun CobroQR(qr: QRCobro, total: Int, nombreTienda: String, terminar: (Boolean) -
     val alcance = rememberCoroutineScope()
     val pulso = rememberInfiniteTransition(label = "pulso").animateFloat(1f, 0.35f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "p").value
 
-    suspend fun cancelar() {
-        intentar { estado.api.hacer("DELETE", "/v1/panel/cobros/qr/${qr.referencia}") }
-        intentar { PedidosApi.cambiarEstado(estado.api, qr.numero, "Cancelado") }
-        terminar(false)
+    var cancelando by remember { mutableStateOf(false) }
+    val aprobados = listOf("processed", "approved", "paid")
+    @Serializable data class E(val estado: String)
+
+    /** `porPersona`: tocó «Cancelar». Si Mercado Pago no anuló el cobro, la venta no se cancela: puede estar ya
+     *  pagada (se mira y, si se acreditó, sigue como cobrada). Si el cobro ya venció o se anuló, se cancela igual. */
+    suspend fun cancelar(porPersona: Boolean = true) {
+        if (cancelando) return
+        cancelando = true
+        try {
+            val anulado = intentar { estado.api.hacer("DELETE", "/v1/panel/cobros/qr/${qr.referencia}") }
+            if (!anulado && porPersona) {
+                val ahora = estado.api.opcional<E>("/v1/panel/cobros/qr/${qr.referencia}")
+                if (ahora != null && ahora.estado in aprobados) { terminar(true); return }
+                Haptico.error()
+                estado.avisar("No pudimos anular el cobro, así que la venta sigue. Probá de nuevo.", ok = false)
+                return
+            }
+            intentar { PedidosApi.cambiarEstado(estado.api, qr.numero, "Cancelado") }
+            terminar(false)
+        } finally { cancelando = false }
     }
 
     DisposableEffect(Unit) {
@@ -298,20 +315,19 @@ fun CobroQR(qr: QRCobro, total: Int, nombreTienda: String, terminar: (Boolean) -
         onDispose { v?.attributes = v?.attributes?.apply { screenBrightness = antes } }
     }
 
-    @Serializable data class E(val estado: String)
     LaunchedEffect(qr.referencia) {
         while (true) {
             delay(3000)
             val e = estado.api.opcional<E>("/v1/panel/cobros/qr/${qr.referencia}") ?: continue
-            if (e.estado in listOf("processed", "approved", "paid")) { terminar(true); return@LaunchedEffect }
-            if (e.estado in listOf("canceled", "expired", "refunded")) { estado.avisar("El pago no se completó.", ok = false); cancelar(); return@LaunchedEffect }
+            if (e.estado in aprobados) { terminar(true); return@LaunchedEffect }
+            if (e.estado in listOf("canceled", "expired", "refunded")) { estado.avisar("El pago no se completó.", ok = false); cancelar(porPersona = false); return@LaunchedEffect }
         }
     }
 
     Column(Modifier.fillMaxSize().background(C.fondo).statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
-            Texto("Cancelar", Estilo.body, C.primarioTexto, Modifier.clickable { alcance.launch { cancelar() } })
+            Texto("Cancelar", Estilo.body, C.primarioTexto, Modifier.clickable(enabled = !cancelando) { alcance.launch { cancelar() } })
         }
         Spacer(Modifier.weight(1f))
         Texto(nombreTienda, Estilo.headline, C.texto2)
