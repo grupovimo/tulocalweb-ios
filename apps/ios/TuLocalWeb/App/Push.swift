@@ -4,7 +4,19 @@ import UserNotifications
 /// El delegado de la app para APNs: recibe el token (y lo registra en /v1/panel/dispositivos), muestra
 /// los avisos con la app abierta y abre la pantalla exacta al tocarlos (`ruta` del payload, §40).
 final class Delegado: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
-    weak var estado: Estado?
+    /// Lo asigna la app en `.onAppear`. Con la app cerrada, el aviso tocado llega antes: queda en `pendiente`
+    /// y se atiende apenas está (si no, se perdía y la app abría en Inicio).
+    weak var estado: Estado? {
+        didSet {
+            guard let estado, let p = pendiente else { return }
+            pendiente = nil
+            atender(p, en: estado)
+        }
+    }
+    private var pendiente: Tocado?
+
+    /// Un aviso tocado: adónde lleva, de qué tienda y si fue «Marcar como preparado».
+    private struct Tocado { var ruta: Ruta; var tienda: String?; var marcar: Bool }
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -44,25 +56,27 @@ final class Delegado: NSObject, UIApplicationDelegate, UNUserNotificationCenterD
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
         guard let texto = info["ruta"] as? String, let ruta = Ruta(texto: texto) else { return }
-        let marcar = response.actionIdentifier == "preparado"
         // La tienda del aviso: con varias, primero se pasa a esa y después se abre la ruta.
-        let tienda = info["tienda"] as? String
+        let tocado = Tocado(ruta: ruta, tienda: info["tienda"] as? String, marcar: response.actionIdentifier == "preparado")
         await MainActor.run {
-            guard let estado = self.estado else { return }
-            Task {
-                guard await estado.pasarATiendaDelAviso(tienda) else { return }
-                if marcar, case let .pedido(n) = ruta {
-                    struct Cuerpo: Encodable { var estado: String }
-                    do {
-                        try await estado.api.hacer("POST", "/v1/panel/pedidos/\(n)/estado", Cuerpo(estado: "Listo para despachar"))
-                        estado.version += 1
-                        estado.avisar("#\(n) listo")
-                    } catch {
-                        estado.rutaPendiente = ruta
-                    }
-                } else {
-                    estado.rutaPendiente = ruta
+            if let estado = self.estado { self.atender(tocado, en: estado) } else { self.pendiente = tocado }
+        }
+    }
+
+    private func atender(_ t: Tocado, en estado: Estado) {
+        Task { @MainActor in
+            guard await estado.pasarATiendaDelAviso(t.tienda) else { return }
+            if t.marcar, case let .pedido(n) = t.ruta {
+                struct Cuerpo: Encodable { var estado: String }
+                do {
+                    try await estado.api.hacer("POST", "/v1/panel/pedidos/\(n)/estado", Cuerpo(estado: "Listo para despachar"))
+                    estado.version += 1
+                    estado.avisar("#\(n) listo")
+                } catch {
+                    estado.rutaPendiente = t.ruta
                 }
+            } else {
+                estado.rutaPendiente = t.ruta
             }
         }
     }
