@@ -70,13 +70,15 @@ final class Api: @unchecked Sendable {
         var restantes: Int?
     }
 
-    func pedir(_ metodo: String, _ ruta: String, query: [URLQueryItem] = [], cuerpo: Data? = nil) async throws -> Data {
+    func pedir(_ metodo: String, _ ruta: String, query: [URLQueryItem] = [], cuerpo: Data? = nil,
+               encabezados: [String: String] = [:]) async throws -> Data {
         var c = URLComponents(url: base.appendingPathComponent(ruta), resolvingAgainstBaseURL: false)!
         if !query.isEmpty { c.queryItems = query }
         var r = URLRequest(url: c.url!, timeoutInterval: 20)
         r.httpMethod = metodo
         r.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        for (k, v) in encabezados { r.setValue(v, forHTTPHeaderField: k) }
         if let cuerpo {
             r.httpBody = cuerpo
             r.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -114,8 +116,8 @@ final class Api: @unchecked Sendable {
         _ = try await pedir(metodo, ruta, cuerpo: Api.codificador.encode(cuerpo))
     }
 
-    func hacer(_ metodo: String, _ ruta: String) async throws {
-        _ = try await pedir(metodo, ruta)
+    func hacer(_ metodo: String, _ ruta: String, encabezados: [String: String] = [:]) async throws {
+        _ = try await pedir(metodo, ruta, encabezados: encabezados)
     }
 
     private func decodificar<T: Decodable>(_ d: Data) throws -> T {

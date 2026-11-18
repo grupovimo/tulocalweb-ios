@@ -264,6 +264,8 @@ data class PedidoDetalle(
     val historial: List<Paso> = emptyList(),
     /** Código público de la confirmación (/t/<tienda>/pedido/<codigo>); null si se cargó a mano. */
     val codigo: String? = null,
+    /** La seña (§52), si se encargó o reservó con una; null si se paga entero. */
+    val sena: Sena? = null,
 ) {
     @Serializable
     data class Item(

@@ -23,11 +23,13 @@ import ar.com.tulocalweb.app.nucleo.Marcas
 import ar.com.tulocalweb.app.nucleo.PedidoDetalle
 import ar.com.tulocalweb.app.tema.*
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 // Clon de Pantallas/Pedidos/CancelarPedido.swift.
 
-/** 3c · «¿Cancelás el pedido #1048?»: aviso de reintegro manual si ya se cobró, y el botón destructivo con la huella
- *  antes de ejecutar. (La API todavía no guarda el motivo ni avisa por mail: esas dos piezas de la hoja quedan para
+/** 3c · «¿Cancelás el pedido #1048?»: qué pasa con lo cobrado (también la seña) y el botón destructivo con la huella
+ *  antes de ejecutar. Si se cobró con Mercado Pago y la persona maneja las finanzas, devuelve el pago desde acá
+ *  (POST …/reembolso) y después cancela. (La API todavía no guarda el motivo ni avisa por mail: esas dos piezas de la hoja quedan para
  *  cuando las tenga, ver docs/decisiones.md.) */
 @Composable
 fun CancelarPedido(pedido: PedidoDetalle, alCancelar: suspend () -> Unit) {
@@ -35,22 +37,39 @@ fun CancelarPedido(pedido: PedidoDetalle, alCancelar: suspend () -> Unit) {
     val cerrar = LocalCerrarHoja.current
     val alcance = rememberCoroutineScope()
     var cancelando by remember { mutableStateOf(false) }
-    val cobrado = pedido.estadoPago in listOf("Acreditada", "Acreditado", "Aprobado", "Cobrado")
+    /** Ya se devolvió (si después falló cancelar, el reintento no vuelve a devolver). */
+    var devuelto by remember { mutableStateOf(false) }
+    /** Una sola clave por hoja: si se reintenta, Mercado Pago no devuelve dos veces. */
+    val clave = remember { UUID.randomUUID().toString() }
+    // «Seña» es cobrado también: se pagó una parte (la API la cuenta igual, sinpago.go).
+    val sena = pedido.estadoPago == "Seña"
+    val cobrado = pedido.estadoPago in listOf("Acreditada", "Acreditado", "Aprobado", "Cobrado", "Seña")
+    val monto = if (sena) pedido.sena?.monto ?: pedido.total else pedido.total
+    val puedeDevolver = cobrado && !devuelto && pedido.pago == "mp" && estado.puede("finanzas")
     val nombre = pedido.comprador.nombre.split(" ").firstOrNull() ?: pedido.comprador.nombre
+    val que = if (sena) "una seña de ${Formato.pesos(monto)}" else Formato.pesos(monto)
     val explicacion = when {
-        cobrado && pedido.pago == "mp" -> "$nombre pagó con Mercado Pago: la devolución de ${Formato.pesos(pedido.total)} la hacés desde Mercado Pago. Esto no se puede deshacer."
-        cobrado -> "$nombre pagó por ${Marcas.pago(pedido.pago).lowercase()}: la devolución de ${Formato.pesos(pedido.total)} la hacés vos. Esto no se puede deshacer."
+        pedido.estadoPago == "Devuelto" -> "Ya le devolviste el pago a $nombre. El stock vuelve a la tienda. Esto no se puede deshacer."
+        cobrado && pedido.pago == "mp" && devuelto -> "Ya le devolviste $que a $nombre. Falta cancelar el pedido. Esto no se puede deshacer."
+        cobrado && pedido.pago == "mp" && puedeDevolver -> "$nombre pagó $que con Mercado Pago. Se lo devolvés desde acá al cancelar. Esto no se puede deshacer."
+        cobrado && pedido.pago == "mp" -> "$nombre pagó $que con Mercado Pago: la devolución la hace quien maneja las finanzas de la tienda. Esto no se puede deshacer."
+        cobrado -> "$nombre pagó $que por ${Marcas.pago(pedido.pago).lowercase()}: la devolución la hacés vos. Esto no se puede deshacer."
         else -> "Todavía no estaba cobrado. El stock vuelve a la tienda. Esto no se puede deshacer."
     }
 
-    suspend fun confirmar() {
+    suspend fun confirmar(devolver: Boolean) {
         if (!estado.confirmarIdentidad("Para cancelar el pedido #${pedido.numero}")) return
         cancelando = true
         try {
+            // Primero la devolución: si falla, el pedido sigue como estaba.
+            if (devolver) {
+                estado.api.hacer("POST", "/v1/panel/pedidos/${pedido.numero}/reembolso", mapOf("Idempotency-Key" to clave))
+                devuelto = true
+            }
             PedidosApi.cambiarEstado(estado.api, pedido.numero, "Cancelado")
             Haptico.exito()
             cerrar()
-            estado.avisar("Cancelaste el pedido #${pedido.numero}")
+            estado.avisar(if (devolver) "Devolviste ${Formato.pesos(monto)} y cancelaste el pedido #${pedido.numero}" else "Cancelaste el pedido #${pedido.numero}")
             estado.version += 1
             alCancelar()
             estado.refrescarResumen()
@@ -75,7 +94,9 @@ fun CancelarPedido(pedido: PedidoDetalle, alCancelar: suspend () -> Unit) {
         }
         Spacer(Modifier.weight(1f))
         Column(Modifier.padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BotonDestructivo("Cancelar pedido", { alcance.launch { confirmar() } }, habilitado = !cancelando, simbolo = "faceid", cargando = cancelando)
+            BotonDestructivo(if (puedeDevolver) "Devolver ${Formato.pesos(monto)} y cancelar" else "Cancelar pedido", { alcance.launch { confirmar(puedeDevolver) } },
+                habilitado = !cancelando, simbolo = "faceid", cargando = cancelando)
+            if (puedeDevolver) BotonTexto("Cancelar sin devolver", { alcance.launch { confirmar(false) } }, alto = 48.dp, color = C.errorTinta, habilitado = !cancelando)
             BotonTexto("Volver", { cerrar() }, alto = 48.dp)
         }
     }

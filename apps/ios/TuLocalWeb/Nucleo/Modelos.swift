@@ -314,6 +314,8 @@ struct PedidoDetalle: Codable {
     var historial: [Paso]
     /// Código público de la confirmación (/t/<tienda>/pedido/<codigo>); null si se cargó a mano.
     var codigo: String?
+    /// La seña (§52), si se encargó o reservó con una; null si se paga entero.
+    var sena: Sena?
 }
 
 // MARK: - Productos

@@ -64,10 +64,12 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
     @Serializable
     private data class Problema(val status: Int? = null, val code: String? = null, val title: String? = null, val detail: String? = null, val restantes: Int? = null)
 
-    suspend fun pedir(metodo: String, ruta: String, query: List<Pair<String, String>> = emptyList(), cuerpo: ByteArray? = null): String {
+    suspend fun pedir(metodo: String, ruta: String, query: List<Pair<String, String>> = emptyList(), cuerpo: ByteArray? = null,
+                      encabezados: Map<String, String> = emptyMap()): String {
         val url = (base.trimEnd('/') + ruta).toHttpUrl().newBuilder().apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }.build()
         val r = Request.Builder().url(url).header("Accept", "application/json")
         token?.let { r.header("Authorization", "Bearer $it") }
+        encabezados.forEach { (k, v) -> r.header(k, v) }
         val cuerpoHttp = cuerpo?.toRequestBody("application/json".toMediaType())
             ?: if (metodo in listOf("POST", "PUT", "PATCH")) ByteArray(0).toRequestBody(null) else null
         r.method(metodo, cuerpoHttp)
@@ -97,7 +99,7 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
         pedir(metodo, ruta, cuerpo = json.encodeToString(cuerpo).toByteArray())
     }
 
-    suspend fun hacer(metodo: String, ruta: String) { pedir(metodo, ruta) }
+    suspend fun hacer(metodo: String, ruta: String, encabezados: Map<String, String> = emptyMap()) { pedir(metodo, ruta, encabezados = encabezados) }
 
     inline fun <reified T> decodificar(d: String): T = try {
         json.decodeFromString<T>(d)
