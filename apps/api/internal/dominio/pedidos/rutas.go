@@ -119,6 +119,8 @@ func Rutas(mux *http.ServeMux, pool tx, tienda func(*http.Request) string) {
 			problema.Escribir(w, problema.NoEncontrado("Ese pedido no existe."))
 		case errors.Is(err, ErrTransicion):
 			problema.Escribir(w, problema.Conflicto("transicion", "El pedido ya cambió de etapa."))
+		case errors.Is(err, ErrSinStock):
+			problema.Escribir(w, problema.Conflicto("sin_stock", "Para reabrirlo no alcanza el stock de algún producto."))
 		default:
 			problema.Escribir(w, problema.Interno())
 		}

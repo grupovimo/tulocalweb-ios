@@ -217,6 +217,8 @@ type Consultado struct {
 	CAE      string
 	VenceCAE time.Time
 	Total    string
+	// DocNro: el documento del receptor (0 si es consumidor final sin identificar).
+	DocNro int64
 }
 
 // Consultar trae un comprobante por tipo, punto de venta y número (FECompConsultar). Sirve para
@@ -233,6 +235,7 @@ func Consultar(ctx context.Context, cli *http.Client, dir Direcciones, t Ticket,
 		CAE    string   `xml:"Body>FECompConsultarResponse>FECompConsultarResult>ResultGet>CodAutorizacion"`
 		Vence  string   `xml:"Body>FECompConsultarResponse>FECompConsultarResult>ResultGet>FchVto"`
 		Total  string   `xml:"Body>FECompConsultarResponse>FECompConsultarResult>ResultGet>ImpTotal"`
+		DocNro int64    `xml:"Body>FECompConsultarResponse>FECompConsultarResult>ResultGet>DocNro"`
 		Errors errsARCA `xml:"Body>FECompConsultarResponse>FECompConsultarResult>Errors"`
 	}
 	if err := xml.Unmarshal(b, &r); err != nil {
@@ -242,7 +245,7 @@ func Consultar(ctx context.Context, cli *http.Client, dir Direcciones, t Ticket,
 		return Consultado{}, err
 	}
 	v, _ := time.ParseInLocation("20060102", r.Vence, arg)
-	return Consultado{CAE: r.CAE, VenceCAE: v, Total: r.Total}, nil
+	return Consultado{CAE: r.CAE, VenceCAE: v, Total: r.Total, DocNro: r.DocNro}, nil
 }
 
 // TotalDec es el total como lo manda (y lo devuelve) ARCA: "12100.00".

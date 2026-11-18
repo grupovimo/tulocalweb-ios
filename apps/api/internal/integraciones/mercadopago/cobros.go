@@ -359,8 +359,9 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 	return s.Pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var tipo, objetivo, previo string
 		var esperado int64
-		err := t.QueryRow(ctx, `SELECT tipo, objetivo, monto, estado FROM mp_cobros WHERE referencia = $1 FOR UPDATE`, ref).
-			Scan(&tipo, &objetivo, &esperado, &previo)
+		var pagoPrevio *int64
+		err := t.QueryRow(ctx, `SELECT tipo, objetivo, monto, estado, pago FROM mp_cobros WHERE referencia = $1 FOR UPDATE`, ref).
+			Scan(&tipo, &objetivo, &esperado, &previo, &pagoPrevio)
 		if errors.Is(err, pgx.ErrNoRows) {
 			// El cobro de una suscripción de la tienda (§51), o un pago de la cuenta que no salió de
 			// Tu Local Web: ese no es nuestro.
@@ -368,6 +369,15 @@ func (s *Servicio) aplicar(ctx context.Context, tiendaID, ref string, pagoID int
 		}
 		if err != nil {
 			return err
+		}
+		// Todos los intentos de una misma preferencia comparten la referencia: un rechazo (o un
+		// pendiente) de OTRO pago que llega después del aprobado no lo pisa. Si no, la fila quedaba
+		// «rejected» con el id del pago rechazado y el reembolso decía que no existía. La devolución o
+		// el contracargo del pago aprobado sí se aplican.
+		yaAprobado := previo == "approved" || previo == "processed"
+		sigueValiendo := estado == "approved" || estado == "processed" || estado == "refunded" || estado == "charged_back"
+		if yaAprobado && !sigueValiendo && pagoPrevio != nil && *pagoPrevio != pagoID {
+			return nil
 		}
 		if _, err := t.Exec(ctx, `UPDATE mp_cobros SET pago = $2, estado = $3, actualizado_en = now() WHERE referencia = $1`,
 			ref, pagoID, estado); err != nil {
@@ -504,8 +514,10 @@ func (s *Servicio) Reembolsar(ctx context.Context, tiendaID string, pedido int, 
 		return t.QueryRow(ctx, `SELECT c.tipo, c.pago, c.orden FROM mp_cobros c
 			LEFT JOIN links l ON c.tipo = 'link' AND l.codigo = c.objetivo
 			WHERE c.estado IN ('approved', 'processed')
-				AND ((c.tipo IN ('pedido', 'qr') AND c.objetivo = $1::text) OR l.pedido = $1)
-			ORDER BY c.actualizado_en DESC LIMIT 1`, pedido).Scan(&tipo, &pagoID, &ordenID)
+				AND ((c.tipo IN ('pedido', 'qr') AND c.objetivo = $1) OR l.pedido = $2)
+			ORDER BY c.actualizado_en DESC LIMIT 1`, strconv.Itoa(pedido), pedido).Scan(&tipo, &pagoID, &ordenID)
+		// Dos parámetros: con $1 como texto y como número a la vez, Postgres fallaba («integer = text»)
+		// y el reembolso daba siempre 500.
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNoExiste

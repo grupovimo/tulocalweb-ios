@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/nawesan12/mostrador-v2/apps/api/internal/plataforma/auditoria"
 )
@@ -55,6 +57,47 @@ func devolver(ctx context.Context, t pgx.Tx, tiendaID string, items []byte, cupo
 	return err
 }
 
+// retomar es lo contrario de devolver (deshacer una cancelación): vuelve a bajar el stock, sólo si
+// alcanza para cada línea (ErrSinStock si no), y vuelve a contar el uso del cupón.
+func retomar(ctx context.Context, t pgx.Tx, tiendaID string, items []byte, cupon *string) error {
+	var ls []Item
+	if err := json.Unmarshal(items, &ls); err != nil {
+		return err
+	}
+	for _, it := range ls {
+		if it.ProductoID == nil {
+			continue
+		}
+		var tag pgconn.CommandTag
+		var err error
+		if it.VarianteID != nil {
+			tag, err = t.Exec(ctx, `UPDATE variantes SET stock = stock - $4
+				WHERE tienda_id = $1 AND producto_id::text = $2 AND id::text = $3 AND (stock IS NULL OR stock >= $4)`, tiendaID, *it.ProductoID, *it.VarianteID, it.Cantidad)
+		} else {
+			tag, err = t.Exec(ctx, `UPDATE productos SET stock = stock - $3
+				WHERE tienda_id = $1 AND id::text = $2 AND opciones = '[]'::jsonb AND (stock IS NULL OR stock >= $3)`, tiendaID, *it.ProductoID, it.Cantidad)
+		}
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			// El producto ya no está (borrado) o no alcanza: si existe con menos stock, no se puede.
+			var hay bool
+			if err := t.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM productos WHERE tienda_id = $1 AND id::text = $2)`, tiendaID, *it.ProductoID).Scan(&hay); err != nil {
+				return err
+			}
+			if hay {
+				return ErrSinStock
+			}
+		}
+	}
+	if cupon == nil {
+		return nil
+	}
+	_, err := t.Exec(ctx, `UPDATE cupones SET usos = usos + 1 WHERE tienda_id = $1 AND codigo = $2`, tiendaID, *cupon)
+	return err
+}
+
 // CancelarSinPago cancela un pedido de la tienda online que espera el pago de Mercado Pago hace más
 // de 24 h: el stock vuelve y el cupón se libera. No avisa a nadie (no fue una venta); queda en la
 // Actividad. Si mientras tanto se pagó, no hace nada y devuelve false.
@@ -67,7 +110,10 @@ func CancelarSinPago(ctx context.Context, pool tx, tiendaID string, numero int) 
 				estados_en = estados_en || jsonb_build_object('Cancelado', now())
 			WHERE tienda_id = $1 AND numero = $2 AND estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp'
 				AND sena IS NULL AND codigo_publico IS NOT NULL AND estado_pago = 'Pendiente' AND creado_en < now() - interval '24 hours'
-			RETURNING items, cupon`, tiendaID, numero).Scan(&items, &cupon)
+				-- Con un pago en curso (efectivo, en revisión) se espera: ver la migración 00087.
+				AND NOT EXISTS (SELECT 1 FROM mp_cobros c WHERE c.tienda_id = $1 AND c.tipo = 'pedido' AND c.objetivo = $3
+					AND c.estado IN ('pending', 'in_process', 'authorized') AND c.actualizado_en > now() - interval '7 days')
+			RETURNING items, cupon`, tiendaID, numero, strconv.Itoa(numero)).Scan(&items, &cupon)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}

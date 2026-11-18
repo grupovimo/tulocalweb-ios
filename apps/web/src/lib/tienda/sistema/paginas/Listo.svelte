@@ -10,6 +10,10 @@
 		codigo?: string;
 		/** La reseña se pide recién cuando lo recibió (Entregado o Retirado). */
 		estado?: string;
+		/** Con Mercado Pago y todavía sin pagar (Mercado Pago no armó el pago o lo rechazó): se puede pagar acá. */
+		porPagar?: boolean;
+		/** Volvió de Mercado Pago con el pago rechazado. */
+		rechazado?: boolean;
 	};
 </script>
 
@@ -52,7 +56,16 @@
 			por mail con cada&nbsp;novedad.
 		</p>
 		<SenaPedido {tema} />
-		{#if pedido.pago === 'transferencia'}
+		{#if pedido.porPagar}
+			<form class="tv-confirma-caja tv-tarjeta" method="POST" action="?/pagar">
+				<p>
+					{#if pedido.rechazado}<b>El pago no se completó.</b> Probá de nuevo, con otra tarjeta o
+						medio.{:else}<b>Falta pagar {precio(pedido.total)}</b> con Mercado Pago.{/if} El pedido te
+					lo guardamos 24&nbsp;horas.
+				</p>
+				<button class="tv-btn tv-btn--primario tv-btn--bloque" type="submit">Pagar con Mercado&nbsp;Pago</button>
+			</form>
+		{:else if pedido.pago === 'transferencia'}
 			<div class="tv-confirma-caja tv-tarjeta">
 				<p>
 					<b>Transferí {precio(pedido.total)}</b>

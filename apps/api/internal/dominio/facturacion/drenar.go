@@ -170,7 +170,18 @@ func (s *Servicio) emitir(ctx context.Context, tienda, cuit string, amb arca.Amb
 			s.fallo(ctx, tienda, p, err)
 			return
 		}
-		if q.CAE != "" && mismoTotal(q.Total, c.Total) {
+		// Además del total: el mismo receptor, y que ningún otro comprobante de la tienda ya tenga ese
+		// número (si el intento no se numeró y otro de la tanda tomó el número, era la factura de otra
+		// venta con el mismo total, y quedaban dos pedidos con la misma factura).
+		otro := false
+		if err := s.Pool.EnTienda(ctx, tienda, func(t pgx.Tx) error {
+			return t.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM comprobantes WHERE id::text <> $1 AND punto_venta = $2 AND tipo = $3
+				AND (numero = $4 OR (estado = 'pendiente' AND numero_intentado = $4)))`, p.id, p.pv, p.tipo, *p.numeroIntentado).Scan(&otro)
+		}); err != nil {
+			s.fallo(ctx, tienda, p, err)
+			return
+		}
+		if q.CAE != "" && mismoTotal(q.Total, c.Total) && q.DocNro == c.DocNro && !otro {
 			s.emitido(ctx, tienda, p, arca.Autorizado{Numero: *p.numeroIntentado, CAE: q.CAE, VenceCAE: q.VenceCAE})
 			return
 		}

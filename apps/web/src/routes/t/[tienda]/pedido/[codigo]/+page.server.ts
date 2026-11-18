@@ -1,9 +1,10 @@
 import { env } from 'cloudflare:workers';
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import { COOKIE } from '#lib/server/sandbox/sandbox.ts';
 import { resolverTienda } from '#lib/server/tienda/publica.ts';
 import { codigoPedido } from '#lib/server/tienda/pedido.ts';
-import type { PageServerLoad } from './$types';
+import { irAfuera } from '#lib/server/afuera.ts';
+import type { Actions, PageServerLoad } from './$types';
 
 /** La confirmación del pedido: el código lleva la firma, así nadie mira el pedido de otro. */
 export const load: PageServerLoad = async ({ params, cookies, url, depends }) => {
@@ -62,7 +63,12 @@ export const load: PageServerLoad = async ({ params, cookies, url, depends }) =>
 				alias: tr ? (c.alias ?? c.cbu) : null,
 				esCbu: tr && !c.alias && !!c.cbu,
 				// Los mismos estados de «pagado» que los mails a quien compra (Go, 00034).
-				pagado: ['Aprobado', 'Acreditada', 'Cobrado'].includes(c.estadoPago ?? '')
+				pagado: ['Aprobado', 'Acreditada', 'Cobrado'].includes(c.estadoPago ?? ''),
+				// Mercado Pago sin pagar todavía: la página ofrece pagarlo (si no, quedaba sin forma de pagar).
+				porPagar: c.pago === 'mercadopago' && c.estado === 'Sin pagar' && c.estadoPago === 'Pendiente' && !c.sena,
+				rechazado: ['rejected', 'failure', 'null'].includes(
+					url.searchParams.get('status') ?? url.searchParams.get('collection_status') ?? ''
+				)
 			}
 		};
 	}
@@ -98,4 +104,25 @@ export const load: PageServerLoad = async ({ params, cookies, url, depends }) =>
 		// La demo no cobra la seña: la confirmación lo dice.
 		senaDemo: !!p.sena
 	};
+};
+
+export const actions: Actions = {
+	/** Pagar después: arma un pago nuevo de Mercado Pago para el pedido y lleva a pagarlo. */
+	pagar: async ({ params, cookies, request, getClientAddress }) => {
+		const r = await resolverTienda(params.tienda, cookies.get(COOKIE));
+		if (!r || r.datos) return fail(400, { error: 'Esta tienda no cobra con Mercado Pago.' });
+		const res = await fetch(
+			`${String(env.API_URL)}/v1/publico/tiendas/${r.tienda.slug}/pedidos/${encodeURIComponent(params.codigo)}/pagar`,
+			{
+				method: 'POST',
+				headers: {
+					'x-mostrador-bff': String(env.CLAVE_BFF ?? ''),
+					'x-cliente-ip': request.headers.get('cf-connecting-ip') ?? getClientAddress()
+				}
+			}
+		).catch(() => null);
+		const g = res?.ok ? ((await res.json()) as { url?: string }) : null;
+		if (!g?.url) return fail(409, { error: 'Mercado Pago no respondió. Probá de nuevo en un rato.' });
+		irAfuera(g.url);
+	}
 };

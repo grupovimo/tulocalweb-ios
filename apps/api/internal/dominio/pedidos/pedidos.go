@@ -467,7 +467,10 @@ var (
 func CambiarEstado(ctx context.Context, pool tx, tiendaID string, numero int, estado string) error {
 	return pool.EnTienda(ctx, tiendaID, func(t pgx.Tx) error {
 		var de, envio string
-		err := t.QueryRow(ctx, `SELECT estado, envio FROM pedidos WHERE tienda_id = $1 AND numero = $2 FOR UPDATE`, tiendaID, numero).Scan(&de, &envio)
+		var items []byte
+		var cupon *string
+		err := t.QueryRow(ctx, `SELECT estado, envio, items, cupon FROM pedidos WHERE tienda_id = $1 AND numero = $2 FOR UPDATE`, tiendaID, numero).
+			Scan(&de, &envio, &items, &cupon)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNoExiste
 		}
@@ -476,6 +479,18 @@ func CambiarEstado(ctx context.Context, pool tx, tiendaID string, numero int, es
 		}
 		if !TransicionValida(de, estado, envio) {
 			return ErrTransicion
+		}
+		// Cancelar devuelve el stock y libera el cupón, como la cancelación automática (antes sólo
+		// cambiaba la etapa y el stock quedaba abajo para siempre, aunque la app decía que volvía).
+		// Deshacer una cancelación lo vuelve a tomar, sólo si alcanza.
+		if estado == "Cancelado" {
+			if err := devolver(ctx, t, tiendaID, items, cupon); err != nil {
+				return err
+			}
+		} else if de == "Cancelado" {
+			if err := retomar(ctx, t, tiendaID, items, cupon); err != nil {
+				return err
+			}
 		}
 		// «Marcar como pagado» (Sin pagar → Para preparar) es la tienda diciendo que cobró: la
 		// transferencia queda acreditada y lo demás cobrado (Mercado Pago lo confirma su aviso). Antes sólo

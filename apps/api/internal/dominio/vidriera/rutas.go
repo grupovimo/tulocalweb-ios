@@ -3,6 +3,7 @@ package vidriera
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -87,6 +88,14 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 		escribir(w, http.StatusOK, t)
 	})
 	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/pedidos", func(w http.ResponseWriter, r *http.Request) {
+		// Tope por IP: sin él, un script podía tomar todo el stock con pedidos de Mercado Pago sin pagar
+		// (quedaba reservado 24 h) y gastar los cupones únicos. Alguien que compra de verdad no llega.
+		if c, ok := pool.(limite.Consultor); ok && ip != nil {
+			if ok, err := limite.Permitido(r.Context(), c, "tienda:pedido:"+ip(r), 20, time.Hour); err == nil && !ok {
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
+			}
+		}
 		var c Compra
 		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10)).Decode(&c) != nil {
 			error404(w, ErrInvalido)
@@ -381,6 +390,38 @@ func Rutas(mux *http.ServeMux, pool tx, mp Pagador, sitio string, dev *devolucio
 			return
 		}
 		escribir(w, http.StatusOK, c)
+	})
+	// Pagar después: si al comprar Mercado Pago no armó el pago (timeout) o el pago fue rechazado, el
+	// pedido quedaba «Sin pagar» sin ninguna forma de pagarlo y se cancelaba solo a las 24 h. Arma un
+	// pago nuevo mientras el pedido siga esperándolo (la preferencia vence con el pedido).
+	mux.HandleFunc("POST /v1/publico/tiendas/{slug}/pedidos/{codigo}/pagar", func(w http.ResponseWriter, r *http.Request) {
+		if c, ok := pool.(limite.Consultor); ok && ip != nil {
+			if ok, err := limite.Permitido(r.Context(), c, "tienda:pagar:"+ip(r), 20, time.Hour); err == nil && !ok {
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
+			}
+		}
+		slug, codigo := r.PathValue("slug"), r.PathValue("codigo")
+		c, err := VerPedido(r.Context(), pool, slug, codigo)
+		if err != nil {
+			error404(w, err)
+			return
+		}
+		if c.Pago != "mercadopago" || c.Estado != "Sin pagar" || c.EstadoPago != "Pendiente" || c.Sena != nil {
+			problema.Escribir(w, problema.Conflicto("no_se_paga", "Este pedido no espera un pago con Mercado Pago."))
+			return
+		}
+		id, err := tiendaDe(r.Context(), pool, slug)
+		if err != nil {
+			error404(w, err)
+			return
+		}
+		url, err := mp.PagarPedido(r.Context(), id, c.Numero, fmt.Sprintf("%s/t/%s/pedido/%s", sitio, slug, codigo))
+		if err != nil || url == "" {
+			problema.Escribir(w, problema.Conflicto("sin_pago", "Mercado Pago no respondió. Probá de nuevo en un rato."))
+			return
+		}
+		escribir(w, http.StatusOK, map[string]string{"url": url})
 	})
 	// Un link de la tienda vieja (importada): 301 al path de Tu Local Web, relativo a la tienda. Lo pide
 	// el BFF cuando un path de /t/{slug} no existe; el cuerpo repite el destino para no leer el header.

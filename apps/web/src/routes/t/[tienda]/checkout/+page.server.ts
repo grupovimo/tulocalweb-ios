@@ -109,7 +109,13 @@ export const actions: Actions = {
 				`${String(env.API_URL)}/v1/publico/tiendas/${r.tienda.slug}/pedidos`,
 				{
 					method: 'POST',
-					headers: { 'content-type': 'application/json' },
+					// La IP de quien compra (para el tope por IP de la API): sin esto, todos los pedidos
+					// llegaban desde este servidor y compartían un solo cupo.
+					headers: {
+						'content-type': 'application/json',
+						'x-mostrador-bff': String(env.CLAVE_BFF ?? ''),
+						'x-cliente-ip': request.headers.get('cf-connecting-ip') ?? getClientAddress()
+					},
 					body: JSON.stringify({ ...p, novedades: p.novedades === true, medicion })
 				}
 			);
