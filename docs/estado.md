@@ -2,6 +2,15 @@
 
 Última actualización: 6/11/2026. Plan completo: `~/.claude/plans/claude-vamos-con-algo-encapsulated-alpaca.md`.
 
+## 18/11/2026: revisión de bugs (desplegado, 355bf8d, migración 00087)
+
+Reembolsar desde el panel fallaba siempre; un rechazo posterior pisaba el pago aprobado; cancelar a mano
+devuelve stock y cupón (reabrir los retoma o 409 sin_stock); pedidos con pago de MP en curso no vencen a las
+24 h (00087); «Pagar con Mercado Pago» en la página del pedido (POST …/pedidos/{codigo}/pagar); ARCA no
+recupera un comprobante de otra venta; tope por IP al crear pedidos (el checkout ahora manda la IP).
+Pendiente: un código TOTP se puede reusar dentro de su ventana (guardar el último paso usado; pide migración);
+`TestDisenoV2EnLaTienda` falla desde antes (el preset «litoral» cambió de bloques, la prueba no).
+
 ## 15/11/2026 · Páginas para los anuncios de Meta
 
 `/l/avisos`, `/l/una-caja` y `/l/pasate`: una página por ángulo con una sola acción (crear la cuenta),
