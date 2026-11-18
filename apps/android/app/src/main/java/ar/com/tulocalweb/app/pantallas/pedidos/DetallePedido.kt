@@ -166,8 +166,9 @@ fun DetallePedido(numero: Int) {
                                 Box(Modifier.fillMaxWidth().tarjeta().padding(horizontal = 16.dp, vertical = 14.dp)) {
                                     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.crema2).padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        // Sin firma: la nota la escribe el checkout, el encargo o quien vende, nunca Tincho (no le
+                                        // habla a quien compra) y la API no guarda otro origen.
                                         Texto(nota, Estilo.subhead, C.texto, interlineado = 2f)
-                                        Texto("Tincho · de la charla con quien compró", Estilo.chip.con(Peso.regular), C.texto2)
                                     }
                                 }
                             }

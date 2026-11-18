@@ -85,8 +85,9 @@ struct DetallePedido: View {
                 if let nota = p.nota, !nota.isEmpty {
                     EtiquetaSeccion(texto: "Notas internas").padding(.horizontal, 4).padding(.top, 6)
                     VStack(alignment: .leading, spacing: 3) {
+                        // Sin firma: la nota la escribe el checkout, el encargo o quien vende, nunca Tincho (no le
+                        // habla a quien compra) y la API no guarda otro origen.
                         Text(nota).estilo(.subhead).foregroundStyle(C.texto).lineSpacing(2)
-                        Text("Tincho · de la charla con quien compró").estilo(.chip).fontWeight(.regular).foregroundStyle(C.texto2)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)
