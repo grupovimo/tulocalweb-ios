@@ -216,7 +216,7 @@ func GuardarEnTx(ctx context.Context, t pgx.Tx, tiendaID, id string, e Editable)
 	} else if _, err := t.Exec(ctx, `UPDATE productos SET nombre = $3, descripcion = coalesce($4, descripcion),
 			categoria = $5, precio = CASE WHEN $14 THEN precio ELSE $6 END,
 			costo = CASE WHEN $14 THEN costo ELSE coalesce($7, costo) END, sku = coalesce($8, sku),
-			stock = coalesce($9, stock), foto = $10, canales = $11, publicado = true, fotos = $12, opciones = $13,
+			stock = coalesce($9, stock), foto = $10, canales = $11, fotos = $12, opciones = $13,
 			precio_mayorista = CASE WHEN $14 OR $15::bigint IS NULL THEN precio_mayorista ELSE nullif($15::bigint, 0) END,
 			tipo = coalesce($16, tipo), atributos = coalesce($17, atributos), iva = coalesce($18, iva)
 		WHERE tienda_id = $1 AND id::text = $2`,

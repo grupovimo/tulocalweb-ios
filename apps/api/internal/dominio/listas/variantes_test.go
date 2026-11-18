@@ -1,6 +1,7 @@
 package listas_test
 
 import (
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -187,5 +188,79 @@ func TestStockPorVariante(t *testing.T) {
 	p, _ = listas.Obtener(ctx, b.App, luna, p.ID, time.Now())
 	if p.Precio != 88000 || *variante(p, "Número", "38").Precio != 99000 || variante(p, "Número", "40").Precio != nil {
 		t.Fatalf("aumento: %d %+v", p.Precio, p.Variantes)
+	}
+}
+
+// Las apps mandan cada variante con valores, precio y SKU (stock sólo si se tocó): lo que no viene en
+// el JSON se conserva; null y "" sí borran.
+func TestVariantesConservanLoQueNoVino(t *testing.T) {
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	fotos := []string{"https://f/a.jpg", "https://f/b.jpg"}
+	p, err := listas.Guardar(ctx, b.App, luna, "", listas.Editable{Nombre: "Remera lisa", Precio: 20000, PrecioMayorista: ptr(int64(15000)),
+		Fotos: fotos, Opciones: []listas.Opcion{{Nombre: "Talle", Valores: []string{"M"}}},
+		Variantes: []listas.VarianteEditable{{Valores: map[string]string{"Talle": "M"}, Stock: ptr(7), SKU: ptr("REM-M"),
+			Foto: ptr("https://f/b.jpg"), PrecioMayorista: ptr(int64(14000))}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	guardar := func(cuerpo string) listas.Producto {
+		t.Helper()
+		var e listas.Editable
+		if err := json.Unmarshal([]byte(cuerpo), &e); err != nil {
+			t.Fatal(err)
+		}
+		p, err := listas.Guardar(ctx, b.App, luna, p.ID, e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	// Una venta entra con el editor abierto: el stock baja a 6 y el editor no lo manda.
+	if err := b.App.EnTienda(ctx, luna, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE variantes SET stock = 6 WHERE tienda_id = $1 AND producto_id = $2::uuid`, luna, p.ID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	p = guardar(`{"nombre": "Remera lisa", "precio": 20000, "fotos": ["https://f/a.jpg", "https://f/b.jpg"],
+		"opciones": [{"nombre": "Talle", "valores": ["M"]}],
+		"variantes": [{"valores": {"Talle": "M"}, "precio": 21000, "sku": "REM-M"}]}`)
+	m := variante(p, "Talle", "M")
+	if m.Foto == nil || *m.Foto != "https://f/b.jpg" || m.PrecioMayorista == nil || *m.PrecioMayorista != 14000 || m.Stock != 6 ||
+		*m.Precio != 21000 || p.Stock != 6 {
+		t.Fatalf("pisó lo que no vino: %+v stock %d", m, p.Stock)
+	}
+	// SKU vacío lo borra; null saca foto y mayorista (como manda la web).
+	p = guardar(`{"nombre": "Remera lisa", "precio": 20000, "fotos": ["https://f/a.jpg", "https://f/b.jpg"],
+		"variantes": [{"valores": {"Talle": "M"}, "precio": null, "sku": "", "foto": null, "precioMayorista": null}]}`)
+	if m = variante(p, "Talle", "M"); m.SKU != "" || m.Foto != nil || m.PrecioMayorista != nil || m.Precio != nil || m.Stock != 6 {
+		t.Fatalf("borrar con null y vacío: %+v", m)
+	}
+}
+
+// Editar un producto pausado no lo vuelve a publicar; sin stock en el cuerpo queda el que hay.
+func TestEditarConservaPausaYStock(t *testing.T) {
+	b := pruebadb.Nueva(t)
+	luna := pruebadb.CrearTienda(t, b.App, "luna")
+	p, err := listas.Guardar(ctx, b.App, luna, "", listas.Editable{Nombre: "Mate", Precio: 9000, Stock: ptr(5)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := listas.Publicar(ctx, b.App, luna, []string{p.ID}, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.App.EnTienda(ctx, luna, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE productos SET stock = 4 WHERE tienda_id = $1 AND id = $2::uuid`, luna, p.ID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	p, err = listas.Guardar(ctx, b.App, luna, p.ID, listas.Editable{Nombre: "Mate imperial", Precio: 9500})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Publicado || p.Stock != 4 || p.Nombre != "Mate imperial" {
+		t.Fatalf("editar pausado: publicado %v stock %d", p.Publicado, p.Stock)
 	}
 }

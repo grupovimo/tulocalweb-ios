@@ -4206,11 +4206,11 @@ components:
           type: object
           description: 'Una clave por opción, con un valor de esa opción: identifica la combinación'
           additionalProperties: { type: string }
-        sku: { type: string, maxLength: 40 }
-        precio: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio del producto' }
-        precioMayorista: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio mayorista del producto (§49)' }
+        sku: { type: string, maxLength: 40, description: 'Sin mandar: el que tenía; vacío lo borra' }
+        precio: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio del producto. Sin mandar: el que tenía' }
+        precioMayorista: { type: [integer, 'null'], minimum: 0, description: 'null: usa el precio mayorista del producto (§49). Sin mandar: el que tenía' }
         stock: { type: integer, minimum: 0, maximum: 1000000, description: 'Sin mandar: el que tenía (0 si es nueva)' }
-        foto: { type: [string, 'null'], description: 'Una de las fotos del producto' }
+        foto: { type: [string, 'null'], description: 'Una de las fotos del producto; null la saca. Sin mandar: la que tenía' }
         activa: { type: boolean, description: 'Sin mandar: la que tenía (true si es nueva)' }
     Variante:
       type: object

@@ -2,6 +2,7 @@ package listas
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -39,16 +40,44 @@ type Variante struct {
 }
 
 // VarianteEditable es lo que manda el editor por cada combinación que quiere tocar. Se identifica
-// por sus valores (el id se ignora). Stock y activa en nil dejan lo que había (o 0 y true si es nueva).
+// por sus valores (el id se ignora). SKU, stock y activa en nil dejan lo que había (o "", 0 y true si
+// es nueva).
 type VarianteEditable struct {
 	Valores map[string]string `json:"valores"`
 	SKU     *string           `json:"sku"`
-	Precio  *int64            `json:"precio"`
-	// PrecioMayorista pisa como Precio: nil usa el mayorista del producto.
+	// Precio, PrecioMayorista y Foto: null los saca (usa el del producto, o sin foto). Si llegan por
+	// JSON sin la clave, quedan los que había: las apps no mandan foto ni mayorista y no se borran.
+	Precio          *int64  `json:"precio"`
 	PrecioMayorista *int64  `json:"precioMayorista"`
 	Stock           *int    `json:"stock"`
 	Foto            *string `json:"foto"`
 	Activa          *bool   `json:"activa"`
+	// vinieron: las claves del JSON. nil si se armó en Go: ahí manda todo, como siempre.
+	vinieron map[string]bool
+}
+
+// UnmarshalJSON anota qué claves vinieron, para no pisar con null lo que el cliente no mandó.
+func (v *VarianteEditable) UnmarshalJSON(b []byte) error {
+	type plana VarianteEditable
+	var p plana
+	if err := json.Unmarshal(b, &p); err != nil {
+		return err
+	}
+	var claves map[string]json.RawMessage
+	if err := json.Unmarshal(b, &claves); err != nil {
+		return err
+	}
+	*v = VarianteEditable(p)
+	v.vinieron = make(map[string]bool, len(claves))
+	for k := range claves {
+		v.vinieron[k] = true
+	}
+	return nil
+}
+
+// trae dice si el editor mandó ese campo (siempre, si la variante se armó en Go).
+func (v VarianteEditable) trae(clave string) bool {
+	return v.vinieron == nil || v.vinieron[clave]
 }
 
 // TextoVariante es lo que se lee en el pedido: "Talle M · Color Negro" (en el orden de las opciones).
@@ -242,13 +271,19 @@ func sincronizarVariantes(ctx context.Context, t pgx.Tx, tiendaID, productoID st
 				v.SKU = strings.TrimSpace(*e.SKU)
 			}
 			if !sinPrecios {
-				v.Precio = e.Precio
-				v.PrecioMayorista = e.PrecioMayorista
+				if e.trae("precio") {
+					v.Precio = e.Precio
+				}
+				if e.trae("precioMayorista") {
+					v.PrecioMayorista = e.PrecioMayorista
+				}
 				if v.PrecioMayorista != nil && *v.PrecioMayorista == 0 {
 					v.PrecioMayorista = nil
 				}
 			}
-			v.Foto = e.Foto
+			if e.trae("foto") {
+				v.Foto = e.Foto
+			}
 			if e.Stock != nil {
 				v.Stock = *e.Stock
 			}
