@@ -1,6 +1,9 @@
 package mitienda
 
-import "maps"
+import (
+	"maps"
+	"slices"
+)
 
 // Mientras la web vieja (las 17 plantillas) conviva con la de bloques, la tienda pública manda
 // también lo de v1 armado desde el diseño v2. Cuando todo migró, esto se borra.
@@ -13,7 +16,9 @@ func LeerDiseno(crudo []byte, plantilla string) Diseno { return leerDiseno(crudo
 func (d Diseno) SeccionesV1() []string {
 	out := []string{}
 	for _, b := range d.Inicio {
-		if s := seccionDe(b.Tipo); s != "" && s != "wa" && !b.Oculto {
+		// Una sección v1 por tipo: con novedades y ofertas hay tres bloques de productos, y v1 sólo
+		// tiene una grilla de productos (repetida, la plantilla vieja la dibujaba tres veces).
+		if s := seccionDe(b.Tipo); s != "" && s != "wa" && !b.Oculto && !slices.Contains(out, s) {
 			out = append(out, s)
 		}
 	}
@@ -33,13 +38,15 @@ func (d Diseno) EstiloV1() *Estilo {
 	if e.Barra != nil && len(e.Barra.Mensajes) > 0 {
 		e.Anuncio, e.AnuncioLink = e.Barra.Mensajes[0].Texto, e.Barra.Mensajes[0].Link
 	}
+	// El título de cada sección sale sólo del primer bloque de su tipo (el que dibuja v1): si no, el de
+	// «Recién llegados» (segundo bloque de productos) titulaba la grilla de todos los productos.
 	textos := map[string]string{}
+	vistas := map[string]bool{}
 	for _, b := range d.Inicio {
-		if s := seccionDe(b.Tipo); s != "" && s != "hero" {
+		if s := seccionDe(b.Tipo); s != "" && s != "hero" && !vistas[s] {
+			vistas[s] = true
 			if t, ok := b.Datos["titulo"].(string); ok && t != "" {
-				if _, ya := textos[s]; !ya {
-					textos[s] = t
-				}
+				textos[s] = t
 			}
 		}
 	}

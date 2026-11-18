@@ -18,13 +18,16 @@ import (
 )
 
 // totp: el código de ahora, calculado aparte (como lo haría la app autenticadora).
-func totp(t *testing.T, b32 string) string {
+func totp(t *testing.T, b32 string) string { return totpMas(t, b32, 0) }
+
+// totpMas: el código de d pasos (de 30 s) después del actual.
+func totpMas(t *testing.T, b32 string, d int64) string {
 	s, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(b32)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var msg [8]byte
-	binary.BigEndian.PutUint64(msg[:], uint64(time.Now().Unix()/30))
+	binary.BigEndian.PutUint64(msg[:], uint64(time.Now().Unix()/30+d))
 	m := hmac.New(sha1.New, s)
 	m.Write(msg[:])
 	h := m.Sum(nil)
@@ -68,7 +71,8 @@ func TestSegundoFactor(t *testing.T) {
 	if rec := pedir(h, "POST", "/v1/auth/segundo-factor/confirmar", `{"codigo":"000000"}`, ses.Token); rec.Code != 400 {
 		t.Fatalf("confirmar con un código mal: %d", rec.Code)
 	}
-	rec = pedir(h, "POST", "/v1/auth/segundo-factor/confirmar", `{"codigo":"`+totp(t, alta.Secreto)+`"}`, ses.Token)
+	confirmado := totp(t, alta.Secreto)
+	rec = pedir(h, "POST", "/v1/auth/segundo-factor/confirmar", `{"codigo":"`+confirmado+`"}`, ses.Token)
 	var r struct{ Codigos []string }
 	_ = json.Unmarshal(rec.Body.Bytes(), &r)
 	if rec.Code != 200 || len(r.Codigos) != cuentas.CodigosRecuperacion {
@@ -91,8 +95,17 @@ func TestSegundoFactor(t *testing.T) {
 	if code, _ := completar(x.SegundoFactor, "123456"); code != 400 {
 		t.Fatalf("código mal: %d", code)
 	}
-	if code, y := completar(x.SegundoFactor, totp(t, alta.Secreto)); code != 200 || y.Token == "" {
+	// El de confirmar ya se usó: entra con el siguiente (se acepta el paso de al lado).
+	if code, _ := completar(x.SegundoFactor, confirmado); code != 400 {
+		t.Fatalf("el código con el que se confirmó no vuelve a valer: %d", code)
+	}
+	siguiente := totpMas(t, alta.Secreto, 1)
+	if code, y := completar(x.SegundoFactor, siguiente); code != 200 || y.Token == "" {
 		t.Fatalf("código bien: %d %+v", code, y)
+	}
+	// Un código ya usado no abre otra sesión (uno interceptado no sirve).
+	if code, _ := completar(ingresar().SegundoFactor, siguiente); code != 400 {
+		t.Fatalf("un código ya usado: %d", code)
 	}
 	if code, _ := completar(x.SegundoFactor, totp(t, alta.Secreto)); code != 401 {
 		t.Fatalf("el desafío se usa una vez: %d", code)

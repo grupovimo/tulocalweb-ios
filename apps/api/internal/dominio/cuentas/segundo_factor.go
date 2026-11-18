@@ -66,17 +66,23 @@ func codigoTOTP(secreto []byte, paso int64) string {
 // totpValido acepta el código del paso actual y el de al lado (el reloj del teléfono puede estar
 // corrido unos segundos).
 func totpValido(secreto []byte, codigo string, ahora time.Time) bool {
+	_, ok := totpPaso(secreto, codigo, ahora)
+	return ok
+}
+
+// totpPaso: el paso de 30 s al que corresponde el código (para no aceptarlo dos veces).
+func totpPaso(secreto []byte, codigo string, ahora time.Time) (int64, bool) {
 	codigo = soloNumeros(codigo)
 	if len(codigo) != 6 {
-		return false
+		return 0, false
 	}
 	paso := ahora.Unix() / 30
 	for d := int64(-1); d <= 1; d++ {
 		if hmac.Equal([]byte(codigoTOTP(secreto, paso+d)), []byte(codigo)) {
-			return true
+			return paso + d, true
 		}
 	}
-	return false
+	return 0, false
 }
 
 func soloNumeros(s string) string {
@@ -148,8 +154,9 @@ func (s *Servicio) verificarCodigo(ctx context.Context, tx pgx.Tx, usuario, codi
 	}
 	var cifrado []byte
 	var codigos []string
-	if err := tx.QueryRow(ctx, `SELECT totp_secreto, codigos_recuperacion FROM auth.usuarios WHERE id = $1 FOR UPDATE`,
-		usuario).Scan(&cifrado, &codigos); err != nil {
+	var ultimo *int64
+	if err := tx.QueryRow(ctx, `SELECT totp_secreto, codigos_recuperacion, totp_ultimo_paso FROM auth.usuarios WHERE id = $1 FOR UPDATE`,
+		usuario).Scan(&cifrado, &codigos, &ultimo); err != nil {
 		return false, err
 	}
 	if cifrado == nil {
@@ -159,8 +166,13 @@ func (s *Servicio) verificarCodigo(ctx context.Context, tx pgx.Tx, usuario, codi
 	if err != nil {
 		return false, err
 	}
-	if totpValido(secreto, codigo, time.Now()) {
-		return true, nil
+	if paso, ok := totpPaso(secreto, codigo, time.Now()); ok {
+		// Un código ya usado (o uno anterior) no vuelve a valer: con uno interceptado se abría otra sesión.
+		if ultimo != nil && paso <= *ultimo {
+			return false, nil
+		}
+		_, err := tx.Exec(ctx, `UPDATE auth.usuarios SET totp_ultimo_paso = $2 WHERE id = $1`, usuario, paso)
+		return err == nil, err
 	}
 	if h := hashCodigo(codigo); len(normalCodigo(codigo)) == 8 && slices.Contains(codigos, h) {
 		_, err := tx.Exec(ctx, `UPDATE auth.usuarios SET codigos_recuperacion = array_remove(codigos_recuperacion, $2) WHERE id = $1`, usuario, h)
@@ -304,13 +316,14 @@ func (s *Servicio) confirmarSegundoFactor(ctx context.Context, d Datos, codigo s
 		if err != nil {
 			return err
 		}
-		if !totpValido(secreto, codigo, time.Now()) {
+		paso, ok := totpPaso(secreto, codigo, time.Now())
+		if !ok {
 			return ErrCodigo
 		}
 		var hashes []string
 		codigos, hashes = nuevosCodigos()
 		_, err = tx.Exec(ctx, `UPDATE auth.usuarios SET totp_secreto = totp_pendiente, totp_pendiente = NULL, totp_activo_en = now(),
-			codigos_recuperacion = $2 WHERE id = $1`, d.Usuario.ID, hashes)
+			codigos_recuperacion = $2, totp_ultimo_paso = $3 WHERE id = $1`, d.Usuario.ID, hashes, paso)
 		return err
 	})
 	return codigos, err

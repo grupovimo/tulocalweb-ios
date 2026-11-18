@@ -21,11 +21,11 @@ func TestDisenoV2EnLaTienda(t *testing.T) {
 	b := pruebadb.Nueva(t)
 	id := pruebadb.CrearTienda(t, b.App, "nube")
 
-	// Sin diseño: el inicial del preset (litoral).
+	// Sin diseño: el inicial del preset (litoral), con los bloques que suma (novedades y ofertas).
 	p, err := vidriera.Publica(ctx, b.App, "nube")
-	if err != nil || p.Diseno.Version != 2 || len(p.Diseno.Inicio) != len(mitienda.Presets["litoral"].Orden) ||
+	if err != nil || p.Diseno.Version != 2 || len(p.Diseno.Inicio) != len(mitienda.Inicial("litoral").Inicio) ||
 		!slices.Equal(p.Secciones, []string{"hero", "cats", "prods", "revs", "ig", "wa"}) || string(p.Estilo) != "{}" {
-		t.Fatalf("sin diseño: %+v %v", p.Diseno, err)
+		t.Fatalf("sin diseño: %d bloques (%d), secciones %v, estilo %s: %v", len(p.Diseno.Inicio), len(mitienda.Inicial("litoral").Inicio), p.Secciones, p.Estilo, err)
 	}
 
 	// Un v1 guardado antes: se migra, y lo de v1 se sigue armando igual.
