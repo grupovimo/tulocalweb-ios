@@ -84,11 +84,14 @@ fun DetallePedido(numero: Int) {
         return t
     }
 
-    suspend fun cargar() {
+    /** `trasCambio`: después de cancelar no se puede seguir mostrando el pedido de antes (con sus botones):
+     *  si no se pudo traer, va el error con reintentar. En una actualización común queda lo que había y se avisa. */
+    suspend fun cargar(trasCambio: Boolean = false) {
         try {
             carga = Carga.listo(estado.api.get("/v1/panel/pedidos/$numero"))
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
-            if (carga.valor == null || e !is ErrorApi) carga = Carga.error(errorDe(e))
+            val err = errorDe(e)
+            if (carga.valor == null || trasCambio) carga = Carga.error(err) else if (!err.sinSesion) estado.avisar("No pudimos actualizar el pedido", ok = false)
         }
     }
 
@@ -184,7 +187,7 @@ fun DetallePedido(numero: Int) {
         }
     }
     LaunchedEffect(estado.version) { cargar() }
-    Hoja(cancelar, { cancelar = false }) { carga.valor?.let { p -> CancelarPedido(p) { cargar() } } }
+    Hoja(cancelar, { cancelar = false }) { carga.valor?.let { p -> CancelarPedido(p) { cargar(trasCambio = true) } } }
 }
 
 @Composable

@@ -55,7 +55,7 @@ struct DetallePedido: View {
         .task(id: estado.version) { await cargar() }
         .sheet(isPresented: $cancelar) {
             if let p = carga.valor {
-                CancelarPedido(pedido: p) { await cargar() }
+                CancelarPedido(pedido: p) { await cargar(trasCambio: true) }
                     .hojaTLW([.large])
             }
         }
@@ -378,15 +378,16 @@ struct DetallePedido: View {
         return t
     }
 
-    private func cargar() async {
+    /// `trasCambio`: después de cancelar no se puede seguir mostrando el pedido de antes (con sus botones):
+    /// si no se pudo traer, va el error con reintentar. En una actualización común queda lo que había y se avisa.
+    private func cargar(trasCambio: Bool = false) async {
         do {
             let p: PedidoDetalle = try await estado.api.get("/v1/panel/pedidos/\(numero)")
             carga = .listo(p)
         } catch is CancellationError {
-        } catch let e as ErrorApi {
-            if carga.valor == nil { carga = .error(e) }
         } catch {
-            carga = .error(.desconocido)
+            let e = error as? ErrorApi ?? .desconocido
+            if carga.valor == nil || trasCambio { carga = .error(e) } else if !e.sinSesion { estado.avisar("No pudimos actualizar el pedido", ok: false) }
         }
     }
 

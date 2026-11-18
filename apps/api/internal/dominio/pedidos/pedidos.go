@@ -383,10 +383,11 @@ func Obtener(ctx context.Context, pool tx, tiendaID string, numero int) (Detalle
 		}
 		// Historia del comprador en la tienda (por email o, si no hay, por nombre): sus compras, sin las
 		// que esperan el pago de Mercado Pago (salvo ésta, que se está mirando).
-		if err := t.QueryRow(ctx, `SELECT min(creado_en), count(*), coalesce(sum(total), 0) FROM pedidos
+		// Si no le queda otra compra (éste cancelado y nada más), «desde» es este pedido: min() daría NULL.
+		if err := t.QueryRow(ctx, `SELECT coalesce(min(creado_en), $5), count(*), coalesce(sum(total), 0) FROM pedidos
 			WHERE tienda_id = $1 AND estado <> 'Cancelado' AND (numero = $4 OR NOT (estado = 'Sin pagar' AND canal = 'web' AND pago = 'mp')) AND
 				CASE WHEN $2::text IS NOT NULL THEN comprador->>'email' = $2 ELSE comprador->>'nombre' = $3 END`,
-			tiendaID, comprador.Email, comprador.Nombre, numero).Scan(&d.Comprador.Desde, &d.Comprador.Pedidos, &d.Comprador.Gastado); err != nil {
+			tiendaID, comprador.Email, comprador.Nombre, numero, d.Creado).Scan(&d.Comprador.Desde, &d.Comprador.Pedidos, &d.Comprador.Gastado); err != nil {
 			return err
 		}
 		d.Historial = historial(d.Fila, d.Canal, d.Pago, d.Envio, d.Factura != nil, estadosEn)

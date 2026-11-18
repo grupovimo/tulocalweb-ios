@@ -126,3 +126,20 @@ func TestTransiciones(t *testing.T) {
 		}
 	}
 }
+
+// Abrir un pedido cancelado de alguien sin otras compras: min(creado_en) daba NULL y el detalle, 500.
+func TestDetalleDeUnCanceladoSolo(t *testing.T) {
+	b := pruebadb.Nueva(t)
+	una := pruebadb.CrearTienda(t, b.App, "una")
+	n, err := pedidos.Crear(ctx, b.App, una, nuevo("Rita Paz", "wa", "transf", "retiro", "Cancelado", 8000, time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := pedidos.Obtener(ctx, b.App, una, n)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Comprador.Pedidos != 0 || !d.Comprador.Desde.Equal(d.Creado) {
+		t.Fatalf("comprador: %+v creado %v", d.Comprador, d.Creado)
+	}
+}
